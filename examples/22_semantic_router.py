@@ -4,9 +4,6 @@ Define routes with example utterances.  The router embeds the incoming
 query and matches it to the closest route using cosine similarity.
 Each route maps to a specific model optimized for that type of task.
 
-Use case: code questions → code-tuned model, creative writing →
-creative model, data analysis → analytical model.
-
 Cost: ~$0.0001 per embedding call, ~50-100ms latency overhead.
 The embedding is computed once per query (not per route).
 
@@ -14,8 +11,9 @@ Demonstrates:
   - Defining routes with example utterances
   - Routing queries to specialized models
   - Handling no-match with a default model
-  - Combining semantic router with the smart router
+  - Combining semantic router with the smart router (preferred_model)
   - Per-route threshold tuning
+  - Full pipeline: intent → cache → route
 """
 
 from bedrock_smart_router import BedrockRouter, RoutingConfig
@@ -30,8 +28,6 @@ router = BedrockRouter.create()
 # ═══════════════════════════════════════════════════════════════════
 # Example 1: Define routes with example utterances
 # ═══════════════════════════════════════════════════════════════════
-# Each route has a name, a target model, and example queries that
-# represent the intent.  More examples = better matching accuracy.
 
 intent_router = SemanticRouter(
     routes=[
@@ -44,8 +40,6 @@ intent_router = SemanticRouter(
                 "Explain this algorithm",
                 "Fix this bug",
                 "Refactor this class",
-                "Write unit tests for",
-                "Optimize this SQL query",
             ],
             threshold=0.80,
         ),
@@ -58,7 +52,6 @@ intent_router = SemanticRouter(
                 "Brainstorm ideas for",
                 "Create a narrative",
                 "Imagine a world where",
-                "Write a song about",
             ],
             threshold=0.80,
         ),
@@ -71,22 +64,8 @@ intent_router = SemanticRouter(
                 "Summarize these numbers",
                 "What trends do you see",
                 "Calculate the average",
-                "Build a dashboard for",
             ],
             threshold=0.80,
-        ),
-        SemanticRoute(
-            name="aws",
-            model="us.anthropic.claude-sonnet-4-6",
-            examples=[
-                "How do I configure a VPC",
-                "Set up an S3 bucket policy",
-                "Create a Lambda function",
-                "Configure IAM roles",
-                "Deploy with CloudFormation",
-                "Set up an ECS cluster",
-            ],
-            threshold=0.82,
         ),
     ],
     embedding_model="amazon.titan-embed-text-v2:0",
@@ -103,8 +82,7 @@ queries = [
     "Help me fix this Python bug in my sort function",
     "Write me a short story about a robot learning to paint",
     "What's the average revenue per quarter from this dataset?",
-    "How do I set up cross-account IAM access?",
-    "What's the weather today?",  # No match — falls back to default
+    "What's the weather today?",
 ]
 
 print("Semantic routing:")
@@ -112,78 +90,55 @@ for query in queries:
     match = intent_router.route(query)
     if match:
         print(f"  '{query[:55]:55s}' → {match.route_name:8s} ({match.model})")
-        print(f"    Score: {match.score:.2f}, matched: '{match.matched_example}'")
     else:
         print(f"  '{query[:55]:55s}' → DEFAULT  ({intent_router.default_model})")
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Example 3: Combine semantic router with the smart router
+# Example 3: Combine with smart router using preferred_model
 # ═══════════════════════════════════════════════════════════════════
-# Two patterns for combining intent routing with smart routing:
-#
-# Pattern A: Intent router picks the model, smart router invokes it
-#   → Use when you want exact model control per intent
-#   → The smart router still provides retries, metrics, observability
-#
-# Pattern B: Intent router narrows the candidates, smart router picks
-#   → Use when you want the smart router's cost/quality optimization
-#     within the intent's model family
+# The semantic router picks the EXACT model.  Pass it to the smart
+# router via preferred_model — the smart router uses that model as
+# primary and builds a fallback chain around it.  You get the intent
+# router's model choice PLUS the smart router's reliability features
+# (retries, fallbacks, caching, metrics, observability).
 
 query = "Write a recursive fibonacci function in Python"
 match = intent_router.route(query)
 
 if match:
-    # Pattern A: Direct model — intent router has full control
-    # Call Bedrock directly with the intent router's model,
-    # using the smart router only for reliability features
-    print(f"\nPattern A (direct model):")
-    print(f"  Intent: {match.route_name} → model: {match.model}")
-    # response = bedrock_client.converse(modelId=match.model, messages=[...])
-    # Or use the smart router with the intent's family for fallback support:
-
-    # Pattern B: Family constraint — smart router optimizes within family
-    family = match.model.split(".")[1]  # "anthropic"
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": query}]}],
-        routing=RoutingConfig(preferred_family=family),
+        routing=RoutingConfig(preferred_model=match.model),
     )
     d = response["routing_decision"]
-    print(f"\nPattern B (family constraint):")
+    print(f"\nIntent + Smart Router:")
     print(f"  Intent: {match.route_name} (score={match.score:.2f})")
-    print(f"  Intent wanted: {match.model}")
-    print(f"  Smart router picked: {d.selected_model} (best {family} model by strategy)")
-    print(f"  Cost: ${d.actual_cost:.6f}")
+    print(f"  Model:  {d.selected_model}")
+    print(f"  Cost:   ${d.actual_cost:.6f}")
 else:
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": query}]}],
     )
-    print(f"\nNo intent match, smart router picked: {response['routing_decision'].selected_model}")
+    print(f"\nNo match → smart router picked: {response['routing_decision'].selected_model}")
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Example 4: Per-route threshold tuning
+# Example 4: No match — falls back to default model
 # ═══════════════════════════════════════════════════════════════════
-# Each route can have its own threshold.  Code routes need higher
-# thresholds (code is specific), creative routes can be lower.
-#
-# Recommended thresholds:
-#   Code:     0.82–0.90 (specific, avoid false matches)
-#   Creative: 0.75–0.85 (broader, more flexible matching)
-#   Data:     0.80–0.88 (moderate specificity)
-#   AWS:      0.82–0.90 (service-specific terminology)
 
-print(f"\nThreshold guide:")
-print(f"  Code routes:     0.82–0.90 (specific)")
-print(f"  Creative routes: 0.75–0.85 (flexible)")
-print(f"  Data routes:     0.80–0.88 (moderate)")
-print(f"  AWS routes:      0.82–0.90 (service-specific)")
+match = intent_router.route("What's the weather today?")
+if match is None:
+    print(f"\nNo intent match → use default: {intent_router.default_model}")
+    response = router.converse(
+        messages=[{"role": "user", "content": [{"text": "What's the weather?"}]}],
+    )
+    print(f"  Smart router picked: {response['routing_decision'].selected_model}")
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Example 5: Full pipeline — semantic router + semantic cache
+# Example 5: Full pipeline — intent → cache → smart router
 # ═══════════════════════════════════════════════════════════════════
-# Route by intent, check semantic cache, call Bedrock if miss.
 
 from bedrock_smart_router.semantic_cache import SemanticCache, SemanticCacheConfig
 
@@ -195,31 +150,26 @@ cache = SemanticCache(
 
 def full_pipeline(query: str) -> dict:
     """Semantic router → semantic cache → smart router."""
-    # Step 1: Route by intent to narrow the model family
     match = intent_router.route(query)
-    family = match.model.split(".")[1] if match else None
     intent = match.route_name if match else "default"
 
-    # Step 2: Check semantic cache
     cached = cache.get(query)
     if cached is not None:
         print(f"  [{intent}] Cache HIT: '{query[:40]}'")
         return cached
 
-    # Step 3: Call smart router, constrained to the intent's family
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": query}]}],
-        routing=RoutingConfig(preferred_family=family) if family else None,
+        routing=RoutingConfig(preferred_model=match.model) if match else None,
     )
 
-    # Step 4: Store in semantic cache
     cache.put(query, response)
     model = response["routing_decision"].selected_model
     print(f"  [{intent}] Cache MISS → {model}: '{query[:40]}'")
     return response
 
 
-print(f"\nFull pipeline (intent → cache → route):")
+print(f"\nFull pipeline:")
 full_pipeline("Write a Python class for a linked list")
 full_pipeline("Create a linked list implementation in Python")  # Cache hit
 full_pipeline("What's the average salary in the dataset?")

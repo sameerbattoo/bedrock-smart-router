@@ -254,11 +254,24 @@ class BedrockRouter:
             strategy_name, weights=weights, metrics_store=self._metrics_store,
         )
 
-        # A/B test and canary can override the strategy's model selection
+        # A/B test, canary, and preferred_model can override strategy
         ab_variant = None
         is_canary = False
 
-        if self._ab_test.is_active:
+        # preferred_model takes highest priority — user explicitly chose
+        if routing.preferred_model:
+            override = self._registry.get(routing.preferred_model)
+            result = strategy.select(available, analysis)
+            if override and override in available:
+                primary = override
+            else:
+                logger.warning(
+                    "preferred_model '%s' not in eligible candidates, "
+                    "falling back to strategy selection",
+                    routing.preferred_model,
+                )
+                primary = result.selected_model
+        elif self._ab_test.is_active:
             user_id = (routing.metadata or {}).get("user_id")
             ab_result = self._ab_test.assign(user_id=user_id)
             if ab_result:

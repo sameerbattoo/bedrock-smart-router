@@ -51,6 +51,7 @@ class RoutingConfig:
     preset: str | None = None  # "economy" | "speed" | "balanced" | "quality"
     strategy: str | None = None
     weights: dict[str, float] | None = None
+    preferred_model: str | None = None  # Exact model ID to use (bypasses strategy selection)
     preferred_family: str | None = None
     required_capabilities: list[str] | None = None
     min_context_window: int | None = None
