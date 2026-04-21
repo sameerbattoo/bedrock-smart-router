@@ -303,6 +303,117 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
+## Reliability: Circuit Breakers, Fallbacks, and Retries
+
+The router is designed so that it never becomes the reason your application fails. Three mechanisms work together to ensure every request gets a response:
+
+### Circuit Breakers
+
+Each model has its own circuit breaker that prevents wasting time on a model that's failing. When too many failures happen, the breaker "trips" and the router skips that model entirely.
+
+```
+CLOSED (normal) ──5 failures in 60s──▶ OPEN (blocked)
+                                          │
+                                     wait 30s cooldown
+                                          │
+                                          ▼
+                                     HALF-OPEN (testing)
+                                          │
+                              ┌───────────┴───────────┐
+                         probe succeeds          probe fails
+                              │                       │
+                              ▼                       ▼
+                         CLOSED                    OPEN
+```
+
+Without a circuit breaker, if Sonnet is throttled, every request would try Sonnet first, wait for the timeout, then fall back — wasted latency on every request. With the breaker open, the router skips Sonnet instantly and goes straight to the fallback.
+
+Throttles (429s) get a shorter cooldown (10s) than hard errors (5xx = 30s), because throttles are transient.
+
+```yaml
+circuit_breaker:
+  failure_threshold: 5           # Failures before tripping
+  window_seconds: 60             # Count failures within this window
+  cooldown_seconds: 30           # How long OPEN stays blocked
+  throttle_cooldown_seconds: 10  # Shorter cooldown for 429s
+```
+
+### Fallback Chain
+
+When the primary model fails (or its circuit breaker is open), the router walks an ordered fallback chain:
+
+```
+Primary: Claude Sonnet 4.6 (selected by strategy)
+  │ fails or circuit breaker open
+  ▼
+Level 1: Claude Haiku 4.5 (same family, cheaper)
+  │ fails
+  ▼
+Level 2: Nova Pro (different family, same capability tier)
+  │ fails
+  ▼
+Level 3: Nova Lite (default safe model — cheap, fast, always available)
+  │ fails
+  ▼
+Level 4: Error returned to caller with full trace
+```
+
+The chain is built automatically: same-family downgrade first (Sonnet → Haiku), then cross-family equivalent (Sonnet → Nova Pro), then the default safe model. The user never sees the failure — they get a response from the best available model.
+
+```yaml
+fallback:
+  enabled: true
+  max_depth: 5
+  default_safe_model: "us.amazon.nova-lite-v1:0"
+```
+
+### Retries
+
+Before falling back to a different model, the router retries the same model for transient errors (throttles, 503s) with exponential backoff:
+
+```
+Request → Sonnet (throttled, 429)
+  → wait 0.5s → retry Sonnet (throttled again)
+  → wait 1.0s → retry Sonnet (throttled again)
+  → wait 2.0s → retry Sonnet (still failing)
+  → max retries exhausted → fall back to Haiku
+```
+
+Non-retryable errors (ValidationException, AccessDeniedException) skip retries and go straight to fallback.
+
+```yaml
+retry:
+  max_retries: 3
+  backoff_base_seconds: 0.5
+  backoff_max_seconds: 8.0
+  backoff_multiplier: 2.0
+```
+
+### How They Work Together
+
+```
+Request arrives
+  │
+  ├─ Strategy picks: Sonnet 4.6
+  ├─ Circuit breaker: is Sonnet OPEN?
+  │   ├─ No → try Sonnet (with retries on transient errors)
+  │   └─ Yes → skip Sonnet, go to fallback[0]
+  │
+  ├─ Sonnet call fails after retries
+  │   ├─ Record failure (may trip circuit breaker)
+  │   └─ Try fallback[0]: Haiku (with retries)
+  │       ├─ Success → return response
+  │       └─ Fail → try fallback[1]: Nova Pro
+  │           └─ ... and so on
+  │
+  └─ Routing decision shows what happened:
+       d.fallback_used = True
+       d.fallback_model = "us.anthropic.claude-haiku-4-5-..."
+       d.circuit_breaker_skipped = ["us.anthropic.claude-sonnet-4-6"]
+```
+
+The caller gets a response from the best available model, with full transparency about what happened behind the scenes.
+
 ## Architecture
 
 ```
