@@ -20,7 +20,7 @@ import boto3
 
 from bedrock_smart_router.ab_testing import ABTestManager
 from bedrock_smart_router.aip_manager import AIPManager
-from bedrock_smart_router.cache_layer import ResponseCache
+from bedrock_smart_router.cache_layer import ResponseCache, build_cache
 from bedrock_smart_router.canary import CanaryManager
 from bedrock_smart_router.circuit_breaker import CircuitBreakerRegistry
 from bedrock_smart_router.config import (
@@ -93,7 +93,7 @@ class BedrockRouter:
 
         # Phase 2: intelligence
         self._metrics_store = _build_metrics_store(config.metrics, config.region, session)
-        self._cache = ResponseCache(config.cache)
+        self._cache = build_cache(config.cache)
 
         # CloudWatch metrics publisher (optional)
         cw_publisher = None

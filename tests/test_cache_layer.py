@@ -1,17 +1,21 @@
-"""Tests for the response cache."""
+"""Tests for the response cache (in-memory and factory)."""
 
 import time
 
-from bedrock_smart_router.cache_layer import CacheConfig, ResponseCache
+from bedrock_smart_router.cache_layer import (
+    CacheConfig,
+    InMemoryCache,
+    build_cache,
+)
 
 
 def _msgs(text: str) -> list[dict]:
     return [{"role": "user", "content": [{"text": text}]}]
 
 
-class TestResponseCache:
+class TestInMemoryCache:
     def setup_method(self):
-        self.cache = ResponseCache(CacheConfig(enabled=True, ttl_seconds=10))
+        self.cache = InMemoryCache(CacheConfig(enabled=True, ttl_seconds=10))
 
     def test_miss_on_empty(self):
         assert self.cache.get(_msgs("hello")) is None
@@ -24,36 +28,33 @@ class TestResponseCache:
         assert hit["output"]["message"]["content"][0]["text"] == "Hi!"
 
     def test_same_request_different_model_still_hits(self):
-        """Cache key is request-based, not model-based."""
         resp = {"output": "Hi!"}
         self.cache.put(_msgs("hello"), resp, model_id="model-a")
-        # Same request, cache should hit regardless of which model would be picked
         hit = self.cache.get(_msgs("hello"))
         assert hit is not None
 
     def test_different_messages_miss(self):
-        resp = {"output": "Hi!"}
-        self.cache.put(_msgs("hello"), resp)
+        self.cache.put(_msgs("hello"), {"output": "Hi!"})
         assert self.cache.get(_msgs("goodbye")) is None
 
     def test_ttl_expiry(self):
-        cache = ResponseCache(CacheConfig(enabled=True, ttl_seconds=0.1))
+        cache = InMemoryCache(CacheConfig(enabled=True, ttl_seconds=0.1))
         cache.put(_msgs("hello"), {"output": "Hi!"})
         assert cache.get(_msgs("hello")) is not None
         time.sleep(0.15)
         assert cache.get(_msgs("hello")) is None
 
     def test_lru_eviction(self):
-        cache = ResponseCache(CacheConfig(enabled=True, max_entries=2))
+        cache = InMemoryCache(CacheConfig(enabled=True, max_entries=2))
         cache.put(_msgs("a"), {"r": "1"})
         cache.put(_msgs("b"), {"r": "2"})
-        cache.put(_msgs("c"), {"r": "3"})  # Evicts "a"
+        cache.put(_msgs("c"), {"r": "3"})
         assert cache.get(_msgs("a")) is None
         assert cache.get(_msgs("b")) is not None
         assert cache.get(_msgs("c")) is not None
 
     def test_disabled_cache(self):
-        cache = ResponseCache(CacheConfig(enabled=False))
+        cache = InMemoryCache(CacheConfig(enabled=False))
         cache.put(_msgs("hello"), {"r": "1"})
         assert cache.get(_msgs("hello")) is None
 
@@ -78,9 +79,32 @@ class TestResponseCache:
         assert self.cache.get(_msgs("y")) is not None
 
     def test_system_prompt_affects_key(self):
-        """Different system prompts should produce different cache keys."""
         self.cache.put(_msgs("hi"), {"r": "1"}, system=[{"text": "Be a pirate"}])
-        # Same user message but different system prompt = miss
         assert self.cache.get(_msgs("hi"), system=[{"text": "Be a doctor"}]) is None
-        # Same system prompt = hit
         assert self.cache.get(_msgs("hi"), system=[{"text": "Be a pirate"}]) is not None
+
+    def test_stats_backend_field(self):
+        assert self.cache.stats["backend"] == "memory"
+
+
+class TestBuildCache:
+    def test_default_builds_memory(self):
+        cache = build_cache()
+        assert isinstance(cache, InMemoryCache)
+
+    def test_explicit_memory(self):
+        cache = build_cache(CacheConfig(backend="memory"))
+        assert isinstance(cache, InMemoryCache)
+
+    def test_disabled_builds_memory(self):
+        cache = build_cache(CacheConfig(enabled=False))
+        assert isinstance(cache, InMemoryCache)
+        cache.put(_msgs("x"), {"r": "1"})
+        assert cache.get(_msgs("x")) is None
+
+    def test_redis_without_url_raises(self):
+        """Redis with empty URL should fail gracefully on get (logged warning)."""
+        cache = build_cache(CacheConfig(backend="redis", redis_url=""))
+        # get() catches the error and returns None (fail-open)
+        result = cache.get(_msgs("test"))
+        assert result is None
