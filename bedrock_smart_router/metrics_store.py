@@ -35,6 +35,14 @@ class RequestRecord:
     quality_score: float | None = None  # From judge, if available
     success: bool = True
     is_throttle: bool = False
+    # Routing context (enriches DynamoDB items for analytics)
+    strategy: str = ""
+    complexity: str = ""
+    tenant_id: str = ""
+    inference_tier: str = ""
+    cris_profile: str = ""
+    fallback_used: bool = False
+    cache_hit: bool = False
 
 
 @dataclass

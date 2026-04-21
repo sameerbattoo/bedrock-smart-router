@@ -438,6 +438,7 @@ class BedrockRouter:
         response["routing_decision"] = decision
 
         # ── Step 12: Record metrics ─────────────────────────────
+        tenant_id = (routing.metadata or {}).get("tenant", "")
         self._metrics_store.record(RequestRecord(
             model_id=used_model.model_id,
             timestamp=time.monotonic(),
@@ -446,6 +447,13 @@ class BedrockRouter:
             output_tokens=output_tokens,
             cost=actual_cost,
             success=True,
+            strategy=strategy_name,
+            complexity=analysis.complexity.value,
+            tenant_id=tenant_id,
+            inference_tier=used_tier,
+            cris_profile=used_cris,
+            fallback_used=(used_model.model_id != primary.model_id),
+            cache_hit=False,
         ))
 
         # ── Step 15: Cache the response ─────────────────────────
@@ -611,6 +619,7 @@ class BedrockRouter:
         )
         self._last_decision = decision
 
+        stream_tenant = (routing.metadata or {}).get("tenant", "")
         self._metrics_store.record(RequestRecord(
             model_id=used_model.model_id,
             timestamp=time.monotonic(),
@@ -620,6 +629,13 @@ class BedrockRouter:
             output_tokens=output_tokens,
             cost=actual_cost,
             success=True,
+            strategy=strategy_name,
+            complexity=analysis.complexity.value,
+            tenant_id=stream_tenant,
+            inference_tier=used_tier,
+            cris_profile=used_cris,
+            fallback_used=(used_model.model_id != resolved["primary"].model_id),
+            cache_hit=False,
         ))
 
         self._observability.emit(

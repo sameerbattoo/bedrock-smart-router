@@ -221,9 +221,19 @@ class DynamoDBMetricsStore(MetricsStore):
             "cost": Decimal(str(rec.cost)),
             "success": rec.success,
             "is_throttle": rec.is_throttle,
+            # Routing context — enriches items for analytics/GSI queries
+            "strategy": rec.strategy,
+            "complexity": rec.complexity,
+            "inference_tier": rec.inference_tier,
+            "fallback_used": rec.fallback_used,
+            "cache_hit": rec.cache_hit,
         }
         if rec.quality_score is not None:
             item["quality_score"] = Decimal(str(rec.quality_score))
+        if rec.tenant_id:
+            item["tenant_id"] = rec.tenant_id
+        if rec.cris_profile:
+            item["cris_profile"] = rec.cris_profile
 
         table.put_item(Item=item)
 
