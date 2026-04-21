@@ -24,6 +24,11 @@ print(f"Strategy:   {d.strategy_used}")
 print(f"Complexity: {d.complexity_detected}")
 print(f"Cost:       ${d.actual_cost:.6f}")
 print(f"Latency:    {d.latency_ms:.0f}ms")
+print(f"Stop reason:       {d.stop_reason}")
+print(f"Bedrock latency:   {d.bedrock_latency_ms}ms")
+print(f"Service tier:      {d.actual_service_tier}")
+print(f"Prompt cache read: {d.prompt_cache_read_tokens} tokens")
+print(f"Prompt cache write:{d.prompt_cache_write_tokens} tokens")
 
 
 # ── Example 2: Config from a YAML file ──────────────────────────────

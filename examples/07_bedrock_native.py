@@ -37,6 +37,9 @@ router = BedrockRouter.create({
 # Simple request → Standard tier
 r1 = router.converse(messages=[{"role": "user", "content": [{"text": "Hi"}]}])
 print(f"\nSimple → tier={r1['routing_decision'].inference_tier}")
+print(f"  Actual tier served: {r1['routing_decision'].actual_service_tier}")
+print(f"  Stop reason: {r1['routing_decision'].stop_reason}")
+print(f"  Bedrock latency: {r1['routing_decision'].bedrock_latency_ms}ms")
 
 # Complex request → Priority tier (if model supports it)
 r2 = router.converse(messages=[{"role": "user", "content": [

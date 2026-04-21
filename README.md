@@ -246,6 +246,8 @@ print(f"P95 latency: {m.p95_latency_ms}ms, error rate: {m.error_rate}")
 # Last routing decision
 d = router.last_routing_decision()
 print(f"Model: {d.selected_model}, Tier: {d.inference_tier}, CRIS: {d.cris_profile}")
+print(f"Stop: {d.stop_reason}, Bedrock latency: {d.bedrock_latency_ms}ms")
+print(f"Prompt cache: {d.prompt_cache_read_tokens} read / {d.prompt_cache_write_tokens} write tokens")
 ```
 
 ## Examples

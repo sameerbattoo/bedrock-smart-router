@@ -65,6 +65,10 @@ print(f"\n\nFull response: {''.join(full_text)}")
 print(f"Model: {decision.selected_model}")
 print(f"Latency: {decision.latency_ms:.0f}ms (TTFT: {decision.ttft_ms:.0f}ms)")
 print(f"Tokens: {decision.input_tokens} in, {decision.output_tokens} out")
+print(f"Stop reason: {decision.stop_reason}")
+print(f"Bedrock latency: {decision.bedrock_latency_ms}ms")
+print(f"Service tier: {decision.actual_service_tier}")
+print(f"Prompt cache: {decision.prompt_cache_read_tokens} read, {decision.prompt_cache_write_tokens} write")
 
 
 # ── Example 4: Async streaming (for FastAPI, aiohttp, etc.) ──────────

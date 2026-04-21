@@ -363,6 +363,44 @@ async for event in async_router.converse_stream(messages=[...]):
 
 **Note:** Streaming responses are not cached (they're consumed once). The routing decision, metrics, and observability events are still recorded after the stream completes.
 
+### Bedrock Response Metrics
+
+Every routing decision (both `converse()` and `converse_stream()`) captures the full set of metrics from the Bedrock response:
+
+```python
+d = response["routing_decision"]
+
+# Latency
+print(f"Wall-clock latency: {d.latency_ms:.0f}ms")
+print(f"Bedrock server latency: {d.bedrock_latency_ms}ms")
+print(f"Network overhead: {d.latency_ms - (d.bedrock_latency_ms or 0):.0f}ms")
+print(f"TTFT (streaming only): {d.ttft_ms}ms")
+
+# Tokens and cost
+print(f"Input tokens: {d.input_tokens}")
+print(f"Output tokens: {d.output_tokens}")
+print(f"Cost: ${d.actual_cost:.6f}")
+
+# Bedrock prompt cache (server-side prefix caching)
+print(f"Prompt cache read: {d.prompt_cache_read_tokens} tokens")
+print(f"Prompt cache write: {d.prompt_cache_write_tokens} tokens")
+if d.input_tokens and d.prompt_cache_read_tokens:
+    ratio = d.prompt_cache_read_tokens / d.input_tokens
+    print(f"Prompt cache hit ratio: {ratio:.0%}")
+
+# Stop reason
+print(f"Stop reason: {d.stop_reason}")
+# end_turn = normal completion
+# max_tokens = response truncated (consider increasing maxTokens)
+# tool_use = model wants to call a tool
+# guardrail_intervened = guardrail blocked the output
+# content_filtered = content filter triggered
+
+# Service tier verification
+print(f"Requested tier: {d.inference_tier}")
+print(f"Actual tier served: {d.actual_service_tier}")
+```
+
 ---
 
 ## Updated Configuration Reference
