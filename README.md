@@ -186,9 +186,9 @@ response = router.converse(
 | `balanced` | balanced (0.4/0.3/0.3) | — | General purpose (default) |
 | `quality` | quality-optimized | — | Complex reasoning, analysis, code generation |
 
-### Handling No-Models-Match
+### Actionable Error Feedback
 
-When no models satisfy the routing constraints, the router raises a `NoModelsMatchError` with structured feedback instead of a generic error:
+When no models satisfy the routing constraints, the router raises a `NoModelsMatchError` with structured, actionable feedback — not a generic error. It tells you exactly which models were checked, why each was excluded, and what to change:
 
 ```python
 from bedrock_smart_router import RoutingConfig, NoModelsMatchError
