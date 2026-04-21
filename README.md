@@ -19,6 +19,7 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - Tag-based routing for free/paid tiers and team access control
 - Conditional routing based on request metadata
 - Custom strategy plugins — subclass `RoutingStrategy` and register it
+- `preferred_model` override — pin a specific model while keeping fallbacks and reliability
 
 **Request Intelligence**
 - 12-dimension zero-API-call complexity classifier (sub-millisecond overhead)
@@ -47,7 +48,9 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - Canary deployments with auto-rollback on error rate/latency thresholds
 - Shadow mode — mirror traffic to a secondary model in background threads
 - Response caching (in-memory LRU with TTL)
-- Semantic caching via embeddings (optional)
+- Semantic caching via embeddings with pluggable vector stores (in-memory, FAISS, Redis)
+- Variable-aware semantic cache — same intent + different parameters = cache miss
+- Semantic intent router — route queries to specialized models by meaning
 
 **Observability**
 - Structured routing decision logging on every request
@@ -83,7 +86,8 @@ pip install bedrock-smart-router[dev]
 | Extra | What it adds | When you need it |
 |---|---|---|
 | *(none)* | Core SDK, boto3 only | Lambda, single-instance, in-memory cache and metrics |
-| `[redis]` | `redis` package | Shared cache across instances via Redis, Valkey, or ElastiCache |
+| `[redis]` | `redis` package | Shared cache + vector store via Redis, Valkey, or ElastiCache |
+| `[faiss]` | `faiss-cpu` package | Fast in-process vector search for semantic cache (~100K entries) |
 | `[otel]` | `opentelemetry-api`, `opentelemetry-sdk` | Distributed tracing and OTEL metrics export |
 | `[dev]` | `pytest`, `pytest-cov`, `moto` | Running the test suite |
 

@@ -565,3 +565,86 @@ observability:
 **For AWS production**, use the AWS Distro for OpenTelemetry (ADOT) collector as a sidecar to send traces to X-Ray and metrics to CloudWatch or Amazon Managed Prometheus.
 
 OTEL is disabled by default — zero overhead when not configured. The `opentelemetry` package is only imported when `otel_enabled: true`.
+
+
+---
+
+## 20. Semantic Cache (`20_semantic_cache.py`)
+
+The semantic cache matches queries by meaning using embedding similarity. Unlike the exact-match cache (which only hits on identical requests), it catches rephrased questions:
+
+```python
+cache.put("How do I reset my password?", response)
+cache.get("I forgot my password, help")  # HIT — same meaning
+```
+
+**Variable-aware caching** prevents false hits on parameterized queries:
+
+```python
+cache.put("Top users for Electronics 2024", response,
+          variables={"category": "Electronics", "year": "2024"})
+
+cache.get("Top users for Electronics 2024",
+          variables={"category": "Electronics", "year": "2024"})  # HIT
+
+cache.get("Top users for Clothing 2025",
+          variables={"category": "Clothing", "year": "2025"})     # MISS
+```
+
+Same intent + same variables = HIT. Same intent + different variables = MISS.
+
+---
+
+## 21. Semantic Cache Deep Dive (`21_semantic_cache_deep_dive.py`)
+
+Covers all vector store backends and configuration options:
+
+| Backend | Install | Scales To | Shared |
+|---|---|---|---|
+| `memory` (default) | *(none)* | ~500 entries | No |
+| `faiss` | `pip install bedrock-smart-router[faiss]` | ~100K entries | No |
+| `redis` | `pip install bedrock-smart-router[redis]` | Millions | Yes |
+
+```python
+SemanticCache(config=SemanticCacheConfig(
+    enabled=True,
+    threshold=0.90,
+    vector_store_backend="faiss",  # or "memory" or "redis"
+    embedding_model="amazon.titan-embed-text-v2:0",
+))
+```
+
+**Threshold tuning guide:**
+- FAQ / customer support: 0.88–0.92
+- General knowledge: 0.90–0.95
+- Code questions: 0.93–0.97 (code is more specific)
+
+---
+
+## 22. Semantic Router (`22_semantic_router.py`)
+
+Routes queries to specialized models by intent using embedding similarity:
+
+```python
+intent_router = SemanticRouter(routes=[
+    SemanticRoute(name="code", model="us.anthropic.claude-sonnet-4-6",
+                  examples=["Write a function", "Debug this code"]),
+    SemanticRoute(name="creative", model="us.anthropic.claude-opus-4-7",
+                  examples=["Write a story", "Compose a poem"]),
+])
+
+match = intent_router.route("Help me fix this Python bug")
+# match.route_name = "code", match.model = "us.anthropic.claude-sonnet-4-6"
+```
+
+**Combining with the smart router** — use `preferred_model` to pin the intent router's model while keeping the smart router's reliability features:
+
+```python
+match = intent_router.route(query)
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(preferred_model=match.model),
+)
+```
+
+The smart router uses the intent router's exact model as primary, builds a fallback chain around it, and provides retries, circuit breakers, caching, metrics, and observability. If the model is unavailable, it falls back gracefully.
