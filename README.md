@@ -10,6 +10,7 @@ Unlike Bedrock's native prompt router, which only routes within a single model f
 
 **Routing Strategies**
 - Cost-optimized, latency-optimized, quality-optimized, and balanced (weighted composite)
+- Named presets: `economy`, `speed`, `balanced`, `quality` — one-word shortcuts for common routing profiles
 - Budget-constrained routing with per-request ceilings and rolling hourly/daily limits
 - Tag-based routing for free/paid tiers and team access control
 - Conditional routing based on request metadata
@@ -35,6 +36,7 @@ Unlike Bedrock's native prompt router, which only routes within a single model f
 - Multi-level fallback chain: same-family downgrade, cross-family equivalent, CRIS retry, safe default
 - Configurable retry with exponential backoff for transient errors
 - Content policy and context window fallbacks
+- Graceful no-models-match errors with per-model rejection reasons and actionable suggestions
 
 **Production Deployment**
 - A/B testing with weighted variants and sticky user assignment
@@ -119,6 +121,77 @@ response = router.converse(
         metadata={"user_id": "u123", "team": "engineering"},
     ),
 )
+```
+
+### Named Presets
+
+Presets are one-word shortcuts for common routing profiles. They set the strategy, weights, and constraints in a single parameter:
+
+```python
+from bedrock_smart_router import RoutingConfig
+
+# Economy — cheapest model, max $0.002/request
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "Classify this text"}]}],
+    routing=RoutingConfig(preset="economy"),
+)
+
+# Speed — lowest latency model
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "Translate: Hello"}]}],
+    routing=RoutingConfig(preset="speed"),
+)
+
+# Quality — best model regardless of cost
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "Analyze this contract"}]}],
+    routing=RoutingConfig(preset="quality"),
+)
+
+# Presets can be overridden — use economy but allow Anthropic only
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "Summarize"}]}],
+    routing=RoutingConfig(preset="economy", preferred_family="anthropic"),
+)
+```
+
+| Preset | Strategy | Cost Limit | Use Case |
+|---|---|---|---|
+| `economy` | cost-optimized | $0.002/req | Batch processing, classification, simple Q&A |
+| `speed` | latency-optimized | — | Real-time chat, interactive UX |
+| `balanced` | balanced (0.4/0.3/0.3) | — | General purpose (default) |
+| `quality` | quality-optimized | — | Complex reasoning, analysis, code generation |
+
+### Handling No-Models-Match
+
+When no models satisfy the routing constraints, the router raises a `NoModelsMatchError` with structured feedback instead of a generic error:
+
+```python
+from bedrock_smart_router import RoutingConfig, NoModelsMatchError
+
+try:
+    response = router.converse(
+        messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+        routing=RoutingConfig(
+            preset="economy",
+            preferred_family="nonexistent",
+        ),
+    )
+except NoModelsMatchError as e:
+    print(e)
+    # No eligible models found for this request.
+    #   Constraints: {complexity: simple, preferred_family: nonexistent, ...}
+    #   Models checked:
+    #     - Nova Micro (us.amazon.nova-micro-v1:0): family amazon != nonexistent
+    #     - Claude Haiku 4.5 (...): family anthropic != nonexistent
+    #   Suggestions:
+    #     - Remove preferred_family='nonexistent' to consider all families
+
+    # Structured access for API responses:
+    print(e.constraints)      # dict of applied constraints
+    print(e.rejections)       # list of ModelRejection(model_id, reasons)
+    print(e.suggestions)      # list of actionable suggestions
+    print(e.to_dict())        # full structured dict for JSON APIs
 ```
 
 ### Async Usage

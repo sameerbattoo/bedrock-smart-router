@@ -693,6 +693,31 @@ class MyCustomStrategy(RoutingStrategy):
 router = BedrockRouter(strategy=MyCustomStrategy())
 ```
 
+### 8.9 Named Presets
+
+One-word shortcuts for common routing profiles.  A preset bundles a strategy, weights, and constraints into a single parameter:
+
+```python
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(preset="economy"),
+)
+```
+
+| Preset | Strategy | Cost Limit | Use Case |
+|---|---|---|---|
+| `economy` | cost-optimized | $0.002/req | Batch processing, classification, simple Q&A |
+| `speed` | latency-optimized | — | Real-time chat, interactive UX |
+| `balanced` | balanced (0.4/0.3/0.3) | — | General purpose (default) |
+| `quality` | quality-optimized | — | Complex reasoning, analysis, code generation |
+
+Presets are defined in ``ROUTING_PRESETS`` and can be extended by users.  Explicit fields in ``RoutingConfig`` override the preset defaults:
+
+```python
+# Economy preset but restricted to Anthropic models
+routing=RoutingConfig(preset="economy", preferred_family="anthropic")
+```
+
 
 ## 9. Reliability and Fallback System
 
@@ -776,6 +801,27 @@ class RetryPolicy:
         "AccessDeniedException",     # Auth error - don't retry
     ])
 ```
+
+### 9.5 Graceful No-Models-Match Error
+
+When no models satisfy the routing constraints, the router raises a ``NoModelsMatchError`` instead of a generic exception.  The error includes structured feedback so the caller knows exactly what to fix:
+
+```python
+from bedrock_smart_router import NoModelsMatchError
+
+try:
+    response = router.converse(
+        messages=[...],
+        routing=RoutingConfig(preset="economy", preferred_family="nonexistent"),
+    )
+except NoModelsMatchError as e:
+    print(e.constraints)    # {"complexity": "simple", "preferred_family": "nonexistent", ...}
+    print(e.rejections)     # [ModelRejection("nova-micro", ["family amazon != nonexistent"]), ...]
+    print(e.suggestions)    # ["Remove preferred_family='nonexistent' to consider all families"]
+    print(e.to_dict())      # Full structured dict for JSON API responses
+```
+
+Each ``ModelRejection`` lists the specific reasons a model was excluded: tier too low, cost too high, missing capability, context window too small, excluded by pattern, or wrong family.  The ``suggestions`` list provides actionable fixes based on which constraints were most restrictive.
 
 
 ## 10. Caching Layer
@@ -1403,6 +1449,8 @@ metrics_store:
 | Multi-turn re-routing | No | No | No | No | Yes | No | **Yes** |
 | Custom strategy plugins | Yes | No | No | No | Yes (fine-tune) | No | **Yes** |
 | Real-time AWS pricing | Community JSON | Markup | No | No | No | N/A | **Yes (AWS Pricing API)** |
+| Named presets | No | No | No | No | No | No | **Yes (economy/speed/balanced/quality)** |
+| Graceful no-match errors | No | No | No | No | No | No | **Yes (per-model rejections + suggestions)** |
 
 
 ## 21. References
