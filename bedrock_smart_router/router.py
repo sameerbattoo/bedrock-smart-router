@@ -343,12 +343,21 @@ class BedrockRouter:
 
             try:
                 t0 = time.monotonic()
+                # Build request metadata from routing metadata
+                req_metadata = {}
+                if routing.metadata:
+                    req_metadata = {
+                        k: str(v) for k, v in routing.metadata.items()
+                        if isinstance(k, str) and len(str(v)) <= 256
+                    }
                 response = self._invoke_bedrock(
                     model_id=invoke_model_id,
                     messages=messages,
                     system=system,
                     tool_config=tool_config,
                     inference_config=inference_config,
+                    service_tier=model_tier if model_tier != "standard" else None,
+                    request_metadata=req_metadata or None,
                     **kwargs,
                 )
                 elapsed_ms = (time.monotonic() - t0) * 1000
@@ -563,6 +572,15 @@ class BedrockRouter:
                     call_kwargs["toolConfig"] = tool_config
                 if inference_config:
                     call_kwargs["inferenceConfig"] = inference_config
+                if model_tier and model_tier != "standard":
+                    call_kwargs["serviceTier"] = {"type": model_tier}
+                if routing.metadata:
+                    stream_req_meta = {
+                        k: str(v) for k, v in routing.metadata.items()
+                        if isinstance(k, str) and len(str(v)) <= 256
+                    }
+                    if stream_req_meta:
+                        call_kwargs["requestMetadata"] = stream_req_meta
                 call_kwargs.update(kwargs)
 
                 stream_resp = self._bedrock.converse_stream(**call_kwargs)
@@ -780,6 +798,8 @@ class BedrockRouter:
         system: list[dict[str, Any]] | None = None,
         tool_config: dict[str, Any] | None = None,
         inference_config: dict[str, Any] | None = None,
+        service_tier: str | None = None,
+        request_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Invoke Bedrock Converse API with retries."""
@@ -793,6 +813,10 @@ class BedrockRouter:
             call_kwargs["toolConfig"] = tool_config
         if inference_config:
             call_kwargs["inferenceConfig"] = inference_config
+        if service_tier:
+            call_kwargs["serviceTier"] = {"type": service_tier}
+        if request_metadata:
+            call_kwargs["requestMetadata"] = request_metadata
         call_kwargs.update(kwargs)
         return self._retry_handler.execute(self._bedrock.converse, **call_kwargs)
 
