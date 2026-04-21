@@ -8,6 +8,10 @@ Unlike Bedrock's native prompt router, which only routes within a single model f
 
 ## Features
 
+**100% Bedrock Converse API Coverage**
+
+The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` and `converse_stream()`. Every Bedrock Converse parameter is supported — either as a first-class parameter or via `**kwargs` passthrough. This includes `additionalModelRequestFields` (model-specific params like `top_k`, extended thinking), `guardrailConfig`, `performanceConfig`, `outputConfig`, `promptVariables`, and `requestMetadata`. Every response field is captured in the routing decision: token usage, prompt cache metrics, stop reason, server-side latency, service tier, cache details, performance config, and guardrail trace. Nothing is lost by using the router instead of calling Bedrock directly.
+
 **Routing Strategies**
 - Cost-optimized, latency-optimized, quality-optimized, and balanced (weighted composite)
 - Named presets: `economy`, `speed`, `balanced`, `quality` — one-word shortcuts for common routing profiles
@@ -273,6 +277,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`14_model_catalog.py`](examples/14_model_catalog.py) | List models, overlays, distilled models |
 | [`15_redis_valkey_caching.py`](examples/15_redis_valkey_caching.py) | Redis, Valkey, ElastiCache shared caching |
 | [`16_streaming.py`](examples/16_streaming.py) | Token-by-token streaming with TTFT tracking |
+| [`17_advanced_bedrock_params.py`](examples/17_advanced_bedrock_params.py) | All Bedrock passthrough params (top_k, guardrails, structured output, etc.) |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 

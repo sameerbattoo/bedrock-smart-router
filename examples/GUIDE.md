@@ -2,6 +2,8 @@
 
 This guide covers every feature of the SDK with runnable code examples. Each example file in this folder is self-contained and can be run directly.
 
+**100% Converse API Coverage:** The router is a true drop-in replacement for `bedrock-runtime.converse()` and `converse_stream()`. Every request parameter is supported (first-class or via `**kwargs`). Every response field is captured in the routing decision. You lose nothing by routing through the SDK instead of calling Bedrock directly.
+
 ## Prerequisites
 
 ```bash
