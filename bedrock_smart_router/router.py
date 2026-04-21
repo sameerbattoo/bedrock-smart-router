@@ -92,9 +92,21 @@ class BedrockRouter:
         # Phase 2: intelligence
         self._metrics_store = _build_metrics_store(config.metrics, config.region, session)
         self._cache = ResponseCache(config.cache)
+
+        # CloudWatch metrics publisher (optional)
+        cw_publisher = None
+        if config.observability.cloudwatch_enabled:
+            from bedrock_smart_router.cloudwatch_metrics import CloudWatchMetricsPublisher
+            cw_publisher = CloudWatchMetricsPublisher(
+                namespace=config.observability.cloudwatch_namespace,
+                boto_session=session,
+                region=config.region,
+            )
+
         self._observability = ObservabilityManager(
             callbacks=callbacks or [],
             log_decisions=config.observability.log_decisions,
+            cloudwatch_publisher=cw_publisher,
         )
 
         # Phase 3: Bedrock-native

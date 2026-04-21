@@ -110,10 +110,12 @@ class ObservabilityManager:
         self,
         callbacks: list[RoutingCallback] | None = None,
         log_decisions: bool = True,
+        cloudwatch_publisher: Any | None = None,
     ) -> None:
         self.callbacks = callbacks or []
         self.log_decisions = log_decisions
         self.cost_tracker = CostTracker()
+        self.cloudwatch = cloudwatch_publisher
         self._request_counter = 0
 
     def emit(
@@ -125,7 +127,7 @@ class ObservabilityManager:
         metadata: dict[str, Any] | None = None,
         most_expensive_cost: float = 0.0,
     ) -> RoutingEvent:
-        """Emit a routing event — log it, call callbacks, track cost."""
+        """Emit a routing event — log it, call callbacks, track cost, publish to CloudWatch."""
         self._request_counter += 1
         request_id = f"req_{self._request_counter:08d}"
 
@@ -158,6 +160,15 @@ class ObservabilityManager:
                 decision.latency_ms or 0.0,
                 cache_hit,
                 decision.fallback_used,
+            )
+
+        # CloudWatch metrics
+        if self.cloudwatch is not None:
+            self.cloudwatch.record(
+                decision,
+                cache_hit=cache_hit,
+                duration_ms=duration_ms,
+                most_expensive_cost=most_expensive_cost,
             )
 
         # Custom callbacks

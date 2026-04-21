@@ -69,6 +69,8 @@ class ObservabilityConfig:
     """Observability configuration."""
 
     log_decisions: bool = True
+    cloudwatch_enabled: bool = False
+    cloudwatch_namespace: str = "BedrockSmartRouter"
 
 
 @dataclass
