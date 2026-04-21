@@ -278,6 +278,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`15_redis_valkey_caching.py`](examples/15_redis_valkey_caching.py) | Redis, Valkey, ElastiCache shared caching |
 | [`16_streaming.py`](examples/16_streaming.py) | Token-by-token streaming with TTFT tracking |
 | [`17_advanced_bedrock_params.py`](examples/17_advanced_bedrock_params.py) | All Bedrock passthrough params (top_k, guardrails, structured output, etc.) |
+| [`18_cross_region_data_residency.py`](examples/18_cross_region_data_residency.py) | CRIS profiles: US-only, EU-only (GDPR), global routing |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
