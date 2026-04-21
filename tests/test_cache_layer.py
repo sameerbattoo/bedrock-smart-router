@@ -108,3 +108,24 @@ class TestBuildCache:
         # get() catches the error and returns None (fail-open)
         result = cache.get(_msgs("test"))
         assert result is None
+
+
+class TestValkeyAlias:
+    def test_valkey_backend_builds_redis_cache(self):
+        """backend='valkey' should create a RedisCache (same protocol)."""
+        from bedrock_smart_router.redis_cache import RedisCache
+        cache = build_cache(CacheConfig(
+            backend="valkey",
+            redis_url="redis://localhost:6379",
+        ))
+        assert isinstance(cache, RedisCache)
+
+    def test_valkey_config_example(self):
+        """ElastiCache Valkey TLS URL should be accepted."""
+        from bedrock_smart_router.redis_cache import RedisCache
+        cache = build_cache(CacheConfig(
+            backend="valkey",
+            redis_url="rediss://my-cluster.abc123.use1.cache.amazonaws.com:6379",
+        ))
+        assert isinstance(cache, RedisCache)
+        assert cache.config.redis_url.startswith("rediss://")

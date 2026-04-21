@@ -1,28 +1,34 @@
-"""Redis-backed response cache.
+"""Redis/Valkey-backed response cache.
 
-Shared across all instances, survives restarts.  Uses Redis ``SET``
-with ``EX`` for TTL and ``GET`` for lookup.  Responses are serialized
-as JSON.
+Shared across all instances, survives restarts.  Uses the Redis
+protocol (``SET``/``GET`` with ``EX`` for TTL).  Compatible with:
+
+  - **Redis** (open source or managed)
+  - **Valkey** (Redis-compatible fork)
+  - **Amazon ElastiCache** (Redis or Valkey engine)
+  - **Amazon ElastiCache Serverless**
+  - **Amazon MemoryDB**
 
 Install the optional dependency::
 
     pip install bedrock-smart-router[redis]
 
-Or directly::
-
-    pip install redis
-
 Configuration::
 
+    # Redis
     cache:
       backend: redis
-      redis_url: "redis://my-elasticache:6379"
-      ttl_seconds: 1800
-      key_prefix: "bsr:"
+      redis_url: "redis://localhost:6379"
 
-Each cache entry is stored as two Redis keys:
-  - ``{prefix}{hash}`` → JSON-serialized response
-  - ``{prefix}model:{hash}`` → model_id (for per-model invalidation)
+    # ElastiCache Valkey with TLS
+    cache:
+      backend: valkey
+      redis_url: "rediss://my-cluster.abc123.use1.cache.amazonaws.com:6379"
+
+    # ElastiCache Serverless
+    cache:
+      backend: redis
+      redis_url: "rediss://my-serverless.abc123.serverless.use1.cache.amazonaws.com:6379"
 """
 
 from __future__ import annotations

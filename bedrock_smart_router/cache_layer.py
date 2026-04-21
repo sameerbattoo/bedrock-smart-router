@@ -28,11 +28,11 @@ class CacheConfig:
     """Cache configuration."""
 
     enabled: bool = True
-    backend: str = "memory"  # "memory" | "redis"
+    backend: str = "memory"  # "memory" | "redis" | "valkey"
     ttl_seconds: float = 3600.0
     max_entries: int = 10_000
-    # Redis-specific
-    redis_url: str = ""
+    # Redis/Valkey/ElastiCache connection
+    redis_url: str = ""  # Also accepts Valkey and ElastiCache endpoints
     key_prefix: str = "bsr:"
 
 
@@ -187,13 +187,15 @@ def build_cache(config: CacheConfig | None = None) -> ResponseCache:
     """Build the appropriate cache backend from config.
 
     Returns an ``InMemoryCache`` by default, or a ``RedisCache`` when
-    ``config.backend == "redis"``.
+    ``config.backend`` is ``"redis"`` or ``"valkey"`` (both use the
+    same Redis-protocol client — works with Redis, Valkey, and
+    ElastiCache Serverless).
     """
     config = config or CacheConfig()
     if not config.enabled:
-        return InMemoryCache(config)  # Disabled cache — all ops are no-ops
+        return InMemoryCache(config)
 
-    if config.backend == "redis":
+    if config.backend in ("redis", "valkey"):
         from bedrock_smart_router.redis_cache import RedisCache
         return RedisCache(config)
 
