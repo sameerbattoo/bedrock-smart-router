@@ -301,6 +301,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`18_cross_region_data_residency.py`](examples/18_cross_region_data_residency.py) | CRIS profiles: US-only, EU-only (GDPR), global routing |
 | [`19_opentelemetry.py`](examples/19_opentelemetry.py) | OTEL tracing and metrics (X-Ray, Jaeger, Datadog, etc.) |
 | [`20_semantic_cache_and_routing.py`](examples/20_semantic_cache_and_routing.py) | Embedding-based semantic cache and intent routing |
+| [`21_semantic_cache_deep_dive.py`](examples/21_semantic_cache_deep_dive.py) | Vector stores (memory/FAISS/Redis), variable-aware caching, threshold tuning |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
