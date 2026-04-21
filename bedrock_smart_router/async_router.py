@@ -85,6 +85,56 @@ class AsyncBedrockRouter:
             ),
         )
 
+    async def converse_stream(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None = None,
+        tool_config: dict[str, Any] | None = None,
+        inference_config: dict[str, Any] | None = None,
+        routing: RoutingConfig | None = None,
+        **kwargs: Any,
+    ):
+        """Async generator wrapping ``BedrockRouter.converse_stream()``.
+
+        Usage::
+
+            async for event in router.converse_stream(messages=[...]):
+                if "contentBlockDelta" in event:
+                    print(event["contentBlockDelta"]["delta"]["text"], end="")
+        """
+        loop = asyncio.get_event_loop()
+        # Run the sync generator in a thread and yield events
+        import queue
+        import threading
+
+        q: queue.Queue = queue.Queue()
+        sentinel = object()
+
+        def _run():
+            try:
+                for event in self._sync_router.converse_stream(
+                    messages=messages, system=system,
+                    tool_config=tool_config, inference_config=inference_config,
+                    routing=routing, **kwargs,
+                ):
+                    q.put(event)
+            except Exception as exc:
+                q.put(exc)
+            finally:
+                q.put(sentinel)
+
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+
+        while True:
+            item = await loop.run_in_executor(None, q.get)
+            if item is sentinel:
+                break
+            if isinstance(item, Exception):
+                raise item
+            yield item
+
     # ── Delegate accessors to the sync router ───────────────────
 
     @property

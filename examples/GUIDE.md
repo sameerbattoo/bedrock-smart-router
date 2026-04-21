@@ -272,3 +272,152 @@ circuit_breaker: {failure_threshold: 5, cooldown_seconds: 30}
 retry: {max_retries: 3}
 excluded_models: ["us.meta.*"]
 ```
+
+---
+
+## 15. Redis / Valkey Caching (`15_redis_valkey_caching.py`)
+
+The in-memory cache (default) works for single-process deployments but doesn't share across instances. For production with multiple Lambda invocations or ECS tasks, use Redis or Valkey to share the cache.
+
+**Compatible with:** Redis, Valkey, Amazon ElastiCache (Redis or Valkey engine), ElastiCache Serverless, Amazon MemoryDB.
+
+```bash
+pip install bedrock-smart-router[redis]
+```
+
+```python
+router = BedrockRouter.create({
+    "cache": {
+        "backend": "valkey",  # or "redis" — same protocol
+        "redis_url": "rediss://master.my-cluster.abc123.usw2.cache.amazonaws.com:6379",
+        "ttl_seconds": 1800,
+        "key_prefix": "bsr:prod:",
+    },
+})
+```
+
+Use `redis://` for unencrypted connections (local dev) and `rediss://` (double s) for TLS (ElastiCache requires TLS by default).
+
+**Cache invalidation** works the same as in-memory — per-model or full flush:
+```python
+router.cache.invalidate("us.anthropic.claude-sonnet-4-6")  # One model
+router.cache.invalidate()  # Everything
+```
+
+**Recommended production setup** — Valkey cache + DynamoDB metrics + CloudWatch:
+```yaml
+cache:
+  backend: valkey
+  redis_url: "rediss://master.my-cluster.abc123.usw2.cache.amazonaws.com:6379"
+  ttl_seconds: 1800
+  key_prefix: "bsr:prod:"
+metrics:
+  backend: dynamodb
+  table_name: BedrockRouterMetrics
+observability:
+  cloudwatch_enabled: true
+  cloudwatch_namespace: MyApp/BedrockRouter
+```
+
+---
+
+## 16. Streaming (`16_streaming.py`)
+
+`converse_stream()` routes the request through the same pipeline as `converse()` (complexity analysis, strategy, CRIS, tier, guardrails, fallbacks) but returns tokens as they arrive instead of waiting for the full response.
+
+```python
+for event in router.converse_stream(
+    messages=[{"role": "user", "content": [{"text": "Write a haiku about clouds."}]}],
+):
+    if "contentBlockDelta" in event:
+        print(event["contentBlockDelta"]["delta"]["text"], end="", flush=True)
+    elif "routing_decision" in event:
+        d = event["routing_decision"]
+        print(f"\n[Model: {d.selected_model}, TTFT: {d.ttft_ms:.0f}ms, Total: {d.latency_ms:.0f}ms]")
+```
+
+**TTFT (Time to First Token)** is automatically measured — the time from stream start to the first `contentBlockDelta` event. This is the key latency metric for streaming:
+
+| Metric | What it measures | Typical values |
+|---|---|---|
+| `ttft_ms` | Time until first token arrives | 2–600ms depending on model |
+| `latency_ms` | Total time from start to stream end | 500–5000ms depending on output length |
+
+For non-streaming `converse()`, TTFT equals total latency (the entire response arrives at once).
+
+**Presets work with streaming:**
+```python
+for event in router.converse_stream(
+    messages=[...],
+    routing=RoutingConfig(preset="speed"),  # Lowest TTFT
+):
+    ...
+```
+
+**Async streaming** for FastAPI / aiohttp:
+```python
+async for event in async_router.converse_stream(messages=[...]):
+    if "contentBlockDelta" in event:
+        yield event["contentBlockDelta"]["delta"]["text"]
+```
+
+**Note:** Streaming responses are not cached (they're consumed once). The routing decision, metrics, and observability events are still recorded after the stream completes.
+
+---
+
+## Updated Configuration Reference
+
+All features including the new ones are configurable from a single YAML/dict:
+
+```yaml
+region: us-west-2
+strategy: balanced
+weights: {cost: 0.4, latency: 0.3, quality: 0.3}
+
+# Caching — memory (default), redis, or valkey
+cache:
+  backend: valkey              # "memory" | "redis" | "valkey"
+  redis_url: "rediss://my-cluster.abc123.usw2.cache.amazonaws.com:6379"
+  ttl_seconds: 1800
+  max_entries: 10000           # For memory backend only
+  key_prefix: "bsr:"
+
+# Metrics — memory (default) or dynamodb
+metrics:
+  backend: dynamodb
+  table_name: MyRouterMetrics
+  ttl_hours: 168
+
+# Observability
+observability:
+  log_decisions: true
+  cloudwatch_enabled: true
+  cloudwatch_namespace: MyApp/BedrockRouter
+
+# Bedrock-native
+cris: {preferred_geography: us}
+inference_tier: {allow_priority: true, flex_for_batch: true}
+guardrails:
+  pre_route: {guardrail_id: gr-abc, action_on_block: reject}
+aip: {enabled: true, auto_create: true, tag_keys: [tenant, team]}
+
+# Deployment features
+ab_test:
+  enabled: true
+  name: sonnet-vs-nova
+  variants:
+    control: {model: us.anthropic.claude-sonnet-4-6, weight: 0.5}
+    treatment: {model: us.amazon.nova-pro-v1:0, weight: 0.5}
+canary:
+  enabled: true
+  baseline: us.anthropic.claude-sonnet-4-6
+  canary_model: us.anthropic.claude-opus-4-7
+  canary_percentage: 5
+shadow: {enabled: true, shadow_model: us.amazon.nova-pro-v1:0, sample_rate: 0.1}
+
+# Reliability
+fallback: {max_depth: 5}
+circuit_breaker: {failure_threshold: 5, cooldown_seconds: 30}
+retry: {max_retries: 3}
+excluded_models: ["us.meta.*"]
+```

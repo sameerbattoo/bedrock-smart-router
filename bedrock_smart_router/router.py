@@ -471,7 +471,259 @@ class BedrockRouter:
 
         return response
 
+    def converse_stream(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None = None,
+        tool_config: dict[str, Any] | None = None,
+        inference_config: dict[str, Any] | None = None,
+        routing: RoutingConfig | None = None,
+        **kwargs: Any,
+    ):
+        """Route and invoke a Bedrock ConverseStream call.
+
+        Yields stream events as they arrive from Bedrock.  The routing
+        decision is attached to a final ``routing_decision`` event
+        after the stream completes.
+
+        Usage::
+
+            for event in router.converse_stream(messages=[...]):
+                if "contentBlockDelta" in event:
+                    print(event["contentBlockDelta"]["delta"]["text"], end="")
+                elif "routing_decision" in event:
+                    print(f"\\nModel: {event['routing_decision'].selected_model}")
+        """
+        routing = resolve_preset(routing or RoutingConfig())
+        strategy_name = routing.strategy or self._config.strategy
+        weights = routing.weights or self._config.weights
+        t_start = time.monotonic()
+
+        # Pre-route guardrail
+        guardrail_checked = False
+        if self._guardrails.has_pre_route:
+            self._guardrails.check_input(messages)
+            guardrail_checked = True
+
+        # Routing pipeline (same as converse)
+        analysis = self._analyzer.analyze(messages, system, tool_config)
+        resolved = self._resolve_model(
+            analysis=analysis, routing=routing,
+            strategy_name=strategy_name, weights=weights,
+            messages=messages, system=system,
+        )
+
+        # Try invocation with fallbacks
+        models_to_try = [resolved["primary"]] + resolved["fallback_chain"]
+        last_error: Exception | None = None
+        used_model: BedrockModel | None = None
+        stream = None
+        used_cris = resolved["cris_profile"]
+        used_tier = resolved["inference_tier"]
+
+        for i, model in enumerate(models_to_try):
+            if i > 0 and not self._circuit_breakers.is_available(model.model_id):
+                continue
+
+            model_cris = self._cris.select_profile(model) if i > 0 else resolved["cris_profile"]
+            model_tier = self._tier_selector.select_tier(model, analysis) if i > 0 else resolved["inference_tier"]
+            invoke_model_id = self._aip.get_model_id_for_tenant(
+                model_cris, routing.metadata or {},
+            )
+
+            try:
+                call_kwargs: dict[str, Any] = {
+                    "modelId": invoke_model_id,
+                    "messages": messages,
+                }
+                if system:
+                    call_kwargs["system"] = system
+                if tool_config:
+                    call_kwargs["toolConfig"] = tool_config
+                if inference_config:
+                    call_kwargs["inferenceConfig"] = inference_config
+                call_kwargs.update(kwargs)
+
+                stream_resp = self._bedrock.converse_stream(**call_kwargs)
+                stream = stream_resp.get("stream")
+                self._circuit_breakers.record_success(model.model_id)
+                used_model = model
+                used_cris = model_cris
+                used_tier = model_tier
+                break
+            except Exception as exc:
+                last_error = exc
+                is_throttle = RetryHandler.is_throttle(exc)
+                self._circuit_breakers.record_failure(
+                    model.model_id, is_throttle=is_throttle,
+                )
+                logger.warning(
+                    "Stream: model %s failed (%s), trying fallback %d/%d",
+                    model.model_id, RetryHandler.get_error_code(exc),
+                    i + 1, len(models_to_try),
+                )
+
+        if stream is None or used_model is None:
+            raise RuntimeError(
+                f"All models in fallback chain failed. Last error: {last_error}"
+            ) from last_error
+
+        # Yield stream events, tracking TTFT
+        usage: dict[str, Any] = {}
+        ttft_ms: float | None = None
+        t_stream_start = time.monotonic()
+
+        for event in stream:
+            # Capture TTFT on first content delta
+            if ttft_ms is None and "contentBlockDelta" in event:
+                ttft_ms = (time.monotonic() - t_stream_start) * 1000
+            # Capture usage from metadata event
+            if "metadata" in event:
+                usage = event["metadata"].get("usage", {})
+            yield event
+
+        # Post-stream: build decision and record metrics
+        elapsed_ms = (time.monotonic() - t_start) * 1000
+        input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
+        output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
+        actual_cost = used_model.pricing.estimate_cost(input_tokens, output_tokens)
+
+        decision = RoutingDecision(
+            selected_model=used_model.model_id,
+            strategy_used=strategy_name,
+            complexity_detected=analysis.complexity.value,
+            complexity_score=analysis.complexity_score,
+            candidates_evaluated=resolved["candidates_evaluated"],
+            fallback_chain=[m.model_id for m in resolved["fallback_chain"]],
+            estimated_cost=resolved["primary"].pricing.estimate_cost(
+                analysis.estimated_input_tokens, analysis.estimated_output_tokens,
+            ),
+            actual_cost=actual_cost,
+            latency_ms=round(elapsed_ms, 1),
+            ttft_ms=round(ttft_ms, 1) if ttft_ms is not None else None,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            fallback_used=(used_model.model_id != resolved["primary"].model_id),
+            inference_tier=used_tier,
+            cris_profile=used_cris,
+            guardrail_checked=guardrail_checked,
+        )
+        self._last_decision = decision
+
+        self._metrics_store.record(RequestRecord(
+            model_id=used_model.model_id,
+            timestamp=time.monotonic(),
+            latency_ms=elapsed_ms,
+            ttft_ms=ttft_ms or 0.0,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost=actual_cost,
+            success=True,
+        ))
+
+        self._observability.emit(
+            decision,
+            duration_ms=elapsed_ms,
+            tags=routing.tags, metadata=routing.metadata,
+        )
+
+        # Yield final event with routing decision
+        yield {"routing_decision": decision}
+
     # ── Helpers ──────────────────────────────────────────────────
+
+    def _resolve_model(
+        self,
+        *,
+        analysis: Any,
+        routing: RoutingConfig,
+        strategy_name: str,
+        weights: dict[str, float],
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        """Run the routing pipeline and return the selected model + metadata.
+
+        Shared by ``converse()`` and ``converse_stream()``.
+        """
+        min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
+        candidates = self._registry.eligible_models(
+            min_tier=min_tier,
+            requires_vision=analysis.requires_vision,
+            requires_tool_use=analysis.requires_tool_use,
+            min_context=routing.min_context_window,
+            exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
+            family=routing.preferred_family,
+        )
+        candidates = self._context_validator.filter_by_context(candidates, messages, system)
+        if not candidates:
+            self._raise_no_models_error(analysis=analysis, routing=routing, messages=messages, system=system)
+
+        available = [c for c in candidates if self._circuit_breakers.is_available(c.model_id)]
+        skipped = [c.model_id for c in candidates if c not in available]
+        if not available:
+            available = candidates
+            skipped = []
+
+        strategy = resolve_strategy(strategy_name, weights=weights, metrics_store=self._metrics_store)
+
+        # A/B / canary overrides
+        ab_variant = None
+        is_canary = False
+        if self._ab_test.is_active:
+            user_id = (routing.metadata or {}).get("user_id")
+            ab_result = self._ab_test.assign(user_id=user_id)
+            if ab_result:
+                ab_variant = ab_result.variant_name
+                override = self._registry.get(ab_result.model_id)
+                result = strategy.select(available, analysis)
+                primary = override if (override and override in available) else result.selected_model
+            else:
+                result = strategy.select(available, analysis)
+                primary = result.selected_model
+        elif self._canary.is_active:
+            canary_id, is_canary = self._canary.select_model()
+            result = strategy.select(available, analysis)
+            override = self._registry.get(canary_id)
+            if is_canary and override and override in available:
+                primary = override
+            else:
+                primary = result.selected_model
+                is_canary = False
+        else:
+            result = strategy.select(available, analysis)
+            primary = result.selected_model
+
+        # Prompt cache boost
+        cache_savings = 0.0
+        if self._config.prompt_cache_boost and (system or len(messages) > 2):
+            benefit = self._cache_advisor.estimate(primary, messages, system)
+            cache_savings = benefit.savings_per_request
+            if not benefit.cache_eligible and cache_savings == 0:
+                ranked = self._cache_advisor.rank_models_by_cache_benefit(available, messages, system)
+                for alt, alt_b in ranked:
+                    if not alt_b.cache_eligible:
+                        continue
+                    alt_s = result.scores.get(alt.model_id, {}).get("composite", 0)
+                    pri_s = result.scores.get(primary.model_id, {}).get("composite", 0)
+                    if alt_s >= pri_s * 0.90:
+                        primary = alt
+                        cache_savings = alt_b.savings_per_request
+                        break
+
+        return {
+            "primary": primary,
+            "fallback_chain": self._fallback_handler.build_chain(primary, result.fallback_chain),
+            "cris_profile": self._cris.select_profile(primary),
+            "inference_tier": self._tier_selector.select_tier(primary, analysis, max_cost_per_request=routing.max_cost_per_request),
+            "candidates_evaluated": len(available),
+            "skipped": skipped,
+            "scores": result.scores,
+            "cache_savings": cache_savings,
+            "ab_variant": ab_variant,
+            "is_canary": is_canary,
+        }
 
     def _invoke_bedrock(
         self,
