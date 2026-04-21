@@ -37,8 +37,18 @@ class RoutingConfig:
     """Per-request routing overrides.
 
     Passed as the ``routing`` parameter to ``BedrockRouter.converse()``.
+
+    Use ``preset`` for a named shortcut::
+
+        routing=RoutingConfig(preset="economy")   # cheapest model
+        routing=RoutingConfig(preset="speed")      # lowest latency
+        routing=RoutingConfig(preset="quality")    # best quality
+        routing=RoutingConfig(preset="balanced")   # default weighted
+
+    Any explicit field overrides the preset value.
     """
 
+    preset: str | None = None  # "economy" | "speed" | "balanced" | "quality"
     strategy: str | None = None
     weights: dict[str, float] | None = None
     preferred_family: str | None = None
@@ -49,6 +59,64 @@ class RoutingConfig:
     tags: list[str] | None = None
     metadata: dict[str, Any] | None = None
     fallback_enabled: bool | None = None
+
+
+# ── Named presets ───────────────────────────────────────────────────
+
+ROUTING_PRESETS: dict[str, dict[str, Any]] = {
+    "economy": {
+        "strategy": "cost-optimized",
+        "max_cost_per_request": 0.002,
+    },
+    "speed": {
+        "strategy": "latency-optimized",
+    },
+    "balanced": {
+        "strategy": "balanced",
+        "weights": {"cost": 0.4, "latency": 0.3, "quality": 0.3},
+    },
+    "quality": {
+        "strategy": "quality-optimized",
+    },
+}
+
+
+def resolve_preset(config: RoutingConfig) -> RoutingConfig:
+    """Apply preset defaults, then layer explicit overrides on top.
+
+    Returns a new ``RoutingConfig`` with preset values filled in for
+    any field the caller didn't explicitly set.
+    """
+    if not config.preset:
+        return config
+
+    preset_values = ROUTING_PRESETS.get(config.preset)
+    if preset_values is None:
+        raise ValueError(
+            f"Unknown preset '{config.preset}'. "
+            f"Available: {list(ROUTING_PRESETS.keys())}"
+        )
+
+    # Start from preset, override with any explicit values
+    merged = RoutingConfig(
+        preset=config.preset,
+        strategy=config.strategy or preset_values.get("strategy"),
+        weights=config.weights or preset_values.get("weights"),
+        preferred_family=config.preferred_family or preset_values.get("preferred_family"),
+        max_cost_per_request=(
+            config.max_cost_per_request
+            if config.max_cost_per_request is not None
+            else preset_values.get("max_cost_per_request")
+        ),
+        # Pass through everything else unchanged
+        required_capabilities=config.required_capabilities,
+        min_context_window=config.min_context_window,
+        exclude_models=config.exclude_models,
+        tags=config.tags,
+        metadata=config.metadata,
+        fallback_enabled=config.fallback_enabled,
+    )
+    return merged
 
 
 @dataclass

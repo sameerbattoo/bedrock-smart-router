@@ -27,9 +27,11 @@ from bedrock_smart_router.config import (
     MetricsConfig,
     RouterConfig,
     RoutingConfig,
+    resolve_preset,
 )
 from bedrock_smart_router.context_validator import ContextValidator
 from bedrock_smart_router.cris_manager import CRISManager
+from bedrock_smart_router.exceptions import ModelRejection, NoModelsMatchError
 from bedrock_smart_router.fallback_handler import FallbackHandler
 from bedrock_smart_router.guardrails_integration import GuardrailsManager
 from bedrock_smart_router.inference_tier import InferenceTierSelector
@@ -163,7 +165,7 @@ class BedrockRouter:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Route and invoke a Bedrock Converse call."""
-        routing = routing or RoutingConfig()
+        routing = resolve_preset(routing or RoutingConfig())
         strategy_name = routing.strategy or self._config.strategy
         weights = routing.weights or self._config.weights
         t_start = time.monotonic()
@@ -195,9 +197,11 @@ class BedrockRouter:
             candidates, messages, system
         )
         if not candidates:
-            raise RuntimeError(
-                "No eligible models found for this request. "
-                "Check your routing constraints and model registry."
+            self._raise_no_models_error(
+                analysis=analysis,
+                routing=routing,
+                messages=messages,
+                system=system,
             )
 
         # ── Step 5: Check response cache (before strategy) ──────
@@ -504,6 +508,106 @@ class BedrockRouter:
             if isinstance(block, dict) and "text" in block:
                 parts.append(block["text"])
         return "\n".join(parts)
+
+    def _raise_no_models_error(
+        self,
+        analysis: Any,
+        routing: RoutingConfig,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None,
+    ) -> None:
+        """Build a detailed NoModelsMatchError with per-model rejection reasons."""
+        from bedrock_smart_router.context_validator import _estimate_tokens_from_messages
+
+        est_tokens = _estimate_tokens_from_messages(messages, system)
+        min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
+        rejections: list[ModelRejection] = []
+
+        for m in self._registry.all_models:
+            reasons: list[str] = []
+            # Tier check
+            if min_tier:
+                from bedrock_smart_router.models import Tier
+                tier_order = list(Tier)
+                if tier_order.index(m.tier) < tier_order.index(min_tier):
+                    reasons.append(
+                        f"tier {m.tier.value} < required {min_tier.value} "
+                        f"(complexity={analysis.complexity.value})"
+                    )
+            # Vision
+            if analysis.requires_vision and not m.capabilities.vision:
+                reasons.append("no vision support")
+            # Tool use
+            if analysis.requires_tool_use and not m.capabilities.tool_use:
+                reasons.append("no tool_use support")
+            # Context window
+            if est_tokens > m.max_input_tokens * 0.95:
+                reasons.append(
+                    f"context too small ({m.max_input_tokens} tokens < "
+                    f"~{est_tokens} estimated)"
+                )
+            # Family filter
+            if routing.preferred_family and m.family != routing.preferred_family:
+                reasons.append(f"family {m.family} != {routing.preferred_family}")
+            # Exclude patterns
+            excludes = routing.exclude_models or self._config.excluded_models
+            if excludes:
+                import fnmatch
+                for pat in excludes:
+                    if fnmatch.fnmatch(m.model_id, pat):
+                        reasons.append(f"excluded by pattern '{pat}'")
+                        break
+            # Cost
+            if routing.max_cost_per_request is not None:
+                est_cost = m.pricing.estimate_cost(
+                    analysis.estimated_input_tokens,
+                    analysis.estimated_output_tokens,
+                )
+                if est_cost > routing.max_cost_per_request:
+                    reasons.append(
+                        f"est. cost ${est_cost:.6f} > max ${routing.max_cost_per_request:.6f}"
+                    )
+
+            if not reasons:
+                reasons.append("passed filters but removed by context window validator")
+
+            rejections.append(ModelRejection(
+                model_id=m.model_id,
+                display_name=m.display_name,
+                reasons=reasons,
+            ))
+
+        # Build suggestions
+        suggestions: list[str] = []
+        if routing.preferred_family:
+            suggestions.append(f"Remove preferred_family='{routing.preferred_family}' to consider all families")
+        if routing.max_cost_per_request is not None:
+            suggestions.append(f"Increase max_cost_per_request (currently ${routing.max_cost_per_request})")
+        if routing.exclude_models:
+            suggestions.append("Remove or relax exclude_models patterns")
+        if analysis.complexity.value in ("complex", "reasoning"):
+            suggestions.append("The request was classified as complex/reasoning — fewer models qualify")
+        if est_tokens > 128_000:
+            suggestions.append(f"Input is ~{est_tokens} tokens — only models with large context windows qualify")
+
+        constraints = {
+            "complexity": analysis.complexity.value,
+            "estimated_tokens": est_tokens,
+            "min_tier": min_tier.value if min_tier else None,
+            "requires_vision": analysis.requires_vision,
+            "requires_tool_use": analysis.requires_tool_use,
+            "preferred_family": routing.preferred_family,
+            "max_cost_per_request": routing.max_cost_per_request,
+            "exclude_models": routing.exclude_models,
+            "preset": routing.preset,
+        }
+
+        raise NoModelsMatchError(
+            "No eligible models found for this request.",
+            rejections=rejections,
+            constraints=constraints,
+            suggestions=suggestions,
+        )
 
     def last_routing_decision(self) -> RoutingDecision | None:
         return self._last_decision
