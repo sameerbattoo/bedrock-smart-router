@@ -248,6 +248,31 @@ d = router.last_routing_decision()
 print(f"Model: {d.selected_model}, Tier: {d.inference_tier}, CRIS: {d.cris_profile}")
 ```
 
+## Examples
+
+The [`examples/`](examples/) folder contains runnable code for every feature, with 2-3 examples each:
+
+| Example | Feature |
+|---|---|
+| [`01_basic_routing.py`](examples/01_basic_routing.py) | Zero-config, YAML config, dict config |
+| [`02_presets.py`](examples/02_presets.py) | Economy, speed, balanced, quality presets |
+| [`03_strategies.py`](examples/03_strategies.py) | Cost, latency, quality, balanced, budget strategies |
+| [`04_fallbacks_and_reliability.py`](examples/04_fallbacks_and_reliability.py) | Fallback chains, circuit breakers, retries |
+| [`05_caching.py`](examples/05_caching.py) | In-memory cache, TTL, invalidation |
+| [`06_observability.py`](examples/06_observability.py) | Callbacks, cost tracking, CloudWatch metrics |
+| [`07_bedrock_native.py`](examples/07_bedrock_native.py) | CRIS profiles, inference tiers, guardrails |
+| [`08_multi_tenant.py`](examples/08_multi_tenant.py) | Application Inference Profiles, per-tenant cost tracking |
+| [`09_ab_testing_canary_shadow.py`](examples/09_ab_testing_canary_shadow.py) | A/B testing, canary rollouts, shadow mode |
+| [`10_custom_strategy.py`](examples/10_custom_strategy.py) | Custom strategy plugins (code-aware, EU-only, time-of-day) |
+| [`11_error_handling.py`](examples/11_error_handling.py) | NoModelsMatchError, rejection reasons, suggestions |
+| [`12_metrics_and_dynamodb.py`](examples/12_metrics_and_dynamodb.py) | In-memory and DynamoDB metrics backends |
+| [`13_async_usage.py`](examples/13_async_usage.py) | AsyncBedrockRouter, parallel requests |
+| [`14_model_catalog.py`](examples/14_model_catalog.py) | List models, overlays, distilled models |
+| [`15_redis_valkey_caching.py`](examples/15_redis_valkey_caching.py) | Redis, Valkey, ElastiCache shared caching |
+| [`16_streaming.py`](examples/16_streaming.py) | Token-by-token streaming with TTFT tracking |
+
+See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
+
 ## Architecture
 
 ```
