@@ -19,7 +19,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from bedrock_smart_router.ab_testing import ABTestConfig, ABVariant
 from bedrock_smart_router.cache_layer import CacheConfig
+from bedrock_smart_router.canary import CanaryConfig, CanaryThresholds
 from bedrock_smart_router.circuit_breaker import CircuitBreakerConfig
 from bedrock_smart_router.cris_manager import CRISConfig
 from bedrock_smart_router.fallback_handler import FallbackConfig
@@ -27,6 +29,7 @@ from bedrock_smart_router.guardrails_integration import GuardrailCheckConfig, Gu
 from bedrock_smart_router.inference_tier import InferenceTierConfig
 from bedrock_smart_router.aip_manager import AIPConfig
 from bedrock_smart_router.retry_handler import RetryConfig
+from bedrock_smart_router.shadow_mode import ShadowConfig
 
 
 @dataclass
@@ -96,10 +99,15 @@ class RouterConfig:
     inference_tier: InferenceTierConfig = field(default_factory=InferenceTierConfig)
     guardrails: GuardrailsConfig = field(default_factory=GuardrailsConfig)
     aip: AIPConfig = field(default_factory=AIPConfig)
-    prompt_cache_boost: bool = True  # Boost score of cache-capable models
+    prompt_cache_boost: bool = True
+
+    # Phase 4: Advanced deployment
+    ab_test: ABTestConfig = field(default_factory=lambda: ABTestConfig(enabled=False))
+    canary: CanaryConfig = field(default_factory=CanaryConfig)
+    shadow: ShadowConfig = field(default_factory=ShadowConfig)
 
     excluded_models: list[str] = field(default_factory=list)
-    catalog_path: str | None = None  # Custom model catalog JSON path
+    catalog_path: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RouterConfig:
@@ -140,6 +148,9 @@ class RouterConfig:
             guardrails=_build_guardrails(data.get("guardrails", {})),
             aip=_build_sub(AIPConfig, data.get("aip", {})),
             prompt_cache_boost=data.get("prompt_cache_boost", True),
+            ab_test=_build_ab_test(data.get("ab_test", {})),
+            canary=_build_canary(data.get("canary", {})),
+            shadow=_build_sub(ShadowConfig, data.get("shadow", {})),
             excluded_models=data.get("excluded_models", []),
             catalog_path=data.get("catalog_path"),
         )
@@ -158,4 +169,40 @@ def _build_guardrails(data: dict[str, Any]) -> GuardrailsConfig:
     return GuardrailsConfig(
         pre_route=_build_sub(GuardrailCheckConfig, pre) if isinstance(pre, dict) else None,
         post_route=_build_sub(GuardrailCheckConfig, post) if isinstance(post, dict) else None,
+    )
+
+
+def _build_ab_test(data: dict[str, Any]) -> ABTestConfig:
+    """Build ABTestConfig from a dict with nested variants."""
+    if not data or not data.get("enabled"):
+        return ABTestConfig(enabled=False)
+    variants_raw = data.get("variants", {})
+    variants = []
+    for name, v in variants_raw.items():
+        variants.append(ABVariant(
+            name=name,
+            model=v.get("model", ""),
+            weight=v.get("weight", 0.5),
+        ))
+    return ABTestConfig(
+        name=data.get("name", ""),
+        variants=variants,
+        sticky=data.get("sticky", True),
+        enabled=True,
+    )
+
+
+def _build_canary(data: dict[str, Any]) -> CanaryConfig:
+    """Build CanaryConfig from a dict with nested thresholds."""
+    if not data or not data.get("enabled"):
+        return CanaryConfig()
+    rollback = data.get("auto_rollback", {})
+    promote = data.get("auto_promote", {})
+    return CanaryConfig(
+        enabled=True,
+        baseline_model=data.get("baseline", ""),
+        canary_model=data.get("canary_model", ""),
+        canary_percentage=data.get("canary_percentage", 5.0),
+        auto_rollback=_build_sub(CanaryThresholds, rollback) if rollback else CanaryThresholds(),
+        auto_promote=_build_sub(CanaryThresholds, promote) if promote else CanaryThresholds(),
     )

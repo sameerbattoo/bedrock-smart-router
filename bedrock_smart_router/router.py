@@ -18,8 +18,10 @@ from typing import Any, Callable
 
 import boto3
 
+from bedrock_smart_router.ab_testing import ABTestManager
 from bedrock_smart_router.aip_manager import AIPManager
 from bedrock_smart_router.cache_layer import ResponseCache
+from bedrock_smart_router.canary import CanaryManager
 from bedrock_smart_router.circuit_breaker import CircuitBreakerRegistry
 from bedrock_smart_router.config import (
     MetricsConfig,
@@ -48,6 +50,7 @@ from bedrock_smart_router.observability import ObservabilityManager, RoutingEven
 from bedrock_smart_router.prompt_cache_advisor import PromptCacheAdvisor
 from bedrock_smart_router.request_analyzer import RequestAnalyzer
 from bedrock_smart_router.retry_handler import RetryHandler
+from bedrock_smart_router.shadow_mode import ShadowManager
 from bedrock_smart_router.strategy_engine import resolve_strategy
 
 logger = logging.getLogger(__name__)
@@ -105,8 +108,17 @@ class BedrockRouter:
             config=config.aip, boto_session=session, region=config.region,
         )
 
+        # Phase 4: Advanced deployment
+        self._ab_test = ABTestManager(config.ab_test)
+        self._canary = CanaryManager(config.canary)
+        self._shadow = ShadowManager(
+            config=config.shadow,
+            invoke_fn=None,  # Set after bedrock client is created
+        )
+
         # Bedrock client
         self._bedrock = session.client("bedrock-runtime")
+        self._shadow._invoke_fn = self._bedrock.converse  # Wire shadow to bedrock
         self._last_decision: RoutingDecision | None = None
 
     @classmethod
@@ -191,8 +203,38 @@ class BedrockRouter:
         strategy = resolve_strategy(
             strategy_name, weights=weights, metrics_store=self._metrics_store,
         )
-        result = strategy.select(available, analysis)
-        primary = result.selected_model
+
+        # A/B test and canary can override the strategy's model selection
+        ab_variant = None
+        is_canary = False
+
+        if self._ab_test.is_active:
+            user_id = (routing.metadata or {}).get("user_id")
+            ab_result = self._ab_test.assign(user_id=user_id)
+            if ab_result:
+                ab_variant = ab_result.variant_name
+                override_model = self._registry.get(ab_result.model_id)
+                if override_model and override_model in available:
+                    result = strategy.select(available, analysis)
+                    primary = override_model  # Override after scoring
+                else:
+                    result = strategy.select(available, analysis)
+                    primary = result.selected_model
+            else:
+                result = strategy.select(available, analysis)
+                primary = result.selected_model
+        elif self._canary.is_active:
+            canary_model_id, is_canary = self._canary.select_model()
+            result = strategy.select(available, analysis)
+            override_model = self._registry.get(canary_model_id)
+            if is_canary and override_model and override_model in available:
+                primary = override_model
+            else:
+                primary = result.selected_model
+                is_canary = False
+        else:
+            result = strategy.select(available, analysis)
+            primary = result.selected_model
 
         # ── Step 6b: Prompt cache boost ─────────────────────────
         cache_savings = 0.0
@@ -329,6 +371,24 @@ class BedrockRouter:
             if output_text:
                 self._guardrails.check_output(output_text)
 
+        # ── Step 10b: Record canary result ──────────────────────
+        if is_canary or self._canary.is_active:
+            self._canary.record_result(
+                is_canary=is_canary,
+                latency_ms=elapsed_ms,
+                success=True,
+            )
+
+        # ── Step 10c: Shadow mode — mirror to secondary model ───
+        if self._shadow.should_shadow():
+            self._shadow.mirror(
+                primary_model=used_model.model_id,
+                messages=messages,
+                system=system,
+                tool_config=tool_config,
+                inference_config=inference_config,
+            )
+
         # ── Step 11: Build routing decision ─────────────────────
         usage = response.get("usage", {})
         input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
@@ -360,6 +420,10 @@ class BedrockRouter:
             cris_profile=used_cris,
             prompt_cache_savings=cache_savings,
             guardrail_checked=guardrail_checked,
+            metadata={
+                **({"ab_variant": ab_variant} if ab_variant else {}),
+                **({"is_canary": is_canary} if is_canary else {}),
+            },
         )
         self._last_decision = decision
         response["routing_decision"] = decision
@@ -473,3 +537,15 @@ class BedrockRouter:
     @property
     def aip(self) -> AIPManager:
         return self._aip
+
+    @property
+    def ab_test(self) -> ABTestManager:
+        return self._ab_test
+
+    @property
+    def canary(self) -> CanaryManager:
+        return self._canary
+
+    @property
+    def shadow(self) -> ShadowManager:
+        return self._shadow
