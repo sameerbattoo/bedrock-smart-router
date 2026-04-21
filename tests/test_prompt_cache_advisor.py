@@ -9,13 +9,14 @@ from bedrock_smart_router.prompt_cache_advisor import PromptCacheAdvisor
 def _model(caching: bool, input_price: float = 0.003, cache_read: float = 0.0003) -> BedrockModel:
     return BedrockModel(
         model_id="test-model", family="anthropic", tier=Tier.MID,
-        display_name="Test", capabilities=ModelCapabilities(),
+        display_name="Test", capabilities=ModelCapabilities(
+            prompt_caching=caching,
+        ),
         max_input_tokens=200_000, max_output_tokens=16_384,
         pricing=ModelPricing(
             input_per_1k=input_price, output_per_1k=0.015,
             cache_read_per_1k=cache_read, cache_write_per_1k=0.00375,
         ),
-        supports_prompt_caching=caching,
     )
 
 

@@ -448,14 +448,15 @@ Request arrives
 
 ## Model Catalog
 
-The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 16 Bedrock models with capabilities, pricing, CRIS profiles, and inference tier support:
+The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 27 Bedrock models with capabilities, pricing, CRIS profiles, and inference tier support:
 
 | Family | Models | Tiers |
 |---|---|---|
-| Amazon Nova | Micro 1.0, Lite 1.0, Nova 2 Lite, Pro 1.0, Premier 1.0 | micro, lite, mid, heavy |
-| Anthropic Claude | Haiku 4.5, Sonnet 4, Sonnet 4.5, Sonnet 4.6, Opus 4.5, Opus 4.6, Opus 4.7 | lite, mid, heavy, reasoning |
-| Meta Llama | 3.1 8B, 3.3 70B | micro, mid |
-| Mistral | Small, Large 2 | lite, mid |
+| Amazon Nova (5) | Micro 1.0, Lite 1.0, Nova 2 Lite, Pro 1.0, Premier 1.0 | micro, lite, mid, heavy |
+| Anthropic Claude (9) | Haiku 4.5, 3.7 Sonnet, Sonnet 4, Sonnet 4.5, Sonnet 4.6, Opus 4.1, Opus 4.5, Opus 4.6, Opus 4.7 | lite, mid, heavy, reasoning |
+| Meta Llama (10) | 3.2 1B, 3.2 3B, 3.1 8B, 3.2 11B, 3.1 70B, 3.3 70B, 3.2 90B, 4 Scout 17B, 4 Maverick 17B | micro, lite, mid, heavy |
+| DeepSeek (1) | R1 | reasoning |
+| Mistral (3) | Small, Large 2, Pixtral Large | lite, mid |
 
 To update pricing or add models, edit the JSON file or use an overlay:
 

@@ -97,8 +97,6 @@ class DistilledModelManager:
             max_input_tokens=max_input_tokens or teacher.max_input_tokens,
             max_output_tokens=max_output_tokens or teacher.max_output_tokens,
             pricing=derived_pricing,
-            supports_prompt_caching=teacher.supports_prompt_caching,
-            supports_extended_thinking=False,  # Distilled models typically don't
             cris_profiles=[],  # Custom models don't have CRIS
             supported_inference_tiers=["standard"],
             guardrail_compatible=teacher.guardrail_compatible,

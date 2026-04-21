@@ -160,7 +160,7 @@ class LatencyOptimizedStrategy(RoutingStrategy):
             if m.is_cris_available:
                 latency_score = min(1.0, latency_score + 0.05)
             # Bonus for prompt caching support (faster TTFT)
-            if m.supports_prompt_caching and analysis.is_multi_turn:
+            if m.capabilities.prompt_caching and analysis.is_multi_turn:
                 latency_score = min(1.0, latency_score + 0.05)
 
             cost_raw = m.pricing.estimate_cost(
@@ -238,7 +238,7 @@ class BalancedStrategy(RoutingStrategy):
 
             if m.is_cris_available:
                 latency_score = min(1.0, latency_score + 0.03)
-            if m.supports_prompt_caching and analysis.is_multi_turn:
+            if m.capabilities.prompt_caching and analysis.is_multi_turn:
                 cost_score = min(1.0, cost_score + 0.05)
 
             composite = (

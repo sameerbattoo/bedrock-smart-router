@@ -457,11 +457,11 @@ class BedrockModel:
 
 | Tier | Anthropic | Amazon Nova | Meta Llama | Mistral | DeepSeek | Typical Use Case |
 |---|---|---|---|---|---|---|
-| `micro` | — | Nova Micro | Llama 3.1 8B | Mistral 7B | — | Classification, extraction, yes/no, simple Q&A |
-| `lite` | Haiku 3.5 | Nova Lite | Llama 3.2 11B | Mistral Small | — | Summarization, chat, moderate tasks |
-| `mid` | Sonnet 4 | Nova Pro | Llama 3.3 70B | Mistral Large | DeepSeek V3 | General-purpose, coding, analysis |
-| `heavy` | Opus 4 | Nova Premier | Llama 3.1 405B | — | — | Complex reasoning, long documents |
-| `reasoning` | Sonnet 4 (ext. thinking) | — | — | — | DeepSeek R1 | Multi-step reasoning, math, planning |
+| `micro` | — | Nova Micro | Llama 3.2 1B, 3.2 3B, 3.1 8B | — | — | Classification, extraction, yes/no, simple Q&A |
+| `lite` | Haiku 4.5 | Nova Lite, Nova 2 Lite | Llama 3.2 11B, 4 Scout 17B | Mistral Small | — | Summarization, chat, moderate tasks |
+| `mid` | 3.7 Sonnet, Sonnet 4, 4.5, 4.6 | Nova Pro | Llama 3.1 70B, 3.3 70B, 4 Maverick 17B | Mistral Large 2, Pixtral Large | — | General-purpose, coding, analysis |
+| `heavy` | Opus 4.1, 4.5, 4.6 | Nova Premier | Llama 3.2 90B | — | — | Complex reasoning, long documents |
+| `reasoning` | Opus 4.7 | — | — | — | DeepSeek R1 | Multi-step reasoning, math, planning |
 
 **Registry population strategy:**
 1. **Static defaults**: Ship with a built-in catalog of all current Bedrock models (updated with each SDK release)

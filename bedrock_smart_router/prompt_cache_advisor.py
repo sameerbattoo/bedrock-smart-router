@@ -57,7 +57,7 @@ class PromptCacheAdvisor:
         system: list[dict[str, Any]] | None = None,
     ) -> CacheBenefit:
         """Estimate the caching benefit for a model + request pair."""
-        if not model.supports_prompt_caching:
+        if not model.capabilities.prompt_caching:
             return CacheBenefit(
                 model_id=model.model_id,
                 cacheable_tokens=0,

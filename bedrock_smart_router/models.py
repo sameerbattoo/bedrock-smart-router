@@ -51,6 +51,7 @@ class ModelCapabilities:
     streaming: bool = True
     document_support: bool = False
     extended_thinking: bool = False
+    prompt_caching: bool = False
 
 
 @dataclass(frozen=True)
@@ -82,8 +83,6 @@ class BedrockModel:
     max_input_tokens: int = 4096
     max_output_tokens: int = 4096
     pricing: ModelPricing = field(default_factory=ModelPricing)
-    supports_prompt_caching: bool = False
-    supports_extended_thinking: bool = False
     cris_profiles: list[str] = field(default_factory=list)
     supported_inference_tiers: list[str] = field(
         default_factory=lambda: ["standard"]
