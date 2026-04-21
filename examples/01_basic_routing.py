@@ -29,6 +29,9 @@ print(f"Bedrock latency:   {d.bedrock_latency_ms}ms")
 print(f"Service tier:      {d.actual_service_tier}")
 print(f"Prompt cache read: {d.prompt_cache_read_tokens} tokens")
 print(f"Prompt cache write:{d.prompt_cache_write_tokens} tokens")
+print(f"Prompt cache hit rate: {d.prompt_cache_hit_rate:.0%}")
+print(f"Total input tokens:   {d.total_input_tokens}")
+print(f"Network overhead:     {d.network_overhead_ms}ms")
 
 
 # ── Example 2: Config from a YAML file ──────────────────────────────

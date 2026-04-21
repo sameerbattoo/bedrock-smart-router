@@ -248,6 +248,7 @@ d = router.last_routing_decision()
 print(f"Model: {d.selected_model}, Tier: {d.inference_tier}, CRIS: {d.cris_profile}")
 print(f"Stop: {d.stop_reason}, Bedrock latency: {d.bedrock_latency_ms}ms")
 print(f"Prompt cache: {d.prompt_cache_read_tokens} read / {d.prompt_cache_write_tokens} write tokens")
+print(f"Prompt cache hit rate: {d.prompt_cache_hit_rate:.0%}, Network overhead: {d.network_overhead_ms}ms")
 ```
 
 ## Examples

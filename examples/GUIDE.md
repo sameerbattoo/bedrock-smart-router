@@ -373,7 +373,7 @@ d = response["routing_decision"]
 # Latency
 print(f"Wall-clock latency: {d.latency_ms:.0f}ms")
 print(f"Bedrock server latency: {d.bedrock_latency_ms}ms")
-print(f"Network overhead: {d.latency_ms - (d.bedrock_latency_ms or 0):.0f}ms")
+print(f"Network overhead: {d.network_overhead_ms}ms")  # Convenience property
 print(f"TTFT (streaming only): {d.ttft_ms}ms")
 
 # Tokens and cost
@@ -384,9 +384,11 @@ print(f"Cost: ${d.actual_cost:.6f}")
 # Bedrock prompt cache (server-side prefix caching)
 print(f"Prompt cache read: {d.prompt_cache_read_tokens} tokens")
 print(f"Prompt cache write: {d.prompt_cache_write_tokens} tokens")
-if d.input_tokens and d.prompt_cache_read_tokens:
-    ratio = d.prompt_cache_read_tokens / d.input_tokens
-    print(f"Prompt cache hit ratio: {ratio:.0%}")
+# Bedrock prompt cache hit ratio
+# Convenience property: d.prompt_cache_hit_rate (0.0–1.0)
+print(f"Prompt cache hit rate: {d.prompt_cache_hit_rate:.0%}")
+print(f"Total input tokens (incl cached): {d.total_input_tokens}")
+# e.g. 1200 read / (300 input + 1200 read + 0 write) = 80%
 
 # Stop reason
 print(f"Stop reason: {d.stop_reason}")

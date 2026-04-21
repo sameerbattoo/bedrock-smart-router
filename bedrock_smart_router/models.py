@@ -151,3 +151,27 @@ class RoutingDecision:
     bedrock_latency_ms: float | None = None  # Server-side latency (excludes network)
     actual_service_tier: str = ""  # Tier that actually served the request
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def total_input_tokens(self) -> int:
+        """Total input tokens including cached: input + cache_read + cache_write."""
+        return (self.input_tokens or 0) + self.prompt_cache_read_tokens + self.prompt_cache_write_tokens
+
+    @property
+    def prompt_cache_hit_rate(self) -> float:
+        """Bedrock prompt cache hit ratio (0.0–1.0).
+
+        Formula: cache_read_tokens / (input_tokens + cache_read + cache_write)
+        Returns 0.0 if no prompt caching occurred.
+        """
+        total = self.total_input_tokens
+        if total == 0 or self.prompt_cache_read_tokens == 0:
+            return 0.0
+        return self.prompt_cache_read_tokens / total
+
+    @property
+    def network_overhead_ms(self) -> float | None:
+        """Network overhead = wall-clock latency minus Bedrock server latency."""
+        if self.latency_ms is not None and self.bedrock_latency_ms is not None:
+            return round(self.latency_ms - self.bedrock_latency_ms, 1)
+        return None

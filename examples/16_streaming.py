@@ -69,6 +69,8 @@ print(f"Stop reason: {decision.stop_reason}")
 print(f"Bedrock latency: {decision.bedrock_latency_ms}ms")
 print(f"Service tier: {decision.actual_service_tier}")
 print(f"Prompt cache: {decision.prompt_cache_read_tokens} read, {decision.prompt_cache_write_tokens} write")
+print(f"Prompt cache hit rate: {decision.prompt_cache_hit_rate:.0%}")
+print(f"Network overhead: {decision.network_overhead_ms}ms")
 
 
 # ── Example 4: Async streaming (for FastAPI, aiohttp, etc.) ──────────
