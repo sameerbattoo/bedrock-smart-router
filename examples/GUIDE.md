@@ -463,3 +463,105 @@ circuit_breaker: {failure_threshold: 5, cooldown_seconds: 30}
 retry: {max_retries: 3}
 excluded_models: ["us.meta.*"]
 ```
+
+---
+
+## 17. Advanced Bedrock Parameters (`17_advanced_bedrock_params.py`)
+
+The router is a 100% drop-in replacement for `bedrock-runtime.converse()` and `converse_stream()`. Every Bedrock Converse parameter is supported — either as a first-class parameter or via `**kwargs` passthrough.
+
+**First-class parameters** (explicit in the method signature):
+- `messages`, `system`, `tool_config`, `inference_config`
+
+**Passthrough via `**kwargs`** (forwarded unchanged to Bedrock):
+
+| Parameter | What it does | Example |
+|---|---|---|
+| `additionalModelRequestFields` | Model-specific params (top_k, extended thinking) | `additionalModelRequestFields={"top_k": 50}` |
+| `additionalModelResponseFieldPaths` | Request extra response fields | `additionalModelResponseFieldPaths=["/stop_sequence"]` |
+| `guardrailConfig` | Native Bedrock guardrail on the call | `guardrailConfig={"guardrailIdentifier": "gr-abc"}` |
+| `promptVariables` | Prompt Management integration | `promptVariables={"topic": {"text": "AI"}}` |
+| `outputConfig` | Structured JSON output | `outputConfig={"textFormat": {"type": "json", ...}}` |
+| `performanceConfig` | Latency-optimized inference | `performanceConfig={"latency": "optimized"}` |
+
+`requestMetadata` is automatically forwarded from `routing.metadata` for CloudWatch invocation log filtering.
+
+**All response fields captured** in `RoutingDecision`:
+- `stop_reason`, `bedrock_latency_ms`, `actual_service_tier`
+- `total_tokens`, `prompt_cache_read_tokens`, `prompt_cache_write_tokens`
+- `cache_details`, `performance_config`, `guardrail_trace`
+- Convenience properties: `prompt_cache_hit_rate`, `total_input_tokens`, `network_overhead_ms`
+
+---
+
+## 18. Cross-Region Inference & Data Residency (`18_cross_region_data_residency.py`)
+
+Bedrock Cross-Region Inference (CRIS) automatically routes requests across AWS regions for higher throughput. Geography-specific profiles ensure data residency compliance.
+
+Your boto3 client connects to ONE region, but the CRIS profile controls where inference runs:
+
+| Profile Prefix | Routes To | Use Case |
+|---|---|---|
+| `us.*` | US regions only | ITAR, FedRAMP, US financial services |
+| `eu.*` | EU regions only | GDPR compliance |
+| `ap.*` | Asia-Pacific only | APAC data residency |
+| `global.*` | Any commercial region | Maximum throughput |
+| *(no prefix)* | Configured region only | Single-region locked |
+
+```yaml
+# EU-only — GDPR, data never leaves Europe
+cris:
+  preferred_geography: eu
+  allow_global: false
+
+# US preferred, global fallback for capacity
+cris:
+  preferred_geography: us
+  allow_global: true
+
+# Maximum throughput, no residency requirement
+cris:
+  allow_global: true
+```
+
+The router selects the profile automatically. You never manage region endpoints or create multiple clients.
+
+---
+
+## 19. OpenTelemetry (`19_opentelemetry.py`)
+
+The router emits OTEL spans and metrics when enabled. Works with any OTEL-compatible backend: AWS X-Ray (via ADOT), Jaeger, Datadog, Grafana Tempo, Honeycomb, etc.
+
+```bash
+pip install bedrock-smart-router[otel]
+```
+
+```yaml
+observability:
+  otel_enabled: true
+  otel_service_name: "my-app"
+```
+
+**Metrics emitted per request** (with `{model, strategy, complexity}` labels):
+
+| Metric | Type | Unit |
+|---|---|---|
+| `bedrock_router.requests` | Counter | 1 |
+| `bedrock_router.latency` | Histogram | ms |
+| `bedrock_router.ttft` | Histogram | ms |
+| `bedrock_router.cost` | Counter | USD |
+| `bedrock_router.cache_hits` | Counter | 1 |
+| `bedrock_router.fallbacks` | Counter | 1 |
+| `bedrock_router.errors` | Counter | 1 |
+
+**All three observability channels work simultaneously:**
+```yaml
+observability:
+  log_decisions: true           # Python logging
+  cloudwatch_enabled: true      # CloudWatch PutMetricData
+  otel_enabled: true            # OpenTelemetry spans + metrics
+```
+
+**For AWS production**, use the AWS Distro for OpenTelemetry (ADOT) collector as a sidecar to send traces to X-Ray and metrics to CloudWatch or Amazon Managed Prometheus.
+
+OTEL is disabled by default — zero overhead when not configured. The `opentelemetry` package is only imported when `otel_enabled: true`.

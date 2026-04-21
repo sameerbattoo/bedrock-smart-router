@@ -64,8 +64,28 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 ### Installation
 
 ```bash
+# Core SDK — only requires boto3, works in Lambda out of the box
 pip install bedrock-smart-router
+
+# With Redis/Valkey/ElastiCache caching support
+pip install bedrock-smart-router[redis]
+
+# With OpenTelemetry tracing and metrics
+pip install bedrock-smart-router[otel]
+
+# With everything
+pip install bedrock-smart-router[redis,otel]
+
+# For development (includes pytest, moto)
+pip install bedrock-smart-router[dev]
 ```
+
+| Extra | What it adds | When you need it |
+|---|---|---|
+| *(none)* | Core SDK, boto3 only | Lambda, single-instance, in-memory cache and metrics |
+| `[redis]` | `redis` package | Shared cache across instances via Redis, Valkey, or ElastiCache |
+| `[otel]` | `opentelemetry-api`, `opentelemetry-sdk` | Distributed tracing and OTEL metrics export |
+| `[dev]` | `pytest`, `pytest-cov`, `moto` | Running the test suite |
 
 ### Basic Usage
 
@@ -279,6 +299,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`16_streaming.py`](examples/16_streaming.py) | Token-by-token streaming with TTFT tracking |
 | [`17_advanced_bedrock_params.py`](examples/17_advanced_bedrock_params.py) | All Bedrock passthrough params (top_k, guardrails, structured output, etc.) |
 | [`18_cross_region_data_residency.py`](examples/18_cross_region_data_residency.py) | CRIS profiles: US-only, EU-only (GDPR), global routing |
+| [`19_opentelemetry.py`](examples/19_opentelemetry.py) | OTEL tracing and metrics (X-Ray, Jaeger, Datadog, etc.) |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
@@ -414,13 +435,23 @@ cd bedrock_smart_router
 # Setup
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,redis,otel]"   # All extras for full test coverage
 
-# Run tests
+# Run unit tests (328 tests, no AWS calls)
 pytest tests/ -v
 
-# Run integration tests (requires AWS credentials)
-INTEGRATION_TEST=1 pytest tests/test_dynamodb_integration.py -v -s
+# Run ALL integration tests (53 tests, requires AWS credentials)
+INTEGRATION_TEST=1 pytest tests/ -v -s
+
+# Run specific integration test suites
+INTEGRATION_TEST=1 pytest tests/test_bedrock_converse_integration.py -v -s  # Bedrock Converse
+INTEGRATION_TEST=1 pytest tests/test_streaming_integration.py -v -s         # Streaming + TTFT
+INTEGRATION_TEST=1 pytest tests/test_dynamodb_integration.py -v -s          # DynamoDB metrics
+INTEGRATION_TEST=1 pytest tests/test_cloudwatch_integration.py -v -s        # CloudWatch metrics
+INTEGRATION_TEST=1 pytest tests/test_aip_integration.py -v -s               # Application Inference Profiles
+INTEGRATION_TEST=1 pytest tests/test_guardrails_real_integration.py -v -s   # Bedrock Guardrails
+INTEGRATION_TEST=1 pytest tests/test_pricing_refresh_integration.py -v -s   # Pricing API
+INTEGRATION_TEST=1 VALKEY_URL=rediss://... pytest tests/test_valkey_cache_integration.py -v -s  # ElastiCache (VPC)
 ```
 
 ## How It Compares

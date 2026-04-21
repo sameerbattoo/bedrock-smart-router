@@ -139,6 +139,8 @@ class ObservabilityConfig:
     log_decisions: bool = True
     cloudwatch_enabled: bool = False
     cloudwatch_namespace: str = "BedrockSmartRouter"
+    otel_enabled: bool = False
+    otel_service_name: str = "bedrock-smart-router"
 
 
 @dataclass

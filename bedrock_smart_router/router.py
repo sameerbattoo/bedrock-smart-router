@@ -49,6 +49,7 @@ from bedrock_smart_router.models import (
     RoutingDecision,
 )
 from bedrock_smart_router.observability import ObservabilityManager, RoutingEvent
+from bedrock_smart_router.otel_integration import OTelIntegration
 from bedrock_smart_router.prompt_cache_advisor import PromptCacheAdvisor
 from bedrock_smart_router.request_analyzer import RequestAnalyzer
 from bedrock_smart_router.retry_handler import RetryHandler
@@ -132,7 +133,14 @@ class BedrockRouter:
 
         # Bedrock client
         self._bedrock = session.client("bedrock-runtime")
-        self._shadow._invoke_fn = self._bedrock.converse  # Wire shadow to bedrock
+        self._shadow._invoke_fn = self._bedrock.converse
+
+        # OpenTelemetry (optional)
+        self._otel = OTelIntegration(
+            enabled=config.observability.otel_enabled,
+            service_name=config.observability.otel_service_name,
+        )
+
         self._last_decision: RoutingDecision | None = None
 
     @classmethod
@@ -506,6 +514,17 @@ class BedrockRouter:
             most_expensive_cost=most_expensive,
         )
 
+        # ── OTEL: record span and metrics ───────────────────────
+        self._otel.record_request(
+            model=decision.selected_model,
+            strategy=decision.strategy_used,
+            complexity=decision.complexity_detected,
+            latency_ms=decision.latency_ms or 0,
+            cost=decision.actual_cost or 0,
+            cache_hit=decision.cache_hit,
+            fallback_used=decision.fallback_used,
+        )
+
         return response
 
     def converse_stream(
@@ -709,6 +728,18 @@ class BedrockRouter:
             decision,
             duration_ms=elapsed_ms,
             tags=routing.tags, metadata=routing.metadata,
+        )
+
+        # ── OTEL: record span and metrics ───────────────────────
+        self._otel.record_request(
+            model=decision.selected_model,
+            strategy=decision.strategy_used,
+            complexity=decision.complexity_detected,
+            latency_ms=decision.latency_ms or 0,
+            cost=decision.actual_cost or 0,
+            cache_hit=False,
+            fallback_used=decision.fallback_used,
+            ttft_ms=decision.ttft_ms,
         )
 
         # Yield final event with routing decision
@@ -1002,3 +1033,7 @@ class BedrockRouter:
     @property
     def shadow(self) -> ShadowManager:
         return self._shadow
+
+    @property
+    def otel(self) -> OTelIntegration:
+        return self._otel
