@@ -71,6 +71,39 @@ else:
 
 
 # ═══════════════════════════════════════════════════════════════════
+# Example 1b: Variable-aware caching
+# ═══════════════════════════════════════════════════════════════════
+# Queries with variables are semantically identical but have different
+# correct answers.  Pass variables to ensure the cache only hits when
+# both the intent AND the variable values match.
+
+# Store response for Electronics in 2024
+semantic_cache.put(
+    "Find top 5 users for Electronics in 2024",
+    {"result": ["user1", "user2", "user3"]},
+    variables={"category": "Electronics", "year": "2024"},
+)
+
+# Same intent, same variables → HIT
+hit = semantic_cache.get(
+    "Show me the top 5 users in Electronics for 2024",
+    variables={"category": "Electronics", "year": "2024"},
+)
+print(f"\nSame variables: {'HIT' if hit else 'MISS'}")
+
+# Same intent, different variables → MISS
+hit = semantic_cache.get(
+    "Find top 5 users for Clothing in 2025",
+    variables={"category": "Clothing", "year": "2025"},
+)
+print(f"Different variables: {'HIT' if hit else 'MISS'}")
+
+# No variables → matches any (backward compatible)
+hit = semantic_cache.get("Find top 5 users for Electronics in 2024")
+print(f"No variables specified: {'HIT' if hit else 'MISS'}")
+
+
+# ═══════════════════════════════════════════════════════════════════
 # Example 2: Semantic Router — route by intent to specialized models
 # ═══════════════════════════════════════════════════════════════════
 # Define routes with example utterances.  The router embeds the

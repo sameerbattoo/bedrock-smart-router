@@ -17,6 +17,9 @@ dependencies = [
 redis = [
     "redis>=5.0",
 ]
+faiss = [
+    "faiss-cpu>=1.7",
+]
 otel = [
     "opentelemetry-api>=1.20",
     "opentelemetry-sdk>=1.20",
