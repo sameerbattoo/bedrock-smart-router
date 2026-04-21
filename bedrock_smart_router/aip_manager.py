@@ -61,6 +61,7 @@ class AIPManager:
         self._region = region
         self._session = boto_session
         self._client: Any | None = None
+        self._account_id: str | None = None
         # Cache: (model_id, tenant_key) -> AIPEntry
         self._cache: dict[tuple[str, str], AIPEntry] = {}
 
@@ -129,9 +130,12 @@ class AIPManager:
         # Build tags list
         tags = [{"key": k, "value": v} for k, v in tenant_tags.items()]
 
+        # The API requires a full ARN for modelSource.copyFrom
+        model_arn = self._to_model_arn(model_id)
+
         resp = client.create_inference_profile(
             inferenceProfileName=profile_name,
-            modelSource={"copyFrom": model_id},
+            modelSource={"copyFrom": model_arn},
             tags=tags,
         )
 
@@ -143,6 +147,33 @@ class AIPManager:
             profile_name=profile_name,
             model_id=model_id,
             tags=tenant_tags,
+        )
+
+    def _to_model_arn(self, model_id: str) -> str:
+        """Convert a short model ID to a full Bedrock inference profile ARN.
+
+        ``us.amazon.nova-micro-v1:0``
+        → ``arn:aws:bedrock:us-west-2:<account>:inference-profile/us.amazon.nova-micro-v1:0``
+
+        If the model_id is already an ARN, return it unchanged.
+        """
+        if model_id.startswith("arn:"):
+            return model_id
+
+        if self._account_id is None:
+            try:
+                if self._session is None:
+                    import boto3
+                    self._session = boto3.Session(region_name=self._region)
+                sts = self._session.client("sts", region_name=self._region)
+                self._account_id = sts.get_caller_identity()["Account"]
+            except Exception as exc:
+                logger.warning("Could not get account ID from STS: %s", exc)
+                self._account_id = ""
+
+        return (
+            f"arn:aws:bedrock:{self._region}:{self._account_id}"
+            f":inference-profile/{model_id}"
         )
 
     def invalidate_cache(self) -> None:
