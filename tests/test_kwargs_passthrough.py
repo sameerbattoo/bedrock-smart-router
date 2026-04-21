@@ -239,3 +239,108 @@ class TestMultipleKwargs:
         assert kwargs["messages"] == _msgs("Hello")
         assert kwargs["system"] == [{"text": "Be helpful"}]
         assert kwargs["inferenceConfig"] == {"maxTokens": 100}
+
+
+class TestRequestMetadata:
+    """requestMetadata — forwarded from routing.metadata for CloudWatch logs."""
+
+    def test_metadata_forwarded(self, mock_router):
+        from bedrock_smart_router import RoutingConfig
+        router, client = mock_router
+        router.converse(
+            messages=_msgs("Hello"),
+            routing=RoutingConfig(metadata={"tenant": "acme", "team": "eng"}),
+        )
+        kwargs = _get_converse_call_kwargs(client)
+        assert kwargs["requestMetadata"]["tenant"] == "acme"
+        assert kwargs["requestMetadata"]["team"] == "eng"
+
+    def test_stream_metadata_forwarded(self, mock_router):
+        from bedrock_smart_router import RoutingConfig
+        router, client = mock_router
+        for _ in router.converse_stream(
+            messages=_msgs("Hello"),
+            routing=RoutingConfig(metadata={"tenant": "globex"}),
+        ):
+            pass
+        kwargs = _get_stream_call_kwargs(client)
+        assert kwargs["requestMetadata"]["tenant"] == "globex"
+
+    def test_no_metadata_no_field(self, mock_router):
+        router, client = mock_router
+        router.converse(messages=_msgs("Hello"))
+        kwargs = _get_converse_call_kwargs(client)
+        # requestMetadata should not be present when no metadata
+        assert "requestMetadata" not in kwargs or kwargs["requestMetadata"] is None
+
+
+class TestResponseFieldCapture:
+    """Verify all Bedrock response fields are captured in RoutingDecision."""
+
+    def _make_rich_response(self):
+        return {
+            "output": {"message": {"content": [{"text": "ok"}]}},
+            "usage": {
+                "inputTokens": 100,
+                "outputTokens": 50,
+                "totalTokens": 150,
+                "cacheReadInputTokens": 80,
+                "cacheWriteInputTokens": 20,
+                "cacheDetails": [{"inputTokens": 80, "ttl": "PT1H"}],
+            },
+            "stopReason": "end_turn",
+            "metrics": {"latencyMs": 450},
+            "serviceTier": {"type": "priority"},
+            "performanceConfig": {"latency": "optimized"},
+            "trace": {
+                "guardrail": {
+                    "inputAssessment": {"0": {"topicPolicy": {"topics": []}}},
+                }
+            },
+        }
+
+    def test_total_tokens_captured(self, mock_router):
+        router, client = mock_router
+        client.converse.return_value = self._make_rich_response()
+        response = router.converse(messages=_msgs("Hello"))
+        d = response["routing_decision"]
+        assert d.total_tokens == 150
+
+    def test_cache_details_captured(self, mock_router):
+        router, client = mock_router
+        client.converse.return_value = self._make_rich_response()
+        response = router.converse(messages=_msgs("Hello"))
+        d = response["routing_decision"]
+        assert len(d.cache_details) == 1
+        assert d.cache_details[0]["ttl"] == "PT1H"
+
+    def test_performance_config_captured(self, mock_router):
+        router, client = mock_router
+        client.converse.return_value = self._make_rich_response()
+        response = router.converse(messages=_msgs("Hello"))
+        d = response["routing_decision"]
+        assert d.performance_config == {"latency": "optimized"}
+
+    def test_guardrail_trace_captured(self, mock_router):
+        router, client = mock_router
+        client.converse.return_value = self._make_rich_response()
+        response = router.converse(messages=_msgs("Hello"))
+        d = response["routing_decision"]
+        assert "inputAssessment" in d.guardrail_trace
+
+    def test_prompt_cache_hit_rate_with_real_values(self, mock_router):
+        router, client = mock_router
+        client.converse.return_value = self._make_rich_response()
+        response = router.converse(messages=_msgs("Hello"))
+        d = response["routing_decision"]
+        # total = 100 input + 80 read + 20 write = 200
+        # hit rate = 80 / 200 = 0.4
+        assert d.total_input_tokens == 200
+        assert d.prompt_cache_hit_rate == pytest.approx(0.4)
+
+    def test_service_tier_captured(self, mock_router):
+        router, client = mock_router
+        client.converse.return_value = self._make_rich_response()
+        response = router.converse(messages=_msgs("Hello"))
+        d = response["routing_decision"]
+        assert d.actual_service_tier == "priority"

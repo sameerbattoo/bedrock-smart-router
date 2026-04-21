@@ -150,6 +150,10 @@ class RoutingDecision:
     stop_reason: str = ""  # end_turn | max_tokens | tool_use | guardrail_intervened | content_filtered
     bedrock_latency_ms: float | None = None  # Server-side latency (excludes network)
     actual_service_tier: str = ""  # Tier that actually served the request
+    total_tokens: int = 0  # Bedrock's reported total (input + output)
+    cache_details: list[dict[str, Any]] = field(default_factory=list)  # TTL breakdown of cache writes
+    performance_config: dict[str, Any] = field(default_factory=dict)  # Latency optimization mode
+    guardrail_trace: dict[str, Any] = field(default_factory=dict)  # Full guardrail assessment
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @property

@@ -416,6 +416,10 @@ class BedrockRouter:
         bedrock_latency = response.get("metrics", {}).get("latencyMs")
         stop_reason = response.get("stopReason", "")
         actual_service_tier = response.get("serviceTier", {}).get("type", "")
+        total_tokens = usage.get("totalTokens", input_tokens + output_tokens)
+        cache_details = usage.get("cacheDetails", [])
+        perf_config = response.get("performanceConfig", {})
+        guardrail_trace = response.get("trace", {}).get("guardrail", {})
         actual_cost = used_model.pricing.estimate_cost(input_tokens, output_tokens)
 
         decision = RoutingDecision(
@@ -448,6 +452,10 @@ class BedrockRouter:
             stop_reason=stop_reason,
             bedrock_latency_ms=bedrock_latency,
             actual_service_tier=actual_service_tier,
+            total_tokens=total_tokens,
+            cache_details=cache_details,
+            performance_config=perf_config,
+            guardrail_trace=guardrail_trace,
             metadata={
                 **({"ab_variant": ab_variant} if ab_variant else {}),
                 **({"is_canary": is_canary} if is_canary else {}),
@@ -612,6 +620,8 @@ class BedrockRouter:
         stream_metrics: dict[str, Any] = {}
         stream_stop_reason: str = ""
         stream_service_tier: str = ""
+        stream_perf_config: dict[str, Any] = {}
+        stream_guardrail_trace: dict[str, Any] = {}
         ttft_ms: float | None = None
         t_stream_start = time.monotonic()
 
@@ -628,6 +638,8 @@ class BedrockRouter:
                 usage = meta.get("usage", {})
                 stream_metrics = meta.get("metrics", {})
                 stream_service_tier = meta.get("serviceTier", {}).get("type", "")
+                stream_perf_config = meta.get("performanceConfig", {})
+                stream_guardrail_trace = meta.get("trace", {}).get("guardrail", {})
             yield event
 
         # Post-stream: build decision and record metrics
@@ -636,6 +648,8 @@ class BedrockRouter:
         output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
         prompt_cache_read = usage.get("cacheReadInputTokens", 0)
         prompt_cache_write = usage.get("cacheWriteInputTokens", 0)
+        total_tokens = usage.get("totalTokens", input_tokens + output_tokens)
+        cache_details = usage.get("cacheDetails", [])
         bedrock_latency = stream_metrics.get("latencyMs")
         actual_cost = used_model.pricing.estimate_cost(input_tokens, output_tokens)
 
@@ -663,6 +677,10 @@ class BedrockRouter:
             stop_reason=stream_stop_reason,
             bedrock_latency_ms=bedrock_latency,
             actual_service_tier=stream_service_tier,
+            total_tokens=total_tokens,
+            cache_details=cache_details,
+            performance_config=stream_perf_config,
+            guardrail_trace=stream_guardrail_trace,
         )
         self._last_decision = decision
 
