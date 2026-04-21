@@ -1,0 +1,465 @@
+{
+  "_metadata": {
+    "version": "0.1.0",
+    "description": "Bedrock Smart Router model catalog. Pricing in USD per 1K tokens.",
+    "last_updated": "2026-04-20"
+  },
+  "models": [
+    {
+      "model_id": "us.amazon.nova-micro-v1:0",
+      "family": "amazon",
+      "tier": "micro",
+      "display_name": "Amazon Nova Micro 1.0",
+      "capabilities": {
+        "tool_use": false,
+        "vision": false,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.000035,
+        "output_per_1k": 0.00014,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": false,
+      "cris_profiles": [
+        "us.amazon.nova-micro-v1:0",
+        "global.amazon.nova-micro-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "flex"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.amazon.nova-lite-v1:0",
+      "family": "amazon",
+      "tier": "lite",
+      "display_name": "Amazon Nova Lite 1.0",
+      "capabilities": {
+        "tool_use": false,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 300000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.00006,
+        "output_per_1k": 0.00024,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": false,
+      "cris_profiles": [
+        "us.amazon.nova-lite-v1:0",
+        "global.amazon.nova-lite-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "flex"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "family": "amazon",
+      "tier": "lite",
+      "display_name": "Amazon Nova 2 Lite",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.00008,
+        "output_per_1k": 0.00032,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.amazon.nova-2-lite-v1:0",
+        "global.amazon.nova-2-lite-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "flex"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.amazon.nova-pro-v1:0",
+      "family": "amazon",
+      "tier": "mid",
+      "display_name": "Amazon Nova Pro 1.0",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 300000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.0008,
+        "output_per_1k": 0.0032,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": false,
+      "cris_profiles": [
+        "us.amazon.nova-pro-v1:0",
+        "global.amazon.nova-pro-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "priority", "flex"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.amazon.nova-premier-v1:0",
+      "family": "amazon",
+      "tier": "heavy",
+      "display_name": "Amazon Nova Premier 1.0",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.0025,
+        "output_per_1k": 0.0125,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.amazon.nova-premier-v1:0",
+        "global.amazon.nova-premier-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "priority", "flex"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "family": "anthropic",
+      "tier": "lite",
+      "display_name": "Claude Haiku 4.5",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 0.001,
+        "output_per_1k": 0.005,
+        "cache_read_per_1k": 0.0001,
+        "cache_write_per_1k": 0.00125
+      },
+      "supports_prompt_caching": true,
+      "supports_extended_thinking": false,
+      "cris_profiles": [
+        "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "priority"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+      "family": "anthropic",
+      "tier": "mid",
+      "display_name": "Claude Sonnet 4",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.003,
+        "output_per_1k": 0.015,
+        "cache_read_per_1k": 0.0003,
+        "cache_write_per_1k": 0.00375
+      },
+      "supports_prompt_caching": true,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        "global.anthropic.claude-sonnet-4-20250514-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "priority"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "family": "anthropic",
+      "tier": "mid",
+      "display_name": "Claude Sonnet 4.5",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.003,
+        "output_per_1k": 0.015,
+        "cache_read_per_1k": 0.0003,
+        "cache_write_per_1k": 0.00375
+      },
+      "supports_prompt_caching": true,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "priority"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "family": "anthropic",
+      "tier": "mid",
+      "display_name": "Claude Sonnet 4.6",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.003,
+        "output_per_1k": 0.015,
+        "cache_read_per_1k": 0.0003,
+        "cache_write_per_1k": 0.00375
+      },
+      "supports_prompt_caching": true,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.anthropic.claude-sonnet-4-6",
+        "global.anthropic.claude-sonnet-4-6"
+      ],
+      "supported_inference_tiers": ["standard", "priority"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.anthropic.claude-opus-4-5-20251101-v1:0",
+      "family": "anthropic",
+      "tier": "heavy",
+      "display_name": "Claude Opus 4.5",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 32000,
+      "pricing": {
+        "input_per_1k": 0.005,
+        "output_per_1k": 0.025,
+        "cache_read_per_1k": 0.0005,
+        "cache_write_per_1k": 0.00625
+      },
+      "supports_prompt_caching": true,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.anthropic.claude-opus-4-5-20251101-v1:0",
+        "global.anthropic.claude-opus-4-5-20251101-v1:0"
+      ],
+      "supported_inference_tiers": ["standard", "priority"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.anthropic.claude-opus-4-6-v1",
+      "family": "anthropic",
+      "tier": "heavy",
+      "display_name": "Claude Opus 4.6",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 32000,
+      "pricing": {
+        "input_per_1k": 0.005,
+        "output_per_1k": 0.025,
+        "cache_read_per_1k": 0.0005,
+        "cache_write_per_1k": 0.00625
+      },
+      "supports_prompt_caching": true,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.anthropic.claude-opus-4-6-v1",
+        "global.anthropic.claude-opus-4-6-v1"
+      ],
+      "supported_inference_tiers": ["standard", "priority"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.anthropic.claude-opus-4-7",
+      "family": "anthropic",
+      "tier": "reasoning",
+      "display_name": "Claude Opus 4.7",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 32000,
+      "pricing": {
+        "input_per_1k": 0.005,
+        "output_per_1k": 0.025,
+        "cache_read_per_1k": 0.0005,
+        "cache_write_per_1k": 0.00625
+      },
+      "supports_prompt_caching": true,
+      "supports_extended_thinking": true,
+      "cris_profiles": [
+        "us.anthropic.claude-opus-4-7",
+        "global.anthropic.claude-opus-4-7"
+      ],
+      "supported_inference_tiers": ["standard", "priority"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.meta.llama3-1-8b-instruct-v1:0",
+      "family": "meta",
+      "tier": "micro",
+      "display_name": "Llama 3.1 8B Instruct",
+      "capabilities": {
+        "tool_use": false,
+        "vision": false,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 2048,
+      "pricing": {
+        "input_per_1k": 0.00022,
+        "output_per_1k": 0.00022,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": false,
+      "cris_profiles": [
+        "us.meta.llama3-1-8b-instruct-v1:0"
+      ],
+      "supported_inference_tiers": ["standard"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "us.meta.llama3-3-70b-instruct-v1:0",
+      "family": "meta",
+      "tier": "mid",
+      "display_name": "Llama 3.3 70B Instruct",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 4096,
+      "pricing": {
+        "input_per_1k": 0.00072,
+        "output_per_1k": 0.00072,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": false,
+      "cris_profiles": [
+        "us.meta.llama3-3-70b-instruct-v1:0"
+      ],
+      "supported_inference_tiers": ["standard"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "mistral.mistral-small-2402-v1:0",
+      "family": "mistral",
+      "tier": "lite",
+      "display_name": "Mistral Small",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 32000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 0.001,
+        "output_per_1k": 0.003,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": false,
+      "cris_profiles": [],
+      "supported_inference_tiers": ["standard"],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "mistral.mistral-large-2407-v1:0",
+      "family": "mistral",
+      "tier": "mid",
+      "display_name": "Mistral Large 2",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 0.002,
+        "output_per_1k": 0.006,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supports_prompt_caching": false,
+      "supports_extended_thinking": false,
+      "cris_profiles": [],
+      "supported_inference_tiers": ["standard"],
+      "guardrail_compatible": true
+    }
+  ]
+}
