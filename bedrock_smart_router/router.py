@@ -200,7 +200,33 @@ class BedrockRouter:
                 "Check your routing constraints and model registry."
             )
 
-        # ── Step 5: Filter by circuit breaker ───────────────────
+        # ── Step 5: Check response cache (before strategy) ──────
+        # Cache key is based on the request only, not the model.
+        # This means identical requests always hit the cache even if
+        # the router would have picked a different model this time.
+        cached = self._cache.get(messages, system, inference_config)
+        if cached is not None:
+            decision = RoutingDecision(
+                selected_model=cached.get("_cached_model", "unknown"),
+                strategy_used=strategy_name,
+                complexity_detected=analysis.complexity.value,
+                complexity_score=analysis.complexity_score,
+                candidates_evaluated=0,
+                estimated_cost=0.0,
+                actual_cost=0.0,
+                cache_hit=True,
+                guardrail_checked=guardrail_checked,
+            )
+            self._last_decision = decision
+            cached["routing_decision"] = decision
+            self._observability.emit(
+                decision, cache_hit=True,
+                duration_ms=(time.monotonic() - t_start) * 1000,
+                tags=routing.tags, metadata=routing.metadata,
+            )
+            return cached
+
+        # ── Step 6: Filter by circuit breaker ───────────────────
         available = [
             c for c in candidates
             if self._circuit_breakers.is_available(c.model_id)
@@ -275,7 +301,7 @@ class BedrockRouter:
                         cache_savings = alt_benefit.savings_per_request
                         break
 
-        # ── Step 6c: Select CRIS profile ────────────────────────
+        # ── Step 8: Select CRIS profile ────────────────────────
         cris_profile = self._cris.select_profile(primary)
 
         # ── Step 6d: Select inference tier ──────────────────────
@@ -284,40 +310,7 @@ class BedrockRouter:
             max_cost_per_request=routing.max_cost_per_request,
         )
 
-        # ── Step 7: Check response cache ────────────────────────
-        cached = self._cache.get(
-            primary.model_id, messages, system, inference_config
-        )
-        if cached is not None:
-            decision = RoutingDecision(
-                selected_model=primary.model_id,
-                strategy_used=strategy_name,
-                complexity_detected=analysis.complexity.value,
-                complexity_score=analysis.complexity_score,
-                candidates_evaluated=len(available),
-                candidate_scores=result.scores,
-                fallback_chain=[],
-                estimated_cost=primary.pricing.estimate_cost(
-                    analysis.estimated_input_tokens,
-                    analysis.estimated_output_tokens,
-                ),
-                actual_cost=0.0,
-                cache_hit=True,
-                inference_tier=inference_tier,
-                cris_profile=cris_profile,
-                prompt_cache_savings=cache_savings,
-                guardrail_checked=guardrail_checked,
-            )
-            self._last_decision = decision
-            cached["routing_decision"] = decision
-            self._observability.emit(
-                decision, cache_hit=True,
-                duration_ms=(time.monotonic() - t_start) * 1000,
-                tags=routing.tags, metadata=routing.metadata,
-            )
-            return cached
-
-        # ── Step 8: Build fallback chain ────────────────────────
+        # ── Step 10: Build fallback chain ───────────────────────
         fallback_chain = self._fallback_handler.build_chain(
             primary, result.fallback_chain
         )
@@ -451,10 +444,13 @@ class BedrockRouter:
             success=True,
         ))
 
-        # ── Step 13: Cache the response ─────────────────────────
+        # ── Step 15: Cache the response ─────────────────────────
+        response["_cached_model"] = used_model.model_id
         self._cache.put(
-            used_model.model_id, messages, response,
-            system, inference_config,
+            messages, response,
+            model_id=used_model.model_id,
+            system=system,
+            inference_config=inference_config,
         )
 
         # ── Step 14: Emit observability event ───────────────────

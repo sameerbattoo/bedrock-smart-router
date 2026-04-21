@@ -1,8 +1,18 @@
 """Response cache — exact-match in-memory LRU cache.
 
-Caches Bedrock Converse responses keyed by a hash of the model ID,
-messages, and inference parameters.  Cache hits bypass model selection
-and Bedrock invocation entirely, returning at zero API cost.
+Caches Bedrock Converse responses keyed by a hash of the user's
+request (messages, system prompt, inference config).  The cache key
+does NOT include the model ID — this means a cached response is
+returned regardless of which model the router would have selected,
+which is correct because:
+
+1. If the request is identical, the response quality is acceptable
+   (it was good enough the first time).
+2. Fallbacks don't break the cache — if request A fell back from
+   model X to model Y, request A repeated still gets the cached
+   response from model Y.
+3. The routing decision on a cache hit still reflects which model
+   *would have been* selected, for observability.
 """
 
 from __future__ import annotations
@@ -30,20 +40,18 @@ class CacheConfig:
 @dataclass
 class _CacheEntry:
     response: dict[str, Any]
-    model_id: str
+    model_id: str  # Which model produced this response (for invalidation)
     created_at: float
 
 
 def _make_cache_key(
-    model_id: str,
     messages: list[dict[str, Any]],
     system: list[dict[str, Any]] | None = None,
     inference_config: dict[str, Any] | None = None,
 ) -> str:
-    """Deterministic hash of the request parameters."""
+    """Deterministic hash of the user's request — model-independent."""
     payload = json.dumps(
         {
-            "model": model_id,
             "messages": messages,
             "system": system or [],
             "config": inference_config or {},
@@ -55,7 +63,12 @@ def _make_cache_key(
 
 
 class ResponseCache:
-    """In-memory LRU response cache with TTL expiry."""
+    """In-memory LRU response cache with TTL expiry.
+
+    Keys are based on the user's request (messages + system + config),
+    NOT the model.  This means identical requests always hit the cache
+    even if the router would have picked a different model.
+    """
 
     def __init__(self, config: CacheConfig | None = None) -> None:
         self.config = config or CacheConfig()
@@ -65,7 +78,6 @@ class ResponseCache:
 
     def get(
         self,
-        model_id: str,
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
@@ -74,7 +86,7 @@ class ResponseCache:
         if not self.config.enabled:
             return None
 
-        key = _make_cache_key(model_id, messages, system, inference_config)
+        key = _make_cache_key(messages, system, inference_config)
         entry = self._cache.get(key)
         if entry is None:
             self._misses += 1
@@ -89,14 +101,14 @@ class ResponseCache:
         # Move to end (most recently used)
         self._cache.move_to_end(key)
         self._hits += 1
-        logger.debug("Cache HIT for %s (key=%s…)", model_id, key[:12])
+        logger.debug("Cache HIT (key=%s…)", key[:12])
         return entry.response
 
     def put(
         self,
-        model_id: str,
         messages: list[dict[str, Any]],
         response: dict[str, Any],
+        model_id: str = "",
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
     ) -> None:
@@ -104,7 +116,7 @@ class ResponseCache:
         if not self.config.enabled:
             return
 
-        key = _make_cache_key(model_id, messages, system, inference_config)
+        key = _make_cache_key(messages, system, inference_config)
         self._cache[key] = _CacheEntry(
             response=response,
             model_id=model_id,
