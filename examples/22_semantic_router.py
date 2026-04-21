@@ -120,27 +120,41 @@ for query in queries:
 # ═══════════════════════════════════════════════════════════════════
 # Example 3: Combine semantic router with the smart router
 # ═══════════════════════════════════════════════════════════════════
-# The semantic router picks the intent and target model family.
-# The smart router handles the actual invocation with all its
-# features (fallbacks, caching, metrics, etc.).
+# Two patterns for combining intent routing with smart routing:
+#
+# Pattern A: Intent router picks the model, smart router invokes it
+#   → Use when you want exact model control per intent
+#   → The smart router still provides retries, metrics, observability
+#
+# Pattern B: Intent router narrows the candidates, smart router picks
+#   → Use when you want the smart router's cost/quality optimization
+#     within the intent's model family
 
 query = "Write a recursive fibonacci function in Python"
 match = intent_router.route(query)
 
 if match:
-    # Extract the model family from the matched route
-    family = match.model.split(".")[1]  # e.g. "anthropic"
+    # Pattern A: Direct model — intent router has full control
+    # Call Bedrock directly with the intent router's model,
+    # using the smart router only for reliability features
+    print(f"\nPattern A (direct model):")
+    print(f"  Intent: {match.route_name} → model: {match.model}")
+    # response = bedrock_client.converse(modelId=match.model, messages=[...])
+    # Or use the smart router with the intent's family for fallback support:
+
+    # Pattern B: Family constraint — smart router optimizes within family
+    family = match.model.split(".")[1]  # "anthropic"
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": query}]}],
         routing=RoutingConfig(preferred_family=family),
     )
     d = response["routing_decision"]
-    print(f"\nCombined routing:")
+    print(f"\nPattern B (family constraint):")
     print(f"  Intent: {match.route_name} (score={match.score:.2f})")
-    print(f"  Model:  {d.selected_model}")
-    print(f"  Cost:   ${d.actual_cost:.6f}")
+    print(f"  Intent wanted: {match.model}")
+    print(f"  Smart router picked: {d.selected_model} (best {family} model by strategy)")
+    print(f"  Cost: ${d.actual_cost:.6f}")
 else:
-    # No intent match — let the smart router decide
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": query}]}],
     )
@@ -181,7 +195,7 @@ cache = SemanticCache(
 
 def full_pipeline(query: str) -> dict:
     """Semantic router → semantic cache → smart router."""
-    # Step 1: Route by intent
+    # Step 1: Route by intent to narrow the model family
     match = intent_router.route(query)
     family = match.model.split(".")[1] if match else None
     intent = match.route_name if match else "default"
@@ -192,7 +206,7 @@ def full_pipeline(query: str) -> dict:
         print(f"  [{intent}] Cache HIT: '{query[:40]}'")
         return cached
 
-    # Step 3: Call smart router with intent-based family preference
+    # Step 3: Call smart router, constrained to the intent's family
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": query}]}],
         routing=RoutingConfig(preferred_family=family) if family else None,
