@@ -143,5 +143,11 @@ class RoutingDecision:
     inference_tier: str = "standard"
     cris_profile: str | None = None
     prompt_cache_savings: float = 0.0
+    prompt_cache_read_tokens: int = 0
+    prompt_cache_write_tokens: int = 0
     guardrail_checked: bool = False
+    # Bedrock response metrics
+    stop_reason: str = ""  # end_turn | max_tokens | tool_use | guardrail_intervened | content_filtered
+    bedrock_latency_ms: float | None = None  # Server-side latency (excludes network)
+    actual_service_tier: str = ""  # Tier that actually served the request
     metadata: dict[str, Any] = field(default_factory=dict)

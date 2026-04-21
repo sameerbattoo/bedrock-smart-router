@@ -42,7 +42,10 @@ class RequestRecord:
     inference_tier: str = ""
     cris_profile: str = ""
     fallback_used: bool = False
-    cache_hit: bool = False
+    cache_hit: bool = False  # Response cache hit (our cache, not Bedrock's)
+    # Bedrock prompt cache metrics
+    prompt_cache_read_tokens: int = 0
+    prompt_cache_write_tokens: int = 0
 
 
 @dataclass

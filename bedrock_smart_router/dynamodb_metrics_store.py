@@ -234,6 +234,10 @@ class DynamoDBMetricsStore(MetricsStore):
             item["tenant_id"] = rec.tenant_id
         if rec.cris_profile:
             item["cris_profile"] = rec.cris_profile
+        if rec.prompt_cache_read_tokens > 0:
+            item["prompt_cache_read_tokens"] = rec.prompt_cache_read_tokens
+        if rec.prompt_cache_write_tokens > 0:
+            item["prompt_cache_write_tokens"] = rec.prompt_cache_write_tokens
 
         table.put_item(Item=item)
 
@@ -326,6 +330,15 @@ class DynamoDBMetricsStore(MetricsStore):
             quality_score=float(qs) if qs is not None else None,
             success=item.get("success", True),
             is_throttle=item.get("is_throttle", False),
+            strategy=item.get("strategy", ""),
+            complexity=item.get("complexity", ""),
+            tenant_id=item.get("tenant_id", ""),
+            inference_tier=item.get("inference_tier", ""),
+            cris_profile=item.get("cris_profile", ""),
+            fallback_used=item.get("fallback_used", False),
+            cache_hit=item.get("cache_hit", False),
+            prompt_cache_read_tokens=int(item.get("prompt_cache_read_tokens", 0)),
+            prompt_cache_write_tokens=int(item.get("prompt_cache_write_tokens", 0)),
         )
 
     @staticmethod

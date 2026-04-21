@@ -402,6 +402,11 @@ class BedrockRouter:
         usage = response.get("usage", {})
         input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
         output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
+        prompt_cache_read = usage.get("cacheReadInputTokens", 0)
+        prompt_cache_write = usage.get("cacheWriteInputTokens", 0)
+        bedrock_latency = response.get("metrics", {}).get("latencyMs")
+        stop_reason = response.get("stopReason", "")
+        actual_service_tier = response.get("serviceTier", {}).get("type", "")
         actual_cost = used_model.pricing.estimate_cost(input_tokens, output_tokens)
 
         decision = RoutingDecision(
@@ -428,7 +433,12 @@ class BedrockRouter:
             inference_tier=used_tier,
             cris_profile=used_cris,
             prompt_cache_savings=cache_savings,
+            prompt_cache_read_tokens=prompt_cache_read,
+            prompt_cache_write_tokens=prompt_cache_write,
             guardrail_checked=guardrail_checked,
+            stop_reason=stop_reason,
+            bedrock_latency_ms=bedrock_latency,
+            actual_service_tier=actual_service_tier,
             metadata={
                 **({"ab_variant": ab_variant} if ab_variant else {}),
                 **({"is_canary": is_canary} if is_canary else {}),
@@ -454,6 +464,8 @@ class BedrockRouter:
             cris_profile=used_cris,
             fallback_used=(used_model.model_id != primary.model_id),
             cache_hit=False,
+            prompt_cache_read_tokens=prompt_cache_read,
+            prompt_cache_write_tokens=prompt_cache_write,
         ))
 
         # ── Step 15: Cache the response ─────────────────────────
@@ -579,6 +591,9 @@ class BedrockRouter:
 
         # Yield stream events, tracking TTFT
         usage: dict[str, Any] = {}
+        stream_metrics: dict[str, Any] = {}
+        stream_stop_reason: str = ""
+        stream_service_tier: str = ""
         ttft_ms: float | None = None
         t_stream_start = time.monotonic()
 
@@ -586,15 +601,24 @@ class BedrockRouter:
             # Capture TTFT on first content delta
             if ttft_ms is None and "contentBlockDelta" in event:
                 ttft_ms = (time.monotonic() - t_stream_start) * 1000
-            # Capture usage from metadata event
+            # Capture stop reason from messageStop event
+            if "messageStop" in event:
+                stream_stop_reason = event["messageStop"].get("stopReason", "")
+            # Capture usage, metrics, serviceTier from metadata event
             if "metadata" in event:
-                usage = event["metadata"].get("usage", {})
+                meta = event["metadata"]
+                usage = meta.get("usage", {})
+                stream_metrics = meta.get("metrics", {})
+                stream_service_tier = meta.get("serviceTier", {}).get("type", "")
             yield event
 
         # Post-stream: build decision and record metrics
         elapsed_ms = (time.monotonic() - t_start) * 1000
         input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
         output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
+        prompt_cache_read = usage.get("cacheReadInputTokens", 0)
+        prompt_cache_write = usage.get("cacheWriteInputTokens", 0)
+        bedrock_latency = stream_metrics.get("latencyMs")
         actual_cost = used_model.pricing.estimate_cost(input_tokens, output_tokens)
 
         decision = RoutingDecision(
@@ -615,7 +639,12 @@ class BedrockRouter:
             fallback_used=(used_model.model_id != resolved["primary"].model_id),
             inference_tier=used_tier,
             cris_profile=used_cris,
+            prompt_cache_read_tokens=prompt_cache_read,
+            prompt_cache_write_tokens=prompt_cache_write,
             guardrail_checked=guardrail_checked,
+            stop_reason=stream_stop_reason,
+            bedrock_latency_ms=bedrock_latency,
+            actual_service_tier=stream_service_tier,
         )
         self._last_decision = decision
 
@@ -636,6 +665,8 @@ class BedrockRouter:
             cris_profile=used_cris,
             fallback_used=(used_model.model_id != resolved["primary"].model_id),
             cache_hit=False,
+            prompt_cache_read_tokens=prompt_cache_read,
+            prompt_cache_write_tokens=prompt_cache_write,
         ))
 
         self._observability.emit(
