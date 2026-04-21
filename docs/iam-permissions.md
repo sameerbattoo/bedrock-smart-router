@@ -187,7 +187,72 @@ Required only if you call `PricingRefresher.refresh_from_bedrock()` or `refresh_
 
 ---
 
-## Guardrails Integration (Phase 3, optional)
+## CloudWatch Metrics (optional)
+
+Required only when `observability.cloudwatch_enabled` is set to `true`.
+
+The router publishes custom metrics (RoutingDecisions, Latency, Cost, CacheHits, FallbacksUsed, CircuitBreakerSkips, CostSavings) to a configurable CloudWatch namespace.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockRouterCloudWatchMetrics",
+            "Effect": "Allow",
+            "Action": ["cloudwatch:PutMetricData"],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+Note: `PutMetricData` does not support resource-level restrictions — the `Resource` must be `"*"`. The namespace is controlled in the router config (`observability.cloudwatch_namespace`, default `"BedrockSmartRouter"`).
+
+If you also want to query metrics (e.g. for dashboards or the integration test), add:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockRouterCloudWatchRead",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:PutMetricData",
+                "cloudwatch:GetMetricData",
+                "cloudwatch:ListMetrics"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+**Configuration:**
+
+```yaml
+observability:
+  log_decisions: true
+  cloudwatch_enabled: true
+  cloudwatch_namespace: "MyApp/BedrockRouter"
+```
+
+**Published metrics:**
+
+| Metric | Unit | Dimensions | When |
+|---|---|---|---|
+| `RoutingDecisions` | Count | Model, Strategy, Complexity | Every request |
+| `Latency` | Milliseconds | Model, Strategy, Complexity | When latency > 0 |
+| `Cost` | None (USD) | Model, Strategy, Complexity | When cost > 0 |
+| `CacheHits` | Count | Model, Strategy, Complexity | On cache hits |
+| `FallbacksUsed` | Count | Model, Strategy, Complexity | When fallback triggered |
+| `CircuitBreakerSkips` | Count | Model, Strategy, Complexity | When models skipped |
+| `CostSavings` | None (USD) | Model, Strategy, Complexity | When routing saved money |
+
+---
+
+## Guardrails Integration (optional)
 
 Required only when pre-route or post-route guardrails are configured.
 
@@ -209,7 +274,7 @@ Required only when pre-route or post-route guardrails are configured.
 
 ## Least-Privilege Recommendation
 
-For production, combine only the statements you need. A typical Lambda running the router with DynamoDB metrics and no auto-create:
+For production, combine only the statements you need. A typical Lambda running the router with DynamoDB metrics, CloudWatch observability, and no auto-create:
 
 ```json
 {
@@ -233,6 +298,12 @@ For production, combine only the statements you need. A typical Lambda running t
                 "dynamodb:Scan"
             ],
             "Resource": "arn:aws:dynamodb:us-west-2:123456789012:table/BedrockSmartRouterMetrics"
+        },
+        {
+            "Sid": "CloudWatchMetrics",
+            "Effect": "Allow",
+            "Action": ["cloudwatch:PutMetricData"],
+            "Resource": "*"
         }
     ]
 }
