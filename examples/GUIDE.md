@@ -232,7 +232,7 @@ Works with FastAPI, aiohttp, or any async framework.
 
 ## 14. Model Catalog (`14_model_catalog.py`)
 
-The router ships with a JSON catalog (`data/models.json`) containing 16 Bedrock models. You can:
+The router ships with a JSON catalog (`data/models.json`) containing 39 Bedrock models (27 regional + 12 global CRIS profiles). You can:
 
 - **List and filter** by family, tier, capability, context window
 - **Load overlays** to add custom/imported models or fix stale pricing
@@ -648,3 +648,96 @@ response = router.converse(
 ```
 
 The smart router uses the intent router's exact model as primary, builds a fallback chain around it, and provides retries, circuit breakers, caching, metrics, and observability. If the model is unavailable, it falls back gracefully.
+
+---
+
+## 23. Tag-Based & Conditional Routing (`23_tag_and_conditional_routing.py`)
+
+Route requests based on metadata rather than content. Useful for multi-tier products, team access control, and compliance.
+
+**Tag-based routing** — restrict model pools per tier:
+
+```python
+# Free-tier: cheap models only
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(
+        tags=["free-tier"],
+        exclude_models=["us.anthropic.*"],
+        max_cost_per_request=0.001,
+    ),
+)
+
+# Paid-tier: full access, quality-optimized
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(
+        tags=["paid-tier"],
+        strategy="quality-optimized",
+    ),
+)
+```
+
+**Conditional routing** — drive strategy from metadata:
+
+```python
+# Enterprise user → quality strategy
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(
+        strategy="quality-optimized",
+        metadata={"user_tier": "enterprise", "user_id": "u-001"},
+    ),
+)
+
+# EU user → Anthropic only (GDPR), EU CRIS profile
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(
+        preferred_family="anthropic",
+        metadata={"region": "eu", "compliance": "gdpr"},
+    ),
+)
+```
+
+Tags, metadata, presets, and strategy overrides can all be combined in a single `RoutingConfig`.
+
+---
+
+## 24. Budget Enforcement & Inference Tier Pricing (`24_budget_and_tier_pricing.py`)
+
+Control costs at every level — from per-request ceilings to rolling daily budgets.
+
+**Inference tier pricing multipliers:**
+
+| Tier | Multiplier | Latency | Use Case |
+|---|---|---|---|
+| Flex | 0.50× | Higher (best-effort) | Dev/test, batch, model evals |
+| Standard | 1.0× (base) | Normal | Default production workloads |
+| Priority | 1.75× | Up to 25% better OTPS | Mission-critical, customer-facing |
+
+```python
+from bedrock_smart_router import TIER_PRICING_MULTIPLIER
+
+# Estimate cost across tiers
+model = router.registry.get("us.amazon.nova-pro-v1:0")
+cost_std = model.pricing.estimate_cost(1000, 500)                    # Standard
+cost_pri = model.pricing.estimate_cost(1000, 500, tier="priority")   # 1.75× more
+cost_flx = model.pricing.estimate_cost(1000, 500, tier="flex")       # 0.50× less
+```
+
+**Auto tier selection** — the router picks the tier based on complexity and budget:
+- Simple + tight budget → Flex (if model supports it)
+- Complex/reasoning → Priority (if model supports it)
+- Everything else → Standard
+
+**Per-request cost ceiling:**
+
+```python
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(max_cost_per_request=0.001),
+)
+```
+
+**Rolling budget tracking** — track spend per user/team with hourly and daily limits using `BudgetTracker` and `BudgetRule`. When exceeded, the strategy either downgrades to a cheaper model or rejects the request.

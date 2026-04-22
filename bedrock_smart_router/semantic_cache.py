@@ -80,6 +80,9 @@ class SemanticCache:
         self._region = region
         self._hits = 0
         self._misses = 0
+        # LRU cache for embeddings — avoids redundant Bedrock API calls
+        self._embedding_cache: dict[str, list[float]] = {}
+        self._embedding_cache_max = 500
 
         # Use provided vector store or build from config
         self._store = vector_store or build_vector_store(
@@ -91,7 +94,13 @@ class SemanticCache:
         )
 
     def _get_embedding(self, text: str) -> list[float]:
-        """Compute an embedding vector using Bedrock."""
+        """Compute an embedding vector using Bedrock, with local caching."""
+        # Check local embedding cache first
+        cache_key = hashlib.sha256(text.encode()).hexdigest()[:16]
+        cached = self._embedding_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         if self._session is None:
             import boto3
             self._session = boto3.Session(region_name=self._region)
@@ -101,7 +110,15 @@ class SemanticCache:
             body=json.dumps({"inputText": text}),
         )
         body = json.loads(resp["body"].read())
-        return body.get("embedding", [])
+        embedding = body.get("embedding", [])
+
+        # Store in local cache (evict oldest if full)
+        if len(self._embedding_cache) >= self._embedding_cache_max:
+            oldest = next(iter(self._embedding_cache))
+            del self._embedding_cache[oldest]
+        self._embedding_cache[cache_key] = embedding
+
+        return embedding
 
     def get(
         self,

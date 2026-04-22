@@ -32,10 +32,15 @@ Usage::
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# Max parallel Bedrock embedding calls during route initialization.
+# Keeps us under typical Titan Embed RPM quotas while still being fast.
+_INIT_MAX_WORKERS = 10
 
 
 @dataclass
@@ -82,13 +87,35 @@ class SemanticRouter:
         self._initialized = False
 
     def _ensure_initialized(self) -> None:
-        """Compute embeddings for all route examples (lazy init)."""
+        """Compute embeddings for all route examples (lazy, concurrent).
+
+        Uses a thread pool to call the Bedrock embedding API in
+        parallel (up to ``_INIT_MAX_WORKERS`` concurrent calls).
+        For 40 examples at ~100ms each, this takes ~400ms instead of 4s.
+        """
         if self._initialized:
             return
-        for route in self.routes:
-            for example in route.examples:
-                emb = self._get_embedding(example)
-                self._route_embeddings.append((route, example, emb))
+
+        all_examples: list[tuple[SemanticRoute, str]] = [
+            (route, example)
+            for route in self.routes
+            for example in route.examples
+        ]
+
+        if not all_examples:
+            self._initialized = True
+            return
+
+        # Fire all embedding calls concurrently
+        with ThreadPoolExecutor(max_workers=_INIT_MAX_WORKERS) as pool:
+            embeddings = list(pool.map(
+                lambda pair: self._get_embedding(pair[1]),
+                all_examples,
+            ))
+
+        for (route, example), emb in zip(all_examples, embeddings):
+            self._route_embeddings.append((route, example, emb))
+
         self._initialized = True
         logger.info(
             "Semantic router initialized with %d examples across %d routes",
@@ -110,14 +137,8 @@ class SemanticRouter:
 
     @staticmethod
     def _cosine_similarity(a: list[float], b: list[float]) -> float:
-        if not a or not b or len(a) != len(b):
-            return 0.0
-        dot = sum(x * y for x, y in zip(a, b))
-        norm_a = sum(x * x for x in a) ** 0.5
-        norm_b = sum(x * x for x in b) ** 0.5
-        if norm_a == 0 or norm_b == 0:
-            return 0.0
-        return dot / (norm_a * norm_b)
+        from bedrock_smart_router.utils import cosine_similarity
+        return cosine_similarity(a, b)
 
     def route(self, query: str) -> SemanticRouteMatch | None:
         """Match a query to the best route by embedding similarity.

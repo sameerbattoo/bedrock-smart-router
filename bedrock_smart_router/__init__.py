@@ -3,6 +3,7 @@
 from bedrock_smart_router.router import BedrockRouter
 from bedrock_smart_router.config import RouterConfig, RoutingConfig, MetricsConfig, ROUTING_PRESETS
 from bedrock_smart_router.models import BedrockModel, ModelCapabilities, ModelPricing, TIER_PRICING_MULTIPLIER
+from bedrock_smart_router.model_registry import base_model_id
 from bedrock_smart_router.observability import RoutingEvent
 from bedrock_smart_router.exceptions import NoModelsMatchError
 

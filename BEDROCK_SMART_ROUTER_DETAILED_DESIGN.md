@@ -45,7 +45,7 @@ The Bedrock Smart Router fills this gap with:
 - **Zero-API-call request classification** for sub-millisecond routing overhead
 - **Cross-family routing** (e.g., Nova Micro for simple tasks, Claude Sonnet for complex ones)
 - **Bedrock-native awareness** of CRIS, inference tiers (Standard/Priority/Flex), prompt caching, provisioned throughput, guardrails, and application inference profiles
-- **Two delivery modes**: embeddable Python SDK (single `pip install`) or standalone proxy server
+- **Two delivery modes**: embeddable Python SDK (single `pip install`) or standalone proxy server *(proxy mode planned, not yet implemented)*
 - **Production-grade reliability**: circuit breakers, multi-level fallbacks, cooldown tracking
 - **Built-in A/B testing and canary deployment** for safe model rollouts
 
@@ -259,7 +259,7 @@ Academic framework from LMSYS for training and evaluating LLM routers.
 
 2. **Lightweight and embeddable**: Single `pip install bedrock-smart-router`. No Redis, no Docker, no GPU required. Works in Lambda, ECS, EC2, or local development.
 
-3. **Two delivery modes**: Use as a Python SDK (import and call) or deploy as a standalone proxy server (OpenAI-compatible endpoint). Same routing engine powers both.
+3. **Two delivery modes**: Use as a Python SDK (import and call) or deploy as a standalone proxy server (OpenAI-compatible endpoint). Same routing engine powers both. *(Note: Proxy mode is designed but not yet implemented. The SDK is fully functional.)*
 
 4. **Zero-overhead classification**: Request analysis uses local heuristics (no API calls) for sub-millisecond routing decisions. Optional embedding-based classification for higher accuracy at ~100ms cost.
 
@@ -269,7 +269,7 @@ Academic framework from LMSYS for training and evaluating LLM routers.
 
 7. **Observable by default**: Every routing decision is logged with full context (why this model, what alternatives were scored, estimated vs actual cost). Integrates with CloudWatch, OpenTelemetry, or custom callbacks.
 
-8. **Minimal dependencies**: Core SDK depends only on `boto3`. Optional extras for caching (`[redis]`), semantic routing (`[embeddings]`), and proxy mode (`[proxy]`).
+8. **Minimal dependencies**: Core SDK depends only on `boto3`. Optional extras for caching (`[redis]`), semantic routing (`[embeddings]`), and proxy mode (`[proxy]` — planned, not yet implemented).
 
 ---
 
@@ -311,14 +311,17 @@ print(response["routing_decision"])
 
 ### 5.2 Proxy Mode
 
+> **⚠️ NOT YET IMPLEMENTED** — Proxy mode is designed but not built. The SDK (Section 5.1) is fully functional and covers all routing, reliability, and observability features. Proxy mode is planned for a future release if there is demand from multi-language teams.
+
 ```bash
+# Planned — not yet available
 pip install bedrock-smart-router[proxy]
 bedrock-router serve --port 8080 --config router-config.yaml
 ```
 
-Exposes an OpenAI-compatible `/v1/chat/completions` endpoint that internally routes to Bedrock models.
+Would expose an OpenAI-compatible `/v1/chat/completions` endpoint that internally routes to Bedrock models.
 
-**When to use proxy mode:**
+**When proxy mode would be useful:**
 - Multi-language applications (Node.js, Go, Java calling the proxy)
 - Team-wide shared routing configuration
 - Centralized observability and cost tracking
@@ -326,16 +329,16 @@ Exposes an OpenAI-compatible `/v1/chat/completions` endpoint that internally rou
 
 ### 5.3 Feature Parity
 
-| Feature | SDK Mode | Proxy Mode |
+| Feature | SDK Mode | Proxy Mode *(planned)* |
 |---|---|---|
-| All routing strategies | Yes | Yes |
-| Fallbacks and circuit breakers | Yes | Yes |
-| Response caching | In-memory only | In-memory + Redis/ElastiCache |
-| A/B testing | Yes | Yes + sticky sessions via headers |
-| Multi-tenant cost tracking | Via AIP tags | Via API keys + AIP tags |
-| Budget enforcement | Per-instance | Per-key, per-team, per-org |
-| OpenAI API compatibility | No (Bedrock Converse API) | Yes |
-| Observability | Callbacks + CloudWatch | + Prometheus metrics endpoint |
+| All routing strategies | ✅ Yes | Planned |
+| Fallbacks and circuit breakers | ✅ Yes | Planned |
+| Response caching | ✅ In-memory + Redis | Planned (+ Redis/ElastiCache) |
+| A/B testing | ✅ Yes | Planned (+ sticky sessions via headers) |
+| Multi-tenant cost tracking | ✅ Via AIP tags | Planned (+ API keys) |
+| Budget enforcement | ✅ Per-instance | Planned (per-key, per-team) |
+| OpenAI API compatibility | No (Bedrock Converse API) | Planned |
+| Observability | ✅ Callbacks + CloudWatch + OTEL | Planned (+ Prometheus) |
 
 ---
 
@@ -1091,7 +1094,7 @@ The request analyzer detects content sensitivity signals (PII patterns, financia
 - **No data persistence by default**: Request/response content is not logged or stored unless the user explicitly enables caching or logging.
 - **Cache encryption**: When Redis caching is enabled, supports TLS in transit and encryption at rest via ElastiCache encryption.
 - **Tenant isolation**: Multi-tenant mode uses Bedrock AIPs for cost isolation. The router does not provide data isolation between tenants — that remains the application's responsibility.
-- **Proxy mode authentication**: The proxy server supports API key authentication and can integrate with AWS IAM, Cognito, or custom auth via middleware.
+- **Proxy mode authentication**: *(Not yet implemented.)* The planned proxy server would support API key authentication and integration with AWS IAM, Cognito, or custom auth via middleware.
 - **Guardrails as security layer**: Pre-route guardrails can enforce content policies, block prompt injection attempts, and redact PII before any model sees the data.
 
 
@@ -1184,6 +1187,8 @@ router.refresh_pricing()
 
 
 ## 17. Proxy Mode API Design
+
+> **⚠️ NOT YET IMPLEMENTED** — This section describes the planned proxy mode API. It has not been built. All functionality below is a design proposal for a future release.
 
 ### 17.1 OpenAI-Compatible Endpoint
 
@@ -1405,16 +1410,17 @@ metrics_store:
 
 **Milestone:** Production-grade deployment features. Teams can safely roll out new models with A/B tests and canary deployments.
 
-### Phase 5: Proxy Mode
+### Phase 5: Proxy Mode ⚠️ *NOT YET IMPLEMENTED*
 
-| Component | Description | Priority |
-|---|---|---|
-| `proxy_server.py` | FastAPI-based proxy with OpenAI-compatible endpoints | P1 |
-| `proxy_auth.py` | API key authentication + IAM integration | P1 |
-| `proxy_admin.py` | Admin endpoints (metrics, config reload, health) | P1 |
-| `redis_cache.py` | Redis/ElastiCache cache backend for proxy mode | P2 |
-| `prometheus_metrics.py` | Prometheus metrics endpoint | P2 |
-| `opentelemetry.py` | OpenTelemetry trace/metric export | P2 |
+> Proxy mode is designed but not built. Phases 1–4 (SDK) are complete and production-ready. Proxy mode will be implemented if there is demand from multi-language teams that need an HTTP endpoint.
+
+| Component | Description | Priority | Status |
+|---|---|---|---|
+| `proxy_server.py` | FastAPI-based proxy with OpenAI-compatible endpoints | P1 | Not started |
+| `proxy_auth.py` | API key authentication + IAM integration | P1 | Not started |
+| `proxy_admin.py` | Admin endpoints (metrics, config reload, health) | P1 | Not started |
+| `redis_cache.py` | Redis/ElastiCache cache backend for proxy mode | P2 | Not started |
+| `prometheus_metrics.py` | Prometheus metrics endpoint | P2 | Not started |
 
 **Milestone:** Proxy mode available for multi-language teams. Single deployment serves all applications.
 
@@ -1426,7 +1432,7 @@ metrics_store:
 | **Bedrock-specific** | No | No | No | No | No | Yes | **Yes** |
 | **Open source** | Yes | No | Partial | No | Yes | N/A | **Yes** |
 | **SDK mode (no server)** | Yes | No | No | No | No | N/A | **Yes** |
-| **Proxy mode** | Yes | Yes (SaaS) | Yes | Yes (SaaS) | Yes | N/A | **Yes** |
+| **Proxy mode** | Yes | Yes (SaaS) | Yes | Yes (SaaS) | Yes | N/A | **Planned (not yet built)** |
 | **Zero-dependency core** | No (Redis) | N/A | No | N/A | No (GPU) | N/A | **Yes (boto3 only)** |
 | **Lambda-friendly** | Partial | No | No | No | No | Yes | **Yes** |
 | Cross-family routing | Generic | Generic | Generic | Yes | Yes | No (single family) | **Yes (Bedrock-aware)** |

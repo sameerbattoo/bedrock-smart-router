@@ -13,6 +13,7 @@ guardrails, and AIP multi-tenant support.
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from typing import Any, Callable
 
@@ -181,41 +182,20 @@ class BedrockRouter:
         # ── Step 1: Pre-route guardrail check ───────────────────
         guardrail_checked = False
         if self._guardrails.has_pre_route:
-            result = self._guardrails.check_input(messages)
+            gr_result = self._guardrails.check_input(messages)
             guardrail_checked = True
-            # If sanitize mode returned cleaned text, we could swap
-            # messages here — for now we just let the block/pass through
+            # If sanitize mode returned cleaned text, swap it in
+            if gr_result.output_text and gr_result.blocked:
+                # Guardrail sanitized the input — replace last user message
+                for msg in reversed(messages):
+                    if msg.get("role") == "user":
+                        msg["content"] = [{"text": gr_result.output_text}]
+                        break
 
         # ── Step 2: Analyse the request ─────────────────────────
         analysis = self._analyzer.analyze(messages, system, tool_config)
 
-        # ── Step 3: Determine eligible models ───────────────────
-        min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
-        candidates = self._registry.eligible_models(
-            min_tier=min_tier,
-            requires_vision=analysis.requires_vision,
-            requires_tool_use=analysis.requires_tool_use,
-            min_context=routing.min_context_window,
-            exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
-            family=routing.preferred_family,
-        )
-
-        # ── Step 4: Filter by context window ────────────────────
-        candidates = self._context_validator.filter_by_context(
-            candidates, messages, system
-        )
-        if not candidates:
-            self._raise_no_models_error(
-                analysis=analysis,
-                routing=routing,
-                messages=messages,
-                system=system,
-            )
-
-        # ── Step 5: Check response cache (before strategy) ──────
-        # Cache key is based on the request only, not the model.
-        # This means identical requests always hit the cache even if
-        # the router would have picked a different model this time.
+        # ── Step 3: Check response cache ────────────────────────
         cached = self._cache.get(messages, system, inference_config)
         if cached is not None:
             decision = RoutingDecision(
@@ -238,133 +218,40 @@ class BedrockRouter:
             )
             return cached
 
-        # ── Step 6: Filter by circuit breaker ───────────────────
-        available = [
-            c for c in candidates
-            if self._circuit_breakers.is_available(c.model_id)
-        ]
-        skipped = [c.model_id for c in candidates if c not in available]
-        if not available:
-            logger.warning("All candidates have open circuit breakers, using all anyway")
-            available = candidates
-            skipped = []
-
-        # ── Step 6: Run strategy ────────────────────────────────
-        strategy = resolve_strategy(
-            strategy_name, weights=weights, metrics_store=self._metrics_store,
+        # ── Step 4: Resolve model (shared with converse_stream) ─
+        resolved = self._resolve_model(
+            analysis=analysis, routing=routing,
+            strategy_name=strategy_name, weights=weights,
+            messages=messages, system=system,
         )
+        primary = resolved["primary"]
+        fallback_chain = resolved["fallback_chain"]
+        skipped = resolved["skipped"]
+        cache_savings = resolved["cache_savings"]
+        ab_variant = resolved["ab_variant"]
+        is_canary = resolved["is_canary"]
 
-        # A/B test, canary, and preferred_model can override strategy
-        ab_variant = None
-        is_canary = False
-
-        # preferred_model takes highest priority — user explicitly chose
-        if routing.preferred_model:
-            override = self._registry.get(routing.preferred_model)
-            result = strategy.select(available, analysis)
-            if override and override in available:
-                primary = override
-            else:
-                logger.warning(
-                    "preferred_model '%s' not in eligible candidates, "
-                    "falling back to strategy selection",
-                    routing.preferred_model,
-                )
-                primary = result.selected_model
-        elif self._ab_test.is_active:
-            user_id = (routing.metadata or {}).get("user_id")
-            ab_result = self._ab_test.assign(user_id=user_id)
-            if ab_result:
-                ab_variant = ab_result.variant_name
-                override_model = self._registry.get(ab_result.model_id)
-                if override_model and override_model in available:
-                    result = strategy.select(available, analysis)
-                    primary = override_model  # Override after scoring
-                else:
-                    result = strategy.select(available, analysis)
-                    primary = result.selected_model
-            else:
-                result = strategy.select(available, analysis)
-                primary = result.selected_model
-        elif self._canary.is_active:
-            canary_model_id, is_canary = self._canary.select_model()
-            result = strategy.select(available, analysis)
-            override_model = self._registry.get(canary_model_id)
-            if is_canary and override_model and override_model in available:
-                primary = override_model
-            else:
-                primary = result.selected_model
-                is_canary = False
-        else:
-            result = strategy.select(available, analysis)
-            primary = result.selected_model
-
-        # ── Step 6b: Prompt cache boost ─────────────────────────
-        cache_savings = 0.0
-        if self._config.prompt_cache_boost and (system or len(messages) > 2):
-            benefit = self._cache_advisor.estimate(primary, messages, system)
-            cache_savings = benefit.savings_per_request
-            # If a cache-capable model wasn't selected but would save
-            # significantly, check if any cache-capable candidate scores
-            # close enough to swap
-            if not benefit.cache_eligible and cache_savings == 0:
-                ranked = self._cache_advisor.rank_models_by_cache_benefit(
-                    available, messages, system,
-                )
-                for alt_model, alt_benefit in ranked:
-                    if not alt_benefit.cache_eligible:
-                        continue
-                    alt_score = result.scores.get(alt_model.model_id, {}).get("composite", 0)
-                    primary_score = result.scores.get(primary.model_id, {}).get("composite", 0)
-                    # Swap if the cache-capable model is within 10% of primary score
-                    if alt_score >= primary_score * 0.90:
-                        logger.info(
-                            "Swapping to %s for prompt cache savings ($%.6f/req)",
-                            alt_model.model_id, alt_benefit.savings_per_request,
-                        )
-                        primary = alt_model
-                        cache_savings = alt_benefit.savings_per_request
-                        break
-
-        # ── Step 8: Select CRIS profile ────────────────────────
-        cris_profile = self._cris.select_profile(primary)
-
-        # ── Step 6d: Select inference tier ──────────────────────
-        inference_tier = self._tier_selector.select_tier(
-            primary, analysis,
-            max_cost_per_request=routing.max_cost_per_request,
-        )
-
-        # ── Step 10: Build fallback chain ───────────────────────
-        fallback_chain = self._fallback_handler.build_chain(
-            primary, result.fallback_chain
-        )
-
-        # ── Step 9: Invoke with fallbacks ───────────────────────
+        # ── Step 5: Invoke with fallbacks ───────────────────────
         models_to_try = [primary] + fallback_chain
         last_error: Exception | None = None
         used_model: BedrockModel | None = None
         response: dict[str, Any] | None = None
         elapsed_ms: float = 0.0
-        used_cris: str = cris_profile
-        used_tier: str = inference_tier
+        used_cris: str = resolved["cris_profile"]
+        used_tier: str = resolved["inference_tier"]
 
         for i, model in enumerate(models_to_try):
             if i > 0 and not self._circuit_breakers.is_available(model.model_id):
                 continue
 
-            # Resolve CRIS + tier for this specific model
-            model_cris = self._cris.select_profile(model) if i > 0 else cris_profile
-            model_tier = self._tier_selector.select_tier(model, analysis) if i > 0 else inference_tier
-
-            # Resolve AIP if multi-tenant
+            model_cris = self._cris.select_profile(model) if i > 0 else resolved["cris_profile"]
+            model_tier = self._tier_selector.select_tier(model, analysis) if i > 0 else resolved["inference_tier"]
             invoke_model_id = self._aip.get_model_id_for_tenant(
                 model_cris, routing.metadata or {},
             )
 
             try:
                 t0 = time.monotonic()
-                # Build request metadata from routing metadata
                 req_metadata = {}
                 if routing.metadata:
                     req_metadata = {
@@ -404,13 +291,13 @@ class BedrockRouter:
                 f"All models in fallback chain failed. Last error: {last_error}"
             ) from last_error
 
-        # ── Step 10: Post-route guardrail check ─────────────────
+        # ── Step 6: Post-route guardrail check ──────────────────
         if self._guardrails.has_post_route:
             output_text = self._extract_output_text(response)
             if output_text:
                 self._guardrails.check_output(output_text)
 
-        # ── Step 10b: Record canary result ──────────────────────
+        # ── Step 7: Record canary result ────────────────────────
         if is_canary or self._canary.is_active:
             self._canary.record_result(
                 is_canary=is_canary,
@@ -418,7 +305,7 @@ class BedrockRouter:
                 success=True,
             )
 
-        # ── Step 10c: Shadow mode — mirror to secondary model ───
+        # ── Step 8: Shadow mode ─────────────────────────────────
         if self._shadow.should_shadow():
             self._shadow.mirror(
                 primary_model=used_model.model_id,
@@ -428,7 +315,7 @@ class BedrockRouter:
                 inference_config=inference_config,
             )
 
-        # ── Step 11: Build routing decision ─────────────────────
+        # ── Step 9: Build routing decision ──────────────────────
         usage = response.get("usage", {})
         input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
         output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
@@ -448,8 +335,8 @@ class BedrockRouter:
             strategy_used=strategy_name,
             complexity_detected=analysis.complexity.value,
             complexity_score=analysis.complexity_score,
-            candidates_evaluated=len(available),
-            candidate_scores=result.scores,
+            candidates_evaluated=resolved["candidates_evaluated"],
+            candidate_scores=resolved["scores"],
             fallback_chain=[m.model_id for m in fallback_chain],
             estimated_cost=primary.pricing.estimate_cost(
                 analysis.estimated_input_tokens,
@@ -485,57 +372,46 @@ class BedrockRouter:
         self._last_decision = decision
         response["routing_decision"] = decision
 
-        # ── Step 12: Record metrics ─────────────────────────────
+        # ── Step 10: Record metrics (background) ────────────────
         tenant_id = (routing.metadata or {}).get("tenant", "")
-        self._metrics_store.record(RequestRecord(
-            model_id=used_model.model_id,
-            timestamp=time.monotonic(),
-            latency_ms=elapsed_ms,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            cost=actual_cost,
-            success=True,
-            strategy=strategy_name,
-            complexity=analysis.complexity.value,
-            tenant_id=tenant_id,
-            inference_tier=used_tier,
-            cris_profile=used_cris,
-            fallback_used=(used_model.model_id != primary.model_id),
-            cache_hit=False,
-            prompt_cache_read_tokens=prompt_cache_read,
-            prompt_cache_write_tokens=prompt_cache_write,
-        ))
+        most_expensive = max(
+            (m.pricing.estimate_cost(input_tokens, output_tokens)
+             for m in self._registry.eligible_models(prefer_global=self._config.cris.allow_global)),
+            default=0.0,
+        )
+        self._record_async(
+            RequestRecord(
+                model_id=used_model.model_id,
+                timestamp=time.monotonic(),
+                latency_ms=elapsed_ms,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost=actual_cost,
+                success=True,
+                strategy=strategy_name,
+                complexity=analysis.complexity.value,
+                tenant_id=tenant_id,
+                inference_tier=used_tier,
+                cris_profile=used_cris,
+                fallback_used=(used_model.model_id != primary.model_id),
+                cache_hit=False,
+                prompt_cache_read_tokens=prompt_cache_read,
+                prompt_cache_write_tokens=prompt_cache_write,
+            ),
+            decision,
+            duration_ms=(time.monotonic() - t_start) * 1000,
+            tags=routing.tags,
+            metadata=routing.metadata,
+            most_expensive_cost=most_expensive,
+        )
 
-        # ── Step 15: Cache the response ─────────────────────────
+        # ── Step 11: Cache the response ─────────────────────────
         response["_cached_model"] = used_model.model_id
         self._cache.put(
             messages, response,
             model_id=used_model.model_id,
             system=system,
             inference_config=inference_config,
-        )
-
-        # ── Step 14: Emit observability event ───────────────────
-        most_expensive = max(
-            (m.pricing.estimate_cost(input_tokens, output_tokens) for m in available),
-            default=0.0,
-        )
-        self._observability.emit(
-            decision,
-            duration_ms=(time.monotonic() - t_start) * 1000,
-            tags=routing.tags, metadata=routing.metadata,
-            most_expensive_cost=most_expensive,
-        )
-
-        # ── OTEL: record span and metrics ───────────────────────
-        self._otel.record_request(
-            model=decision.selected_model,
-            strategy=decision.strategy_used,
-            complexity=decision.complexity_detected,
-            latency_ms=decision.latency_ms or 0,
-            cost=decision.actual_cost or 0,
-            cache_hit=decision.cache_hit,
-            fallback_used=decision.fallback_used,
         )
 
         return response
@@ -717,42 +593,30 @@ class BedrockRouter:
         self._last_decision = decision
 
         stream_tenant = (routing.metadata or {}).get("tenant", "")
-        self._metrics_store.record(RequestRecord(
-            model_id=used_model.model_id,
-            timestamp=time.monotonic(),
-            latency_ms=elapsed_ms,
-            ttft_ms=ttft_ms or 0.0,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            cost=actual_cost,
-            success=True,
-            strategy=strategy_name,
-            complexity=analysis.complexity.value,
-            tenant_id=stream_tenant,
-            inference_tier=used_tier,
-            cris_profile=used_cris,
-            fallback_used=(used_model.model_id != resolved["primary"].model_id),
-            cache_hit=False,
-            prompt_cache_read_tokens=prompt_cache_read,
-            prompt_cache_write_tokens=prompt_cache_write,
-        ))
-
-        self._observability.emit(
+        self._record_async(
+            RequestRecord(
+                model_id=used_model.model_id,
+                timestamp=time.monotonic(),
+                latency_ms=elapsed_ms,
+                ttft_ms=ttft_ms or 0.0,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost=actual_cost,
+                success=True,
+                strategy=strategy_name,
+                complexity=analysis.complexity.value,
+                tenant_id=stream_tenant,
+                inference_tier=used_tier,
+                cris_profile=used_cris,
+                fallback_used=(used_model.model_id != resolved["primary"].model_id),
+                cache_hit=False,
+                prompt_cache_read_tokens=prompt_cache_read,
+                prompt_cache_write_tokens=prompt_cache_write,
+            ),
             decision,
             duration_ms=elapsed_ms,
-            tags=routing.tags, metadata=routing.metadata,
-        )
-
-        # ── OTEL: record span and metrics ───────────────────────
-        self._otel.record_request(
-            model=decision.selected_model,
-            strategy=decision.strategy_used,
-            complexity=decision.complexity_detected,
-            latency_ms=decision.latency_ms or 0,
-            cost=decision.actual_cost or 0,
-            cache_hit=False,
-            fallback_used=decision.fallback_used,
-            ttft_ms=decision.ttft_ms,
+            tags=routing.tags,
+            metadata=routing.metadata,
         )
 
         # Yield final event with routing decision
@@ -782,6 +646,7 @@ class BedrockRouter:
             min_context=routing.min_context_window,
             exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
             family=routing.preferred_family,
+            prefer_global=self._config.cris.allow_global,
         )
         candidates = self._context_validator.filter_by_context(candidates, messages, system)
         if not candidates:
@@ -795,10 +660,24 @@ class BedrockRouter:
 
         strategy = resolve_strategy(strategy_name, weights=weights, metrics_store=self._metrics_store)
 
-        # A/B / canary overrides
+        # A/B / canary / preferred_model overrides
         ab_variant = None
         is_canary = False
-        if self._ab_test.is_active:
+
+        # preferred_model takes highest priority — user explicitly chose
+        if routing.preferred_model:
+            override = self._registry.get(routing.preferred_model)
+            result = strategy.select(available, analysis)
+            if override and override in available:
+                primary = override
+            else:
+                logger.warning(
+                    "preferred_model '%s' not in eligible candidates, "
+                    "falling back to strategy selection",
+                    routing.preferred_model,
+                )
+                primary = result.selected_model
+        elif self._ab_test.is_active:
             user_id = (routing.metadata or {}).get("user_id")
             ab_result = self._ab_test.assign(user_id=user_id)
             if ab_result:
@@ -839,9 +718,12 @@ class BedrockRouter:
                         cache_savings = alt_b.savings_per_request
                         break
 
+        # Build fallback chain from the PRIMARY model (not the strategy pick)
+        fallback_chain = self._fallback_handler.build_chain(primary, result.fallback_chain)
+
         return {
             "primary": primary,
-            "fallback_chain": self._fallback_handler.build_chain(primary, result.fallback_chain),
+            "fallback_chain": fallback_chain,
             "cris_profile": self._cris.select_profile(primary),
             "inference_tier": self._tier_selector.select_tier(primary, analysis, max_cost_per_request=routing.max_cost_per_request),
             "candidates_evaluated": len(available),
@@ -851,6 +733,52 @@ class BedrockRouter:
             "ab_variant": ab_variant,
             "is_canary": is_canary,
         }
+
+    def _record_async(
+        self,
+        record: RequestRecord,
+        decision: RoutingDecision,
+        *,
+        duration_ms: float,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        most_expensive_cost: float = 0.0,
+    ) -> None:
+        """Fire metrics, observability, and OTEL recording in a background thread.
+
+        This avoids blocking the response on DynamoDB writes, CloudWatch
+        publishes, and OTEL exports — typically saving 10–30ms per request.
+        """
+        def _work() -> None:
+            try:
+                self._metrics_store.record(record)
+            except Exception:
+                logger.debug("Background metrics record failed", exc_info=True)
+            try:
+                self._observability.emit(
+                    decision,
+                    duration_ms=duration_ms,
+                    tags=tags,
+                    metadata=metadata,
+                    most_expensive_cost=most_expensive_cost,
+                )
+            except Exception:
+                logger.debug("Background observability emit failed", exc_info=True)
+            try:
+                self._otel.record_request(
+                    model=decision.selected_model,
+                    strategy=decision.strategy_used,
+                    complexity=decision.complexity_detected,
+                    latency_ms=decision.latency_ms or 0,
+                    cost=decision.actual_cost or 0,
+                    cache_hit=decision.cache_hit,
+                    fallback_used=decision.fallback_used,
+                    ttft_ms=decision.ttft_ms,
+                )
+            except Exception:
+                logger.debug("Background OTEL record failed", exc_info=True)
+
+        threading.Thread(target=_work, daemon=True).start()
 
     def _invoke_bedrock(
         self,
@@ -908,7 +836,14 @@ class BedrockRouter:
         min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
         rejections: list[ModelRejection] = []
 
+        # Deduplicate: only show one entry per base model (skip global
+        # variants — they have the same capabilities as the regional entry)
+        seen_base: set[str] = set()
         for m in self._registry.all_models:
+            bm = m.base_model_id
+            if bm in seen_base:
+                continue
+            seen_base.add(bm)
             reasons: list[str] = []
             # Tier check
             if min_tier:

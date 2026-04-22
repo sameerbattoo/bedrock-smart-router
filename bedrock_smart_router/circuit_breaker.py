@@ -10,6 +10,7 @@ States:
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -42,11 +43,15 @@ class _ModelCircuit:
 
 
 class CircuitBreakerRegistry:
-    """Manages circuit breakers for all models."""
+    """Manages circuit breakers for all models.
+
+    Thread-safe: all state reads and mutations are protected by a lock.
+    """
 
     def __init__(self, config: CircuitBreakerConfig | None = None) -> None:
         self.config = config or CircuitBreakerConfig()
         self._circuits: dict[str, _ModelCircuit] = {}
+        self._lock = threading.Lock()
 
     def _get(self, model_id: str) -> _ModelCircuit:
         if model_id not in self._circuits:
@@ -55,79 +60,85 @@ class CircuitBreakerRegistry:
 
     def is_available(self, model_id: str) -> bool:
         """Check whether a model is available (circuit not OPEN)."""
-        circuit = self._get(model_id)
-        now = time.monotonic()
+        with self._lock:
+            circuit = self._get(model_id)
+            now = time.monotonic()
 
-        if circuit.state == CircuitState.CLOSED:
-            return True
-
-        if circuit.state == CircuitState.OPEN:
-            cooldown = (
-                self.config.throttle_cooldown_seconds
-                if circuit.is_throttle
-                else self.config.cooldown_seconds
-            )
-            if now - circuit.last_opened_at >= cooldown:
-                circuit.state = CircuitState.HALF_OPEN
-                circuit.half_open_attempts = 0
-                logger.info("Circuit for %s -> HALF_OPEN (probing)", model_id)
+            if circuit.state == CircuitState.CLOSED:
                 return True
-            return False
 
-        # HALF_OPEN — allow limited probe requests
-        if circuit.state == CircuitState.HALF_OPEN:
-            return circuit.half_open_attempts < self.config.half_open_max_requests
+            if circuit.state == CircuitState.OPEN:
+                cooldown = (
+                    self.config.throttle_cooldown_seconds
+                    if circuit.is_throttle
+                    else self.config.cooldown_seconds
+                )
+                if now - circuit.last_opened_at >= cooldown:
+                    circuit.state = CircuitState.HALF_OPEN
+                    circuit.half_open_attempts = 0
+                    logger.info("Circuit for %s -> HALF_OPEN (probing)", model_id)
+                    return True
+                return False
 
-        return True  # pragma: no cover
+            # HALF_OPEN — allow limited probe requests
+            if circuit.state == CircuitState.HALF_OPEN:
+                return circuit.half_open_attempts < self.config.half_open_max_requests
+
+            return True  # pragma: no cover
 
     def record_success(self, model_id: str) -> None:
         """Record a successful request — may close a half-open circuit."""
-        circuit = self._get(model_id)
-        if circuit.state == CircuitState.HALF_OPEN:
-            circuit.state = CircuitState.CLOSED
-            circuit.failures.clear()
-            logger.info("Circuit for %s -> CLOSED (probe succeeded)", model_id)
+        with self._lock:
+            circuit = self._get(model_id)
+            if circuit.state == CircuitState.HALF_OPEN:
+                circuit.state = CircuitState.CLOSED
+                circuit.failures.clear()
+                logger.info("Circuit for %s -> CLOSED (probe succeeded)", model_id)
 
     def record_failure(self, model_id: str, *, is_throttle: bool = False) -> None:
         """Record a failed request — may open the circuit."""
-        circuit = self._get(model_id)
-        now = time.monotonic()
+        with self._lock:
+            circuit = self._get(model_id)
+            now = time.monotonic()
 
-        if circuit.state == CircuitState.HALF_OPEN:
-            circuit.state = CircuitState.OPEN
-            circuit.last_opened_at = now
-            circuit.is_throttle = is_throttle
-            circuit.half_open_attempts = 0
-            logger.warning("Circuit for %s -> OPEN (probe failed)", model_id)
-            return
+            if circuit.state == CircuitState.HALF_OPEN:
+                circuit.state = CircuitState.OPEN
+                circuit.last_opened_at = now
+                circuit.is_throttle = is_throttle
+                circuit.half_open_attempts = 0
+                logger.warning("Circuit for %s -> OPEN (probe failed)", model_id)
+                return
 
-        # Prune old failures outside the window
-        cutoff = now - self.config.window_seconds
-        while circuit.failures and circuit.failures[0] < cutoff:
-            circuit.failures.popleft()
+            # Prune old failures outside the window
+            cutoff = now - self.config.window_seconds
+            while circuit.failures and circuit.failures[0] < cutoff:
+                circuit.failures.popleft()
 
-        circuit.failures.append(now)
+            circuit.failures.append(now)
 
-        if len(circuit.failures) >= self.config.failure_threshold:
-            circuit.state = CircuitState.OPEN
-            circuit.last_opened_at = now
-            circuit.is_throttle = is_throttle
-            logger.warning(
-                "Circuit for %s -> OPEN (%d failures in %.0fs)",
-                model_id,
-                len(circuit.failures),
-                self.config.window_seconds,
-            )
+            if len(circuit.failures) >= self.config.failure_threshold:
+                circuit.state = CircuitState.OPEN
+                circuit.last_opened_at = now
+                circuit.is_throttle = is_throttle
+                logger.warning(
+                    "Circuit for %s -> OPEN (%d failures in %.0fs)",
+                    model_id,
+                    len(circuit.failures),
+                    self.config.window_seconds,
+                )
 
     def get_state(self, model_id: str) -> CircuitState:
-        return self._get(model_id).state
+        with self._lock:
+            return self._get(model_id).state
 
     def get_all_states(self) -> dict[str, CircuitState]:
-        return {mid: c.state for mid, c in self._circuits.items()}
+        with self._lock:
+            return {mid: c.state for mid, c in self._circuits.items()}
 
     def reset(self, model_id: str) -> None:
         """Manually reset a circuit to CLOSED."""
-        circuit = self._get(model_id)
-        circuit.state = CircuitState.CLOSED
-        circuit.failures.clear()
-        logger.info("Circuit for %s manually reset -> CLOSED", model_id)
+        with self._lock:
+            circuit = self._get(model_id)
+            circuit.state = CircuitState.CLOSED
+            circuit.failures.clear()
+            logger.info("Circuit for %s manually reset -> CLOSED", model_id)

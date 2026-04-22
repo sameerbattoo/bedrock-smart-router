@@ -6,6 +6,10 @@ Fallback chain:
   3. Cross-family equivalent tier (e.g., Sonnet -> Nova Pro)
   4. CRIS profile retry
   5. Default safe model
+
+Geography deduplication: if the primary is ``global.anthropic.claude-sonnet-4-6``,
+the chain will not include ``us.anthropic.claude-sonnet-4-6`` (same underlying
+model, different CRIS profile — not a useful fallback).
 """
 
 from __future__ import annotations
@@ -15,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from bedrock_smart_router.models import BedrockModel, Tier
-from bedrock_smart_router.model_registry import ModelRegistry
+from bedrock_smart_router.model_registry import ModelRegistry, base_model_id
 
 logger = logging.getLogger(__name__)
 
@@ -51,18 +55,25 @@ class FallbackHandler:
     ) -> list[BedrockModel]:
         """Build an ordered fallback chain for *primary*.
 
-        The chain is de-duplicated and capped at ``config.max_depth``.
+        The chain is de-duplicated by base model identity — geography
+        variants (``us.*`` vs ``global.*``) of the same model are
+        treated as duplicates since they hit the same underlying model.
         """
         if not self.config.enabled:
             return []
 
         chain: list[BedrockModel] = []
-        seen: set[str] = {primary.model_id}
+        seen_ids: set[str] = {primary.model_id}
+        seen_base: set[str] = {primary.base_model_id}
 
         def _add(model: BedrockModel | None) -> None:
-            if model and model.model_id not in seen:
+            if model is None:
+                return
+            bm = model.base_model_id
+            if model.model_id not in seen_ids and bm not in seen_base:
                 chain.append(model)
-                seen.add(model.model_id)
+                seen_ids.add(model.model_id)
+                seen_base.add(bm)
 
         # Level 1 — strategy-provided fallbacks (already scored)
         for fb in (strategy_fallbacks or []):
@@ -98,13 +109,18 @@ class FallbackHandler:
         if not self.config.context_window_fallback:
             return None
         exclude = exclude or set()
-        candidates = [
-            m
-            for m in self.registry.all_models
-            if m.max_input_tokens >= estimated_tokens and m.model_id not in exclude
-        ]
+        # Deduplicate by base model — prefer cheapest variant
+        seen_base: set[str] = set()
+        candidates: list[BedrockModel] = []
+        for m in self.registry.all_models:
+            if m.max_input_tokens < estimated_tokens or m.model_id in exclude:
+                continue
+            bm = m.base_model_id
+            if bm in seen_base:
+                continue
+            seen_base.add(bm)
+            candidates.append(m)
         if not candidates:
             return None
-        # Prefer cheapest model that fits
         candidates.sort(key=lambda m: m.pricing.input_per_1k)
         return candidates[0]

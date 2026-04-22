@@ -307,6 +307,8 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`20_semantic_cache.py`](examples/20_semantic_cache.py) | Semantic cache: match by meaning, variable-aware caching |
 | [`21_semantic_cache_deep_dive.py`](examples/21_semantic_cache_deep_dive.py) | Vector stores (memory/FAISS/Redis), threshold tuning |
 | [`22_semantic_router.py`](examples/22_semantic_router.py) | Intent routing: route queries to specialized models by meaning |
+| [`23_tag_and_conditional_routing.py`](examples/23_tag_and_conditional_routing.py) | Tag-based routing (free/paid tiers, teams) and metadata-driven conditions |
+| [`24_budget_and_tier_pricing.py`](examples/24_budget_and_tier_pricing.py) | Per-request cost ceilings, rolling budgets, inference tier pricing (Flex/Standard/Priority) |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
@@ -420,6 +422,219 @@ Request arrives
 ```
 
 The caller gets a response from the best available model, with full transparency about what happened behind the scenes.
+
+## Safe Model Rollouts: A/B Testing, Canary, and Shadow Mode
+
+Three mechanisms for safely introducing new models into production without risking user experience.
+
+### A/B Testing
+
+Split traffic between two (or more) models to compare quality, cost, and latency in production. Sticky mode hashes the user ID so the same user always sees the same variant — important for consistent UX and valid comparison.
+
+```
+                    ┌─── 70% ──→ Variant A: Claude Sonnet 4.6
+Request arrives ────┤
+                    └─── 30% ──→ Variant B: Claude Sonnet 4.5
+```
+
+```yaml
+ab_test:
+  enabled: true
+  name: "sonnet-comparison"
+  sticky: true                    # Same user_id → same variant
+  variants:
+    control:
+      model: "us.anthropic.claude-sonnet-4-6"
+      weight: 0.7                 # 70% of traffic
+    challenger:
+      model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      weight: 0.3                 # 30% of traffic
+```
+
+```python
+# User ID drives sticky assignment
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(metadata={"user_id": "u-12345"}),
+)
+d = response["routing_decision"]
+print(d.metadata)  # {"ab_variant": "control"} or {"ab_variant": "challenger"}
+
+# Check split stats
+print(router.ab_test.stats)
+# {"test_name": "sonnet-comparison", "variant_counts": {"control": 700, "challenger": 300}}
+```
+
+The A/B test overrides the strategy engine — the variant's model is used directly, but fallbacks, circuit breakers, and metrics still apply.
+
+### Canary Deployments
+
+Gradually roll out a new model by sending a small percentage of traffic to it while monitoring error rate and latency. If the canary exceeds thresholds, it's automatically rolled back. If it performs well after enough requests, it's auto-promoted.
+
+```
+                    ┌─── 95% ──→ Baseline: Nova Pro (proven)
+Request arrives ────┤
+                    └───  5% ──→ Canary: Nova 2 Lite (new)
+                                    │
+                         ┌──────────┴──────────┐
+                    error rate > 10%      100 requests, < 2% errors
+                         │                     │
+                    AUTO-ROLLBACK          AUTO-PROMOTE
+                    (canary disabled)      (canary becomes baseline)
+```
+
+```yaml
+canary:
+  enabled: true
+  baseline: "us.amazon.nova-pro-v1:0"
+  canary_model: "us.amazon.nova-2-lite-v1:0"
+  canary_percentage: 5              # Start with 5% of traffic
+  auto_rollback:
+    max_error_rate: 0.10            # Roll back if > 10% errors
+    max_latency_p95_ms: 5000        # Roll back if P95 > 5 seconds
+  auto_promote:
+    min_requests: 100               # Need 100+ canary requests
+    max_error_rate: 0.02            # Promote if < 2% errors
+```
+
+```python
+# Check canary health
+print(router.canary.stats)
+# {"canary_requests": 47, "canary_error_rate": 0.02, "rolled_back": false, "promoted": false}
+
+# After enough good requests:
+# {"canary_requests": 150, "promoted": true}
+```
+
+### Shadow Mode
+
+Mirror a sample of production traffic to a secondary model in background threads. The shadow response is logged but never returned to the caller — zero impact on latency or user experience. Use it to evaluate a new model's quality before any traffic shift.
+
+```
+Request arrives ──→ Primary: Claude Sonnet 4.6 ──→ Response to caller
+                        │
+                        └──→ Shadow (background thread): Nova Pro
+                             │
+                             └──→ Logged for offline comparison
+                                  (never affects the response)
+```
+
+```yaml
+shadow:
+  enabled: true
+  shadow_model: "us.amazon.nova-pro-v1:0"
+  sample_rate: 0.1                  # Mirror 10% of traffic
+```
+
+```python
+# Check shadow results
+print(router.shadow.stats)
+# {"shadow_model": "us.amazon.nova-pro-v1:0", "total": 42, "success_rate": 0.98, "avg_latency_ms": 320}
+
+# Access individual results for quality comparison
+for result in router.shadow.results[-5:]:
+    print(f"  primary={result.primary_model} shadow={result.shadow_model} "
+          f"latency={result.latency_ms:.0f}ms success={result.success}")
+```
+
+### Typical Rollout Workflow
+
+```
+Week 1: Shadow mode (10% sample) → compare quality offline
+Week 2: Canary (5% traffic) → monitor error rate and latency
+Week 3: Canary (25% traffic) → increase if metrics are good
+Week 4: A/B test (50/50) → statistical comparison
+Week 5: Full rollout → make the new model the default
+```
+
+## Budget Enforcement
+
+The SDK provides three levels of cost control, from simple per-request caps to rolling budget windows with automatic downgrade.
+
+### Level 1: Per-Request Cost Ceiling
+
+The simplest control. Set `max_cost_per_request` and the router excludes any model whose estimated cost exceeds it:
+
+```python
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(max_cost_per_request=0.001),  # Max $0.001
+)
+```
+
+The `economy` preset does this automatically with a $0.002 ceiling.
+
+### Level 2: BudgetRule — Declarative Limits
+
+Define per-request, hourly, and daily spend limits in a single rule. Choose what happens when the budget is exceeded — downgrade to a cheaper model or reject the request:
+
+```python
+from bedrock_smart_router.budget_strategy import BudgetRule
+
+# Enterprise: generous limits, downgrade on exceed
+enterprise = BudgetRule(
+    max_cost_per_request=0.05,     # Max $0.05 per request
+    max_hourly_spend=1.00,         # Max $1.00/hour
+    max_daily_spend=10.00,         # Max $10.00/day
+    on_exceeded="downgrade",       # Switch to cheaper model (vs "reject")
+    downgrade_to_tier="lite",      # Downgrade target tier
+)
+
+# Free tier: tight limits, hard reject
+free = BudgetRule(
+    max_cost_per_request=0.001,
+    max_hourly_spend=0.10,
+    max_daily_spend=0.50,
+    on_exceeded="reject",          # Raise BudgetExceededError
+)
+```
+
+| Field | What it does |
+|---|---|
+| `max_cost_per_request` | Excludes models whose estimated cost exceeds this |
+| `max_hourly_spend` | Rolling 1-hour spend window per scope |
+| `max_daily_spend` | Rolling 24-hour spend window per scope |
+| `on_exceeded` | `"downgrade"` picks the cheapest model; `"reject"` raises `BudgetExceededError` |
+| `downgrade_to_tier` | When downgrading, restrict to this tier or below |
+
+### Level 3: BudgetTracker — Rolling Spend Tracking
+
+Track actual spend per user, team, or tenant over sliding time windows. Pair it with `BudgetRule` to enforce rolling limits:
+
+```python
+from bedrock_smart_router.budget_strategy import BudgetTracker, BudgetRule
+
+tracker = BudgetTracker()
+
+# After each request, record the actual cost
+tracker.record_spend("user-u123", decision.actual_cost)
+tracker.record_spend("team-engineering", decision.actual_cost)
+
+# Before the next request, check if the budget is exceeded
+rule = BudgetRule(max_hourly_spend=1.00, max_daily_spend=10.00)
+exceeded = tracker.check_budget("user-u123", rule)
+if exceeded:
+    print(f"Budget exceeded: {exceeded}")
+    # "hourly spend $1.0234 >= $1.0000"
+
+# Query spend for any time window
+hourly = tracker.get_spend("user-u123", 3600)     # Last hour
+daily  = tracker.get_spend("user-u123", 86400)    # Last 24 hours
+weekly = tracker.get_spend("team-engineering", 604800)  # Last 7 days
+```
+
+**When to use each level:**
+
+| Scenario | Use |
+|---|---|
+| Simple cost cap, no tracking needed | `RoutingConfig(max_cost_per_request=...)` |
+| Different limits for free/paid tiers | `BudgetRule` per tier |
+| Per-user or per-team rolling budgets | `BudgetTracker` + `BudgetRule` |
+| SaaS with tenant cost isolation | `BudgetTracker` keyed by tenant ID + `BudgetRule` per plan |
+
+The `BudgetTracker` is in-memory — it resets on process restart and doesn't share across instances. This works well for single-instance deployments and Lambda (where each invocation is independent anyway).
+
+For multi-instance persistent budget tracking, the DynamoDB metrics store (`metrics.backend: "dynamodb"`) records every request with `cost` and `tenant_id`, but there's no built-in query for "total spend by tenant in the last hour." You'd need to add a GSI on `tenant_id` or build a separate spend-tracking table. This is on the roadmap but not yet implemented.
 
 ## Architecture
 
@@ -547,6 +762,110 @@ All configuration is driven through a single `RouterConfig` object, constructabl
 | `retry` | `max_retries`, `backoff_base_seconds`, `backoff_multiplier` | 3 retries, 0.5s base |
 
 See [BEDROCK_SMART_ROUTER_DETAILED_DESIGN.md](BEDROCK_SMART_ROUTER_DETAILED_DESIGN.md) for the full configuration schema.
+
+## Configuration in Production
+
+The router reads its config once at creation time. Changing a YAML file or dict after `BedrockRouter.create()` has no effect on the running instance. This is by design — the router is cheap to create and stateless enough to swap.
+
+How you handle config changes depends on your deployment model:
+
+### Lambda
+
+Not a problem. Lambda instances are short-lived. Store your config in S3, Parameter Store, or AppConfig and read it at the module level:
+
+```python
+import json, boto3, yaml
+from bedrock_smart_router import BedrockRouter
+
+ssm = boto3.client("ssm")
+config_str = ssm.get_parameter(Name="/myapp/router-config", WithDecryption=True)["Parameter"]["Value"]
+router = BedrockRouter.create(yaml.safe_load(config_str))
+
+def handler(event, context):
+    return router.converse(messages=event["messages"])
+```
+
+Change the parameter → next cold start picks it up. Force a cold start by deploying a no-op change or updating the function's environment variable.
+
+### ECS / Fargate
+
+Store config in S3 or Parameter Store. When you change the config, trigger a rolling deployment — ECS drains old tasks and starts new ones with the fresh config. This is the standard ECS pattern for any config change.
+
+```python
+# startup.py — runs once when the container starts
+import boto3, yaml
+from bedrock_smart_router import BedrockRouter
+
+s3 = boto3.client("s3")
+obj = s3.get_object(Bucket="my-config-bucket", Key="router-config.yaml")
+config = yaml.safe_load(obj["Body"].read())
+router = BedrockRouter.create(config)
+```
+
+For zero-downtime config changes without redeployment, use **AWS AppConfig**:
+
+```python
+import time, threading, yaml
+from bedrock_smart_router import BedrockRouter
+
+_router = BedrockRouter.create(initial_config)
+
+def _poll_appconfig():
+    """Background thread that checks for config changes every 60s."""
+    while True:
+        time.sleep(60)
+        new_config = fetch_from_appconfig()  # Your AppConfig client
+        if new_config != current_config:
+            global _router
+            _router = BedrockRouter.create(new_config)  # Swap atomically
+
+threading.Thread(target=_poll_appconfig, daemon=True).start()
+```
+
+Creating a new router is fast (~10ms, no API calls). The only things lost on swap are the in-memory response cache and in-memory metrics — both rebuild within minutes. If you use DynamoDB metrics and Redis cache, nothing is lost.
+
+### EKS (Kubernetes)
+
+Mount the config as a ConfigMap. Kubernetes updates the mounted file when the ConfigMap changes. Use a file watcher to detect changes:
+
+```python
+import os, time, threading, yaml
+from bedrock_smart_router import BedrockRouter
+
+CONFIG_PATH = "/etc/config/router-config.yaml"
+_last_mtime = 0
+_router = None
+
+def _load():
+    global _router, _last_mtime
+    with open(CONFIG_PATH) as f:
+        _router = BedrockRouter.create(yaml.safe_load(f))
+    _last_mtime = os.path.getmtime(CONFIG_PATH)
+
+def _watch():
+    while True:
+        time.sleep(30)
+        mtime = os.path.getmtime(CONFIG_PATH)
+        if mtime != _last_mtime:
+            _load()
+
+_load()
+threading.Thread(target=_watch, daemon=True).start()
+```
+
+### What's preserved vs lost on router swap
+
+| Component | Preserved? | Notes |
+|---|---|---|
+| DynamoDB metrics | ✅ Yes | Stored externally, new router reads them |
+| Redis/Valkey cache | ✅ Yes | Stored externally, new router connects |
+| In-memory metrics | ❌ Lost | Rebuilds from incoming requests |
+| In-memory cache | ❌ Lost | Rebuilds from cache misses |
+| Circuit breaker state | ❌ Lost | All circuits reset to CLOSED |
+| A/B test counts | ❌ Lost | Counters restart from zero |
+| Canary health data | ❌ Lost | Monitoring restarts |
+
+For production services where losing circuit breaker state is a concern, use DynamoDB metrics — the quality-optimized strategy reads historical data from DynamoDB, so it survives router swaps.
 
 ## IAM Permissions
 

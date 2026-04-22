@@ -126,6 +126,21 @@ class BedrockModel:
     def is_cris_available(self) -> bool:
         return len(self.cris_profiles) > 0
 
+    @property
+    def base_model_id(self) -> str:
+        """Model identity without geography prefix.
+
+        ``"us.anthropic.claude-sonnet-4-6"``   → ``"anthropic.claude-sonnet-4-6"``
+        ``"global.anthropic.claude-sonnet-4-6"`` → ``"anthropic.claude-sonnet-4-6"``
+        """
+        from bedrock_smart_router.model_registry import base_model_id
+        return base_model_id(self.model_id)
+
+    @property
+    def is_global_profile(self) -> bool:
+        """True if this model entry is a global CRIS profile."""
+        return self.model_id.startswith("global.")
+
 
 @dataclass
 class RequestAnalysis:

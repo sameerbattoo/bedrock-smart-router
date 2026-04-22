@@ -68,7 +68,8 @@ class ModelMetrics:
 def _percentile(sorted_vals: list[float], pct: float) -> float:
     if not sorted_vals:
         return 0.0
-    idx = int(len(sorted_vals) * pct / 100)
+    # nearest-rank: index into 0-based sorted list
+    idx = int((len(sorted_vals) - 1) * pct / 100)
     return sorted_vals[min(idx, len(sorted_vals) - 1)]
 
 

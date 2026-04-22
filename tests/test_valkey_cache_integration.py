@@ -18,8 +18,11 @@ import pytest
 
 from bedrock_smart_router.cache_layer import CacheConfig, build_cache
 
-SKIP_REASON = "Set INTEGRATION_TEST=1 to run against real AWS"
-VALKEY_URL = "rediss://master.capstone-sqlagent-valkey-cache.8ot617.usw2.cache.amazonaws.com:6379"
+SKIP_REASON = "Set INTEGRATION_TEST=1 and VALKEY_URL=rediss://... to run (requires VPC access)"
+VALKEY_URL = os.environ.get(
+    "VALKEY_URL",
+    "rediss://master.capstone-sqlagent-valkey-cache.8ot617.usw2.cache.amazonaws.com:6379",
+)
 
 # Note: ElastiCache is VPC-only. This test requires network access to
 # the VPC (run from EC2, Lambda, or VPN-connected machine).
@@ -55,7 +58,7 @@ def valkey_cache():
 
 
 @pytest.mark.skipif(
-    os.environ.get("INTEGRATION_TEST") != "1",
+    os.environ.get("INTEGRATION_TEST") != "1" or not os.environ.get("VALKEY_URL"),
     reason=SKIP_REASON,
 )
 class TestValkeyCacheIntegration:

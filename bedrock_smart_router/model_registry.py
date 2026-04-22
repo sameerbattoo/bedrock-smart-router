@@ -19,6 +19,22 @@ logger = logging.getLogger(__name__)
 # Path to the bundled JSON catalog shipped with the package
 _DEFAULT_CATALOG_PATH = Path(__file__).parent / "data" / "models.json"
 
+# Geography prefixes used in CRIS inference profile IDs
+_GEO_PREFIXES = ("us.", "eu.", "ap.", "global.")
+
+
+def base_model_id(model_id: str) -> str:
+    """Strip the geography prefix from a model ID.
+
+    ``"us.anthropic.claude-sonnet-4-6"``   → ``"anthropic.claude-sonnet-4-6"``
+    ``"global.anthropic.claude-sonnet-4-6"`` → ``"anthropic.claude-sonnet-4-6"``
+    ``"mistral.mistral-small-2402-v1:0"``  → ``"mistral.mistral-small-2402-v1:0"`` (no prefix)
+    """
+    for prefix in _GEO_PREFIXES:
+        if model_id.startswith(prefix):
+            return model_id[len(prefix):]
+    return model_id
+
 
 def _model_from_dict(d: dict[str, Any]) -> BedrockModel:
     """Deserialise a single model entry from the JSON catalog."""
@@ -178,15 +194,23 @@ class ModelRegistry:
         min_context: int | None = None,
         exclude_patterns: list[str] | None = None,
         family: str | None = None,
+        prefer_global: bool = False,
     ) -> list[BedrockModel]:
-        """Return models that meet the given requirements."""
+        """Return models that meet the given requirements.
+
+        When the catalog contains both regional (``us.*``) and global
+        (``global.*``) entries for the same underlying model, only one
+        variant is returned per base model.  Set *prefer_global* to
+        ``True`` to prefer the cheaper global variant; otherwise the
+        regional variant is kept.
+        """
         import fnmatch
 
         if isinstance(min_tier, str):
             min_tier = Tier(min_tier)
 
         tier_order = list(Tier)
-        results: list[BedrockModel] = []
+        raw: list[BedrockModel] = []
         for m in self._models.values():
             if min_tier and tier_order.index(m.tier) < tier_order.index(min_tier):
                 continue
@@ -206,8 +230,24 @@ class ModelRegistry:
                         break
                 if skip:
                     continue
-            results.append(m)
-        return results
+            raw.append(m)
+
+        # Deduplicate geography variants: keep one entry per base model.
+        # When prefer_global=True, keep global.* over us.* (cheaper).
+        # Otherwise keep us.* (regional, data stays in-region).
+        best: dict[str, BedrockModel] = {}
+        for m in raw:
+            bm = base_model_id(m.model_id)
+            existing = best.get(bm)
+            if existing is None:
+                best[bm] = m
+            elif prefer_global and m.is_global_profile and not existing.is_global_profile:
+                best[bm] = m
+            elif not prefer_global and not m.is_global_profile and existing.is_global_profile:
+                best[bm] = m
+            # else: keep whichever we saw first (same preference)
+
+        return list(best.values())
 
     # ── Mutations ───────────────────────────────────────────────
 
