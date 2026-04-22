@@ -4,9 +4,10 @@
     "description": "Bedrock Smart Router model catalog. Pricing in USD per 1K tokens.",
     "last_updated": "2026-04-21",
     "notes": {
-      "prompt_caching": "Only Anthropic Claude models have explicit prompt caching with separate cache_read/cache_write pricing. Amazon Nova has automatic prompt caching (latency benefit, no separate pricing). Meta Llama, DeepSeek, and Mistral do not support prompt caching on Bedrock \u2014 their cache_read_per_1k and cache_write_per_1k are 0.0 (not applicable, not free).",
-      "pricing": "Prices are on-demand standard tier rates from public Bedrock pricing as of April 2026. Batch mode is 50% off. Priority tier may cost more. Flex tier may cost less.",
-      "cris_profiles": "Only us.* profiles are listed. Most models also have global.* and eu.* profiles \u2014 add them via overlay if needed for your geography."
+      "prompt_caching": "Anthropic Claude and Amazon Nova models have prompt caching with cache_read pricing (cache reads are discounted vs regular input tokens; cache writes are free for Nova, charged for Claude). Meta Llama, DeepSeek, and Mistral do not support prompt caching on Bedrock \u2014 their cache_read_per_1k and cache_write_per_1k are 0.0.",
+      "pricing": "Prices are on-demand Standard tier rates from public Bedrock pricing as of April 2026. Batch mode is 50% off. Priority tier is ~75% premium over Standard. Flex tier is ~50% discount vs Standard. Tier multipliers are applied at runtime by ModelPricing.estimate_cost(tier=...).",
+      "cris_profiles": "Both us.* (regional) and global.* (cross-region, ~10% cheaper) profiles are included as separate model entries with their own pricing. The router treats them as distinct models for cost-based routing.",
+      "global_pricing": "Global cross-region inference profiles offer approximately 10% savings on both input and output token pricing compared to regional (us.*) profiles. Source: AWS Bedrock documentation."
     }
   },
   "models": [
@@ -21,14 +22,14 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": false,
-        "prompt_caching": false
+        "prompt_caching": true
       },
       "max_input_tokens": 128000,
       "max_output_tokens": 5000,
       "pricing": {
         "input_per_1k": 3.5e-05,
         "output_per_1k": 0.00014,
-        "cache_read_per_1k": 0.0,
+        "cache_read_per_1k": 8.75e-06,
         "cache_write_per_1k": 0.0
       },
       "cris_profiles": [
@@ -36,8 +37,7 @@
         "global.amazon.nova-micro-v1:0"
       ],
       "supported_inference_tiers": [
-        "standard",
-        "flex"
+        "standard"
       ],
       "guardrail_compatible": true
     },
@@ -52,14 +52,14 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": false,
-        "prompt_caching": false
+        "prompt_caching": true
       },
       "max_input_tokens": 300000,
       "max_output_tokens": 5000,
       "pricing": {
         "input_per_1k": 6e-05,
         "output_per_1k": 0.00024,
-        "cache_read_per_1k": 0.0,
+        "cache_read_per_1k": 1.5e-05,
         "cache_write_per_1k": 0.0
       },
       "cris_profiles": [
@@ -67,8 +67,7 @@
         "global.amazon.nova-lite-v1:0"
       ],
       "supported_inference_tiers": [
-        "standard",
-        "flex"
+        "standard"
       ],
       "guardrail_compatible": true
     },
@@ -83,14 +82,14 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": true,
-        "prompt_caching": false
+        "prompt_caching": true
       },
       "max_input_tokens": 1000000,
       "max_output_tokens": 5000,
       "pricing": {
-        "input_per_1k": 8e-05,
-        "output_per_1k": 0.00032,
-        "cache_read_per_1k": 0.0,
+        "input_per_1k": 0.000525,
+        "output_per_1k": 0.0048125,
+        "cache_read_per_1k": 0.00013125,
         "cache_write_per_1k": 0.0
       },
       "cris_profiles": [
@@ -98,8 +97,7 @@
         "global.amazon.nova-2-lite-v1:0"
       ],
       "supported_inference_tiers": [
-        "standard",
-        "flex"
+        "standard"
       ],
       "guardrail_compatible": true
     },
@@ -114,14 +112,14 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": false,
-        "prompt_caching": false
+        "prompt_caching": true
       },
       "max_input_tokens": 300000,
       "max_output_tokens": 5000,
       "pricing": {
-        "input_per_1k": 0.0008,
+        "input_per_1k": 0.0014,
         "output_per_1k": 0.0032,
-        "cache_read_per_1k": 0.0,
+        "cache_read_per_1k": 0.0002,
         "cache_write_per_1k": 0.0
       },
       "cris_profiles": [
@@ -129,9 +127,7 @@
         "global.amazon.nova-pro-v1:0"
       ],
       "supported_inference_tiers": [
-        "standard",
-        "priority",
-        "flex"
+        "standard"
       ],
       "guardrail_compatible": true
     },
@@ -146,14 +142,14 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": true,
-        "prompt_caching": false
+        "prompt_caching": true
       },
       "max_input_tokens": 1000000,
       "max_output_tokens": 5000,
       "pricing": {
         "input_per_1k": 0.0025,
-        "output_per_1k": 0.0125,
-        "cache_read_per_1k": 0.0,
+        "output_per_1k": 0.021875,
+        "cache_read_per_1k": 0.000625,
         "cache_write_per_1k": 0.0
       },
       "cris_profiles": [
@@ -161,9 +157,7 @@
         "global.amazon.nova-premier-v1:0"
       ],
       "supported_inference_tiers": [
-        "standard",
-        "priority",
-        "flex"
+        "standard"
       ],
       "guardrail_compatible": true
     },
@@ -572,8 +566,8 @@
       "max_input_tokens": 128000,
       "max_output_tokens": 8192,
       "pricing": {
-        "input_per_1k": 0.003,
-        "output_per_1k": 0.007,
+        "input_per_1k": 0.00135,
+        "output_per_1k": 0.0054,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
@@ -601,8 +595,8 @@
       "max_input_tokens": 3500000,
       "max_output_tokens": 16384,
       "pricing": {
-        "input_per_1k": 0.00018,
-        "output_per_1k": 0.00072,
+        "input_per_1k": 0.00017,
+        "output_per_1k": 0.00066,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
@@ -630,8 +624,8 @@
       "max_input_tokens": 1000000,
       "max_output_tokens": 16384,
       "pricing": {
-        "input_per_1k": 0.00048,
-        "output_per_1k": 0.00048,
+        "input_per_1k": 0.00024,
+        "output_per_1k": 0.00097,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
@@ -814,6 +808,361 @@
       ],
       "supported_inference_tiers": [
         "standard"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.amazon.nova-micro-v1:0",
+      "family": "amazon",
+      "tier": "micro",
+      "display_name": "Amazon Nova Micro 1.0 (Global)",
+      "capabilities": {
+        "tool_use": false,
+        "vision": false,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 3.15e-05,
+        "output_per_1k": 0.000126,
+        "cache_read_per_1k": 7.875e-06,
+        "cache_write_per_1k": 0.0
+      },
+      "cris_profiles": [
+        "global.amazon.nova-micro-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.amazon.nova-lite-v1:0",
+      "family": "amazon",
+      "tier": "lite",
+      "display_name": "Amazon Nova Lite 1.0 (Global)",
+      "capabilities": {
+        "tool_use": false,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 300000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 5.4e-05,
+        "output_per_1k": 0.000216,
+        "cache_read_per_1k": 1.35e-05,
+        "cache_write_per_1k": 0.0
+      },
+      "cris_profiles": [
+        "global.amazon.nova-lite-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.amazon.nova-2-lite-v1:0",
+      "family": "amazon",
+      "tier": "lite",
+      "display_name": "Amazon Nova 2 Lite (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.0004725,
+        "output_per_1k": 0.00433125,
+        "cache_read_per_1k": 0.000118125,
+        "cache_write_per_1k": 0.0
+      },
+      "cris_profiles": [
+        "global.amazon.nova-2-lite-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.amazon.nova-pro-v1:0",
+      "family": "amazon",
+      "tier": "mid",
+      "display_name": "Amazon Nova Pro 1.0 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 300000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.00126,
+        "output_per_1k": 0.00288,
+        "cache_read_per_1k": 0.00018,
+        "cache_write_per_1k": 0.0
+      },
+      "cris_profiles": [
+        "global.amazon.nova-pro-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.amazon.nova-premier-v1:0",
+      "family": "amazon",
+      "tier": "heavy",
+      "display_name": "Amazon Nova Premier 1.0 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 5000,
+      "pricing": {
+        "input_per_1k": 0.00225,
+        "output_per_1k": 0.0196875,
+        "cache_read_per_1k": 0.0005625,
+        "cache_write_per_1k": 0.0
+      },
+      "cris_profiles": [
+        "global.amazon.nova-premier-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "family": "anthropic",
+      "tier": "lite",
+      "display_name": "Claude Haiku 4.5 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 0.0009,
+        "output_per_1k": 0.0045,
+        "cache_read_per_1k": 9e-05,
+        "cache_write_per_1k": 0.001125
+      },
+      "cris_profiles": [
+        "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard",
+        "priority"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.anthropic.claude-sonnet-4-20250514-v1:0",
+      "family": "anthropic",
+      "tier": "mid",
+      "display_name": "Claude Sonnet 4 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.0027,
+        "output_per_1k": 0.0135,
+        "cache_read_per_1k": 0.00027,
+        "cache_write_per_1k": 0.003375
+      },
+      "cris_profiles": [
+        "global.anthropic.claude-sonnet-4-20250514-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard",
+        "priority"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "family": "anthropic",
+      "tier": "mid",
+      "display_name": "Claude Sonnet 4.5 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.0027,
+        "output_per_1k": 0.0135,
+        "cache_read_per_1k": 0.00027,
+        "cache_write_per_1k": 0.003375
+      },
+      "cris_profiles": [
+        "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard",
+        "priority"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.anthropic.claude-sonnet-4-6",
+      "family": "anthropic",
+      "tier": "mid",
+      "display_name": "Claude Sonnet 4.6 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.0027,
+        "output_per_1k": 0.0135,
+        "cache_read_per_1k": 0.00027,
+        "cache_write_per_1k": 0.003375
+      },
+      "cris_profiles": [
+        "global.anthropic.claude-sonnet-4-6"
+      ],
+      "supported_inference_tiers": [
+        "standard",
+        "priority"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+      "family": "anthropic",
+      "tier": "heavy",
+      "display_name": "Claude Opus 4.5 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 32000,
+      "pricing": {
+        "input_per_1k": 0.0045,
+        "output_per_1k": 0.0225,
+        "cache_read_per_1k": 0.00045,
+        "cache_write_per_1k": 0.005625
+      },
+      "cris_profiles": [
+        "global.anthropic.claude-opus-4-5-20251101-v1:0"
+      ],
+      "supported_inference_tiers": [
+        "standard",
+        "priority"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.anthropic.claude-opus-4-6-v1",
+      "family": "anthropic",
+      "tier": "heavy",
+      "display_name": "Claude Opus 4.6 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 32000,
+      "pricing": {
+        "input_per_1k": 0.0045,
+        "output_per_1k": 0.0225,
+        "cache_read_per_1k": 0.00045,
+        "cache_write_per_1k": 0.005625
+      },
+      "cris_profiles": [
+        "global.anthropic.claude-opus-4-6-v1"
+      ],
+      "supported_inference_tiers": [
+        "standard",
+        "priority"
+      ],
+      "guardrail_compatible": true
+    },
+    {
+      "model_id": "global.anthropic.claude-opus-4-7",
+      "family": "anthropic",
+      "tier": "reasoning",
+      "display_name": "Claude Opus 4.7 (Global)",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "document_support": false,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 200000,
+      "max_output_tokens": 32000,
+      "pricing": {
+        "input_per_1k": 0.0045,
+        "output_per_1k": 0.0225,
+        "cache_read_per_1k": 0.00045,
+        "cache_write_per_1k": 0.005625
+      },
+      "cris_profiles": [
+        "global.anthropic.claude-opus-4-7"
+      ],
+      "supported_inference_tiers": [
+        "standard",
+        "priority"
       ],
       "guardrail_compatible": true
     }

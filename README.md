@@ -28,9 +28,9 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - Context window pre-validation before sending to Bedrock
 
 **Bedrock-Native Awareness**
-- Cross-Region Inference (CRIS) profile selection by geography preference
-- Inference tier auto-selection (Standard / Priority / Flex)
-- Prompt cache benefit estimation — boosts cache-capable models when savings are significant
+- Cross-Region Inference (CRIS) profile selection — regional (`us.*`) and global (`global.*`, ~10% cheaper) profiles as separate catalog entries
+- Inference tier auto-selection (Standard / Priority / Flex) with tier-aware cost estimation
+- Prompt cache benefit estimation — boosts cache-capable models (Claude and Nova) when savings are significant
 - Provisioned throughput detection — prefers already-paid capacity
 - Bedrock Guardrails integration — pre-route and post-route checks via ApplyGuardrail API
 - Application Inference Profile management for multi-tenant cost tracking
@@ -448,17 +448,79 @@ Request arrives
 
 ## Model Catalog
 
-The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 27 Bedrock models with capabilities, pricing, CRIS profiles, and inference tier support:
+The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 39 Bedrock models — 27 regional and 12 global CRIS profiles — with capabilities, pricing, and inference tier support:
 
 | Family | Models | Tiers |
 |---|---|---|
-| Amazon Nova (5) | Micro 1.0, Lite 1.0, Nova 2 Lite, Pro 1.0, Premier 1.0 | micro, lite, mid, heavy |
-| Anthropic Claude (9) | Haiku 4.5, 3.7 Sonnet, Sonnet 4, Sonnet 4.5, Sonnet 4.6, Opus 4.1, Opus 4.5, Opus 4.6, Opus 4.7 | lite, mid, heavy, reasoning |
+| Amazon Nova (5 regional + 5 global) | Micro 1.0, Lite 1.0, Nova 2 Lite, Pro 1.0, Premier 1.0 | micro, lite, mid, heavy |
+| Anthropic Claude (9 regional + 7 global) | Haiku 4.5, 3.7 Sonnet, Sonnet 4, Sonnet 4.5, Sonnet 4.6, Opus 4.1, Opus 4.5, Opus 4.6, Opus 4.7 | lite, mid, heavy, reasoning |
 | Meta Llama (10) | 3.2 1B, 3.2 3B, 3.1 8B, 3.2 11B, 3.1 70B, 3.3 70B, 3.2 90B, 4 Scout 17B, 4 Maverick 17B | micro, lite, mid, heavy |
 | DeepSeek (1) | R1 | reasoning |
 | Mistral (3) | Small, Large 2, Pixtral Large | lite, mid |
 
-To update pricing or add models, edit the JSON file or use an overlay:
+Pricing is validated against the live AWS Pricing API using `scripts/refresh_pricing.py`. Run it periodically to catch price changes:
+
+```bash
+# Dry run — show mismatches
+python scripts/refresh_pricing.py
+
+# Auto-fix models.json and regenerate global entries
+python scripts/refresh_pricing.py --fix --regen-global --check-tiers
+```
+
+### Global CRIS Profiles
+
+Global cross-region inference profiles route requests to any commercial AWS Region worldwide for higher throughput and resilience. They are ~10% cheaper than regional (`us.*`) profiles on both input and output tokens ([source](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html)).
+
+The catalog includes global profiles as separate model entries with their own discounted pricing. The router's cost-optimized strategy naturally prefers them when `allow_global` is enabled in the CRIS config. Example: `global.anthropic.claude-sonnet-4-6` is the same model as `us.anthropic.claude-sonnet-4-6` but at 90% of the price.
+
+### Inference Tier Pricing
+
+Bedrock offers four on-demand service tiers. All prices in the catalog are **Standard tier** rates. The router applies tier multipliers at cost estimation time via `ModelPricing.estimate_cost(tier=...)`:
+
+| Tier | Multiplier | Latency | Use Case |
+|---|---|---|---|
+| **Flex** | ~0.50× | Higher (best-effort) | Dev/test, model evals, batch-like workloads |
+| **Standard** | 1.0× (base) | Normal | Default — everyday production workloads |
+| **Priority** | ~1.75× | Up to 25% better OTPS | Mission-critical, customer-facing, latency-sensitive |
+| **Reserved** | Fixed hourly | Guaranteed | Steady high-volume with 1–6 month commitment |
+
+The `InferenceTierSelector` picks the tier automatically based on request complexity and budget constraints:
+- Simple/moderate requests with tight budgets → Flex (if the model supports it)
+- Complex/reasoning requests → Priority (if the model supports it)
+- Everything else → Standard
+
+Not all models support all tiers. The catalog tracks which tiers each model supports in `supported_inference_tiers`. The actual cost is always captured from the Bedrock response in `RoutingDecision.actual_cost` — the multipliers are used only for pre-call cost estimation during strategy scoring.
+
+```python
+from bedrock_smart_router.models import TIER_PRICING_MULTIPLIER
+
+# Check the multipliers
+print(TIER_PRICING_MULTIPLIER)
+# {"standard": 1.0, "priority": 1.75, "flex": 0.50}
+
+# Estimate cost for a specific tier
+model = router.registry.get("us.amazon.nova-pro-v1:0")
+cost_standard = model.pricing.estimate_cost(1000, 500)                    # $0.003
+cost_priority = model.pricing.estimate_cost(1000, 500, tier="priority")   # $0.00525
+cost_flex     = model.pricing.estimate_cost(1000, 500, tier="flex")       # $0.0015
+```
+
+### Prompt Caching
+
+Both Anthropic Claude and Amazon Nova models support prompt caching on Bedrock, but with different pricing models:
+
+| Provider | Cache Reads | Cache Writes | Mechanism |
+|---|---|---|---|
+| Anthropic Claude | ~10% of input price | ~125% of input price | Explicit — you mark cache breakpoints |
+| Amazon Nova | ~25% of input price | Free ($0.00) | Automatic — Bedrock caches repeated prefixes |
+| Meta, Mistral, DeepSeek | N/A | N/A | Not supported |
+
+The router's prompt cache advisor estimates savings and can boost cache-capable models in the strategy scoring when the savings are significant (within 10% of the primary model's score).
+
+### Updating the Catalog
+
+To update pricing or add models, edit the JSON file directly or use an overlay at runtime:
 
 ```python
 router.registry.load_overlay("my-custom-models.json")
@@ -504,7 +566,7 @@ bedrock_smart_router/
   config.py                    # Consolidated RouterConfig from dict/YAML
   router.py                    # BedrockRouter — main entry point (14-step request flow)
   async_router.py              # AsyncBedrockRouter for async/await
-  data/models.json             # JSON model catalog (16 models, pricing, capabilities)
+  data/models.json             # JSON model catalog (39 models, pricing, capabilities)
   # Phase 1: Core
   model_registry.py            # JSON-driven model catalog with filtering and overlays
   request_analyzer.py          # 12-dimension zero-API-call complexity classifier
@@ -539,7 +601,10 @@ bedrock_smart_router/
   semantic_cache.py            # Embedding-based semantic cache (optional)
   semantic_router.py           # Intent routing via embeddings (optional)
 
-tests/                         # 209 unit tests + 5 integration tests
+scripts/
+  refresh_pricing.py           # Validate & refresh models.json from AWS Pricing API
+
+tests/                         # 387 unit tests + 53 integration tests (gated)
 docs/
   iam-permissions.md           # IAM policy reference (Bedrock, DynamoDB, Pricing, Guardrails)
 ```
@@ -556,7 +621,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev,redis,otel]"   # All extras for full test coverage
 
-# Run unit tests (328 tests, no AWS calls)
+# Run unit tests (387 tests, no AWS calls)
 pytest tests/ -v
 
 # Run ALL integration tests (53 tests, requires AWS credentials)
@@ -571,6 +636,9 @@ INTEGRATION_TEST=1 pytest tests/test_aip_integration.py -v -s               # Ap
 INTEGRATION_TEST=1 pytest tests/test_guardrails_real_integration.py -v -s   # Bedrock Guardrails
 INTEGRATION_TEST=1 pytest tests/test_pricing_refresh_integration.py -v -s   # Pricing API
 INTEGRATION_TEST=1 VALKEY_URL=rediss://... pytest tests/test_valkey_cache_integration.py -v -s  # ElastiCache (VPC)
+
+# Validate model catalog pricing against live AWS Pricing API
+python scripts/refresh_pricing.py --check-tiers
 ```
 
 ## How It Compares
@@ -580,8 +648,10 @@ INTEGRATION_TEST=1 VALKEY_URL=rediss://... pytest tests/test_valkey_cache_integr
 | Bedrock-specific | No | No | No | Yes | **Yes** |
 | Cross-family routing | Generic | Generic | Generic | No (single family) | **Yes** |
 | CRIS awareness | No | No | No | Yes | **Yes** |
-| Inference tier routing | No | No | No | Manual | **Auto** |
-| Prompt cache-aware | No | No | No | No | **Yes** |
+| Global CRIS profiles | No | No | No | Manual | **Auto (separate entries, ~10% cheaper)** |
+| Inference tier routing | No | No | No | Manual | **Auto (Flex/Standard/Priority)** |
+| Tier-aware cost estimation | No | No | No | No | **Yes (0.5×/1.0×/1.75× multipliers)** |
+| Prompt cache-aware | No | No | No | No | **Yes (Claude + Nova)** |
 | Circuit breaker | No | No | Yes | No | **Yes** |
 | A/B + canary + shadow | Mirror only | No | Canary only | No | **Yes** |
 | Historical quality routing | No | No | No | No | **Yes** |
@@ -589,6 +659,7 @@ INTEGRATION_TEST=1 VALKEY_URL=rediss://... pytest tests/test_valkey_cache_integr
 | Multi-tenant AIPs | No | No | No | Manual | **Auto** |
 | Lambda-friendly | Partial | No | No | Yes | **Yes** |
 | Zero-dependency core | No (Redis) | N/A | No | N/A | **Yes (boto3 only)** |
+| Pricing validation script | No | No | No | No | **Yes (vs AWS Pricing API)** |
 
 ## Design Document
 

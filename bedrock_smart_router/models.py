@@ -54,21 +54,52 @@ class ModelCapabilities:
     prompt_caching: bool = False
 
 
+# ── Inference tier pricing multipliers ───────────────────────────
+# Standard = 1.0 (base price in models.json).
+# Priority ≈ 1.75× Standard (up to 25% better OTPS latency).
+# Flex ≈ 0.50× Standard (latency-tolerant, best-effort).
+# These are approximate defaults — actual multipliers vary by model.
+# Source: AWS Bedrock pricing page + Bedrock service tiers documentation.
+TIER_PRICING_MULTIPLIER: dict[str, float] = {
+    "standard": 1.0,
+    "priority": 1.75,
+    "flex": 0.50,
+}
+
+
 @dataclass(frozen=True)
 class ModelPricing:
-    """Per-1K-token pricing for a model."""
+    """Per-1K-token pricing for a model.
+
+    Prices represent **Standard tier** on-demand rates.  Use
+    ``estimate_cost(tier=...)`` to apply the tier multiplier for
+    Priority (~1.75×) or Flex (~0.50×) tiers.
+    """
 
     input_per_1k: float = 0.0
     output_per_1k: float = 0.0
     cache_read_per_1k: float = 0.0
     cache_write_per_1k: float = 0.0
 
-    def estimate_cost(self, input_tokens: int, output_tokens: int) -> float:
-        """Estimate the cost for a request in dollars."""
+    def estimate_cost(
+        self,
+        input_tokens: int,
+        output_tokens: int,
+        tier: str = "standard",
+    ) -> float:
+        """Estimate the cost for a request in dollars.
+
+        Args:
+            input_tokens: Number of input tokens.
+            output_tokens: Number of output tokens.
+            tier: Inference tier — ``"standard"`` (default),
+                ``"priority"`` (~1.75×), or ``"flex"`` (~0.50×).
+        """
+        multiplier = TIER_PRICING_MULTIPLIER.get(tier, 1.0)
         return (
             (input_tokens / 1000) * self.input_per_1k
             + (output_tokens / 1000) * self.output_per_1k
-        )
+        ) * multiplier
 
 
 @dataclass
