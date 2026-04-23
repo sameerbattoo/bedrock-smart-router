@@ -54,7 +54,7 @@ print(f"Complex → tier={r2['routing_decision'].inference_tier}")
 router = BedrockRouter.create({
     "guardrails": {
         "pre_route": {
-            "guardrail_id": "fl8aietlxhbx",  # Replace with your guardrail ID
+            "guardrail_id": "your-guardrail-id",  # Replace with your guardrail ID
             "guardrail_version": "DRAFT",
             "action_on_block": "reject",
         },

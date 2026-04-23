@@ -3,8 +3,8 @@
 Run with:
     INTEGRATION_TEST=1 .venv/bin/python -m pytest tests/test_valkey_cache_integration.py -v -s
 
-Uses the ElastiCache Valkey cluster:
-    arn:aws:elasticache:us-west-2:175918693907:replicationgroup:capstone-sqlagent-valkey-cache
+Uses an ElastiCache Valkey cluster (set VALKEY_URL env var):
+    VALKEY_URL=rediss://your-cluster-endpoint:6379
 
 Requires network access to the VPC where ElastiCache is running.
 """
@@ -21,7 +21,7 @@ from bedrock_smart_router.cache_layer import CacheConfig, build_cache
 SKIP_REASON = "Set INTEGRATION_TEST=1 and VALKEY_URL=rediss://... to run (requires VPC access)"
 VALKEY_URL = os.environ.get(
     "VALKEY_URL",
-    "rediss://master.capstone-sqlagent-valkey-cache.8ot617.usw2.cache.amazonaws.com:6379",
+    "rediss://your-cluster-endpoint:6379",
 )
 
 # Note: ElastiCache is VPC-only. This test requires network access to

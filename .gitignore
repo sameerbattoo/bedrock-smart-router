@@ -6,6 +6,7 @@ dist/
 build/
 *.egg
 .venv/
+*.whl
 
 # IDE
 .idea/
@@ -22,5 +23,15 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Secrets — never commit these
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+
 # Kiro
 .kiro/
+
+# Temp files
+.commit_msg.txt

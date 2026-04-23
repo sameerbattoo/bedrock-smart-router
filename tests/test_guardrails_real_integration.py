@@ -3,7 +3,7 @@
 Run with:
     INTEGRATION_TEST=1 .venv/bin/python -m pytest tests/test_guardrails_real_integration.py -v -s
 
-Uses the existing ``no-investment-advice`` guardrail (fl8aietlxhbx)
+Uses the existing guardrail configured via ``GUARDRAIL_ID`` env var
 which blocks fiduciary advice, investment recommendations, and
 financial planning guidance.
 
@@ -26,7 +26,7 @@ from bedrock_smart_router.guardrails_integration import (
 
 SKIP_REASON = "Set INTEGRATION_TEST=1 to run against real AWS"
 REGION = "us-west-2"
-GUARDRAIL_ID = "fl8aietlxhbx"  # no-investment-advice
+GUARDRAIL_ID = os.environ.get("GUARDRAIL_ID", "your-guardrail-id")
 
 
 def _msgs(text: str) -> list[dict]:

@@ -1028,7 +1028,7 @@ docs/
 
 ```bash
 # Clone
-git clone git@ssh.gitlab.aws.dev:sbattoo/bedrock_smart_router.git
+git clone https://github.com/YOUR_ORG/bedrock-smart-router.git
 cd bedrock_smart_router
 
 # Setup

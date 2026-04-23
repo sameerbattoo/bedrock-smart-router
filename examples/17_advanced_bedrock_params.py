@@ -74,7 +74,7 @@ print(f"\nExtra response fields: {extra}")
 response = router.converse(
     messages=[{"role": "user", "content": [{"text": "What is the weather?"}]}],
     guardrailConfig={
-        "guardrailIdentifier": "fl8aietlxhbx",  # Replace with your guardrail ID
+        "guardrailIdentifier": "your-guardrail-id",  # Replace with your guardrail ID
         "guardrailVersion": "DRAFT",
         "trace": "enabled",
     },
