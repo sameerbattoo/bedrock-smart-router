@@ -661,6 +661,102 @@ Request arrives
   +-- Step 14: Emit observability event
 ```
 
+## How Routing Strategies Work
+
+Every strategy scores each eligible model on three dimensions — cost, latency, and quality — then picks the model with the highest composite score. The difference between strategies is which dimension drives the composite.
+
+### Scoring Dimensions
+
+**Cost score** (0–1, higher = cheaper) — computed from actual pricing in `models.json`:
+
+```
+cost_score = 1.0 - (model_estimated_cost / max_cost_across_candidates)
+```
+
+This is always real data — no heuristics. Global CRIS profiles score higher because they're ~10% cheaper.
+
+**Latency score** (0–1, higher = faster) — blends real data with heuristics:
+
+```
+Day 1 (no data):   tier heuristic (MICRO=0.90, LITE=0.75, MID=0.50, HEAVY=0.25, REASONING=0.10)
+                    + 0.05 bonus for CRIS availability
+                    + 0.05 bonus for prompt caching on multi-turn
+
+After 5+ requests: real avg_latency_ms from metrics store, normalised against 5000ms max
+```
+
+**Quality score** (0–1, higher = better) — blends real data with heuristics:
+
+```
+Day 1 (no data):   tier heuristic (MICRO=0.55, LITE=0.70, MID=0.82, HEAVY=0.90, REASONING=0.93)
+
+5–19 samples:      weighted blend of heuristic + historical avg_quality_score
+
+20+ samples:       pure historical avg_quality_score from metrics store
+                   (penalised by error_rate × 0.5)
+```
+
+Quality scores only improve if your application records `quality_score` in the metrics store (e.g., from a judge model or user feedback). Without that, quality stays at the tier heuristic.
+
+### Strategy Comparison
+
+| Strategy | Composite formula | Best for |
+|---|---|---|
+| `cost-optimized` | `composite = cost_score` | Batch processing, classification, high-volume |
+| `latency-optimized` | `composite = latency_score` | Real-time chat, interactive UX |
+| `quality-optimized` | `composite = quality_score` | Complex reasoning, analysis, code generation |
+| `balanced` | `0.4×cost + 0.3×latency + 0.3×quality` | General purpose (default) |
+
+All four strategies compute all three scores for every model — the difference is only which score(s) drive the final selection. The non-primary scores are still recorded in `routing_decision.candidate_scores` for observability.
+
+### How Strategies Improve Over Time
+
+```
+Week 1:  All strategies use tier heuristics (sensible defaults)
+         Cost strategy uses real pricing (always accurate)
+
+Week 2:  5+ requests per model → latency scores switch to real P50 data
+         Latency-optimized and balanced strategies get smarter
+
+Week 4:  20+ requests with quality_score → quality scores switch to historical
+         Quality-optimized strategy fully data-driven
+
+Ongoing: Error rates penalise unreliable models automatically
+         Circuit breakers remove failing models from candidates
+```
+
+No cold-start problem — the heuristics are reasonable from day 1. The router gets better as it collects data, but it never makes a bad decision because of missing data.
+
+### Request Complexity Classification
+
+Before strategy scoring, the router classifies each request across 12 dimensions to determine the minimum model tier:
+
+| Dimension | Weight | What it detects |
+|---|---|---|
+| Token count | 0.07 | Longer input = more complex |
+| Code presence | 0.12 | `` ``` ``, `def`, `import`, language names |
+| Reasoning markers | 0.14 | "analyze", "step by step", "trade-off", "prove" |
+| Technical depth | 0.10 | Keyword density per 500 chars |
+| Simple indicators | 0.05 | "hello", "what is", "translate" (inverted) |
+| Multi-step patterns | 0.08 | "first", "then", "step 1" |
+| Tool use signals | 0.09 | "function call", "json schema", tool_config present |
+| Document analysis | 0.08 | "document", "pdf", "summarize the" |
+| Conversation depth | 0.06 | Number of messages / 10 |
+| AWS specificity | 0.06 | "s3", "ec2", "lambda", "cloudformation" |
+| Math/logical | 0.08 | "equation", "calculate", "proof", "algorithm" |
+| Creative/open-ended | 0.07 | "write a story", "brainstorm", "imagine" |
+
+The weighted composite maps to a complexity level, which sets the minimum model tier:
+
+```
+score < 0.25                          → SIMPLE    → min tier: MICRO
+0.25 ≤ score < 0.55                   → MODERATE  → min tier: LITE
+0.55 ≤ score < 0.80                   → COMPLEX   → min tier: MID
+score ≥ 0.80 OR 2+ reasoning markers  → REASONING → min tier: REASONING
+```
+
+Models below the minimum tier are excluded before strategy scoring begins. This ensures simple questions never go to expensive models, and complex questions never go to models that can't handle them.
+
 ## Model Catalog
 
 The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 39 Bedrock models — 27 regional and 12 global CRIS profiles — with capabilities, pricing, and inference tier support:
@@ -861,11 +957,11 @@ threading.Thread(target=_watch, daemon=True).start()
 | Redis/Valkey cache | ✅ Yes | Stored externally, new router connects |
 | In-memory metrics | ❌ Lost | Rebuilds from incoming requests |
 | In-memory cache | ❌ Lost | Rebuilds from cache misses |
-| Circuit breaker state | ❌ Lost | All circuits reset to CLOSED |
+| Circuit breaker state | ❌ Lost | Resets to CLOSED — re-trips within seconds if model is still failing |
 | A/B test counts | ❌ Lost | Counters restart from zero |
 | Canary health data | ❌ Lost | Monitoring restarts |
 
-For production services where losing circuit breaker state is a concern, use DynamoDB metrics — the quality-optimized strategy reads historical data from DynamoDB, so it survives router swaps.
+For production services, use DynamoDB metrics (`metrics.backend: "dynamodb"`) — the strategy engine reads historical latency, quality, and error rate data from DynamoDB on startup, so routing decisions are informed immediately after a swap. Circuit breaker state resets to CLOSED, but re-trips within seconds if a model is still failing — the fallback chain handles those requests gracefully.
 
 ## IAM Permissions
 

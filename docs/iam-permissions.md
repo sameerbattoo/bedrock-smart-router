@@ -32,6 +32,10 @@ arn:aws:bedrock:us-west-2::foundation-model/us.anthropic.claude-sonnet-4-6
 arn:aws:bedrock:us-west-2::foundation-model/us.amazon.nova-pro-v1:0
 ```
 
+### Global CRIS Profiles
+
+If the router selects global CRIS profiles (`global.*`), the IAM policy needs three parts — the regional inference profile, the regional foundation model, and the global foundation model. See the [AWS documentation on global cross-region inference IAM](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html) for the full policy structure. The simplest approach is to use the wildcard resource above, which covers all profiles.
+
 ---
 
 ## DynamoDB Metrics Store
@@ -272,9 +276,89 @@ Required only when pre-route or post-route guardrails are configured.
 
 ---
 
+## Application Inference Profiles / Multi-Tenant (optional)
+
+Required only when `aip.enabled` is `true` and `aip.auto_create` is `true`. The router creates per-tenant inference profiles for cost attribution and needs STS to discover the account ID.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockAIPManagement",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock:CreateInferenceProfile"
+            ],
+            "Resource": "arn:aws:bedrock:*:*:inference-profile/*"
+        },
+        {
+            "Sid": "STSIdentity",
+            "Effect": "Allow",
+            "Action": ["sts:GetCallerIdentity"],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+If `auto_create` is `false`, you create the inference profiles yourself and the router only needs `bedrock:InvokeModel` (already covered above).
+
+---
+
+## Provisioned Throughput Detection (optional)
+
+Required only when `provisioned_throughput.enabled` is `true`. The router lists active provisioned capacity to prefer already-paid throughput.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockProvisionedThroughput",
+            "Effect": "Allow",
+            "Action": ["bedrock:ListProvisionedModelThroughputs"],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+---
+
+## Semantic Cache & Semantic Router (optional)
+
+Required only when using `SemanticCache` or `SemanticRouter`. These call the Bedrock embedding model (default: `amazon.titan-embed-text-v2:0`) via `InvokeModel`.
+
+The Bedrock Inference permission above covers this if you use a wildcard resource. If you restrict to specific model ARNs, add the embedding model:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockEmbeddings",
+            "Effect": "Allow",
+            "Action": ["bedrock:InvokeModel"],
+            "Resource": "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0"
+        }
+    ]
+}
+```
+
+---
+
+## Redis / Valkey / ElastiCache (optional)
+
+Redis and Valkey are accessed over the network (TCP/TLS), not via AWS APIs. No IAM permissions are needed — authentication is handled by the Redis connection URL (password or IAM auth token).
+
+For ElastiCache with IAM authentication, the application needs network access to the VPC (security group rules) and the ElastiCache IAM auth token. See [ElastiCache IAM authentication](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth-iam.html).
+
+---
+
 ## Least-Privilege Recommendation
 
-For production, combine only the statements you need. A typical Lambda running the router with DynamoDB metrics, CloudWatch observability, and no auto-create:
+For production, combine only the statements you need. A typical Lambda running the router with DynamoDB metrics, CloudWatch observability, guardrails, and no auto-create:
 
 ```json
 {
@@ -288,6 +372,12 @@ For production, combine only the statements you need. A typical Lambda running t
                 "bedrock:InvokeModelWithResponseStream"
             ],
             "Resource": "arn:aws:bedrock:us-west-2:123456789012:inference-profile/*"
+        },
+        {
+            "Sid": "BedrockGuardrails",
+            "Effect": "Allow",
+            "Action": ["bedrock:ApplyGuardrail"],
+            "Resource": "arn:aws:bedrock:us-west-2:123456789012:guardrail/*"
         },
         {
             "Sid": "MetricsStore",
@@ -308,3 +398,12 @@ For production, combine only the statements you need. A typical Lambda running t
     ]
 }
 ```
+
+Add these only if you use the corresponding features:
+
+| Feature | Add these actions |
+|---|---|
+| Multi-tenant AIPs (`aip.auto_create: true`) | `bedrock:CreateInferenceProfile`, `sts:GetCallerIdentity` |
+| Provisioned throughput detection | `bedrock:ListProvisionedModelThroughputs` |
+| Semantic cache / semantic router | `bedrock:InvokeModel` on the embedding model ARN |
+| Pricing refresh | `bedrock:ListFoundationModels`, `pricing:GetProducts` |

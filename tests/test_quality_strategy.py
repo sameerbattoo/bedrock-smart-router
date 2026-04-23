@@ -18,9 +18,8 @@ from bedrock_smart_router.models import (
 )
 from bedrock_smart_router.quality_strategy import (
     QualityOptimizedStrategy,
-    _quality_score_for_model,
 )
-from bedrock_smart_router.strategy_engine import resolve_strategy
+from bedrock_smart_router.strategy_engine import resolve_strategy, _quality_score
 
 
 def _model(mid: str, tier: Tier, price: float) -> BedrockModel:
@@ -50,7 +49,7 @@ class TestQualityScoreBlending:
 
     def test_no_metrics_uses_heuristic(self):
         model = _model("m", Tier.MID, 0.003)
-        score = _quality_score_for_model(model, None)
+        score = _quality_score(model, None)
         assert score == 0.82  # TIER_QUALITY_HEURISTIC[MID]
 
     def test_no_quality_scores_in_metrics(self):
@@ -60,7 +59,7 @@ class TestQualityScoreBlending:
             model_id="m", window_seconds=3600,
             sample_count=10, error_rate=0.0,
         )
-        score = _quality_score_for_model(model, metrics)
+        score = _quality_score(model, metrics)
         assert score == 0.82  # Heuristic, no quality data
 
     def test_high_error_rate_penalises(self):
@@ -70,7 +69,7 @@ class TestQualityScoreBlending:
             model_id="m", window_seconds=3600,
             sample_count=10, error_rate=0.5,
         )
-        score = _quality_score_for_model(model, metrics)
+        score = _quality_score(model, metrics)
         assert score < 0.82  # Penalised
 
     def test_full_trust_with_enough_samples(self):
@@ -80,7 +79,7 @@ class TestQualityScoreBlending:
             model_id="m", window_seconds=3600,
             sample_count=25, avg_quality_score=0.95,
         )
-        score = _quality_score_for_model(model, metrics)
+        score = _quality_score(model, metrics)
         # With 25 samples (>= 20), should fully trust historical
         assert score == 0.95
 
@@ -91,7 +90,7 @@ class TestQualityScoreBlending:
             model_id="m", window_seconds=3600,
             sample_count=12, avg_quality_score=0.95,
         )
-        score = _quality_score_for_model(model, metrics)
+        score = _quality_score(model, metrics)
         # 12 samples: partial trust, should be between 0.55 and 0.95
         assert 0.55 < score < 0.95
 
