@@ -782,3 +782,199 @@ response = router.converse(
 ```
 
 **Rolling budget tracking** — track spend per user/team with hourly and daily limits using `BudgetTracker` and `BudgetRule`. When exceeded, the strategy either downgrades to a cheaper model or rejects the request.
+
+---
+
+## 25. Strands Agents SDK Integration (`25_strands_integration.py`)
+
+Use the smart router as a **Strands Agents model provider**. Instead of Strands calling Bedrock directly with a fixed model, every agent call flows through the router — getting automatic model selection, fallbacks, circuit breakers, cost tracking, and all other routing features.
+
+### Why Use This
+
+When you build a Strands agent with the default `BedrockModel`, you pick one model and every call goes to it regardless of complexity. A simple "Hello" costs the same as a complex architecture question. With `SmartRouterModel`:
+
+- Simple questions route to cheap/fast models (Nova Micro, Llama 3.1 8B)
+- Complex reasoning routes to powerful models (Claude Opus, Claude Sonnet)
+- Tool use routes to models that support it
+- If a model fails, the fallback chain tries alternatives automatically
+- Cost, latency, and routing decisions are tracked on every call
+
+### Installation
+
+```bash
+pip install bedrock-smart-router[strands]
+```
+
+### How It Works
+
+`SmartRouterModel` implements Strands' `Model` interface. When the Strands agent loop calls `model.stream()`, the adapter:
+
+1. **Converts** Strands types (messages, tool_specs, system_prompt) to Bedrock Converse format
+2. **Delegates** to `BedrockRouter.converse_stream()` which runs the full routing pipeline (complexity analysis → strategy → model selection → CRIS → tier → guardrails → fallbacks)
+3. **Passes through** Bedrock stream events as-is — they're already valid Strands `StreamEvent`s (the formats are identical)
+4. **Captures** the routing decision and stores it on `model.last_routing_decision`
+
+The sync router runs in a background thread using `asyncio.to_thread` with a callback queue — the same pattern Strands' own `BedrockModel` uses internally.
+
+### Example 1: Basic Agent with Smart Routing
+
+```python
+from strands import Agent
+from bedrock_smart_router.strands_model import SmartRouterModel
+
+model = SmartRouterModel(router_config={"region": "us-west-2"})
+agent = Agent(model=model)
+
+response = agent("What is Amazon S3?")
+
+# Every call produces a routing decision
+d = model.last_routing_decision
+print(f"Routed to:   {d.selected_model}")    # e.g. "us.amazon.nova-lite-v1:0"
+print(f"Strategy:    {d.strategy_used}")      # "balanced"
+print(f"Complexity:  {d.complexity_detected}")# "simple"
+print(f"Cost:        ${d.actual_cost:.6f}")   # $0.000012
+print(f"Latency:     {d.latency_ms:.0f}ms")  # 450ms
+```
+
+### Example 2: Routing Presets
+
+Presets control the cost/quality/speed trade-off with a single parameter:
+
+```python
+# Economy — cheapest model, max $0.002/request
+economy_model = SmartRouterModel(
+    router_config={"region": "us-west-2"},
+    routing_preset="economy",
+)
+economy_agent = Agent(model=economy_model)
+response = economy_agent("Summarise S3 in one sentence.")
+# → Routes to Nova Micro or Llama 8B, cost ~$0.00002
+
+# Quality — best model regardless of cost
+quality_model = SmartRouterModel(
+    router_config={"region": "us-west-2"},
+    routing_preset="quality",
+)
+quality_agent = Agent(model=quality_model)
+response = quality_agent("Compare eventual vs strong consistency in distributed systems.")
+# → Routes to Claude Opus, cost ~$0.02
+```
+
+### Example 3: Tool Use
+
+Strands handles the agent loop (call model → execute tools → feed results back). The router picks the best model that supports `tool_use`:
+
+```python
+from strands import Agent, tool
+
+@tool
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    return f"22°C and sunny in {city}"
+
+@tool
+def calculate(expression: str) -> str:
+    """Evaluate a math expression."""
+    return str(eval(expression))
+
+model = SmartRouterModel(router_config={"region": "us-west-2"})
+agent = Agent(
+    model=model,
+    tools=[get_weather, calculate],
+    system_prompt="You are a helpful assistant. Use tools when needed.",
+)
+
+response = agent("What's the weather in Seattle and what is 42 * 17?")
+# → Router picks a tool-capable model (e.g. Nova 2 Lite)
+# → Strands executes both tools and feeds results back
+# → Final response: "The weather in Seattle is 22°C and sunny. 42 × 17 = 714."
+```
+
+### Example 4: Multi-Turn Conversation
+
+Each turn is independently routed — a simple greeting may go to a cheap model while a complex follow-up routes to a heavier one:
+
+```python
+model = SmartRouterModel(router_config={"region": "us-west-2"}, max_tokens=1024)
+agent = Agent(model=model)
+
+response = agent("Hi, what's your name?")
+print(f"Turn 1 → {model.last_routing_decision.selected_model}")
+# → Llama 8B (simple)
+
+response = agent("Explain the CAP theorem in 3 sentences.")
+print(f"Turn 2 → {model.last_routing_decision.selected_model}")
+# → Nova 2 Lite or Claude Sonnet (moderate/complex)
+```
+
+### Example 5: Non-Streaming Mode
+
+Some models don't support streaming tool use. Set `streaming=False` and the adapter uses `router.converse()` instead, converting the response to Strands' streaming event format:
+
+```python
+model = SmartRouterModel(
+    router_config={"region": "us-west-2"},
+    streaming=False,
+)
+agent = Agent(model=model)
+response = agent("What is Lambda?")
+```
+
+### Example 6: Bring Your Own Router
+
+If you already have a configured `BedrockRouter` with caching, metrics, guardrails, etc., pass it directly:
+
+```python
+from bedrock_smart_router import BedrockRouter
+
+router = BedrockRouter.create({
+    "region": "us-west-2",
+    "strategy": "cost-optimized",
+    "cache": {"enabled": True, "ttl": 300},
+    "metrics": {"backend": "dynamodb", "table_name": "MyMetrics"},
+})
+
+model = SmartRouterModel(router=router)
+agent = Agent(model=model)
+```
+
+### Example 7: Runtime Config Changes
+
+Switch routing behaviour mid-conversation without creating a new agent:
+
+```python
+model = SmartRouterModel(router_config={"region": "us-west-2"})
+agent = Agent(model=model)
+
+response = agent("Hello!")
+# → Default balanced routing
+
+model.update_config(routing_preset="economy", max_cost_per_request=0.001)
+response = agent("What is EC2?")
+# → Economy routing, cost-capped
+
+model.update_config(routing_preset="quality", max_cost_per_request=None)
+response = agent("Design a microservices architecture for a banking platform.")
+# → Quality routing, no cost limit → Claude Opus
+```
+
+### Configuration Options
+
+`SmartRouterModel` accepts all standard router config plus Strands-specific options:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `router_config` | dict / RouterConfig | `None` | Configuration for creating a new `BedrockRouter` |
+| `router` | BedrockRouter | `None` | Pre-built router instance (overrides `router_config`) |
+| `streaming` | bool | `True` | Use `converse_stream` (True) or `converse` (False) |
+| `routing_preset` | str | `None` | Named preset: `"economy"`, `"speed"`, `"balanced"`, `"quality"` |
+| `routing_strategy` | str | `None` | Explicit strategy name (overrides preset) |
+| `preferred_model` | str | `None` | Pin a specific Bedrock model ID |
+| `preferred_family` | str | `None` | Prefer a model family (e.g. `"anthropic"`) |
+| `max_cost_per_request` | float | `None` | Cost ceiling in dollars |
+| `max_tokens` | int | `None` | Maximum output tokens |
+| `temperature` | float | `None` | Sampling temperature |
+| `tags` | list[str] | `None` | Tags forwarded to the routing decision |
+| `metadata` | dict | `None` | Arbitrary metadata forwarded to the router |
+
+All parameters can be changed at runtime via `model.update_config()`.

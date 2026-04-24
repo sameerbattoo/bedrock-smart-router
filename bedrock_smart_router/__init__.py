@@ -7,6 +7,13 @@ from bedrock_smart_router.model_registry import base_model_id
 from bedrock_smart_router.observability import RoutingEvent
 from bedrock_smart_router.exceptions import NoModelsMatchError
 
+# Strands integration (optional — only available when strands-agents is installed)
+try:
+    from bedrock_smart_router.strands_model import SmartRouterModel as SmartRouterModel
+    _HAS_STRANDS = True
+except ImportError:
+    _HAS_STRANDS = False
+
 __all__ = [
     "BedrockRouter",
     "RouterConfig",
@@ -19,6 +26,7 @@ __all__ = [
     "TIER_PRICING_MULTIPLIER",
     "RoutingEvent",
     "NoModelsMatchError",
+    *((["SmartRouterModel"] if _HAS_STRANDS else [])),
 ]
 
 __version__ = "0.1.0"

@@ -457,6 +457,7 @@ class BedrockRouter:
             analysis=analysis, routing=routing,
             strategy_name=strategy_name, weights=weights,
             messages=messages, system=system,
+            requires_streaming_tool_use=bool(tool_config),
         )
 
         # Try invocation with fallbacks
@@ -633,6 +634,7 @@ class BedrockRouter:
         weights: dict[str, float],
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None,
+        requires_streaming_tool_use: bool = False,
     ) -> dict[str, Any]:
         """Run the routing pipeline and return the selected model + metadata.
 
@@ -643,6 +645,7 @@ class BedrockRouter:
             min_tier=min_tier,
             requires_vision=analysis.requires_vision,
             requires_tool_use=analysis.requires_tool_use,
+            requires_streaming_tool_use=requires_streaming_tool_use,
             min_context=routing.min_context_window,
             exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
             family=routing.preferred_family,

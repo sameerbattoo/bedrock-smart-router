@@ -163,3 +163,31 @@ class TestConverseStream:
                 decision = event["routing_decision"]
         assert decision.cris_profile is not None
         assert decision.inference_tier in ("standard", "priority", "flex")
+
+    def test_streaming_tool_use_excludes_incompatible_models(self, mock_router):
+        """converse_stream with tools should not select models with streaming_tool_use=False."""
+        router, _ = mock_router
+        tool_config = {
+            "tools": [{
+                "toolSpec": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "inputSchema": {"json": {"type": "object", "properties": {}}},
+                }
+            }]
+        }
+        decision = None
+        for event in router.converse_stream(
+            messages=_msgs("What's the weather?"),
+            tool_config=tool_config,
+        ):
+            if "routing_decision" in event:
+                decision = event["routing_decision"]
+        assert decision is not None
+        # The selected model should support streaming tool use
+        model = router.registry.get(decision.selected_model)
+        if model is not None:
+            assert model.capabilities.streaming_tool_use is True, (
+                f"Model {decision.selected_model} has streaming_tool_use=False "
+                f"but was selected for converse_stream with tools"
+            )

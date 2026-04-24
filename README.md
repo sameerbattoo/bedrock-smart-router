@@ -62,6 +62,13 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 **Async Support**
 - `AsyncBedrockRouter` for async/await usage in FastAPI, aiohttp, etc.
 
+**Strands Agents SDK Integration**
+- `SmartRouterModel` — drop-in Strands `Model` provider backed by the smart router
+- Every Strands agent call is automatically routed across Bedrock models by cost, latency, quality, and complexity
+- Tool use, multi-turn conversations, streaming, and structured output all work transparently
+- Per-request routing control via presets, strategies, cost limits, and metadata
+- Routing decisions accessible after every call for observability
+
 ## Quick Start
 
 ### Installation
@@ -70,6 +77,9 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 # Core SDK — only requires boto3, works in Lambda out of the box
 pip install bedrock-smart-router
 
+# With Strands Agents SDK integration
+pip install bedrock-smart-router[strands]
+
 # With Redis/Valkey/ElastiCache caching support
 pip install bedrock-smart-router[redis]
 
@@ -77,7 +87,7 @@ pip install bedrock-smart-router[redis]
 pip install bedrock-smart-router[otel]
 
 # With everything
-pip install bedrock-smart-router[redis,otel]
+pip install bedrock-smart-router[strands,redis,otel]
 
 # For development (includes pytest, moto)
 pip install bedrock-smart-router[dev]
@@ -86,6 +96,7 @@ pip install bedrock-smart-router[dev]
 | Extra | What it adds | When you need it |
 |---|---|---|
 | *(none)* | Core SDK, boto3 only | Lambda, single-instance, in-memory cache and metrics |
+| `[strands]` | `strands-agents` package | Using the router as a Strands Agents model provider |
 | `[redis]` | `redis` package | Shared cache + vector store via Redis, Valkey, or ElastiCache |
 | `[faiss]` | `faiss-cpu` package | Fast in-process vector search for semantic cache (~100K entries) |
 | `[otel]` | `opentelemetry-api`, `opentelemetry-sdk` | Distributed tracing and OTEL metrics export |
@@ -309,6 +320,8 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`22_semantic_router.py`](examples/22_semantic_router.py) | Intent routing: route queries to specialized models by meaning |
 | [`23_tag_and_conditional_routing.py`](examples/23_tag_and_conditional_routing.py) | Tag-based routing (free/paid tiers, teams) and metadata-driven conditions |
 | [`24_budget_and_tier_pricing.py`](examples/24_budget_and_tier_pricing.py) | Per-request cost ceilings, rolling budgets, inference tier pricing (Flex/Standard/Priority) |
+| [`25_strands_integration.py`](examples/25_strands_integration.py) | Strands Agents SDK integration — use the smart router as a Strands Model provider |
+| [`26_strands_first_agent.py`](examples/26_strands_first_agent.py) | Official Strands Agents SDK "First Agent" sample adapted to use smart routing |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
@@ -636,6 +649,135 @@ The `BudgetTracker` is in-memory — it resets on process restart and doesn't sh
 
 For multi-instance persistent budget tracking, the DynamoDB metrics store (`metrics.backend: "dynamodb"`) records every request with `cost` and `tenant_id`, but there's no built-in query for "total spend by tenant in the last hour." You'd need to add a GSI on `tenant_id` or build a separate spend-tracking table. This is on the roadmap but not yet implemented.
 
+## Strands Agents SDK Integration
+
+The Smart Router integrates with the [Strands Agents SDK](https://strandsagents.com/) as a custom model provider. Instead of Strands calling Bedrock directly with a fixed model, every agent call flows through the router — getting automatic model selection, fallbacks, circuit breakers, cost tracking, and all other routing features.
+
+### How It Works
+
+```
+Strands Agent
+  │ agent("Explain quantum computing")
+  ▼
+SmartRouterModel (implements strands.models.Model)
+  │ Converts Strands types → Bedrock Converse format
+  │ Builds RoutingConfig from model config (preset, strategy, cost limits)
+  ▼
+BedrockRouter
+  │ Analyzes complexity (12-dimension classifier)
+  │ Selects optimal model via strategy engine
+  │ Applies CRIS profile, inference tier, guardrails
+  │ Invokes Bedrock converse_stream with fallback chain
+  ▼
+Bedrock converse_stream
+  │ Returns stream events (messageStart, contentBlockDelta, ...)
+  ▼
+SmartRouterModel
+  │ Passes events through (Bedrock events ARE Strands StreamEvents)
+  │ Captures routing_decision for observability
+  ▼
+Strands Agent
+  │ Processes events normally (text, tool calls, reasoning)
+  │ Executes tools, feeds results back → next loop iteration
+  ▼
+Response returned to caller
+```
+
+The key insight: Bedrock's `converse_stream` event format is identical to Strands' `StreamEvent` format — the SDK was designed around Bedrock's Converse API. This means stream events pass through untouched with zero translation overhead.
+
+### Installation
+
+```bash
+pip install bedrock-smart-router[strands]
+```
+
+### Basic Usage
+
+```python
+from strands import Agent
+from bedrock_smart_router.strands_model import SmartRouterModel
+
+# Create a Strands model backed by the smart router
+model = SmartRouterModel(router_config={"region": "us-west-2"})
+agent = Agent(model=model)
+
+# Use it like any Strands agent — routing is automatic
+response = agent("Explain quantum computing")
+
+# Inspect the routing decision
+d = model.last_routing_decision
+print(f"Model: {d.selected_model}")      # e.g. "us.amazon.nova-lite-v1:0"
+print(f"Strategy: {d.strategy_used}")     # e.g. "balanced"
+print(f"Complexity: {d.complexity_detected}")  # e.g. "moderate"
+print(f"Cost: ${d.actual_cost:.6f}")
+```
+
+### Routing Presets
+
+Control the cost/quality/speed trade-off with a single parameter:
+
+```python
+# Economy — cheapest model for simple tasks
+model = SmartRouterModel(
+    router_config={"region": "us-west-2"},
+    routing_preset="economy",
+)
+
+# Quality — best model for complex reasoning
+model = SmartRouterModel(
+    router_config={"region": "us-west-2"},
+    routing_preset="quality",
+)
+```
+
+### Tool Use
+
+Strands handles the agent loop (call model → execute tools → feed results back). The router picks the best model that supports `tool_use`:
+
+```python
+from strands import Agent, tool
+
+@tool
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    return f"22°C and sunny in {city}"
+
+model = SmartRouterModel(router_config={"region": "us-west-2"})
+agent = Agent(model=model, tools=[get_weather])
+response = agent("What's the weather in Seattle?")
+```
+
+### Runtime Config Changes
+
+Switch routing behaviour mid-conversation:
+
+```python
+model.update_config(routing_preset="economy")
+response = agent("Simple question")  # Routes to cheapest model
+
+model.update_config(routing_preset="quality")
+response = agent("Complex analysis")  # Routes to best model
+```
+
+### Bring Your Own Router
+
+Pass a pre-configured `BedrockRouter` instance:
+
+```python
+from bedrock_smart_router import BedrockRouter
+
+router = BedrockRouter.create({
+    "region": "us-west-2",
+    "strategy": "cost-optimized",
+    "cache": {"enabled": True, "ttl": 300},
+})
+
+model = SmartRouterModel(router=router)
+agent = Agent(model=model)
+```
+
+See [`examples/25_strands_integration.py`](examples/25_strands_integration.py) for the full set of examples.
+
 ## Architecture
 
 ```
@@ -769,14 +911,14 @@ The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) c
 | DeepSeek (1) | R1 | reasoning |
 | Mistral (3) | Small, Large 2, Pixtral Large | lite, mid |
 
-Pricing is validated against the live AWS Pricing API using `scripts/refresh_pricing.py`. Run it periodically to catch price changes:
+Pricing is validated against the live AWS Pricing API using `scripts/refresh_pricing.py`. Run it periodically to catch price changes and remove legacy models. See [Maintaining the Catalog](#maintaining-the-catalog-with-refresh_pricingpy) for the full workflow.
 
 ```bash
-# Dry run — show mismatches
-python scripts/refresh_pricing.py
+# Check everything: pricing, tiers, and legacy models
+python scripts/refresh_pricing.py --check-tiers --check-legacy
 
-# Auto-fix models.json and regenerate global entries
-python scripts/refresh_pricing.py --fix --regen-global --check-tiers
+# Fix everything automatically
+python scripts/refresh_pricing.py --fix --check-tiers --check-legacy --regen-global
 ```
 
 ### Global CRIS Profiles
@@ -835,6 +977,55 @@ To update pricing or add models, edit the JSON file directly or use an overlay a
 
 ```python
 router.registry.load_overlay("my-custom-models.json")
+```
+
+### Maintaining the Catalog with `refresh_pricing.py`
+
+The model catalog (`bedrock_smart_router/data/models.json`) is a static file that ships with the SDK. AWS changes pricing, retires models, and launches new ones — so the catalog needs periodic maintenance. The `scripts/refresh_pricing.py` script automates this by querying live AWS APIs.
+
+**What it checks:**
+
+| Flag | AWS API Used | What It Does |
+|---|---|---|
+| *(default)* | Pricing API (`pricing:GetProducts`) | Compares catalog pricing against live on-demand Standard tier rates |
+| `--check-tiers` | Pricing API | Validates `supported_inference_tiers` (Standard/Priority/Flex) per model |
+| `--check-legacy` | Bedrock API (`bedrock:ListFoundationModels`) | Detects models marked LEGACY by the provider and flags them for removal |
+| `--regen-global` | *(none — computed)* | Regenerates `global.*` CRIS entries at 90% of regional pricing |
+
+**Common workflows:**
+
+```bash
+# Dry run — see what's different, don't change anything
+python scripts/refresh_pricing.py
+
+# Check everything: pricing + tiers + legacy models
+python scripts/refresh_pricing.py --check-tiers --check-legacy
+
+# Fix everything automatically
+python scripts/refresh_pricing.py --fix --check-tiers --check-legacy --regen-global
+
+# Check a specific provider only
+python scripts/refresh_pricing.py --provider meta --check-legacy
+
+# Use a different region
+python scripts/refresh_pricing.py --region us-east-1 --check-legacy
+```
+
+**Why `--check-legacy` matters:** The Pricing API has no concept of model lifecycle — a model can have valid pricing while being marked LEGACY by the provider (e.g. Meta) in the Bedrock runtime. Legacy models still appear as inference profiles in the console but Bedrock blocks invocations if you haven't used them in the last 30 days. The `--check-legacy` flag queries `bedrock:ListFoundationModels` to detect these and remove them from the catalog.
+
+**Recommended schedule:** Run `--fix --check-tiers --check-legacy --regen-global` monthly, or after any AWS pricing announcement. The script requires `pricing:GetProducts` permission (Pricing API is only in us-east-1) and `bedrock:ListFoundationModels` permission for legacy detection.
+
+**IAM permissions required:**
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "pricing:GetProducts",
+    "bedrock:ListFoundationModels"
+  ],
+  "Resource": "*"
+}
 ```
 
 ## Configuration Reference
@@ -1013,6 +1204,7 @@ bedrock_smart_router/
   canary.py                    # Canary deployments with auto-rollback
   shadow_mode.py               # Traffic mirroring to shadow model
   custom_strategy.py           # Strategy plugin registration
+  strands_model.py             # Strands Agents SDK Model provider (SmartRouterModel)
   semantic_cache.py            # Embedding-based semantic cache (optional)
   semantic_router.py           # Intent routing via embeddings (optional)
 
@@ -1053,7 +1245,7 @@ INTEGRATION_TEST=1 pytest tests/test_pricing_refresh_integration.py -v -s   # Pr
 INTEGRATION_TEST=1 VALKEY_URL=rediss://... pytest tests/test_valkey_cache_integration.py -v -s  # ElastiCache (VPC)
 
 # Validate model catalog pricing against live AWS Pricing API
-python scripts/refresh_pricing.py --check-tiers
+python scripts/refresh_pricing.py --check-tiers --check-legacy
 ```
 
 ## How It Compares
@@ -1073,6 +1265,7 @@ python scripts/refresh_pricing.py --check-tiers
 | Budget enforcement | Yes | No | No | No | **Yes** |
 | Multi-tenant AIPs | No | No | No | Manual | **Auto** |
 | Lambda-friendly | Partial | No | No | Yes | **Yes** |
+| Strands Agents SDK | No | No | No | No | **Yes (SmartRouterModel)** |
 | Zero-dependency core | No (Redis) | N/A | No | N/A | **Yes (boto3 only)** |
 | Pricing validation script | No | No | No | No | **Yes (vs AWS Pricing API)** |
 
