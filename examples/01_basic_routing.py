@@ -3,9 +3,12 @@
 Demonstrates:
   1. Zero-config (defaults to us-west-2, balanced strategy)
   2. Explicit region
-  3. Pinning a specific model with preferred_model
-  4. Config from a YAML string
-  5. Config from a dict
+  3. Boto3 drop-in: modelId parameter
+  4. Boto3 drop-in: camelCase parameters (inferenceConfig, toolConfig)
+  5. Pin a model with preferred_model (RoutingConfig)
+  6. Let the router pick (no modelId) — adds routing intelligence
+  7. Config from a YAML string
+  8. Config from a dict
 """
 
 import yaml
@@ -47,28 +50,95 @@ response = router.converse(
 print(f"\nus-east-1 → Model: {response['routing_decision'].selected_model}")
 
 
-# ── Example 3: Pin a specific model ─────────────────────────────────
-# Use preferred_model to always route to a specific model.
-# The router still provides fallbacks, circuit breakers, and metrics —
-# you get reliability without giving up model choice.
+# ═══════════════════════════════════════════════════════════════════
+# Boto3 Drop-In Compatibility
+#
+# The router accepts the same parameter names as boto3's
+# bedrock-runtime.converse(). You can migrate by changing one line:
+#
+#   BEFORE:  response = client.converse(modelId="...", messages=[...])
+#   AFTER:   response = router.converse(modelId="...", messages=[...])
+#
+# Both snake_case and camelCase parameter names are accepted.
+# ═══════════════════════════════════════════════════════════════════
+
+
+# ── Example 3: Boto3 drop-in with modelId ────────────────────────────
+# Pass modelId just like you would with boto3. The router uses that
+# exact model but still provides fallbacks, circuit breakers, and metrics.
 
 router = BedrockRouter.create({"region": "us-west-2"})
 
 response = router.converse(
-    messages=[{"role": "user", "content": [{"text": "Explain VPC peering in AWS."}]}],
-    routing=RoutingConfig(preferred_model="us.amazon.nova-pro-v1:0"),
+    modelId="us.amazon.nova-pro-v1:0",
+    messages=[{"role": "user", "content": [{"text": "Explain VPC peering."}]}],
 )
-
 d = response["routing_decision"]
-print(f"\nPinned model → {d.selected_model}")
-print(f"Cost:    ${d.actual_cost:.6f}")
-print(f"Latency: {d.latency_ms:.0f}ms")
-print(f"Tokens:  {d.input_tokens} in / {d.output_tokens} out")
-# If Nova Pro were down, the router would fall back automatically:
-print(f"Fallback chain: {d.fallback_chain}")
+print(f"\nBoto3 modelId → {d.selected_model}")
+print(f"  Cost:    ${d.actual_cost:.6f}")
+print(f"  Latency: {d.latency_ms:.0f}ms")
+# The router still builds a fallback chain in case the model fails:
+print(f"  Fallback chain: {d.fallback_chain}")
 
 
-# ── Example 4: Config from a YAML file ──────────────────────────────
+# ── Example 4: Boto3 camelCase parameters ────────────────────────────
+# inferenceConfig, toolConfig — both camelCase (boto3) and snake_case work.
+
+response = router.converse(
+    modelId="us.amazon.nova-pro-v1:0",
+    messages=[{"role": "user", "content": [{"text": "Write a haiku about clouds."}]}],
+    inferenceConfig={"maxTokens": 100, "temperature": 0.9},
+)
+d = response["routing_decision"]
+print(f"\ncamelCase params → {d.selected_model}, {d.output_tokens} tokens")
+
+# Same thing with snake_case — both work:
+response = router.converse(
+    model_id="us.amazon.nova-pro-v1:0",
+    messages=[{"role": "user", "content": [{"text": "Write a haiku about rain."}]}],
+    inference_config={"maxTokens": 100, "temperature": 0.9},
+)
+d = response["routing_decision"]
+print(f"snake_case params → {d.selected_model}, {d.output_tokens} tokens")
+
+
+# ── Example 5: Pin a model with RoutingConfig ────────────────────────
+# For advanced routing control, use RoutingConfig. preferred_model pins
+# the model while letting you also set strategy, tags, metadata, etc.
+
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "Explain VPC peering in AWS."}]}],
+    routing=RoutingConfig(
+        preferred_model="us.amazon.nova-pro-v1:0",
+        metadata={"user_id": "u-123", "team": "networking"},
+    ),
+)
+d = response["routing_decision"]
+print(f"\nRoutingConfig → {d.selected_model}")
+print(f"  Tokens: {d.input_tokens} in / {d.output_tokens} out")
+
+
+# ── Example 6: Let the router pick (smart routing) ──────────────────
+# Omit modelId entirely. The router analyzes the request complexity
+# and picks the optimal model based on cost, latency, and quality.
+
+# Simple question → cheap model (Nova Micro or similar)
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "What is EC2?"}]}],
+)
+print(f"\nSimple question → {response['routing_decision'].selected_model}")
+
+# Complex question → capable model (Sonnet, Nova Pro, or similar)
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": """
+        Analyze the trade-offs between microservices and monolithic architecture.
+        Consider scalability, team structure, and operational overhead.
+    """}]}],
+)
+print(f"Complex question → {response['routing_decision'].selected_model}")
+
+
+# ── Example 7: Config from a YAML file ──────────────────────────────
 # Application code never changes — just edit the YAML.
 
 CONFIG = """
@@ -93,7 +163,7 @@ response = router.converse(
 print(f"\nYAML config → Model: {response['routing_decision'].selected_model}")
 
 
-# ── Example 5: Config from a dict (e.g. loaded from DynamoDB/S3) ────
+# ── Example 8: Config from a dict (e.g. loaded from DynamoDB/S3) ────
 
 router = BedrockRouter.create({
     "region": "us-west-2",
