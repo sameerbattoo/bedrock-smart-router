@@ -273,7 +273,7 @@ Works with FastAPI, aiohttp, or any async framework.
 
 ## 14. Model Catalog (`14_model_catalog.py`)
 
-The router ships with a JSON catalog (`data/models.json`) containing 26 Bedrock models (19 regional + 7 global CRIS profiles). You can:
+The router ships with a JSON catalog (`data/models.json`) containing 25 Bedrock models (18 regional + 7 global CRIS profiles). You can:
 
 - **List and filter** by family, tier, capability, context window
 - **Load overlays** to add custom/imported models or fix stale pricing
@@ -311,7 +311,7 @@ canary:
   canary_percentage: 5
 shadow: {enabled: true, shadow_model: us.amazon.nova-pro-v1:0, sample_rate: 0.1}
 fallback: {max_depth: 5}
-circuit_breaker: {failure_threshold: 5, cooldown_seconds: 30}
+circuit_breaker: {failure_threshold: 5, window_seconds: 60, cooldown_seconds: 30, throttle_cooldown_seconds: 10}
 retry: {max_retries: 3}
 excluded_models: ["us.meta.*"]
 ```
@@ -500,7 +500,7 @@ shadow: {enabled: true, shadow_model: us.amazon.nova-pro-v1:0, sample_rate: 0.1}
 
 # Reliability
 fallback: {max_depth: 5}
-circuit_breaker: {failure_threshold: 5, cooldown_seconds: 30}
+circuit_breaker: {failure_threshold: 5, window_seconds: 60, cooldown_seconds: 30, throttle_cooldown_seconds: 10}
 retry: {max_retries: 3}
 excluded_models: ["us.meta.*"]
 ```

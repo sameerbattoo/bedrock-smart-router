@@ -901,15 +901,15 @@ Models below the minimum tier are excluded before strategy scoring begins. This 
 
 ## Model Catalog
 
-The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 39 Bedrock models — 27 regional and 12 global CRIS profiles — with capabilities, pricing, and inference tier support:
+The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 25 Bedrock models — 18 regional and 7 global CRIS profiles — with capabilities, pricing, and inference tier support:
 
 | Family | Models | Tiers |
 |---|---|---|
-| Amazon Nova (5 regional + 5 global) | Micro 1.0, Lite 1.0, Nova 2 Lite, Pro 1.0, Premier 1.0 | micro, lite, mid, heavy |
-| Anthropic Claude (9 regional + 7 global) | Haiku 4.5, 3.7 Sonnet, Sonnet 4, Sonnet 4.5, Sonnet 4.6, Opus 4.1, Opus 4.5, Opus 4.6, Opus 4.7 | lite, mid, heavy, reasoning |
-| Meta Llama (10) | 3.2 1B, 3.2 3B, 3.1 8B, 3.2 11B, 3.1 70B, 3.3 70B, 3.2 90B, 4 Scout 17B, 4 Maverick 17B | micro, lite, mid, heavy |
+| Amazon Nova (4 regional + 1 global) | Micro 1.0, Lite 1.0, Nova 2 Lite, Pro 1.0 | micro, lite, mid |
+| Anthropic Claude (7 regional + 6 global) | Haiku 4.5, Sonnet 4.5, Sonnet 4.6, Opus 4.1, Opus 4.5, Opus 4.6, Opus 4.7 | lite, mid, heavy, reasoning |
+| Meta Llama (5) | 3.1 8B, 3.1 70B, 3.3 70B, 4 Scout 17B, 4 Maverick 17B | micro, lite, mid |
 | DeepSeek (1) | R1 | reasoning |
-| Mistral (3) | Small, Large 2, Pixtral Large | lite, mid |
+| Mistral (1) | Pixtral Large | mid |
 
 Pricing is validated against the live AWS Pricing API using `scripts/refresh_pricing.py`. Run it periodically to catch price changes and remove legacy models. See [Maintaining the Catalog](#maintaining-the-catalog-with-refresh_pricingpy) for the full workflow.
 
@@ -1037,7 +1037,7 @@ All configuration is driven through a single `RouterConfig` object, constructabl
 | `region` | AWS region | `us-west-2` |
 | `strategy` | `balanced`, `cost-optimized`, `latency-optimized`, `quality-optimized` | `balanced` |
 | `weights` | `{cost, latency, quality}` weights for balanced strategy | `{0.4, 0.3, 0.3}` |
-| `cache` | `enabled`, `ttl_seconds`, `max_entries` | enabled, 3600s, 10K |
+| `cache` | `enabled`, `backend`, `ttl_seconds`, `max_entries`, `redis_url`, `key_prefix` | enabled, memory, 3600s, 10K |
 | `metrics` | `backend` (`memory`/`dynamodb`), `table_name`, `ttl_hours` | memory |
 | `observability` | `log_decisions` | true |
 | `cris` | `enabled`, `preferred_geography`, `allow_global` | enabled, no pref |
@@ -1045,8 +1045,8 @@ All configuration is driven through a single `RouterConfig` object, constructabl
 | `guardrails` | `pre_route`, `post_route` with `guardrail_id` and `action_on_block` | disabled |
 | `aip` | `enabled`, `auto_create`, `tag_keys` | disabled |
 | `fallback` | `enabled`, `max_depth`, `default_safe_model` | enabled, depth 5 |
-| `circuit_breaker` | `failure_threshold`, `window_seconds`, `cooldown_seconds` | 5 failures, 60s, 30s |
-| `retry` | `max_retries`, `backoff_base_seconds`, `backoff_multiplier` | 3 retries, 0.5s base |
+| `circuit_breaker` | `failure_threshold`, `window_seconds`, `cooldown_seconds`, `throttle_cooldown_seconds`, `half_open_max_requests` | 5 failures, 60s, 30s, 10s, 1 req |
+| `retry` | `max_retries`, `backoff_base_seconds`, `backoff_max_seconds`, `backoff_multiplier` | 3 retries, 0.5s base, 8.0s max, 2.0× |
 
 See [BEDROCK_SMART_ROUTER_DETAILED_DESIGN.md](BEDROCK_SMART_ROUTER_DETAILED_DESIGN.md) for the full configuration schema.
 
@@ -1172,7 +1172,7 @@ bedrock_smart_router/
   config.py                    # Consolidated RouterConfig from dict/YAML
   router.py                    # BedrockRouter — main entry point (14-step request flow)
   async_router.py              # AsyncBedrockRouter for async/await
-  data/models.json             # JSON model catalog (39 models, pricing, capabilities)
+  data/models.json             # JSON model catalog (25 models, pricing, capabilities)
   # Phase 1: Core
   model_registry.py            # JSON-driven model catalog with filtering and overlays
   request_analyzer.py          # 12-dimension zero-API-call complexity classifier
@@ -1211,7 +1211,7 @@ bedrock_smart_router/
 scripts/
   refresh_pricing.py           # Validate & refresh models.json from AWS Pricing API
 
-tests/                         # 387 unit tests + 53 integration tests (gated)
+tests/                         # 420 unit tests + 53 integration tests (gated)
 docs/
   iam-permissions.md           # IAM policy reference (Bedrock, DynamoDB, Pricing, Guardrails)
 ```
@@ -1228,7 +1228,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev,redis,otel]"   # All extras for full test coverage
 
-# Run unit tests (387 tests, no AWS calls)
+# Run unit tests (420 tests, no AWS calls)
 pytest tests/ -v
 
 # Run ALL integration tests (53 tests, requires AWS credentials)

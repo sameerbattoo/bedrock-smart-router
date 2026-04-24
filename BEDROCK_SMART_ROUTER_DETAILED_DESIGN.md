@@ -304,7 +304,7 @@ print(response["routing_decision"])
 #   "complexity": "simple",
 #   "estimated_cost": 0.0002,
 #   "alternatives_scored": 6,
-#   "fallback_chain": ["us.anthropic.claude-3-5-haiku-20241022-v1:0", ...]
+#   "fallback_chain": ["us.anthropic.claude-haiku-4-5-20251001-v1:0", ...]
 # }
 ```
 
@@ -465,10 +465,10 @@ class BedrockModel:
 
 | Tier | Anthropic | Amazon Nova | Meta Llama | Mistral | DeepSeek | Typical Use Case |
 |---|---|---|---|---|---|---|
-| `micro` | — | Nova Micro | Llama 3.2 1B, 3.2 3B, 3.1 8B | — | — | Classification, extraction, yes/no, simple Q&A |
-| `lite` | Haiku 4.5 | Nova Lite, Nova 2 Lite | Llama 3.2 11B, 4 Scout 17B | Mistral Small | — | Summarization, chat, moderate tasks |
-| `mid` | 3.7 Sonnet, Sonnet 4, 4.5, 4.6 | Nova Pro | Llama 3.1 70B, 3.3 70B, 4 Maverick 17B | Mistral Large 2, Pixtral Large | — | General-purpose, coding, analysis |
-| `heavy` | Opus 4.1, 4.5, 4.6 | Nova Premier | Llama 3.2 90B | — | — | Complex reasoning, long documents |
+| `micro` | — | Nova Micro | Llama 3.1 8B | — | — | Classification, extraction, yes/no, simple Q&A |
+| `lite` | Haiku 4.5 | Nova Lite, Nova 2 Lite | 4 Scout 17B | — | — | Summarization, chat, moderate tasks |
+| `mid` | Sonnet 4.5, 4.6 | Nova Pro | Llama 3.1 70B, 3.3 70B, 4 Maverick 17B | Pixtral Large | — | General-purpose, coding, analysis |
+| `heavy` | Opus 4.1, 4.5, 4.6 | — | — | — | — | Complex reasoning, long documents |
 | `reasoning` | Opus 4.7 | — | — | — | DeepSeek R1 | Multi-step reasoning, math, planning |
 
 **Registry population strategy:**
@@ -585,9 +585,9 @@ Routes to the cheapest model that meets the complexity requirement.
 
 ```
 simple    -> Nova Micro ($0.000035/1K in) or Llama 8B
-moderate  -> Nova Lite ($0.00006/1K in) or Haiku 3.5
-complex   -> Sonnet 4 or Nova Pro
-reasoning -> Sonnet 4 extended thinking or DeepSeek R1
+moderate  -> Nova Lite ($0.00006/1K in) or Haiku 4.5
+complex   -> Sonnet 4.5 or Nova Pro
+reasoning -> Opus 4.7 or DeepSeek R1
 ```
 
 **Inference tier selection:** Always uses Standard tier. Falls back to Flex tier for batch-eligible requests (50% cheaper). Never selects Priority tier.
@@ -899,7 +899,7 @@ Every routing decision is logged as a structured event:
     "us.anthropic.claude-sonnet-4-6": {"cost": 0.6, "latency": 0.7, "quality": 0.9, "composite": 0.73},
     "us.amazon.nova-pro-v1:0": {"cost": 0.8, "latency": 0.8, "quality": 0.7, "composite": 0.76}
   },
-  "fallback_chain": ["us.anthropic.claude-3-5-haiku-20241022-v1:0", "us.amazon.nova-lite-v1:0"],
+  "fallback_chain": ["us.anthropic.claude-haiku-4-5-20251001-v1:0", "us.amazon.nova-lite-v1:0"],
   "cache_hit": false,
   "estimated_cost": 0.0045,
   "actual_cost": 0.0042,
