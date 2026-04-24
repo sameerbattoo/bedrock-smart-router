@@ -2,40 +2,81 @@
 
 This guide covers every feature of the SDK with runnable code examples. Each example file in this folder is self-contained and can be run directly.
 
-**100% Converse API Coverage:** The router is a true drop-in replacement for `bedrock-runtime.converse()` and `converse_stream()`. Every request parameter is supported (first-class or via `**kwargs`). Every response field is captured in the routing decision. You lose nothing by routing through the SDK instead of calling Bedrock directly.
+---
 
-## Prerequisites
+## Drop-In Replacement for Bedrock Converse
 
-```bash
-pip install bedrock-smart-router
-# AWS credentials configured (via ~/.aws/credentials, IAM role, or env vars)
+The Smart Router is a **1-to-1 drop-in replacement** for `bedrock-runtime.converse()` and `converse_stream()`. You can migrate existing boto3 code by changing one line:
+
+```python
+# BEFORE — direct boto3 call:
+client = boto3.client("bedrock-runtime", region_name="us-west-2")
+response = client.converse(
+    modelId="us.anthropic.claude-sonnet-4-6",
+    messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+    inferenceConfig={"maxTokens": 1000, "temperature": 0.7},
+)
+
+# AFTER — smart router (change client to router, everything else stays the same):
+router = BedrockRouter.create({"region": "us-west-2"})
+response = router.converse(
+    modelId="us.anthropic.claude-sonnet-4-6",
+    messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+    inferenceConfig={"maxTokens": 1000, "temperature": 0.7},
+)
 ```
+
+**What stays the same:**
+- `modelId` — pin a specific model, just like boto3
+- `messages`, `system` — identical format
+- `inferenceConfig`, `toolConfig` — camelCase accepted (and snake_case too)
+- `guardrailConfig`, `performanceConfig`, `outputConfig` — all passthrough via `**kwargs`
+- `requestMetadata`, `additionalModelRequestFields` — all passthrough
+- Response format — same `output`, `usage`, `stopReason`, `metrics` fields
+
+**What you gain by using the router:**
+- Omit `modelId` → the router picks the optimal model automatically
+- Fallback chain → if the model fails, the router tries alternatives
+- Circuit breakers → failing models are skipped instantly
+- Cost tracking, metrics, observability → built in
+- Caching → identical requests return instantly
+- A/B testing, canary, shadow mode → safe model rollouts
+
+**What you lose:** Nothing. Every Bedrock Converse parameter is supported. Every response field is captured. The router adds a `routing_decision` field to the response — everything else is unchanged.
 
 ---
 
 ## 1. Basic Routing (`01_basic_routing.py`)
 
-The router sits between your application and Bedrock. It analyzes each request, picks the optimal model, calls Bedrock, and returns the response with routing metadata attached.
+Eight examples covering every way to use the router:
 
-**Three ways to configure:**
-
-| Method | When to use |
+| Example | What it shows |
 |---|---|
-| `BedrockRouter.create()` | Quick start with sensible defaults |
-| `BedrockRouter.create(yaml.safe_load(file))` | Team-shared config, no code changes to switch strategies |
-| `BedrockRouter.create({"strategy": "..."})` | Config loaded from DynamoDB, S3, Parameter Store, etc. |
-
-The key design principle: **application code never changes**. All routing behavior is driven by the config file.
+| 1. Zero-config | `BedrockRouter.create()` — defaults to us-west-2, balanced strategy |
+| 2. Explicit region | `{"region": "us-east-1"}` |
+| 3. Boto3 `modelId` | Pin a model, same syntax as boto3 |
+| 4. Boto3 camelCase | `inferenceConfig`, `toolConfig` — both camelCase and snake_case work |
+| 5. RoutingConfig | Advanced: `preferred_model` + metadata + tags |
+| 6. Smart routing | Omit `modelId` — router picks based on complexity |
+| 7. YAML config | Load from file, no code changes to switch strategies |
+| 8. Dict config | Load from DynamoDB, S3, Parameter Store |
 
 ```python
-router = BedrockRouter.create()
+# Boto3 drop-in — just change client to router:
+response = router.converse(
+    modelId="us.amazon.nova-pro-v1:0",
+    messages=[{"role": "user", "content": [{"text": "Explain VPC peering."}]}],
+    inferenceConfig={"maxTokens": 1000},
+)
+
+# Or let the router pick the optimal model:
 response = router.converse(
     messages=[{"role": "user", "content": [{"text": "What is S3?"}]}],
 )
-print(response["routing_decision"].selected_model)  # e.g. "us.amazon.nova-lite-v1:0"
+print(response["routing_decision"].selected_model)
 ```
 
-Every response includes a `routing_decision` with: selected model, strategy used, complexity detected, cost, latency, fallback chain, inference tier, CRIS profile, and more.
+Every response includes a `routing_decision` with: selected model, strategy used, complexity detected, cost, latency, fallback chain, inference tier, CRIS profile, prompt cache metrics, and more.
 
 ---
 
@@ -232,7 +273,7 @@ Works with FastAPI, aiohttp, or any async framework.
 
 ## 14. Model Catalog (`14_model_catalog.py`)
 
-The router ships with a JSON catalog (`data/models.json`) containing 39 Bedrock models (27 regional + 12 global CRIS profiles). You can:
+The router ships with a JSON catalog (`data/models.json`) containing 26 Bedrock models (19 regional + 7 global CRIS profiles). You can:
 
 - **List and filter** by family, tier, capability, context window
 - **Load overlays** to add custom/imported models or fix stale pricing
