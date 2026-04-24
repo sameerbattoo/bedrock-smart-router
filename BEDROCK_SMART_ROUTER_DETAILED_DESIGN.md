@@ -27,7 +27,8 @@
 18. [Configuration Schema](#18-configuration-schema)
 19. [Implementation Plan](#19-implementation-plan)
 20. [Differentiation Matrix](#20-differentiation-matrix)
-21. [References](#21-references)
+21. [Strands Agents SDK Integration](#21-strands-agents-sdk-integration)
+22. [References](#22-references)
 
 ---
 
@@ -48,6 +49,7 @@ The Bedrock Smart Router fills this gap with:
 - **Two delivery modes**: embeddable Python SDK (single `pip install`) or standalone proxy server *(proxy mode planned, not yet implemented)*
 - **Production-grade reliability**: circuit breakers, multi-level fallbacks, cooldown tracking
 - **Built-in A/B testing and canary deployment** for safe model rollouts
+- **Strands Agents SDK integration**: drop-in `Model` provider that brings routing intelligence to any Strands agent
 
 ---
 
@@ -233,6 +235,7 @@ Academic framework from LMSYS for training and evaluating LLM routers.
 | No Bedrock Guardrails pre-routing | Content safety checked after model selection, not before | Pre-route guardrail check to select appropriate model |
 | No multi-turn complexity adaptation | Same model used for entire conversation regardless of turn complexity | Per-turn re-evaluation (inspired by NVIDIA blueprint) |
 | No historical quality routing from own data | Routing based on generic benchmarks, not your workload | Integration with evaluation/judge scores from DynamoDB or any store |
+| No agentic framework integration | Routing intelligence not available to agent SDKs (Strands, LangChain) | SmartRouterModel — drop-in Strands Model provider with full routing |
 
 ### 3.2 Features in Competitors We Should Also Support
 
@@ -270,6 +273,8 @@ Academic framework from LMSYS for training and evaluating LLM routers.
 7. **Observable by default**: Every routing decision is logged with full context (why this model, what alternatives were scored, estimated vs actual cost). Integrates with CloudWatch, OpenTelemetry, or custom callbacks.
 
 8. **Minimal dependencies**: Core SDK depends only on `boto3`. Optional extras for caching (`[redis]`), semantic routing (`[embeddings]`), and proxy mode (`[proxy]` — planned, not yet implemented).
+
+9. **Agentic framework integration**: First-class support for the Strands Agents SDK via `SmartRouterModel`, so agent developers get routing intelligence without changing their agent code.
 
 ---
 
@@ -1185,6 +1190,77 @@ router.register_model(
 router.refresh_pricing()
 ```
 
+### 16.4 Strands Agents SDK API
+
+`SmartRouterModel` implements the Strands `Model` interface, allowing any Strands `Agent` to use the smart router as its model provider. All routing intelligence — complexity analysis, strategy selection, fallbacks, circuit breakers, CRIS, inference tiers, caching, guardrails — is applied transparently on every agent call.
+
+```python
+from strands import Agent, tool
+from bedrock_smart_router.strands_model import SmartRouterModel
+
+# Basic usage — all routing is automatic
+model = SmartRouterModel(router_config={"region": "us-west-2"})
+agent = Agent(model=model)
+response = agent("Explain quantum computing")
+
+# Inspect routing decision after each call
+d = model.last_routing_decision
+print(f"Model: {d.selected_model}, Cost: ${d.actual_cost:.6f}")
+
+# Routing presets
+model = SmartRouterModel(
+    router_config={"region": "us-west-2"},
+    routing_preset="quality",       # economy | speed | balanced | quality
+    preferred_family="anthropic",   # Optional: restrict to a family
+    max_cost_per_request=0.05,      # Optional: cost ceiling
+)
+
+# Tool use — Strands handles the agent loop, router picks tool-capable models
+@tool
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    return f"22°C and sunny in {city}"
+
+agent = Agent(model=model, tools=[get_weather])
+response = agent("What's the weather in Seattle?")
+
+# Bring your own router — pass a pre-configured BedrockRouter
+from bedrock_smart_router import BedrockRouter
+router = BedrockRouter.create({
+    "region": "us-west-2",
+    "strategy": "cost-optimized",
+    "cache": {"enabled": True, "ttl": 300},
+})
+model = SmartRouterModel(router=router)
+
+# Runtime config changes — switch routing mid-conversation
+model.update_config(routing_preset="economy")
+response = agent("Simple question")
+model.update_config(routing_preset="quality")
+response = agent("Complex analysis")
+```
+
+**How it works internally:**
+
+1. Strands calls `model.stream(messages, tool_specs, system_prompt)` on each agent loop iteration
+2. `SmartRouterModel` converts Strands types to Bedrock Converse format (messages pass through as-is, tool_specs are wrapped in `toolConfig`, system_prompt becomes `system`)
+3. The sync `BedrockRouter.converse_stream()` runs in a background thread via `asyncio.to_thread` with a callback queue — the same pattern Strands' own `BedrockModel` uses
+4. Bedrock stream events pass through untouched — they're already valid Strands `StreamEvent`s (the formats are identical by design)
+5. The router's `routing_decision` event is captured but not forwarded to Strands — it's stored on `model.last_routing_decision` for observability
+6. Error mapping converts Bedrock `ThrottlingException` → Strands `ModelThrottledException` and context overflow → `ContextWindowOverflowException`, so the Strands agent loop handles retries correctly
+
+**Supported Strands features:**
+
+| Feature | Supported | Notes |
+|---|---|---|
+| Text generation | ✅ | Streaming and non-streaming |
+| Tool use / function calling | ✅ | Router picks tool-capable models automatically |
+| Multi-turn conversations | ✅ | Each turn independently routed by complexity |
+| Structured output | ✅ | Via `agent.structured_output(PydanticModel, ...)` |
+| System prompts | ✅ | String or content block format |
+| Reasoning content | ✅ | Extended thinking blocks pass through |
+| Guardrail redaction | ✅ | Bedrock guardrail events forwarded to Strands |
+
 
 ## 17. Proxy Mode API Design
 
@@ -1407,8 +1483,9 @@ metrics_store:
 | `semantic_router.py` | Embedding-based intent routing (optional extra) | P2 |
 | `custom_strategy.py` | Plugin interface for user-defined strategies | P2 |
 | `async_router.py` | AsyncBedrockRouter for async/await usage | P2 |
+| `strands_model.py` | Strands Agents SDK Model provider (SmartRouterModel) | P1 |
 
-**Milestone:** Production-grade deployment features. Teams can safely roll out new models with A/B tests and canary deployments.
+**Milestone:** Production-grade deployment features. Teams can safely roll out new models with A/B tests and canary deployments. Strands agent developers get routing intelligence via `SmartRouterModel`.
 
 ### Phase 5: Proxy Mode ⚠️ *NOT YET IMPLEMENTED*
 
@@ -1456,10 +1533,141 @@ metrics_store:
 | Custom strategy plugins | Yes | No | No | No | Yes (fine-tune) | No | **Yes** |
 | Real-time AWS pricing | Community JSON | Markup | No | No | No | N/A | **Yes (AWS Pricing API)** |
 | Named presets | No | No | No | No | No | No | **Yes (economy/speed/balanced/quality)** |
+| Strands Agents SDK integration | No | No | No | No | No | No | **Yes (SmartRouterModel)** |
 | Graceful no-match errors | No | No | No | No | No | No | **Yes (per-model rejections + suggestions)** |
 
 
-## 21. References
+## 21. Strands Agents SDK Integration
+
+### 21.1 Overview
+
+The Bedrock Smart Router provides first-class integration with the [Strands Agents SDK](https://strandsagents.com/) via `SmartRouterModel` — a custom `Model` provider that brings the full routing pipeline to any Strands agent. This means agent developers get automatic model selection, fallbacks, circuit breakers, cost tracking, and all other routing features without changing their agent code.
+
+**Problem:** When building a Strands agent with the default `BedrockModel`, you pick one model and every call goes to it regardless of complexity. A simple "Hello" costs the same as a complex architecture question. There's no fallback if the model is throttled, no cost tracking, and no way to route different turns to different models.
+
+**Solution:** `SmartRouterModel` replaces `BedrockModel` as the Strands model provider. Every agent loop iteration flows through the smart router's 14-step pipeline — complexity analysis, strategy selection, CRIS profile, inference tier, guardrails, fallback chain — before hitting Bedrock.
+
+### 21.2 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Strands Agent                               │
+│                                                                   │
+│  agent("Explain quantum computing")                               │
+│    ↓                                                              │
+│  Agent Loop: model.stream(messages, tool_specs, system_prompt)    │
+│    ↓                                                              │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │              SmartRouterModel (strands_model.py)             │  │
+│  │                                                              │  │
+│  │  1. Convert Strands types → Bedrock Converse format          │  │
+│  │     • messages: pass through (identical format)              │  │
+│  │     • tool_specs → toolConfig: {"tools": [{toolSpec: ...}]}  │  │
+│  │     • system_prompt → system: [{"text": "..."}]              │  │
+│  │     • tool_choice → toolConfig.toolChoice                    │  │
+│  │                                                              │  │
+│  │  2. Build RoutingConfig from model config                    │  │
+│  │     • preset, strategy, preferred_model, cost limits, etc.   │  │
+│  │                                                              │  │
+│  │  3. Delegate to BedrockRouter.converse_stream()              │  │
+│  │     (runs in background thread via asyncio.to_thread)        │  │
+│  │                                                              │  │
+│  │  4. Forward Bedrock stream events as Strands StreamEvents    │  │
+│  │     (identical format — zero translation overhead)           │  │
+│  │                                                              │  │
+│  │  5. Capture routing_decision → model.last_routing_decision   │  │
+│  │                                                              │  │
+│  │  6. Map errors: ThrottlingException → ModelThrottledException│  │
+│  │                  context overflow → ContextWindowOverflow     │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│    ↓                                                              │
+│  Agent Loop: process events, execute tools, feed results back     │
+│    ↓                                                              │
+│  Response returned to caller                                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 21.3 Design Decisions
+
+**Why Bedrock events pass through as-is:** The Strands SDK was designed around Bedrock's Converse API. Strands' `StreamEvent` type uses the exact same event names and structure as Bedrock's `converse_stream` response — `messageStart`, `contentBlockStart`, `contentBlockDelta`, `contentBlockStop`, `messageStop`, `metadata`. This means the adapter has zero translation overhead for stream events.
+
+**Why async-to-sync bridging:** The Strands `Model.stream()` method must be `async`. The `BedrockRouter` is synchronous (it wraps a boto3 client). We use `asyncio.to_thread` with a callback queue — the same pattern Strands' own `BedrockModel` uses internally. The sync router runs in a background thread and pushes events through a queue that the async generator consumes.
+
+**Why filter Strands-internal kwargs:** Strands passes internal kwargs like `invocation_state` through to the model's `stream()` method. These must be filtered out before reaching the Bedrock API, which strictly validates its parameters. The adapter maintains a blocklist (`_STRANDS_ONLY_KWARGS`) of Strands-internal keys.
+
+**Why store routing_decision on the model:** The router appends a `{"routing_decision": ...}` event at the end of the stream. Strands doesn't know about this event type, so the adapter captures it and stores it on `model.last_routing_decision` instead of forwarding it. This gives users observability without breaking the Strands event loop.
+
+### 21.4 Supported Features
+
+| Strands Feature | Support | How It Works |
+|---|---|---|
+| Text generation (streaming) | ✅ | `router.converse_stream()` → events pass through |
+| Text generation (non-streaming) | ✅ | `router.converse()` → converted to streaming events |
+| Tool use / function calling | ✅ | `tool_specs` wrapped in `toolConfig`, router picks tool-capable models |
+| Multi-turn conversations | ✅ | Each turn independently routed by complexity |
+| Structured output | ✅ | `structured_output()` uses tool calling with Pydantic model |
+| System prompts (string) | ✅ | Converted to `system: [{"text": "..."}]` |
+| System prompts (content blocks) | ✅ | Passed through as `system_prompt_content` |
+| Reasoning / extended thinking | ✅ | `reasoningContent` blocks pass through in events |
+| Guardrail redaction events | ✅ | Bedrock guardrail events forwarded to Strands |
+| Runtime config changes | ✅ | `model.update_config()` changes routing on next call |
+| `tool_choice` parameter | ✅ | Forwarded as `toolConfig.toolChoice` |
+
+| Router Feature | Available via SmartRouterModel |
+|---|---|
+| Routing presets (economy/speed/balanced/quality) | ✅ via `routing_preset` config |
+| Per-request cost ceilings | ✅ via `max_cost_per_request` config |
+| Preferred model / family | ✅ via `preferred_model` / `preferred_family` config |
+| Fallback chains | ✅ automatic — transparent to the agent |
+| Circuit breakers | ✅ automatic — failing models skipped |
+| CRIS profile selection | ✅ automatic — based on router config |
+| Inference tier selection | ✅ automatic — based on complexity and budget |
+| Response caching | ✅ automatic — cache hits bypass Bedrock |
+| Metrics and observability | ✅ via `model.last_routing_decision` and router callbacks |
+| A/B testing / canary / shadow | ✅ via router config — transparent to the agent |
+| Tags and metadata | ✅ via `tags` / `metadata` config |
+| Guardrails (pre/post route) | ✅ via router config |
+| Budget enforcement | ✅ via `max_cost_per_request` and router-level budget rules |
+
+### 21.5 Installation and Dependencies
+
+```bash
+pip install bedrock-smart-router[strands]
+```
+
+This installs `strands-agents` as an optional dependency. The `SmartRouterModel` class is only importable when `strands-agents` is installed — the core SDK has no dependency on it. The `__init__.py` conditionally exports `SmartRouterModel` when the import succeeds.
+
+### 21.6 Configuration
+
+`SmartRouterModel` accepts two categories of configuration:
+
+**Router-level config** (passed to `BedrockRouter.create()`):
+- `router_config`: dict or `RouterConfig` — region, strategy, weights, cache, metrics, CRIS, guardrails, etc.
+- `router`: pre-built `BedrockRouter` instance (overrides `router_config`)
+
+**Per-model config** (controls routing behaviour per call):
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `streaming` | bool | `True` | Use `converse_stream` (True) or `converse` (False) |
+| `routing_preset` | str | `None` | Named preset: `"economy"`, `"speed"`, `"balanced"`, `"quality"` |
+| `routing_strategy` | str | `None` | Explicit strategy name (overrides preset) |
+| `preferred_model` | str | `None` | Pin a specific Bedrock model ID |
+| `preferred_family` | str | `None` | Prefer a model family (e.g. `"anthropic"`) |
+| `max_cost_per_request` | float | `None` | Cost ceiling in dollars |
+| `max_tokens` | int | `None` | Maximum output tokens (forwarded as `inferenceConfig.maxTokens`) |
+| `temperature` | float | `None` | Sampling temperature |
+| `top_p` | float | `None` | Nucleus sampling parameter |
+| `stop_sequences` | list[str] | `None` | Stop sequences |
+| `exclude_models` | list[str] | `None` | Glob patterns of models to exclude |
+| `tags` | list[str] | `None` | Tags forwarded to the routing decision |
+| `metadata` | dict | `None` | Arbitrary metadata forwarded to the router |
+
+All parameters can be changed at runtime via `model.update_config(**kwargs)`.
+
+---
+
+## 22. References
 
 ### Competitor Documentation
 - [LiteLLM Router - Load Balancing](https://docs.litellm.ai/docs/routing)

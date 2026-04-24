@@ -49,6 +49,7 @@ class ModelCapabilities:
     tool_use: bool = False
     vision: bool = False
     streaming: bool = True
+    streaming_tool_use: bool = True
     document_support: bool = False
     extended_thinking: bool = False
     prompt_caching: bool = False

@@ -47,6 +47,36 @@ class TestModelRegistry:
         tools = reg.eligible_models(requires_tool_use=True)
         assert all(m.capabilities.tool_use for m in tools)
 
+    def test_eligible_models_streaming_tool_use(self):
+        """Models with streaming_tool_use=False should be excluded when required."""
+        reg = ModelRegistry()
+        # Without streaming filter — Scout should be included (it has tool_use=True)
+        all_tool = reg.eligible_models(requires_tool_use=True)
+        scout_ids = [m.model_id for m in all_tool if "scout" in m.model_id]
+        assert len(scout_ids) > 0, "Scout should be in tool_use candidates"
+
+        # With streaming filter — Scout should be excluded
+        streaming_tool = reg.eligible_models(
+            requires_tool_use=True, requires_streaming_tool_use=True,
+        )
+        scout_ids = [m.model_id for m in streaming_tool if "scout" in m.model_id]
+        assert len(scout_ids) == 0, "Scout should NOT be in streaming tool_use candidates"
+
+    def test_streaming_tool_use_loaded_from_catalog(self):
+        """streaming_tool_use capability should be loaded from models.json."""
+        reg = ModelRegistry()
+        scout = reg.get("us.meta.llama4-scout-17b-instruct-v1:0")
+        assert scout is not None
+        assert scout.capabilities.tool_use is True
+        assert scout.capabilities.streaming_tool_use is False
+
+    def test_streaming_tool_use_defaults_true(self):
+        """Models without explicit streaming_tool_use should default to True."""
+        reg = ModelRegistry()
+        nova = reg.get("us.amazon.nova-2-lite-v1:0")
+        assert nova is not None
+        assert nova.capabilities.streaming_tool_use is True
+
     def test_eligible_models_exclude_pattern(self):
         reg = ModelRegistry()
         no_meta = reg.eligible_models(exclude_patterns=["us.meta.*"])
@@ -72,7 +102,7 @@ class TestJsonCatalog:
     def test_loads_from_bundled_json(self):
         """Default registry loads from data/models.json."""
         reg = ModelRegistry()
-        assert len(reg) == 39  # 27 regional + 12 global CRIS profiles
+        assert len(reg) == 25  # regional + global CRIS profiles (legacy models excluded)
 
     def test_loads_from_custom_path(self, tmp_path):
         """Registry can load from a user-provided JSON file."""

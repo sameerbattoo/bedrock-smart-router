@@ -21,6 +21,10 @@ Usage:
     # Also check and fix service tier support
     python scripts/refresh_pricing.py --fix --check-tiers
 
+    # Check for legacy models and remove them
+    python scripts/refresh_pricing.py --check-legacy
+    python scripts/refresh_pricing.py --fix --check-legacy
+
     # Verbose: show all AWS pricing rows (for debugging)
     python scripts/refresh_pricing.py --verbose
 
@@ -185,6 +189,84 @@ def save_catalog(data: dict) -> None:
         f.write("\n")
 
 
+# ── Legacy detection ────────────────────────────────────────────────
+
+def fetch_legacy_model_ids(region: str) -> set[str]:
+    """Query the Bedrock API for foundation models marked as LEGACY.
+
+    Returns a set of base model IDs (e.g. ``meta.llama3-2-1b-instruct-v1:0``)
+    that have ``modelLifecycle.status == "LEGACY"``.
+    """
+    bedrock = boto3.client("bedrock", region_name=region)
+    legacy: set[str] = set()
+
+    paginator_kwargs: dict[str, Any] = {}
+    while True:
+        resp = bedrock.list_foundation_models(**paginator_kwargs)
+        for model in resp.get("modelSummaries", []):
+            status = model.get("modelLifecycle", {}).get("status", "ACTIVE")
+            if status == "LEGACY":
+                legacy.add(model["modelId"])
+        # ListFoundationModels doesn't paginate, but be safe
+        if "nextToken" in resp:
+            paginator_kwargs["nextToken"] = resp["nextToken"]
+        else:
+            break
+
+    return legacy
+
+
+def check_legacy_models(
+    catalog: dict,
+    region: str,
+    fix: bool = False,
+) -> int:
+    """Check catalog models against the Bedrock LEGACY list.
+
+    Returns the number of legacy models found.  When *fix* is True,
+    removes them from the catalog dict in-place.
+    """
+    print(f"\n  {'─'*64}")
+    print(f"  Checking for LEGACY models via Bedrock API (region: {region})...")
+
+    legacy_ids = fetch_legacy_model_ids(region)
+    if not legacy_ids:
+        print(f"    No legacy models reported by Bedrock API")
+        return 0
+
+    print(f"    Bedrock reports {len(legacy_ids)} legacy foundation models")
+
+    # Match catalog entries: strip the geography prefix (us.*, global.*)
+    # to compare against the base model ID from the Bedrock API.
+    legacy_found: list[str] = []
+    for m in catalog["models"]:
+        model_id = m["model_id"]
+        # Strip geography prefix to get the base model ID
+        base = model_id
+        for prefix in ("us.", "global.", "eu.", "ap."):
+            if base.startswith(prefix):
+                base = base[len(prefix):]
+                break
+        if base in legacy_ids:
+            legacy_found.append(model_id)
+            print(f"    ⚠ LEGACY: {model_id}  ({m['display_name']})")
+
+    if not legacy_found:
+        print(f"    ✓ No legacy models in catalog")
+        return 0
+
+    print(f"    Found {len(legacy_found)} legacy model(s) in catalog")
+
+    if fix:
+        legacy_set = set(legacy_found)
+        before = len(catalog["models"])
+        catalog["models"] = [m for m in catalog["models"] if m["model_id"] not in legacy_set]
+        after = len(catalog["models"])
+        print(f"    ✓ Removed {before - after} legacy models from catalog")
+
+    return len(legacy_found)
+
+
 # ── Main logic ──────────────────────────────────────────────────────
 
 def refresh(
@@ -192,6 +274,7 @@ def refresh(
     provider_filter: str | None = None,
     fix: bool = False,
     check_tiers: bool = False,
+    check_legacy: bool = False,
     regen_global: bool = False,
     verbose: bool = False,
 ) -> int:
@@ -203,6 +286,7 @@ def refresh(
         by_display[m["display_name"]] = m
 
     mismatches = 0
+    legacy_count = 0
     checked = 0
     skipped_no_api = 0
 
@@ -278,6 +362,11 @@ def refresh(
             else:
                 print(f"    ✓ Tiers OK: {sorted(our_tiers)}")
 
+    # Check for legacy models if requested
+    if check_legacy:
+        legacy_count = check_legacy_models(catalog, region, fix=fix)
+        mismatches += legacy_count
+
     # Regenerate global entries if requested
     if regen_global and fix:
         print(f"\n  {'─'*64}")
@@ -314,6 +403,8 @@ def refresh(
     print(f"  Checked:        {checked} models against AWS Pricing API")
     print(f"  Mismatches:     {mismatches}")
     print(f"  No API data:    {skipped_no_api}")
+    if legacy_count:
+        print(f"  Legacy models:  {legacy_count}")
     if not_in_api:
         print(f"  Not mapped:     {len(not_in_api)} (no Pricing API mapping)")
         for n in not_in_api:
@@ -322,6 +413,8 @@ def refresh(
         save_catalog(catalog)
         print(f"\n  ✓ Applied fixes to {CATALOG_PATH}")
         print(f"    Total models in catalog: {len(catalog['models'])}")
+        if legacy_count:
+            print(f"    Legacy models removed: {legacy_count}")
     elif mismatches > 0:
         print(f"\n  Run with --fix to auto-update models.json")
     else:
@@ -340,6 +433,7 @@ def main() -> None:
     parser.add_argument("--provider", help="Filter by family (amazon, anthropic, meta, mistral, deepseek)")
     parser.add_argument("--fix", action="store_true", help="Auto-update models.json with correct pricing")
     parser.add_argument("--check-tiers", action="store_true", help="Also validate supported_inference_tiers")
+    parser.add_argument("--check-legacy", action="store_true", help="Check for LEGACY models via Bedrock API and remove them")
     parser.add_argument("--regen-global", action="store_true", help="Regenerate global.* entries after fixing")
     parser.add_argument("--verbose", action="store_true", help="Show raw pricing rows from AWS")
     args = parser.parse_args()
@@ -349,6 +443,7 @@ def main() -> None:
         provider_filter=args.provider,
         fix=args.fix,
         check_tiers=args.check_tiers,
+        check_legacy=args.check_legacy,
         regen_global=args.regen_global,
         verbose=args.verbose,
     )

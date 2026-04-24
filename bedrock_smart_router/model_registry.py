@@ -49,6 +49,7 @@ def _model_from_dict(d: dict[str, Any]) -> BedrockModel:
             tool_use=caps.get("tool_use", False),
             vision=caps.get("vision", False),
             streaming=caps.get("streaming", True),
+            streaming_tool_use=caps.get("streaming_tool_use", True),
             document_support=caps.get("document_support", False),
             extended_thinking=caps.get("extended_thinking", False),
             prompt_caching=caps.get("prompt_caching", False),
@@ -191,6 +192,7 @@ class ModelRegistry:
         min_tier: Tier | str | None = None,
         requires_vision: bool = False,
         requires_tool_use: bool = False,
+        requires_streaming_tool_use: bool = False,
         min_context: int | None = None,
         exclude_patterns: list[str] | None = None,
         family: str | None = None,
@@ -217,6 +219,8 @@ class ModelRegistry:
             if requires_vision and not m.capabilities.vision:
                 continue
             if requires_tool_use and not m.capabilities.tool_use:
+                continue
+            if requires_streaming_tool_use and not m.capabilities.streaming_tool_use:
                 continue
             if min_context and m.max_input_tokens < min_context:
                 continue
