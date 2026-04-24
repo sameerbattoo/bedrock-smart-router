@@ -354,7 +354,8 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": false,
-        "prompt_caching": false
+        "prompt_caching": false,
+        "streaming_tool_use": false
       },
       "max_input_tokens": 128000,
       "max_output_tokens": 4096,
@@ -472,7 +473,8 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": false,
-        "prompt_caching": false
+        "prompt_caching": false,
+        "streaming_tool_use": false
       },
       "max_input_tokens": 1000000,
       "max_output_tokens": 16384,
@@ -501,7 +503,8 @@
         "streaming": true,
         "document_support": false,
         "extended_thinking": false,
-        "prompt_caching": false
+        "prompt_caching": false,
+        "streaming_tool_use": false
       },
       "max_input_tokens": 128000,
       "max_output_tokens": 4096,

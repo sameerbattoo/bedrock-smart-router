@@ -662,6 +662,111 @@ SemanticCache(config=SemanticCacheConfig(
 
 ---
 
+## 27. Auto-Extracting Semantic Cache (`27_auto_semantic_cache.py`)
+
+The standard semantic cache requires the caller to manually extract and pass variables. The auto-extracting mode uses a cheap Bedrock model (Nova Micro, ~$0.00003/call) to automatically decompose each query into a canonical intent and variables.
+
+### Three Modes
+
+| Mode | Config | How Variables Are Handled |
+|---|---|---|
+| **Manual** (default) | `auto_extract=False` | Caller passes `variables={"year": "2026", ...}` explicitly |
+| **Auto single-turn** | `auto_extract=True` | LLM extracts intent + variables from the query automatically |
+| **Auto multi-turn** | `auto_extract=True, multi_turn_resolution=True` | LLM resolves conversation history → single query → extracts |
+
+### Manual Mode (Existing)
+
+```python
+cache.put("Count users by geo for 2026 with sales > $200", response,
+          variables={"year": "2026", "sales_threshold": "200"})
+
+cache.get("Show user distribution by geo, year 2026, sales over $200",
+          variables={"year": "2026", "sales_threshold": "200"})  # HIT
+```
+
+The developer must know which parts are parameters and extract them.
+
+### Auto-Extract Single-Turn
+
+```python
+cache = SemanticCache(config=SemanticCacheConfig(
+    enabled=True,
+    auto_extract=True,
+    extraction_model="us.amazon.nova-micro-v1:0",
+))
+
+# No variables needed — extracted automatically
+cache.put("Count users by geo for 2026 with sales > $200", response)
+cache.get("Show user distribution by geo, year 2026, sales over $200")  # HIT
+cache.get("Count users by geo for 2025 with sales > $100")              # MISS (different vars)
+```
+
+The LLM extracts:
+- **Intent:** "Count users by geography for a year with sales above a threshold"
+- **Variables:** `{"year": "2026", "sales_threshold": "200"}`
+
+The intent is embedded and stored in the vector store. The variables are hashed and compared exactly. Different wording with the same intent + same variables = HIT. Same intent + different variables = MISS.
+
+### Auto-Extract Multi-Turn
+
+```python
+cache = SemanticCache(config=SemanticCacheConfig(
+    enabled=True,
+    auto_extract=True,
+    multi_turn_resolution=True,
+))
+
+# Store from single-turn
+cache.put("Count users by geo for 2026 with sales > $200", response)
+
+# Lookup from multi-turn conversation
+cache.get(messages=[
+    {"role": "user", "content": [{"text": "show me users by geo"}]},
+    {"role": "assistant", "content": [{"text": "Here are users..."}]},
+    {"role": "user", "content": [{"text": "now for 2026 with sales > $200"}]},
+])
+# → HIT! The conversation resolves to the same intent + variables
+```
+
+The LLM sees the full conversation and resolves it into a single self-contained query before extraction. This means a cached single-turn response can match a multi-turn conversation with the same intent.
+
+### How It Works Internally
+
+```
+get() / put() called
+  │
+  ├─ auto_extract=false? → existing path (embed raw query, use manual variables)
+  │
+  ├─ auto_extract=true?
+  │   ├─ multi_turn + messages with 2+ user turns?
+  │   │   └─ Call extraction_model with full conversation → {intent, variables}
+  │   └─ else
+  │       └─ Call extraction_model with query text → {intent, variables}
+  │
+  │   Then:
+  │   ├─ Embed the extracted "intent" (not the raw query)
+  │   ├─ Hash the extracted "variables" for exact matching
+  │   └─ Proceed with existing vector search + variable comparison
+  │
+  └─ Return cached response or None
+```
+
+### Cost
+
+| Component | Cost per call | When |
+|---|---|---|
+| Embedding (existing) | ~$0.00001 | Every `get()` and `put()` |
+| Intent extraction (new) | ~$0.00003 | Every `get()` and `put()` when `auto_extract=True` |
+| **Total** | ~$0.00004 | Still negligible vs a Bedrock inference call ($0.001–$0.02) |
+
+Extraction results are cached in-memory, so repeated identical queries don't incur additional LLM calls.
+
+### Retry Logic
+
+Both embedding calls and extraction calls have built-in retry with exponential backoff for transient errors (ThrottlingException, ServiceUnavailableException). Non-retryable errors (ValidationException) fail immediately.
+
+---
+
 ## 22. Semantic Router (`22_semantic_router.py`)
 
 Routes queries to specialized models by intent using embedding similarity:

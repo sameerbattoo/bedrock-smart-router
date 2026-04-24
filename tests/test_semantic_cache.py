@@ -1,14 +1,14 @@
 """Tests for the semantic cache with pluggable vector stores.
 
 Uses mocked embeddings to test cache logic without calling Bedrock.
-Tests in-memory and FAISS backends.
+Tests in-memory and FAISS backends, plus auto-extraction and multi-turn.
 """
 
 from __future__ import annotations
 
 import hashlib
 import time
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -28,6 +28,11 @@ def _mock_embedding(text: str) -> list[float]:
         vec[2] = 0.9
     if "weather" in text_lower or "temperature" in text_lower:
         vec[3] = 0.9
+    # Intent-based embeddings for auto-extract tests
+    if "users" in text_lower and "geography" in text_lower:
+        vec = [0.8, 0.2, 0.1, 0.1]
+    if "top" in text_lower and "product" in text_lower:
+        vec = [0.1, 0.8, 0.2, 0.1]
     return vec
 
 
@@ -109,7 +114,7 @@ class TestSemanticCacheMemory:
 
 
 class TestSemanticCacheVariables:
-    """Tests for variable-aware caching."""
+    """Tests for manual variable-aware caching."""
 
     def test_same_variables_hit(self, cache):
         cache.put("top users for Electronics 2024", {"users": ["a", "b"]},
@@ -132,13 +137,11 @@ class TestSemanticCacheVariables:
         assert hit is not None
 
     def test_variable_hash_deterministic(self):
-        from bedrock_smart_router.semantic_cache import SemanticCache
         h1 = SemanticCache._hash_variables({"a": "1", "b": "2"})
         h2 = SemanticCache._hash_variables({"b": "2", "a": "1"})
         assert h1 == h2  # Order-independent
 
     def test_empty_variables_same_as_none(self):
-        from bedrock_smart_router.semantic_cache import SemanticCache
         assert SemanticCache._hash_variables({}) == ""
 
 
@@ -169,7 +172,6 @@ class TestSemanticCacheFAISS:
     def test_many_entries(self, cache_faiss):
         """FAISS should handle many entries efficiently."""
         for i in range(100):
-            # Create varied embeddings by using different keywords
             topics = ["password", "s3", "vpc", "weather"]
             topic = topics[i % 4]
             cache_faiss.put(f"{topic} question {i}", {"i": i})
@@ -177,3 +179,179 @@ class TestSemanticCacheFAISS:
 
     def test_stats_backend(self, cache_faiss):
         assert cache_faiss.stats["backend"] == "faiss"
+
+
+class TestAutoExtraction:
+    """Tests for auto_extract mode with mocked IntentExtractor."""
+
+    @pytest.fixture
+    def auto_cache(self):
+        """SemanticCache with auto_extract enabled and mocked extractor."""
+        from bedrock_smart_router.intent_extractor import ExtractionResult
+
+        c = SemanticCache(
+            config=SemanticCacheConfig(
+                enabled=True,
+                threshold=0.80,
+                max_entries=100,
+                ttl_seconds=60,
+                auto_extract=True,
+                multi_turn_resolution=True,
+            ),
+        )
+        c._get_embedding = _mock_embedding
+
+        # Mock the extractor
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = ExtractionResult(
+            intent="Count users by geography for a year with sales above a threshold",
+            variables={"year": "2026", "sales_threshold": "200"},
+            raw_query="Count users by geo for 2026 with sales > $200",
+            source="single-turn",
+        )
+        mock_extractor.extract_from_messages.return_value = ExtractionResult(
+            intent="Count users by geography for a year with sales above a threshold",
+            variables={"year": "2026", "sales_threshold": "200"},
+            raw_query="multi-turn",
+            source="multi-turn",
+        )
+        c._extractor = mock_extractor
+        return c
+
+    def test_auto_extract_single_turn_put_and_get(self, auto_cache):
+        """Auto-extract should extract intent+variables and use them for matching."""
+        auto_cache.put("Count users by geo for 2026 with sales > $200",
+                       {"result": "42 users"})
+        hit = auto_cache.get("Show user distribution by geography, year 2026, sales over $200")
+        assert hit is not None
+        assert hit["result"] == "42 users"
+
+    def test_auto_extract_different_variables_miss(self, auto_cache):
+        """Different extracted variables should cause a cache miss."""
+        from bedrock_smart_router.intent_extractor import ExtractionResult
+
+        auto_cache.put("Count users by geo for 2026 with sales > $200",
+                       {"result": "42 users"})
+
+        # Change the extractor to return different variables for the get
+        auto_cache._extractor.extract.return_value = ExtractionResult(
+            intent="Count users by geography for a year with sales above a threshold",
+            variables={"year": "2025", "sales_threshold": "100"},
+        )
+        hit = auto_cache.get("Count users by geo for 2025 with sales > $100")
+        assert hit is None
+
+    def test_auto_extract_multi_turn_matches_single_turn(self, auto_cache):
+        """Multi-turn conversation should resolve to same intent as single-turn."""
+        # Store from single-turn
+        auto_cache.put("Count users by geo for 2026 with sales > $200",
+                       {"result": "42 users"})
+
+        # Lookup from multi-turn conversation
+        messages = [
+            {"role": "user", "content": [{"text": "show me users by geo"}]},
+            {"role": "assistant", "content": [{"text": "Here are users..."}]},
+            {"role": "user", "content": [{"text": "now for 2026 with sales > $200"}]},
+        ]
+        hit = auto_cache.get(messages=messages)
+        assert hit is not None
+        assert hit["result"] == "42 users"
+
+    def test_auto_extract_no_variables_query(self, auto_cache):
+        """Queries with no variables should still work."""
+        from bedrock_smart_router.intent_extractor import ExtractionResult
+
+        auto_cache._extractor.extract.return_value = ExtractionResult(
+            intent="What is Amazon S3",
+            variables={},
+        )
+        auto_cache.put("What is Amazon S3?", {"answer": "Object storage"})
+
+        # Same intent, no variables
+        auto_cache._extractor.extract.return_value = ExtractionResult(
+            intent="What is Amazon S3",
+            variables={},
+        )
+        hit = auto_cache.get("Tell me about S3")
+        assert hit is not None
+
+    def test_auto_extract_overrides_manual_variables(self, auto_cache):
+        """When auto_extract is on, manual variables should be ignored."""
+        auto_cache.put("Count users for 2026",
+                       {"result": "42"},
+                       variables={"year": "9999"})  # Manual var — should be ignored
+
+        # The extractor returns year=2026, not 9999
+        hit = auto_cache.get("Count users for 2026",
+                            variables={"year": "9999"})  # Also ignored
+        assert hit is not None  # Matches on extracted variables, not manual
+
+    def test_stats_include_auto_extract_fields(self, auto_cache):
+        stats = auto_cache.stats
+        assert stats["auto_extract"] is True
+        assert stats["multi_turn_resolution"] is True
+
+
+class TestMultiTurnWithoutAutoExtract:
+    """Test the messages parameter in manual mode."""
+
+    def test_messages_uses_last_user_text(self, cache):
+        """Without auto_extract, messages should use the last user message text."""
+        cache.put("How do I reset my password?", {"answer": "settings"})
+        messages = [
+            {"role": "user", "content": [{"text": "Hello"}]},
+            {"role": "assistant", "content": [{"text": "Hi"}]},
+            {"role": "user", "content": [{"text": "I forgot my password"}]},
+        ]
+        hit = cache.get(messages=messages)
+        assert hit is not None  # Last user message matches semantically
+
+
+class TestEmbeddingRetry:
+    """Test retry logic on embedding calls."""
+
+    def test_embedding_retries_on_throttle(self):
+        from botocore.exceptions import ClientError
+
+        c = SemanticCache(
+            config=SemanticCacheConfig(enabled=True, threshold=0.80),
+        )
+
+        mock_client = MagicMock()
+        error_resp = {"Error": {"Code": "ThrottlingException", "Message": "Rate exceeded"}}
+
+        # First call fails, second succeeds
+        mock_body = MagicMock()
+        mock_body.read.return_value = b'{"embedding": [0.1, 0.2, 0.3]}'
+        mock_client.invoke_model.side_effect = [
+            ClientError(error_resp, "InvokeModel"),
+            {"body": mock_body},
+        ]
+
+        mock_session = MagicMock()
+        mock_session.client.return_value = mock_client
+        c._session = mock_session
+
+        with patch("bedrock_smart_router.semantic_cache.time.sleep"):
+            embedding = c._get_embedding("test")
+        assert embedding == [0.1, 0.2, 0.3]
+        assert mock_client.invoke_model.call_count == 2
+
+    def test_embedding_no_retry_on_validation(self):
+        from botocore.exceptions import ClientError
+
+        c = SemanticCache(
+            config=SemanticCacheConfig(enabled=True, threshold=0.80),
+        )
+
+        mock_client = MagicMock()
+        error_resp = {"Error": {"Code": "ValidationException", "Message": "Bad"}}
+        mock_client.invoke_model.side_effect = ClientError(error_resp, "InvokeModel")
+
+        mock_session = MagicMock()
+        mock_session.client.return_value = mock_client
+        c._session = mock_session
+
+        with pytest.raises(ClientError):
+            c._get_embedding("test")
+        assert mock_client.invoke_model.call_count == 1

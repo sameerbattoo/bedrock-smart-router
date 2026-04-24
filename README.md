@@ -47,9 +47,14 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - A/B testing with weighted variants and sticky user assignment
 - Canary deployments with auto-rollback on error rate/latency thresholds
 - Shadow mode — mirror traffic to a secondary model in background threads
-- Response caching (in-memory LRU with TTL)
+
+**Caching**
+- Response caching (in-memory LRU with TTL) — identical requests return instantly at zero cost
+- Redis / Valkey / ElastiCache shared cache for multi-instance deployments
 - Semantic caching via embeddings with pluggable vector stores (in-memory, FAISS, Redis)
 - Variable-aware semantic cache — same intent + different parameters = cache miss
+- Auto-extracting semantic cache — LLM-based intent + variable extraction, no manual tagging needed
+- Multi-turn semantic cache — resolves conversation history into a single query for cache matching
 - Semantic intent router — route queries to specialized models by meaning
 
 **Observability**
@@ -322,6 +327,9 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`24_budget_and_tier_pricing.py`](examples/24_budget_and_tier_pricing.py) | Per-request cost ceilings, rolling budgets, inference tier pricing (Flex/Standard/Priority) |
 | [`25_strands_integration.py`](examples/25_strands_integration.py) | Strands Agents SDK integration — use the smart router as a Strands Model provider |
 | [`26_strands_first_agent.py`](examples/26_strands_first_agent.py) | Official Strands Agents SDK "First Agent" sample adapted to use smart routing |
+| [`27_auto_semantic_cache.py`](examples/27_auto_semantic_cache.py) | Auto-extracting semantic cache: automatic intent + variable extraction, multi-turn resolution |
+| [`28_strands_custom_tools_cached.py`](examples/28_strands_custom_tools_cached.py) | Official Strands "Custom Tools" sample adapted with smart routing + semantic cache |
+| [`29_strands_streaming_multi_tenant.py`](examples/29_strands_streaming_multi_tenant.py) | Official Strands streaming sample adapted with multi-tenant routing (premium vs freemium) |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
@@ -778,6 +786,157 @@ agent = Agent(model=model)
 
 See [`examples/25_strands_integration.py`](examples/25_strands_integration.py) for the full set of examples.
 
+## Caching: Exact-Match, Semantic, and Auto-Extracting
+
+The router provides three layers of caching, each building on the previous. All are optional and can be used independently or together.
+
+### Layer 1: Exact-Match Response Cache
+
+The simplest cache. Stores responses keyed by a hash of the request (messages + system prompt + inference config). Identical requests return instantly at zero Bedrock cost.
+
+```python
+router = BedrockRouter.create({
+    "cache": {"ttl_seconds": 1800, "max_entries": 5000},
+})
+
+r1 = router.converse(messages=msgs)  # Cache miss — calls Bedrock
+r2 = router.converse(messages=msgs)  # Cache hit — instant, free
+```
+
+**Backends:** In-memory LRU (default), Redis, Valkey, ElastiCache. Use Redis/Valkey for shared cache across Lambda invocations or ECS tasks.
+
+### Layer 2: Semantic Cache (Manual Variables)
+
+Matches queries by meaning using embedding similarity. "How do I reset my password?" and "I forgot my password, help" are different strings but the same intent — the semantic cache catches this.
+
+```python
+from bedrock_smart_router.semantic_cache import SemanticCache, SemanticCacheConfig
+
+cache = SemanticCache(config=SemanticCacheConfig(
+    enabled=True,
+    threshold=0.85,
+    embedding_model="amazon.titan-embed-text-v2:0",
+))
+
+cache.put("How do I reset my password?", response)
+cache.get("I forgot my password, help")  # HIT — same meaning
+```
+
+**Embedding model:** Amazon Titan Embed Text v2 (default, 1024 dimensions). Any Bedrock embedding model can be used.
+
+**Vector store backends:**
+
+| Backend | Install | Scales To | Shared Across Instances |
+|---|---|---|---|
+| `memory` (default) | *(none)* | ~500 entries | No |
+| `faiss` | `pip install bedrock-smart-router[faiss]` | ~100K entries | No |
+| `redis` | `pip install bedrock-smart-router[redis]` | Millions | Yes |
+
+**Variable-aware matching:** Queries like "top users for Electronics 2024" and "top users for Clothing 2025" are semantically identical but have different correct answers. Pass `variables` to distinguish them:
+
+```python
+cache.put("top users for Electronics 2024", response,
+          variables={"category": "Electronics", "year": "2024"})
+
+cache.get("show top users in Electronics 2024",
+          variables={"category": "Electronics", "year": "2024"})  # HIT ✅
+
+cache.get("top users for Clothing 2025",
+          variables={"category": "Clothing", "year": "2025"})     # MISS ✅
+```
+
+The limitation: the caller must manually extract and pass the variables.
+
+### Layer 3: Auto-Extracting Semantic Cache
+
+Solves the manual extraction problem. Uses a cheap Bedrock model (Nova Micro, ~$0.00003/call) to automatically decompose each query into a canonical intent and variables. No manual tagging needed.
+
+```python
+cache = SemanticCache(config=SemanticCacheConfig(
+    enabled=True,
+    threshold=0.85,
+    auto_extract=True,                            # Enable auto-extraction
+    extraction_model="us.amazon.nova-micro-v1:0", # Cheapest model
+))
+
+# No variables needed — extracted automatically
+cache.put("Count users by geo for 2026 with sales > $200", response)
+cache.get("Show user distribution by geography, year 2026, sales over $200")  # HIT ✅
+cache.get("Count users by geo for 2025 with sales > $100")                    # MISS ✅
+```
+
+The extractor calls Nova Micro with a structured prompt that returns:
+- **Intent:** "Count users by geography for a year with sales above a threshold" (parameterised template)
+- **Variables:** `{"year": "2026", "sales_threshold": "200"}` (extracted values)
+
+The intent is embedded and stored in the vector store. The variables are hashed and compared exactly. Different wording with the same intent + same variables = HIT. Same intent + different variables = MISS.
+
+### Multi-Turn Resolution
+
+When `multi_turn_resolution=True`, the cache can resolve a multi-turn conversation into a single self-contained query before extraction. This means a cached single-turn response can match a multi-turn conversation with the same intent:
+
+```python
+cache = SemanticCache(config=SemanticCacheConfig(
+    enabled=True,
+    auto_extract=True,
+    multi_turn_resolution=True,
+))
+
+# Store from single-turn
+cache.put("Count users by geo for 2026 with sales > $200", response)
+
+# Lookup from multi-turn conversation
+cache.get(messages=[
+    {"role": "user", "content": [{"text": "show me users by geo"}]},
+    {"role": "assistant", "content": [{"text": "Here are users..."}]},
+    {"role": "user", "content": [{"text": "now for 2026 with sales > $200"}]},
+])
+# → HIT! Conversation resolves to same intent + variables
+```
+
+### Using with Strands Agents
+
+The semantic cache works alongside `SmartRouterModel`. Check the cache before calling the agent, and store the response after:
+
+```python
+from strands import Agent
+from bedrock_smart_router.strands_model import SmartRouterModel
+from bedrock_smart_router.semantic_cache import SemanticCache, SemanticCacheConfig
+
+cache = SemanticCache(config=SemanticCacheConfig(
+    enabled=True,
+    auto_extract=True,
+    multi_turn_resolution=True,
+))
+
+model = SmartRouterModel(router_config={"region": "us-west-2"})
+agent = Agent(model=model)
+
+def agent_with_cache(query: str) -> str:
+    cached = cache.get(query)
+    if cached:
+        return cached["text"]
+    response = agent(query)
+    cache.put(query, {"text": str(response)})
+    return str(response)
+
+agent_with_cache("What is DynamoDB?")       # MISS → calls Bedrock
+agent_with_cache("Tell me about DynamoDB")  # HIT → instant, free
+```
+
+### Cost
+
+| Component | Cost per call | Notes |
+|---|---|---|
+| Exact-match cache | Free | Hash comparison, no API calls |
+| Embedding (semantic cache) | ~$0.00001 | Titan Embed v2 per query |
+| Intent extraction (auto-extract) | ~$0.00003 | Nova Micro per query |
+| **Total (auto-extract)** | ~$0.00004 | vs $0.001–$0.02 saved per cache hit |
+
+Extraction and embedding results are both cached in-memory, so repeated identical queries incur zero additional API calls. All Bedrock calls (embedding and extraction) have built-in retry with exponential backoff for transient errors.
+
+See [`examples/20_semantic_cache.py`](examples/20_semantic_cache.py), [`examples/21_semantic_cache_deep_dive.py`](examples/21_semantic_cache_deep_dive.py), and [`examples/27_auto_semantic_cache.py`](examples/27_auto_semantic_cache.py) for runnable examples.
+
 ## Architecture
 
 ```
@@ -1206,12 +1365,13 @@ bedrock_smart_router/
   custom_strategy.py           # Strategy plugin registration
   strands_model.py             # Strands Agents SDK Model provider (SmartRouterModel)
   semantic_cache.py            # Embedding-based semantic cache (optional)
+  intent_extractor.py          # Auto-extraction of intent + variables for semantic cache
   semantic_router.py           # Intent routing via embeddings (optional)
 
 scripts/
   refresh_pricing.py           # Validate & refresh models.json from AWS Pricing API
 
-tests/                         # 420 unit tests + 53 integration tests (gated)
+tests/                         # 445 unit tests + 53 integration tests (gated)
 docs/
   iam-permissions.md           # IAM policy reference (Bedrock, DynamoDB, Pricing, Guardrails)
 ```
