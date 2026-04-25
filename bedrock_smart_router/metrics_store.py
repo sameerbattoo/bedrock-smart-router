@@ -96,6 +96,47 @@ class MetricsStore(ABC):
         ...
 
 
+def aggregate_metrics(
+    model_id: str,
+    records: list[RequestRecord],
+    window: float,
+) -> ModelMetrics:
+    """Aggregate a list of RequestRecords into a ModelMetrics summary.
+
+    Shared by InMemoryMetricsStore and DynamoDBMetricsStore.
+    """
+    if not records:
+        return ModelMetrics(model_id=model_id, window_seconds=window)
+
+    n = len(records)
+    latencies = sorted(r.latency_ms for r in records if r.success)
+    ttfts = [r.ttft_ms for r in records if r.success and r.ttft_ms > 0]
+    costs = [r.cost for r in records]
+    quality_scores = [
+        r.quality_score for r in records if r.quality_score is not None
+    ]
+    errors = sum(1 for r in records if not r.success)
+    throttles = sum(1 for r in records if r.is_throttle)
+
+    return ModelMetrics(
+        model_id=model_id,
+        window_seconds=window,
+        avg_latency_ms=sum(latencies) / max(1, len(latencies)),
+        p50_latency_ms=_percentile(latencies, 50),
+        p95_latency_ms=_percentile(latencies, 95),
+        avg_ttft_ms=sum(ttfts) / max(1, len(ttfts)) if ttfts else 0.0,
+        avg_cost_per_request=sum(costs) / n if costs else 0.0,
+        error_rate=errors / n,
+        throttle_rate=throttles / n,
+        avg_quality_score=(
+            sum(quality_scores) / len(quality_scores)
+            if quality_scores
+            else None
+        ),
+        sample_count=n,
+    )
+
+
 class InMemoryMetricsStore(MetricsStore):
     """Sliding-window in-memory metrics store.
 
@@ -137,33 +178,4 @@ class InMemoryMetricsStore(MetricsStore):
         records: list[RequestRecord],
         window: float,
     ) -> ModelMetrics:
-        if not records:
-            return ModelMetrics(model_id=model_id, window_seconds=window)
-
-        n = len(records)
-        latencies = sorted(r.latency_ms for r in records if r.success)
-        ttfts = [r.ttft_ms for r in records if r.success and r.ttft_ms > 0]
-        costs = [r.cost for r in records]
-        quality_scores = [
-            r.quality_score for r in records if r.quality_score is not None
-        ]
-        errors = sum(1 for r in records if not r.success)
-        throttles = sum(1 for r in records if r.is_throttle)
-
-        return ModelMetrics(
-            model_id=model_id,
-            window_seconds=window,
-            avg_latency_ms=sum(latencies) / max(1, len(latencies)),
-            p50_latency_ms=_percentile(latencies, 50),
-            p95_latency_ms=_percentile(latencies, 95),
-            avg_ttft_ms=sum(ttfts) / max(1, len(ttfts)) if ttfts else 0.0,
-            avg_cost_per_request=sum(costs) / n if costs else 0.0,
-            error_rate=errors / n,
-            throttle_rate=throttles / n,
-            avg_quality_score=(
-                sum(quality_scores) / len(quality_scores)
-                if quality_scores
-                else None
-            ),
-            sample_count=n,
-        )
+        return aggregate_metrics(model_id, records, window)
