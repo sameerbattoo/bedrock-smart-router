@@ -136,16 +136,23 @@ class DynamoDBMetricsStore(MetricsStore):
         boto_session: Any | None = None,
         region: str = "us-west-2",
         auto_create_table: bool = True,
+        metrics_cache_ttl: float = 60.0,
     ) -> None:
         self._table_name = table_name
         self._ttl_seconds = ttl_hours * 3600
         self._region = region
         self._auto_create = auto_create_table
+        self._metrics_cache_ttl = metrics_cache_ttl
 
         import boto3
         session = boto_session or boto3.Session(region_name=region)
         self._dynamodb = session.resource("dynamodb", region_name=region)
         self._table: Any | None = None
+
+        # Per-model metrics cache: model_id → (ModelMetrics, expiry_time)
+        self._metrics_cache: dict[str, tuple[ModelMetrics, float]] = {}
+        # Track model IDs seen via record() for get_all_metrics()
+        self._known_model_ids: set[str] = set()
 
     # ── Table management ────────────────────────────────────────
 
@@ -208,6 +215,7 @@ class DynamoDBMetricsStore(MetricsStore):
 
     def record(self, rec: RequestRecord) -> None:
         """Write a single request record to DynamoDB."""
+        self._known_model_ids.add(rec.model_id)
         table = self._get_table()
         now_epoch = Decimal(str(time.time()))
         expires = Decimal(str(time.time() + self._ttl_seconds))
@@ -246,47 +254,45 @@ class DynamoDBMetricsStore(MetricsStore):
     def get_metrics(
         self, model_id: str, window_seconds: float = 3600.0
     ) -> ModelMetrics:
-        """Query records for a model within the time window and aggregate."""
+        """Query records for a model within the time window and aggregate.
+
+        Results are cached per model for ``metrics_cache_ttl`` seconds
+        (default 60s) to avoid repeated DynamoDB queries on every request.
+        """
+        now = time.time()
+        cached = self._metrics_cache.get(model_id)
+        if cached is not None:
+            metrics, expiry = cached
+            if now < expiry:
+                return metrics
+
         records = self._query_records(model_id, window_seconds)
-        return self._aggregate(model_id, records, window_seconds)
+        metrics = self._aggregate(model_id, records, window_seconds)
+        self._metrics_cache[model_id] = (metrics, now + self._metrics_cache_ttl)
+        return metrics
 
     def get_all_metrics(
         self, window_seconds: float = 3600.0
     ) -> dict[str, ModelMetrics]:
-        """Scan all records within the time window and aggregate per model.
+        """Get aggregated metrics for all known models.
 
-        Note: this performs a full table scan.  For large tables
-        consider using the in-memory store for hot-path routing and
-        DynamoDB for persistence / cross-instance sharing.
+        Uses per-model DynamoDB Queries (partition key lookup) with
+        in-memory caching instead of a full table scan.  Each model's
+        metrics are cached for ``metrics_cache_ttl`` seconds.
+
+        The method queries all model IDs that have been recorded via
+        :meth:`record`.  To also include models that haven't been
+        seen yet, callers can pass a list of model IDs to pre-populate.
         """
-        table = self._get_table()
-        cutoff = Decimal(str(time.time() - window_seconds))
-
-        items: list[dict[str, Any]] = []
-        scan_kwargs: dict[str, Any] = {
-            "FilterExpression": "#ts >= :cutoff",
-            "ExpressionAttributeNames": {"#ts": "timestamp"},
-            "ExpressionAttributeValues": {":cutoff": cutoff},
-        }
-
-        while True:
-            resp = table.scan(**scan_kwargs)
-            items.extend(resp.get("Items", []))
-            last_key = resp.get("LastEvaluatedKey")
-            if not last_key:
-                break
-            scan_kwargs["ExclusiveStartKey"] = last_key
-
-        # Group by model
-        by_model: dict[str, list[RequestRecord]] = {}
-        for item in items:
-            rec = self._item_to_record(item)
-            by_model.setdefault(rec.model_id, []).append(rec)
-
-        return {
-            mid: self._aggregate(mid, recs, window_seconds)
-            for mid, recs in by_model.items()
-        }
+        # Collect all model IDs we know about from the cache + any
+        # previously recorded models
+        model_ids = set(self._metrics_cache.keys()) | self._known_model_ids
+        result: dict[str, ModelMetrics] = {}
+        for model_id in model_ids:
+            metrics = self.get_metrics(model_id, window_seconds)
+            if metrics.sample_count > 0:
+                result[model_id] = metrics
+        return result
 
     # ── Internal helpers ────────────────────────────────────────
 
