@@ -230,15 +230,6 @@ except Exception as e:
     else:
         print(f"  → Error: {error_msg[:100]}")
 
-# Turn 4: Safe question after blocked one — should work
-print("\n  Turn 4: 'Look up customer CUST101' (should work)")
-try:
-    agent3("Look up customer CUST101")
-    d = model3.last_routing_decision
-    print(f"  → Model: {d.selected_model}, Cost: ${d.actual_cost:.6f} ✅")
-except Exception as e:
-    print(f"  → Error: {str(e)[:80]}")
-
 
 # ═══════════════════════════════════════════════════════════════════
 # Clean up: Delete the guardrail
