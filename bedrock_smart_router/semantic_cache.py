@@ -34,10 +34,11 @@ query.  No manual variable passing needed::
     cache.get("Show user distribution by geography, year 2026, sales over $200")
     # → HIT (intent matches, variables {year: 2026, sales_threshold: 200} match)
 
-**Multi-turn resolution (optional):**
+**Multi-turn resolution (automatic with auto_extract):**
 
-When ``multi_turn_resolution=True``, the cache can resolve a multi-turn
-conversation into a single self-contained query before extraction::
+When ``auto_extract=True`` and ``messages`` with 2+ user turns are
+passed, the cache automatically resolves the conversation into a single
+self-contained query before extraction::
 
     cache.get(messages=[
         {"role": "user", "content": [{"text": "show me users by geo"}]},
@@ -83,7 +84,7 @@ _EMBED_RETRYABLE_ERRORS = frozenset({
 class SemanticCacheConfig:
     """Semantic cache configuration."""
 
-    enabled: bool = False
+    enabled: bool = True
     threshold: float = 0.92  # Cosine similarity threshold (0.0–1.0)
     embedding_model: str = "amazon.titan-embed-text-v2:0"
     embedding_dimension: int = 1024  # Titan v2 default
@@ -96,7 +97,6 @@ class SemanticCacheConfig:
     # Auto-extraction (optional)
     auto_extract: bool = False
     extraction_model: str = "us.amazon.nova-micro-v1:0"
-    multi_turn_resolution: bool = False
 
 
 class SemanticCache:
@@ -341,7 +341,6 @@ class SemanticCache:
             # Multi-turn with messages
             if (
                 messages is not None
-                and self.config.multi_turn_resolution
                 and self._count_user_messages(messages) >= 2
             ):
                 result = extractor.extract_from_messages(messages)
@@ -408,7 +407,6 @@ class SemanticCache:
             "threshold": self.config.threshold,
             "embedding_model": self.config.embedding_model,
             "auto_extract": self.config.auto_extract,
-            "multi_turn_resolution": self.config.multi_turn_resolution,
         }
 
 

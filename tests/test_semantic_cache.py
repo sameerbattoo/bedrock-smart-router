@@ -41,7 +41,6 @@ def cache():
     """SemanticCache with mocked embeddings and in-memory store."""
     c = SemanticCache(
         config=SemanticCacheConfig(
-            enabled=True,
             threshold=0.80,
             max_entries=100,
             ttl_seconds=60,
@@ -56,7 +55,6 @@ def cache_faiss():
     """SemanticCache with FAISS backend and mocked embeddings."""
     c = SemanticCache(
         config=SemanticCacheConfig(
-            enabled=True,
             threshold=0.80,
             vector_store_backend="faiss",
             embedding_dimension=4,
@@ -191,12 +189,10 @@ class TestAutoExtraction:
 
         c = SemanticCache(
             config=SemanticCacheConfig(
-                enabled=True,
                 threshold=0.80,
                 max_entries=100,
                 ttl_seconds=60,
                 auto_extract=True,
-                multi_turn_resolution=True,
             ),
         )
         c._get_embedding = _mock_embedding
@@ -289,7 +285,6 @@ class TestAutoExtraction:
     def test_stats_include_auto_extract_fields(self, auto_cache):
         stats = auto_cache.stats
         assert stats["auto_extract"] is True
-        assert stats["multi_turn_resolution"] is True
 
 
 class TestMultiTurnWithoutAutoExtract:
@@ -314,7 +309,7 @@ class TestEmbeddingRetry:
         from botocore.exceptions import ClientError
 
         c = SemanticCache(
-            config=SemanticCacheConfig(enabled=True, threshold=0.80),
+            config=SemanticCacheConfig(threshold=0.80),
         )
 
         mock_client = MagicMock()
@@ -341,7 +336,7 @@ class TestEmbeddingRetry:
         from botocore.exceptions import ClientError
 
         c = SemanticCache(
-            config=SemanticCacheConfig(enabled=True, threshold=0.80),
+            config=SemanticCacheConfig(threshold=0.80),
         )
 
         mock_client = MagicMock()

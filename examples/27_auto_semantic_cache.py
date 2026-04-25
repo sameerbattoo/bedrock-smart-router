@@ -35,7 +35,6 @@ print("=" * 60)
 
 manual_cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.75,  # Lower threshold for raw query matching (no auto-extract)
         embedding_model="amazon.titan-embed-text-v2:0",
     ),
@@ -79,7 +78,6 @@ print("=" * 60)
 
 auto_cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.85,
         auto_extract=True,                            # Enable auto-extraction
         extraction_model="us.amazon.nova-micro-v1:0", # Cheapest model
@@ -122,10 +120,8 @@ print("=" * 60)
 
 multi_cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.85,
         auto_extract=True,
-        multi_turn_resolution=True,                   # Enable multi-turn
         extraction_model="us.amazon.nova-micro-v1:0",
     ),
     region="us-west-2",
@@ -163,10 +159,8 @@ print("=" * 60)
 
 faiss_cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.85,
         auto_extract=True,
-        multi_turn_resolution=True,
         extraction_model="us.amazon.nova-micro-v1:0",
         vector_store_backend="faiss",       # Use FAISS instead of brute-force
         embedding_dimension=1024,           # Must match Titan v2 output
@@ -219,7 +213,6 @@ print("=" * 60)
 router = BedrockRouter.create({"region": "us-west-2"})
 converse_cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.85,
         auto_extract=True,
         extraction_model="us.amazon.nova-micro-v1:0",
@@ -259,7 +252,6 @@ print("=" * 60)
 
 stream_cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.70,  # Lower threshold for rephrased queries
         auto_extract=True,
         extraction_model="us.amazon.nova-micro-v1:0",
@@ -312,11 +304,9 @@ try:
 
     strands_cache = SemanticCache(
         config=SemanticCacheConfig(
-            enabled=True,
-            threshold=0.85,
+                threshold=0.85,
             auto_extract=True,
-            multi_turn_resolution=True,
-            extraction_model="us.amazon.nova-micro-v1:0",
+                extraction_model="us.amazon.nova-micro-v1:0",
         ),
         region="us-west-2",
     )
@@ -358,11 +348,9 @@ try:
 
     multi_turn_cache = SemanticCache(
         config=SemanticCacheConfig(
-            enabled=True,
-            threshold=0.85,
+                threshold=0.85,
             auto_extract=True,
-            multi_turn_resolution=True,
-            extraction_model="us.amazon.nova-micro-v1:0",
+                extraction_model="us.amazon.nova-micro-v1:0",
         ),
         region="us-west-2",
     )

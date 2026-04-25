@@ -133,10 +133,8 @@ model = SmartRouterModel(
 # Auto-extracting semantic cache with FAISS backend and multi-turn resolution
 cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.85,
         auto_extract=True,
-        multi_turn_resolution=True,
         extraction_model="us.amazon.nova-micro-v1:0",
         vector_store_backend="faiss",       # FAISS for fast similarity search
         embedding_dimension=1024,           # Must match Titan v2 output

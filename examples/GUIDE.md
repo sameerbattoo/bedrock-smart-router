@@ -648,7 +648,6 @@ Covers all vector store backends and configuration options:
 
 ```python
 SemanticCache(config=SemanticCacheConfig(
-    enabled=True,
     threshold=0.90,
     vector_store_backend="faiss",  # or "memory" or "redis"
     embedding_model="amazon.titan-embed-text-v2:0",
@@ -672,7 +671,7 @@ The standard semantic cache requires the caller to manually extract and pass var
 |---|---|---|
 | **Manual** (default) | `auto_extract=False` | Caller passes `variables={"year": "2026", ...}` explicitly |
 | **Auto single-turn** | `auto_extract=True` | LLM extracts intent + variables from the query automatically |
-| **Auto multi-turn** | `auto_extract=True, multi_turn_resolution=True` | LLM resolves conversation history → single query → extracts |
+| **Auto multi-turn** | `auto_extract=True` + `messages` with 2+ user turns | LLM resolves conversation history → single query → extracts |
 
 ### Manual Mode (Existing)
 
@@ -690,7 +689,6 @@ The developer must know which parts are parameters and extract them.
 
 ```python
 cache = SemanticCache(config=SemanticCacheConfig(
-    enabled=True,
     auto_extract=True,
     extraction_model="us.amazon.nova-micro-v1:0",
 ))
@@ -711,9 +709,7 @@ The intent is embedded and stored in the vector store. The variables are hashed 
 
 ```python
 cache = SemanticCache(config=SemanticCacheConfig(
-    enabled=True,
     auto_extract=True,
-    multi_turn_resolution=True,
 ))
 
 # Store from single-turn

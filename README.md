@@ -814,7 +814,6 @@ Matches queries by meaning using embedding similarity. "How do I reset my passwo
 from bedrock_smart_router.semantic_cache import SemanticCache, SemanticCacheConfig
 
 cache = SemanticCache(config=SemanticCacheConfig(
-    enabled=True,
     threshold=0.85,
     embedding_model="amazon.titan-embed-text-v2:0",
 ))
@@ -854,7 +853,6 @@ Solves the manual extraction problem. Uses a cheap Bedrock model (Nova Micro, ~$
 
 ```python
 cache = SemanticCache(config=SemanticCacheConfig(
-    enabled=True,
     threshold=0.85,
     auto_extract=True,                            # Enable auto-extraction
     extraction_model="us.amazon.nova-micro-v1:0", # Cheapest model
@@ -878,9 +876,7 @@ When `multi_turn_resolution=True`, the cache can resolve a multi-turn conversati
 
 ```python
 cache = SemanticCache(config=SemanticCacheConfig(
-    enabled=True,
     auto_extract=True,
-    multi_turn_resolution=True,
 ))
 
 # Store from single-turn
@@ -905,9 +901,7 @@ from bedrock_smart_router.strands_model import SmartRouterModel
 from bedrock_smart_router.semantic_cache import SemanticCache, SemanticCacheConfig
 
 cache = SemanticCache(config=SemanticCacheConfig(
-    enabled=True,
     auto_extract=True,
-    multi_turn_resolution=True,
 ))
 
 model = SmartRouterModel(router_config={"region": "us-west-2"})

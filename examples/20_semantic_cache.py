@@ -28,7 +28,6 @@ router = BedrockRouter.create()
 
 semantic_cache = SemanticCache(
     config=SemanticCacheConfig(
-        enabled=True,
         threshold=0.92,
         embedding_model="amazon.titan-embed-text-v2:0",
         max_entries=5000,
