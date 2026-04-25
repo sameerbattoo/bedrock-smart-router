@@ -8,6 +8,7 @@ strategy either downgrades to a cheaper tier or rejects the request.
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
@@ -51,17 +52,20 @@ class BudgetTracker:
         self._spend: dict[str, deque[_SpendRecord]] = defaultdict(
             lambda: deque(maxlen=10_000)
         )
+        self._lock = threading.Lock()
 
     def record_spend(self, scope: str, cost: float) -> None:
-        self._spend[scope].append(
-            _SpendRecord(timestamp=time.monotonic(), cost=cost)
-        )
+        with self._lock:
+            self._spend[scope].append(
+                _SpendRecord(timestamp=time.monotonic(), cost=cost)
+            )
 
     def get_spend(self, scope: str, window_seconds: float) -> float:
         cutoff = time.monotonic() - window_seconds
-        return sum(
-            r.cost for r in self._spend.get(scope, []) if r.timestamp >= cutoff
-        )
+        with self._lock:
+            return sum(
+                r.cost for r in self._spend.get(scope, []) if r.timestamp >= cutoff
+            )
 
     def check_budget(self, scope: str, rule: BudgetRule) -> str | None:
         """Return the reason the budget is exceeded, or None if OK."""
