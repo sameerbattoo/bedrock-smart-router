@@ -381,11 +381,6 @@ class BedrockRouter:
 
         # ── Step 10: Record metrics (background) ────────────────
         tenant_id = (routing.metadata or {}).get("tenant", "")
-        most_expensive = max(
-            (m.pricing.estimate_cost(input_tokens, output_tokens)
-             for m in self._registry.eligible_models(prefer_global=self._config.cris.allow_global)),
-            default=0.0,
-        )
         self._record_async(
             RequestRecord(
                 model_id=used_model.model_id,
@@ -409,7 +404,8 @@ class BedrockRouter:
             duration_ms=(time.monotonic() - t_start) * 1000,
             tags=routing.tags,
             metadata=routing.metadata,
-            most_expensive_cost=most_expensive,
+            input_tokens_for_cost=input_tokens,
+            output_tokens_for_cost=output_tokens,
         )
 
         # ── Step 11: Cache the response ─────────────────────────
@@ -760,7 +756,8 @@ class BedrockRouter:
         duration_ms: float,
         tags: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
-        most_expensive_cost: float = 0.0,
+        input_tokens_for_cost: int = 0,
+        output_tokens_for_cost: int = 0,
     ) -> None:
         """Fire metrics, observability, and OTEL recording in a background thread.
 
@@ -773,6 +770,18 @@ class BedrockRouter:
             except Exception:
                 logger.debug("Background metrics record failed", exc_info=True)
             try:
+                # Compute most_expensive in background to avoid blocking response
+                most_expensive_cost = 0.0
+                if input_tokens_for_cost > 0:
+                    try:
+                        most_expensive_cost = max(
+                            (m.pricing.estimate_cost(input_tokens_for_cost, output_tokens_for_cost)
+                             for m in self._registry.eligible_models(
+                                 prefer_global=self._config.cris.allow_global)),
+                            default=0.0,
+                        )
+                    except Exception:
+                        pass
                 self._observability.emit(
                     decision,
                     duration_ms=duration_ms,
