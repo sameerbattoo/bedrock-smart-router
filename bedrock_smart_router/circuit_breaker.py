@@ -82,7 +82,10 @@ class CircuitBreakerRegistry:
 
             # HALF_OPEN — allow limited probe requests
             if circuit.state == CircuitState.HALF_OPEN:
-                return circuit.half_open_attempts < self.config.half_open_max_requests
+                if circuit.half_open_attempts < self.config.half_open_max_requests:
+                    circuit.half_open_attempts += 1
+                    return True
+                return False
 
             return True  # pragma: no cover
 
