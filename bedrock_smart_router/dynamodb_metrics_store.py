@@ -163,9 +163,11 @@ class DynamoDBMetricsStore(MetricsStore):
     def _ensure_table_exists(self) -> None:
         """Create the table if it does not already exist."""
         client = self._dynamodb.meta.client
-        existing = client.list_tables().get("TableNames", [])
-        if self._table_name in existing:
-            return
+        try:
+            client.describe_table(TableName=self._table_name)
+            return  # Table exists
+        except client.exceptions.ResourceNotFoundException:
+            pass  # Table doesn't exist — create it below
 
         logger.info("Creating DynamoDB table %s", self._table_name)
         client.create_table(
