@@ -4,20 +4,19 @@ Adapted from the official Strands Agents SDK guardrails sample:
 https://github.com/strands-agents/samples/blob/main/python/01-learn/05-guardrails/bedrock_guardrails_sample.ipynb
 
 The original sample configures guardrails on the BedrockModel directly.
-With the Smart Router, you have TWO ways to use guardrails:
+With the Smart Router, guardrails are configured at the ROUTER level:
 
-  Method 1: Router-level guardrails (pre-route + post-route)
-    - Configured once in the router config
-    - Applied via the ApplyGuardrail API BEFORE and AFTER model selection
-    - Works regardless of which model the router picks
-    - Input is screened before any Bedrock inference call
+  - Set once in the router config (guardrails.pre_route / post_route)
+  - Input screened via ApplyGuardrail API BEFORE model selection
+  - Works regardless of which model the router picks
+  - Blocked requests never reach Bedrock inference (saves cost)
 
-  Method 2: Model-level guardrails (Bedrock native, via kwargs)
-    - Passed as guardrailConfig in the Bedrock Converse API call
-    - Applied by Bedrock during inference
-    - Same as the original AWS sample, but with smart routing
-
-This example demonstrates both methods.
+Demonstrates:
+  1. Create a Bedrock Guardrail (blocks financial advice)
+  2. Safe question → tool use works, guardrail_checked=True
+  3. Blocked question → rejected pre-route, no inference cost
+  4. Multi-turn conversation with guardrail intervention mid-chat
+  5. Clean up the guardrail
 
 Requirements:
     pip install bedrock-smart-router[strands]
@@ -28,8 +27,8 @@ Note: This example creates and deletes a Bedrock Guardrail. You need
 
 import boto3
 from strands import Agent, tool
-from bedrock_smart_router import BedrockRouter
 from bedrock_smart_router.strands_model import SmartRouterModel
+from bedrock_smart_router import BedrockRouter
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -130,7 +129,7 @@ def get_account_balance(customer_id: str) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Method 1: Router-Level Guardrails (Pre-Route + Post-Route)
+# Step 2: Create Strands Agent with Router-Level Guardrails
 # ═══════════════════════════════════════════════════════════════════
 # The guardrail is configured in the ROUTER, not the model.
 # Input is screened via ApplyGuardrail API BEFORE model selection.
@@ -138,7 +137,7 @@ def get_account_balance(customer_id: str) -> str:
 # This works regardless of which model the router picks.
 
 print(f"\n{'=' * 60}")
-print("Method 1: Router-Level Guardrails")
+print("Strands Agent with Router-Level Guardrails")
 print("=" * 60)
 
 router = BedrockRouter.create({
@@ -186,58 +185,7 @@ except Exception as e:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Method 2: Model-Level Guardrails (via kwargs passthrough)
-# ═══════════════════════════════════════════════════════════════════
-# The guardrail is passed as guardrailConfig in the Bedrock Converse
-# API call. The router forwards it via **kwargs. This works with the
-# router's converse() / converse_stream() directly (not via Strands).
-
-print(f"\n{'=' * 60}")
-print("Method 2: Model-Level Guardrails (Bedrock native via kwargs)")
-print("=" * 60)
-
-# Create a router WITHOUT pre-route guardrails
-router2 = BedrockRouter.create({"region": "us-west-2"})
-
-guardrail_config = {
-    "guardrailIdentifier": guardrail_id,
-    "guardrailVersion": guardrail_version,
-    "trace": "enabled",
-}
-
-# Test 2a: Safe question — guardrail passed per-request via kwargs
-print("\n  Test 2a: Safe question (guardrailConfig in kwargs)")
-response = router2.converse(
-    messages=[{"role": "user", "content": [{"text": "What is Amazon S3?"}]}],
-    guardrailConfig=guardrail_config,
-)
-d = response["routing_decision"]
-print(f"  → Model: {d.selected_model}, Cost: ${d.actual_cost:.6f}")
-print(f"  → Guardrail trace: {'present' if d.guardrail_trace else 'none'}")
-
-# Test 2b: Blocked question — Bedrock applies guardrail during inference
-print("\n  Test 2b: Financial advice (should be blocked by Bedrock)")
-try:
-    response = router2.converse(
-        messages=[{"role": "user", "content": [{"text": "What stocks should I invest in?"}]}],
-        guardrailConfig=guardrail_config,
-    )
-    stop = response.get("stopReason", "")
-    if stop == "guardrail_intervened":
-        print(f"  → ⚠️ GUARDRAIL INTERVENED during inference ✅")
-    else:
-        d = response["routing_decision"]
-        print(f"  → Model: {d.selected_model}, stop: {d.stop_reason}")
-except Exception as e:
-    print(f"  → Blocked: {str(e)[:80]}")
-
-print("\n  Note: Method 1 (router-level) is preferred for Strands agents")
-print("  because it screens input BEFORE inference and costs nothing.")
-print("  Method 2 is useful when calling router.converse() directly.")
-
-
-# ═══════════════════════════════════════════════════════════════════
-# Method 1 continued: Multi-turn with guardrails
+# Step 3: Multi-turn conversation with guardrails
 # ═══════════════════════════════════════════════════════════════════
 
 print(f"\n{'=' * 60}")
@@ -310,21 +258,11 @@ print(f"\n{'=' * 60}")
 print("Summary")
 print("=" * 60)
 print("""
-  The Smart Router supports Bedrock Guardrails at two levels:
+  The Smart Router applies Bedrock Guardrails at the router level:
 
-  1. Router-level (recommended for Strands agents):
-     - Configure once in router config: guardrails.pre_route / post_route
-     - Input screened via ApplyGuardrail API BEFORE model selection
-     - Works with any model the router picks
-     - Blocked requests never reach Bedrock inference (saves cost)
-
-  2. Model-level (via Bedrock Converse API kwargs):
-     - Pass guardrailConfig per request
-     - Applied by Bedrock during inference
-     - Same as using BedrockModel directly
-
-  Router-level is preferred because:
-  - Blocked input is caught before any inference cost
-  - Works regardless of which model is selected
-  - Configured once, not per-request
+  - Configure once: guardrails.pre_route / post_route in router config
+  - Input screened via ApplyGuardrail API BEFORE model selection
+  - Works with any model the router picks
+  - Blocked requests never reach Bedrock inference (saves cost)
+  - Configured once, applied to every request automatically
 """)
