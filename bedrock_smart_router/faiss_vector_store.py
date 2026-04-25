@@ -49,6 +49,7 @@ class FAISSVectorStore(VectorStore):
         self._index = faiss.IndexFlatIP(dimension)  # Inner product (cosine after normalization)
         self._id_map: list[str] = []  # Position → ID
         self._payloads: dict[str, dict[str, Any]] = {}  # ID → payload
+        self._deleted_ids: set[str] = set()  # Soft-deleted IDs (FAISS doesn't support removal)
         logger.info("FAISS vector store initialized (dim=%d)", dimension)
 
     @staticmethod
@@ -73,37 +74,44 @@ class FAISSVectorStore(VectorStore):
             return []
 
         vec = self._normalize(embedding)
-        k = min(top_k, self._index.ntotal)
+        # Fetch extra candidates to account for soft-deleted entries
+        k = min(top_k + len(self._deleted_ids), self._index.ntotal)
         scores, indices = self._index.search(vec, k)
 
         results: list[SearchResult] = []
         for score, idx in zip(scores[0], indices[0]):
             if idx < 0 or idx >= len(self._id_map):
                 continue
+            entry_id = self._id_map[idx]
+            if entry_id in self._deleted_ids:
+                continue  # Skip soft-deleted entries
             if score < threshold:
                 continue
-            entry_id = self._id_map[idx]
             results.append(SearchResult(
                 id=entry_id,
                 score=float(score),
                 payload=self._payloads.get(entry_id, {}),
             ))
+            if len(results) >= top_k:
+                break
         return results
 
     def delete(self, id: str) -> bool:
-        # FAISS IndexFlatIP doesn't support deletion.
-        # We mark the payload as deleted and skip it in search.
+        # FAISS IndexFlatIP doesn't support vector removal.
+        # Soft-delete: remove payload and mark ID so search() skips it.
         if id in self._payloads:
             del self._payloads[id]
+            self._deleted_ids.add(id)
             return True
         return False
 
     def clear(self) -> int:
         import faiss
-        count = self._index.ntotal
+        count = len(self._payloads)
         self._index = faiss.IndexFlatIP(self._dimension)
         self._id_map.clear()
         self._payloads.clear()
+        self._deleted_ids.clear()
         return count
 
     def count(self) -> int:
