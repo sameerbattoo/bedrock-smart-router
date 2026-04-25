@@ -185,8 +185,9 @@ class BedrockRouter:
             gr_result = self._guardrails.check_input(messages)
             guardrail_checked = True
             # If sanitize mode returned cleaned text, swap it in
+            # Copy messages to avoid mutating the caller's data
             if gr_result.output_text and gr_result.blocked:
-                # Guardrail sanitized the input — replace last user message
+                messages = [dict(m) for m in messages]
                 for msg in reversed(messages):
                     if msg.get("role") == "user":
                         msg["content"] = [{"text": gr_result.output_text}]
@@ -451,7 +452,9 @@ class BedrockRouter:
             gr_result = self._guardrails.check_input(messages)
             guardrail_checked = True
             # If sanitize mode returned cleaned text, swap it in
+            # Copy messages to avoid mutating the caller's data
             if gr_result.output_text and gr_result.blocked:
+                messages = [dict(m) for m in messages]
                 for msg in reversed(messages):
                     if msg.get("role") == "user":
                         msg["content"] = [{"text": gr_result.output_text}]
