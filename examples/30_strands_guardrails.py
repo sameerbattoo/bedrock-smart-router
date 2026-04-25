@@ -189,28 +189,51 @@ except Exception as e:
 # Method 2: Model-Level Guardrails (via kwargs passthrough)
 # ═══════════════════════════════════════════════════════════════════
 # The guardrail is passed as guardrailConfig in the Bedrock Converse
-# API call. The router forwards it via **kwargs. This is the same
-# approach as the original AWS sample, but with smart routing.
+# API call. The router forwards it via **kwargs. This works with the
+# router's converse() / converse_stream() directly (not via Strands).
 
 print(f"\n{'=' * 60}")
-print("Method 2: Model-Level Guardrails (Bedrock native)")
+print("Method 2: Model-Level Guardrails (Bedrock native via kwargs)")
 print("=" * 60)
 
-# Create a router WITHOUT guardrails configured
-model2 = SmartRouterModel(
-    router_config={"region": "us-west-2"},
-    max_tokens=256,
+# Create a router WITHOUT pre-route guardrails
+router2 = BedrockRouter.create({"region": "us-west-2"})
+
+guardrail_config = {
+    "guardrailIdentifier": guardrail_id,
+    "guardrailVersion": guardrail_version,
+    "trace": "enabled",
+}
+
+# Test 2a: Safe question — guardrail passed per-request via kwargs
+print("\n  Test 2a: Safe question (guardrailConfig in kwargs)")
+response = router2.converse(
+    messages=[{"role": "user", "content": [{"text": "What is Amazon S3?"}]}],
+    guardrailConfig=guardrail_config,
 )
+d = response["routing_decision"]
+print(f"  → Model: {d.selected_model}, Cost: ${d.actual_cost:.6f}")
+print(f"  → Guardrail trace: {'present' if d.guardrail_trace else 'none'}")
 
-# The guardrail is passed per-request via the Bedrock Converse API.
-# With the direct router, you'd pass it as guardrailConfig in kwargs.
-# With Strands, the SmartRouterModel doesn't expose guardrailConfig
-# directly, so Method 1 (router-level) is the recommended approach.
+# Test 2b: Blocked question — Bedrock applies guardrail during inference
+print("\n  Test 2b: Financial advice (should be blocked by Bedrock)")
+try:
+    response = router2.converse(
+        messages=[{"role": "user", "content": [{"text": "What stocks should I invest in?"}]}],
+        guardrailConfig=guardrail_config,
+    )
+    stop = response.get("stopReason", "")
+    if stop == "guardrail_intervened":
+        print(f"  → ⚠️ GUARDRAIL INTERVENED during inference ✅")
+    else:
+        d = response["routing_decision"]
+        print(f"  → Model: {d.selected_model}, stop: {d.stop_reason}")
+except Exception as e:
+    print(f"  → Blocked: {str(e)[:80]}")
 
-print("  Method 2 passes guardrailConfig via Bedrock Converse kwargs.")
-print("  For Strands agents, Method 1 (router-level) is recommended")
-print("  because it screens input BEFORE model selection and works")
-print("  transparently with any model the router picks.")
+print("\n  Note: Method 1 (router-level) is preferred for Strands agents")
+print("  because it screens input BEFORE inference and costs nothing.")
+print("  Method 2 is useful when calling router.converse() directly.")
 
 
 # ═══════════════════════════════════════════════════════════════════
