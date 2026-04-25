@@ -119,8 +119,8 @@ class OpenSearchVectorStore(VectorStore):
                 body["mappings"]["properties"]["embedding"]["dimension"] = self._dimension
                 self._client.indices.create(index=self._index_name, body=body)
                 logger.info("Created OpenSearch index '%s'", self._index_name)
-                # Give AOSS a moment to propagate the index
-                time.sleep(1)
+                # AOSS needs time to make a new index writable
+                time.sleep(10)
             else:
                 logger.debug("OpenSearch index '%s' already exists", self._index_name)
         except Exception as exc:
@@ -135,14 +135,17 @@ class OpenSearchVectorStore(VectorStore):
             "created_at": time.time(),
         }
         # AOSS doesn't support client-specified document IDs
-        resp = self._client.index(
-            index=self._index_name,
-            body=doc,
-            
-        )
-        # Map our logical ID to the auto-generated _id
-        aoss_id = resp.get("_id", "")
-        self._id_map[id] = aoss_id
+        try:
+            resp = self._client.index(
+                index=self._index_name,
+                body=doc,
+            )
+            # Map our logical ID to the auto-generated _id
+            aoss_id = resp.get("_id", "")
+            self._id_map[id] = aoss_id
+        except Exception as exc:
+            logger.warning("OpenSearch add failed for '%s': %s", id, exc)
+            raise
 
     def search(
         self,
@@ -207,16 +210,17 @@ class OpenSearchVectorStore(VectorStore):
             return False
 
     def clear(self) -> int:
-        """Delete all documents in the index."""
+        """Delete all documents by deleting and recreating the index.
+
+        AOSS does not support _delete_by_query, so we drop the index
+        and recreate it.  This takes ~10s for AOSS to propagate.
+        """
         try:
             count = self.count()
-            if count > 0:
-                self._client.delete_by_query(
-                    index=self._index_name,
-                    body={"query": {"match_all": {}}},
-                    
-                )
+            self._client.indices.delete(index=self._index_name)
             self._id_map.clear()
+            time.sleep(10)
+            self._ensure_index()
             return count
         except Exception as exc:
             logger.warning("OpenSearch clear failed: %s", exc)
