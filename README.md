@@ -1351,7 +1351,6 @@ bedrock_smart_router/
   cris_manager.py              # CRIS profile selection by geography
   inference_tier.py            # Standard/Priority/Flex auto-selection
   prompt_cache_advisor.py      # Prompt caching benefit estimation
-  provisioned_throughput.py    # Detect and prefer provisioned capacity
   guardrails_integration.py    # Pre/post-route guardrail checks
   aip_manager.py               # Application Inference Profile management
   distilled_models.py          # Distilled model registration
