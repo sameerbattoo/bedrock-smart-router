@@ -448,8 +448,14 @@ class BedrockRouter:
         # Pre-route guardrail
         guardrail_checked = False
         if self._guardrails.has_pre_route:
-            self._guardrails.check_input(messages)
+            gr_result = self._guardrails.check_input(messages)
             guardrail_checked = True
+            # If sanitize mode returned cleaned text, swap it in
+            if gr_result.output_text and gr_result.blocked:
+                for msg in reversed(messages):
+                    if msg.get("role") == "user":
+                        msg["content"] = [{"text": gr_result.output_text}]
+                        break
 
         # Routing pipeline (same as converse)
         analysis = self._analyzer.analyze(messages, system, tool_config)
