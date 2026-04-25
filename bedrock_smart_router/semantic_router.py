@@ -83,6 +83,7 @@ class SemanticRouter:
         self.default_model = default_model
         self._session = boto_session
         self._region = region
+        self._client: Any | None = None
         self._route_embeddings: list[tuple[SemanticRoute, str, list[float]]] = []
         self._initialized = False
 
@@ -123,12 +124,13 @@ class SemanticRouter:
         )
 
     def _get_embedding(self, text: str) -> list[float]:
-        if self._session is None:
-            import boto3
-            self._session = boto3.Session(region_name=self._region)
-        client = self._session.client("bedrock-runtime", region_name=self._region)
+        if self._client is None:
+            if self._session is None:
+                import boto3
+                self._session = boto3.Session(region_name=self._region)
+            self._client = self._session.client("bedrock-runtime", region_name=self._region)
         import json
-        resp = client.invoke_model(
+        resp = self._client.invoke_model(
             modelId=self.embedding_model,
             body=json.dumps({"inputText": text}),
         )
