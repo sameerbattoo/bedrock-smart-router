@@ -71,7 +71,7 @@ class AsyncBedrockRouter:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Async version of ``BedrockRouter.converse()``."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
             functools.partial(
@@ -103,7 +103,7 @@ class AsyncBedrockRouter:
                 if "contentBlockDelta" in event:
                     print(event["contentBlockDelta"]["delta"]["text"], end="")
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         # Run the sync generator in a thread and yield events
         import queue
         import threading

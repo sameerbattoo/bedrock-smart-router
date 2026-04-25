@@ -220,7 +220,7 @@ class SmartRouterModel(Model):
             ContextWindowOverflowException: Input exceeds model context.
             ModelThrottledException: Bedrock is throttling requests.
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         queue: asyncio.Queue[StreamEvent | None] = asyncio.Queue()
 
         def callback(event: StreamEvent | None = None) -> None:
