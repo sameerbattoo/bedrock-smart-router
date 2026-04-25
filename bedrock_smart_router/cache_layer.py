@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -114,6 +115,7 @@ class InMemoryCache(ResponseCache):
     def __init__(self, config: CacheConfig | None = None) -> None:
         super().__init__(config)
         self._cache: OrderedDict[str, _MemoryCacheEntry] = OrderedDict()
+        self._lock = threading.Lock()
 
     def get(
         self,
@@ -125,18 +127,19 @@ class InMemoryCache(ResponseCache):
             return None
 
         key = _make_cache_key(messages, system, inference_config)
-        entry = self._cache.get(key)
-        if entry is None:
-            self._misses += 1
-            return None
+        with self._lock:
+            entry = self._cache.get(key)
+            if entry is None:
+                self._misses += 1
+                return None
 
-        if time.monotonic() - entry.created_at > self.config.ttl_seconds:
-            del self._cache[key]
-            self._misses += 1
-            return None
+            if time.monotonic() - entry.created_at > self.config.ttl_seconds:
+                del self._cache[key]
+                self._misses += 1
+                return None
 
-        self._cache.move_to_end(key)
-        self._hits += 1
+            self._cache.move_to_end(key)
+            self._hits += 1
         logger.debug("Memory cache HIT (key=%s…)", key[:12])
         return entry.response
 
@@ -152,22 +155,24 @@ class InMemoryCache(ResponseCache):
             return
 
         key = _make_cache_key(messages, system, inference_config)
-        self._cache[key] = _MemoryCacheEntry(
-            response=response, model_id=model_id, created_at=time.monotonic(),
-        )
-        self._cache.move_to_end(key)
-        while len(self._cache) > self.config.max_entries:
-            self._cache.popitem(last=False)
+        with self._lock:
+            self._cache[key] = _MemoryCacheEntry(
+                response=response, model_id=model_id, created_at=time.monotonic(),
+            )
+            self._cache.move_to_end(key)
+            while len(self._cache) > self.config.max_entries:
+                self._cache.popitem(last=False)
 
     def invalidate(self, model_id: str | None = None) -> int:
-        if model_id is None:
-            count = len(self._cache)
-            self._cache.clear()
-            return count
-        keys = [k for k, v in self._cache.items() if v.model_id == model_id]
-        for k in keys:
-            del self._cache[k]
-        return len(keys)
+        with self._lock:
+            if model_id is None:
+                count = len(self._cache)
+                self._cache.clear()
+                return count
+            keys = [k for k, v in self._cache.items() if v.model_id == model_id]
+            for k in keys:
+                del self._cache[k]
+            return len(keys)
 
     @property
     def stats(self) -> dict[str, Any]:
