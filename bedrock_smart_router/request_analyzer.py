@@ -115,9 +115,7 @@ class ComplexityThresholds:
 
 # ── Token estimation ────────────────────────────────────────────────
 
-def _estimate_tokens(text: str) -> int:
-    """Rough token estimate: ~4 chars per token for English text."""
-    return max(1, len(text) // 4)
+from bedrock_smart_router.utils import estimate_tokens as _estimate_tokens
 
 
 def _extract_text(messages: list[dict[str, Any]]) -> str:

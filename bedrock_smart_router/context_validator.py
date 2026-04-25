@@ -23,29 +23,7 @@ class ValidationResult:
     headroom_pct: float = 0.0  # How much room is left (0.0–1.0)
 
 
-def _estimate_tokens_from_messages(
-    messages: list[dict[str, Any]],
-    system: list[dict[str, Any]] | None = None,
-) -> int:
-    """Rough token estimate (~4 chars per token for English)."""
-    total_chars = 0
-    for msg in messages:
-        content = msg.get("content", [])
-        if isinstance(content, str):
-            total_chars += len(content)
-        elif isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict):
-                    if "text" in block:
-                        total_chars += len(block["text"])
-                    elif "image" in block:
-                        # Images consume ~1K tokens on average
-                        total_chars += 4_000
-    if system:
-        for block in system:
-            if isinstance(block, dict) and "text" in block:
-                total_chars += len(block["text"])
-    return max(1, total_chars // 4)
+from bedrock_smart_router.utils import estimate_tokens_from_messages as _estimate_tokens_from_messages
 
 
 class ContextValidator:

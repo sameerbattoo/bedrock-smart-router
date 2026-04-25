@@ -20,12 +20,7 @@ from bedrock_smart_router.models import BedrockModel
 
 logger = logging.getLogger(__name__)
 
-# Rough chars-per-token for estimation
-_CHARS_PER_TOKEN = 4
-
-
-def _estimate_tokens(text: str) -> int:
-    return max(1, len(text) // _CHARS_PER_TOKEN)
+from bedrock_smart_router.utils import estimate_tokens as _estimate_tokens
 
 
 @dataclass
