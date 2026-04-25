@@ -21,6 +21,7 @@ Usage::
 
 from __future__ import annotations
 
+import copy
 import logging
 import time
 from typing import Any
@@ -115,7 +116,7 @@ class OpenSearchVectorStore(VectorStore):
         """Create the index if it doesn't exist."""
         try:
             if not self._client.indices.exists(index=self._index_name):
-                body = _INDEX_BODY_TEMPLATE.copy()
+                body = copy.deepcopy(_INDEX_BODY_TEMPLATE)
                 body["mappings"]["properties"]["embedding"]["dimension"] = self._dimension
                 self._client.indices.create(index=self._index_name, body=body)
                 logger.info("Created OpenSearch index '%s'", self._index_name)
