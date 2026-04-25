@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
 
 import boto3
@@ -143,6 +144,11 @@ class BedrockRouter:
         )
 
         self._last_decision: RoutingDecision | None = None
+
+        # Bounded thread pool for background work (metrics, observability, OTEL)
+        self._bg_executor = ThreadPoolExecutor(
+            max_workers=4, thread_name_prefix="bsr-bg",
+        )
 
     @classmethod
     def create(
@@ -790,7 +796,7 @@ class BedrockRouter:
             except Exception:
                 logger.debug("Background OTEL record failed", exc_info=True)
 
-        threading.Thread(target=_work, daemon=True).start()
+        self._bg_executor.submit(_work)
 
     def _invoke_bedrock(
         self,

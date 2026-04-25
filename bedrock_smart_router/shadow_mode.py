@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -50,6 +51,9 @@ class ShadowManager:
         self._invoke_fn = invoke_fn
         self._results: list[ShadowResult] = []
         self._lock = threading.Lock()
+        self._executor = ThreadPoolExecutor(
+            max_workers=2, thread_name_prefix="bsr-shadow",
+        )
 
     @property
     def is_active(self) -> bool:
@@ -121,8 +125,7 @@ class ShadowManager:
                 self.config.shadow_model, result.latency_ms, result.success,
             )
 
-        thread = threading.Thread(target=_run, daemon=True)
-        thread.start()
+        self._executor.submit(_run)
 
     @property
     def results(self) -> list[ShadowResult]:
