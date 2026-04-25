@@ -91,9 +91,12 @@ class SemanticCacheConfig:
     max_entries: int = 5000
     ttl_seconds: float = 3600.0
     # Vector store backend
-    vector_store_backend: str = "memory"  # "memory" | "faiss" | "redis"
+    vector_store_backend: str = "memory"  # "memory" | "faiss" | "redis" | "opensearch"
     redis_url: str = ""
     redis_key_prefix: str = "bsr:semcache:"
+    # OpenSearch Serverless (optional)
+    opensearch_endpoint: str = ""
+    opensearch_index_name: str = "bsr-semantic-cache"
     # Auto-extraction (optional)
     auto_extract: bool = False
     extraction_model: str = "us.amazon.nova-micro-v1:0"
@@ -134,6 +137,9 @@ class SemanticCache:
             max_entries=self.config.max_entries,
             redis_url=self.config.redis_url,
             key_prefix=self.config.redis_key_prefix,
+            opensearch_endpoint=self.config.opensearch_endpoint,
+            opensearch_index_name=self.config.opensearch_index_name,
+            opensearch_region=self._region,
         )
 
         # Lazy-init intent extractor (only when auto_extract is enabled)

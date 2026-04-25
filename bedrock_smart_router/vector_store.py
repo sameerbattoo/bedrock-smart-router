@@ -143,15 +143,21 @@ def build_vector_store(
     max_entries: int = 5000,
     redis_url: str = "",
     key_prefix: str = "bsr:vec:",
+    opensearch_endpoint: str = "",
+    opensearch_index_name: str = "bsr-semantic-cache",
+    opensearch_region: str = "us-west-2",
 ) -> VectorStore:
     """Build the appropriate vector store backend.
 
     Args:
-        backend: ``"memory"``, ``"faiss"``, or ``"redis"``.
+        backend: ``"memory"``, ``"faiss"``, ``"redis"``, or ``"opensearch"``.
         dimension: Embedding vector dimension (default 1024 for Titan v2).
         max_entries: Max entries for in-memory backend.
         redis_url: Redis connection URL (for redis backend).
         key_prefix: Key prefix for Redis backend.
+        opensearch_endpoint: OpenSearch Serverless endpoint URL.
+        opensearch_index_name: Index name for OpenSearch backend.
+        opensearch_region: AWS region for OpenSearch Serverless.
     """
     if backend == "faiss":
         from bedrock_smart_router.faiss_vector_store import FAISSVectorStore
@@ -161,6 +167,15 @@ def build_vector_store(
         from bedrock_smart_router.redis_vector_store import RedisVectorStore
         return RedisVectorStore(
             redis_url=redis_url, key_prefix=key_prefix, dimension=dimension,
+        )
+
+    if backend == "opensearch":
+        from bedrock_smart_router.opensearch_vector_store import OpenSearchVectorStore
+        return OpenSearchVectorStore(
+            endpoint=opensearch_endpoint,
+            index_name=opensearch_index_name,
+            dimension=dimension,
+            region=opensearch_region,
         )
 
     return InMemoryVectorStore(max_entries=max_entries)

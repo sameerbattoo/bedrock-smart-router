@@ -104,6 +104,7 @@ pip install bedrock-smart-router[dev]
 | `[strands]` | `strands-agents` package | Using the router as a Strands Agents model provider |
 | `[redis]` | `redis` package | Shared cache + vector store via Redis, Valkey, or ElastiCache |
 | `[faiss]` | `faiss-cpu` package | Fast in-process vector search for semantic cache (~100K entries) |
+| `[opensearch]` | `opensearch-py`, `requests-aws4auth` | OpenSearch Serverless vector store for semantic cache |
 | `[otel]` | `opentelemetry-api`, `opentelemetry-sdk` | Distributed tracing and OTEL metrics export |
 | `[dev]` | `pytest`, `pytest-cov`, `moto` | Running the test suite |
 
@@ -831,6 +832,7 @@ cache.get("I forgot my password, help")  # HIT — same meaning
 | `memory` (default) | *(none)* | ~500 entries | No |
 | `faiss` | `pip install bedrock-smart-router[faiss]` | ~100K entries | No |
 | `redis` | `pip install bedrock-smart-router[redis]` | Millions | Yes |
+| `opensearch` | `pip install bedrock-smart-router[opensearch]` | Millions | Yes (AWS managed) |
 
 **Variable-aware matching:** Queries like "top users for Electronics 2024" and "top users for Clothing 2025" are semantically identical but have different correct answers. Pass `variables` to distinguish them:
 
@@ -1361,6 +1363,7 @@ bedrock_smart_router/
   strands_model.py             # Strands Agents SDK Model provider (SmartRouterModel)
   semantic_cache.py            # Embedding-based semantic cache (optional)
   intent_extractor.py          # Auto-extraction of intent + variables for semantic cache
+  opensearch_vector_store.py   # OpenSearch Serverless vector store backend
   semantic_router.py           # Intent routing via embeddings (optional)
 
 scripts/

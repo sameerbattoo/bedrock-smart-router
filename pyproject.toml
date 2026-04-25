@@ -24,6 +24,10 @@ otel = [
     "opentelemetry-api>=1.20",
     "opentelemetry-sdk>=1.20",
 ]
+opensearch = [
+    "opensearch-py>=2.4.0",
+    "requests-aws4auth>=1.2.0",
+]
 strands = [
     "strands-agents>=0.1.0",
 ]
