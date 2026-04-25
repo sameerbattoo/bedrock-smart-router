@@ -8,6 +8,8 @@ Demonstrates:
   - In-memory vector store (default, no dependencies)
   - FAISS vector store (fast in-process, pip install bedrock-smart-router[faiss])
   - Redis vector store (shared across instances, pip install bedrock-smart-router[redis])
+  - OpenSearch Serverless vector store (AWS managed, pip install bedrock-smart-router[opensearch])
+  - FAISS with auto-extract (automatic intent + variable extraction)
   - Caching without variables (intent-only matching)
   - Caching with variables (intent + variable values must match)
   - Threshold tuning
@@ -102,6 +104,77 @@ print(f"  Stats: {cache_faiss.stats}")
 # cache_redis.put("How do I reset my password?", {"answer": "Go to settings..."})
 # hit = cache_redis.get("I forgot my password, help")
 print(f"\nRedis backend: (uncomment to run with a real Redis instance)")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Example 3b: OpenSearch Serverless Vector Store
+# ═══════════════════════════════════════════════════════════════════
+# Shared across all instances via Amazon OpenSearch Serverless (AOSS).
+# Uses SigV4 authentication — no passwords, just IAM roles.
+# Scales to millions of entries with k-NN vector search.
+#
+# pip install bedrock-smart-router[opensearch]
+#
+# Requires an active AOSS collection with VECTORSEARCH type.
+# The index is auto-created on first use.
+
+# cache_opensearch = SemanticCache(
+#     config=SemanticCacheConfig(
+#         threshold=0.90,
+#         vector_store_backend="opensearch",
+#         opensearch_endpoint="https://abc123.us-west-2.aoss.amazonaws.com",
+#         opensearch_index_name="my-semantic-cache",
+#         embedding_dimension=1024,
+#     ),
+#     region="us-west-2",
+# )
+#
+# # Shared across all Lambda invocations / ECS tasks — IAM auth, no passwords
+# cache_opensearch.put("How do I reset my password?", {"answer": "Go to settings..."})
+# hit = cache_opensearch.get("I forgot my password, help")
+print(f"\nOpenSearch Serverless backend: (uncomment to run with a real AOSS collection)")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Example 3c: FAISS with Auto-Extract
+# ═══════════════════════════════════════════════════════════════════
+# Combine FAISS (fast vector search) with auto-extract (automatic
+# intent + variable extraction).  No manual variable passing needed.
+
+cache_faiss_auto = SemanticCache(
+    config=SemanticCacheConfig(
+        threshold=0.85,
+        vector_store_backend="faiss",
+        embedding_dimension=1024,
+        auto_extract=True,
+        extraction_model="us.amazon.nova-micro-v1:0",
+    ),
+    region="us-west-2",
+)
+
+# Store — variables extracted automatically by Nova Micro
+cache_faiss_auto.put(
+    "Count users by geography for 2026 with sales > $200",
+    {"result": "42 users across 5 regions"},
+)
+
+# Same intent + same variables → HIT (auto-extracted)
+hit = cache_faiss_auto.get("Show user distribution by geo, year 2026, sales over $200")
+print(f"\nFAISS + auto-extract:")
+print(f"  Same intent+vars:    {'HIT' if hit else 'MISS'}")
+
+# Different variables → MISS (auto-extracted variables differ)
+hit = cache_faiss_auto.get("Count users by geography for 2025 with sales > $100")
+print(f"  Different variables: {'HIT' if hit else 'MISS'}")
+
+# Multi-turn resolution (auto when messages with 2+ user turns are passed)
+hit = cache_faiss_auto.get(messages=[
+    {"role": "user", "content": [{"text": "show me users by geo"}]},
+    {"role": "assistant", "content": [{"text": "Here are users by geography..."}]},
+    {"role": "user", "content": [{"text": "now for 2026 with sales > $200"}]},
+])
+print(f"  Multi-turn match:    {'HIT' if hit else 'MISS'}")
+print(f"  Backend: {cache_faiss_auto.stats['backend']}, auto_extract: {cache_faiss_auto.stats['auto_extract']}")
 
 
 # ═══════════════════════════════════════════════════════════════════
