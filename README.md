@@ -330,6 +330,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`27_auto_semantic_cache.py`](examples/27_auto_semantic_cache.py) | Auto-extracting semantic cache: automatic intent + variable extraction, multi-turn resolution |
 | [`28_strands_custom_tools_cached.py`](examples/28_strands_custom_tools_cached.py) | Official Strands "Custom Tools" sample adapted with smart routing + semantic cache |
 | [`29_strands_streaming_multi_tenant.py`](examples/29_strands_streaming_multi_tenant.py) | Official Strands streaming sample adapted with multi-tenant routing (premium vs freemium) |
+| [`30_strands_guardrails.py`](examples/30_strands_guardrails.py) | Official Strands guardrails sample adapted with router-level pre-route guardrails |
 
 See [`examples/GUIDE.md`](examples/GUIDE.md) for a comprehensive walkthrough of every feature with explanations.
 
