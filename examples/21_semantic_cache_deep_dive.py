@@ -118,21 +118,46 @@ print(f"\nRedis backend: (uncomment to run with a real Redis instance)")
 # Requires an active AOSS collection with VECTORSEARCH type.
 # The index is auto-created on first use.
 
-# cache_opensearch = SemanticCache(
-#     config=SemanticCacheConfig(
-#         threshold=0.90,
-#         vector_store_backend="opensearch",
-#         opensearch_endpoint="https://abc123.us-west-2.aoss.amazonaws.com",
-#         opensearch_index_name="my-semantic-cache",
-#         embedding_dimension=1024,
-#     ),
-#     region="us-west-2",
-# )
-#
-# # Shared across all Lambda invocations / ECS tasks — IAM auth, no passwords
-# cache_opensearch.put("How do I reset my password?", {"answer": "Go to settings..."})
-# hit = cache_opensearch.get("I forgot my password, help")
-print(f"\nOpenSearch Serverless backend: (uncomment to run with a real AOSS collection)")
+import time
+
+AOSS_ENDPOINT = "https://7lut6jmi4b3hpeubgbde.us-west-2.aoss.amazonaws.com"
+
+cache_opensearch = SemanticCache(
+    config=SemanticCacheConfig(
+        threshold=0.85,
+        vector_store_backend="opensearch",
+        opensearch_endpoint=AOSS_ENDPOINT,
+        opensearch_index_name="bsr-example-21",
+        embedding_dimension=1024,
+        auto_extract=True,
+        extraction_model="us.amazon.nova-micro-v1:0",
+    ),
+    region="us-west-2",
+)
+
+# Store a response — auto-extract pulls out intent + variables
+cache_opensearch.put(
+    "Count users by geography for 2026 with sales > $200",
+    {"result": "42 users across 5 regions"},
+)
+
+# AOSS has eventual consistency — data takes ~60-90s to be searchable
+print(f"\nOpenSearch Serverless backend:")
+print(f"  Stored entry. Waiting 90s for AOSS to propagate...")
+time.sleep(90)
+
+# Same intent + same variables → HIT
+hit = cache_opensearch.get("Show user distribution by geo, year 2026, sales over $200")
+print(f"  Same intent+vars:    {'HIT' if hit else 'MISS'}")
+
+# Different variables → MISS
+hit = cache_opensearch.get("Count users by geography for 2025 with sales > $100")
+print(f"  Different variables: {'HIT' if hit else 'MISS'}")
+
+print(f"  Backend: {cache_opensearch.stats['backend']}, entries: {cache_opensearch.stats['entries']}")
+
+# Cleanup
+cache_opensearch.invalidate()
 
 
 # ═══════════════════════════════════════════════════════════════════
