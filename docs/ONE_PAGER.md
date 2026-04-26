@@ -12,7 +12,9 @@ When building applications on Amazon Bedrock, teams face a recurring set of chal
 
 ## The Solution
 
-The **Bedrock Smart Router** is a lightweight Python SDK that sits between your application and Amazon Bedrock. It automatically selects the optimal model for each request based on cost, latency, quality, and task complexity — while leveraging every Bedrock-native feature.
+The **Bedrock Smart Router** was created after a deep competitive analysis of 7 existing routing solutions — LiteLLM, OpenRouter, Portkey, Inworld Router, NVIDIA AI Blueprint, RouteLLM, and Bedrock's native prompt router. The study revealed that every existing option either treats Bedrock as just another generic provider (missing CRIS, inference tiers, prompt caching, guardrails, AIPs) or only routes within a single model family. None were purpose-built for Bedrock. The full analysis is documented in [BEDROCK_SMART_ROUTER_DETAILED_DESIGN.md](../BEDROCK_SMART_ROUTER_DETAILED_DESIGN.md).
+
+The Bedrock Smart Router fills this gap — a lightweight Python SDK that sits between your application and Amazon Bedrock, automatically selecting the optimal model for each request based on cost, latency, quality, and task complexity, while leveraging every Bedrock-native feature.
 
 ```python
 pip install bedrock-smart-router
