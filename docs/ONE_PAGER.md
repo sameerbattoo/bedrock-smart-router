@@ -16,21 +16,35 @@ The **Bedrock Smart Router** was created after a deep competitive analysis of 7 
 
 The Bedrock Smart Router fills this gap — a lightweight Python SDK that sits between your application and Amazon Bedrock, automatically selecting the optimal model for each request based on cost, latency, quality, and task complexity, while leveraging every Bedrock-native feature.
 
-```python
-pip install bedrock-smart-router
-```
+## Design Philosophy: Drop-in Replacement
+
+A core design goal of the SDK is **zero friction adoption**. The router provides 100% API coverage for Bedrock's `Converse` and `ConverseStream` APIs — the same method signatures, the same request format, the same response format. Upgrading existing code is a two-line change:
 
 ```python
+# Before — direct Bedrock client
+client = boto3.client("bedrock-runtime", region_name="us-west-2")
+response = client.converse(
+    modelId="us.anthropic.claude-sonnet-4-6",
+    messages=[{"role": "user", "content": [{"text": "What is S3?"}]}],
+    inferenceConfig={"maxTokens": 1024},
+)
+
+# After — smart router (same parameters, same response)
 from bedrock_smart_router import BedrockRouter
-
-router = BedrockRouter.create()
+router = BedrockRouter.create({"region": "us-west-2"})
 response = router.converse(
     messages=[{"role": "user", "content": [{"text": "What is S3?"}]}],
+    inference_config={"maxTokens": 1024},
 )
-# → Automatically routes to the cheapest capable model
-# → Falls back if the model fails
-# → Tracks cost, latency, and routing decisions
 ```
+
+Everything the caller already passes — `messages`, `system`, `toolConfig`, `inferenceConfig`, `guardrailConfig` — flows through unchanged. The response is a standard Bedrock Converse response with an additional `routing_decision` field. No new abstractions to learn, no request format to translate, no response parsing to rewrite.
+
+The same applies to streaming. Replace `client.converse_stream(...)` with `router.converse_stream(...)` and the stream events are identical — `contentBlockDelta`, `messageStop`, `metadata` — because the router passes Bedrock's native events through untouched.
+
+**Why Converse and not InvokeModel?** The Converse API is Bedrock's unified interface — one format across all model families (Claude, Nova, Llama, Mistral, DeepSeek). InvokeModel requires model-specific request/response schemas, making transparent cross-family routing impossible without format translation that would break the drop-in contract. By building on Converse, the router can route a request from Nova Micro to Claude Haiku without the caller knowing or caring — the format is the same either way.
+
+For Strands Agents users, the same principle applies: `SmartRouterModel` is a drop-in replacement for Strands' `BedrockModel`. Swap the model provider, and every agent call is automatically routed with zero code changes to the agent logic.
 
 ## Key Features
 
@@ -79,6 +93,7 @@ response = router.converse(
 
 | Capability | LiteLLM | Portkey | Bedrock Native | **Smart Router** |
 |---|---|---|---|---|
+| Drop-in for Converse API | No (own format) | No (own format) | N/A | **Yes (same signature + response)** |
 | Cross-family routing | Generic | Generic | No | **Yes (Bedrock-aware)** |
 | CRIS / Inference tiers | No | No | Manual | **Automatic** |
 | Prompt cache-aware | No | No | No | **Yes** |
@@ -93,7 +108,7 @@ response = router.converse(
 ## Quick Start
 
 ```bash
-# Core SDK
+# Core SDK (only dependency: boto3)
 pip install bedrock-smart-router
 
 # With Strands Agents
@@ -104,7 +119,21 @@ pip install bedrock-smart-router[faiss]
 ```
 
 ```python
-# Strands Agent with smart routing
+# Drop-in replacement — same Converse API, automatic routing
+from bedrock_smart_router import BedrockRouter
+
+router = BedrockRouter.create()
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "What is S3?"}]}],
+)
+# → Automatically routes to the cheapest capable model
+# → Falls back if the model fails
+# → Tracks cost, latency, and routing decisions
+print(response["output"]["message"]["content"][0]["text"])
+```
+
+```python
+# Strands Agent — drop-in replacement for BedrockModel
 from strands import Agent
 from bedrock_smart_router.strands_model import SmartRouterModel
 
