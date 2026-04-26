@@ -118,7 +118,7 @@ print(model.last_routing_decision.actual_cost)      # e.g. $0.000012
 
 ## Future: Native TypeScript SDK
 
-The current SDK is Python-only. To serve Node.js and TypeScript teams, a **native TypeScript port** is planned as the next major milestone.
+The current SDK is Python-only. To serve Node.js and TypeScript teams, a **native TypeScript port** should be planned as the next major milestone.
 
 **Why a native port instead of a proxy?**
 
