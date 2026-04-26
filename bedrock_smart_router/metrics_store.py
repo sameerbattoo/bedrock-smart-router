@@ -12,7 +12,6 @@ Backends:
 from __future__ import annotations
 
 import logging
-import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
@@ -138,7 +137,14 @@ def aggregate_metrics(
 
 
 class InMemoryMetricsStore(MetricsStore):
-    """Sliding-window in-memory metrics store.
+    """Bounded in-memory metrics store backed by a fixed-size deque.
+
+    The deque's ``maxlen`` naturally evicts the oldest records as new
+    ones arrive — no time-based filtering needed.  This avoids scanning
+    all records on every ``get_metrics()`` call.  Freshness is implicit:
+    at high traffic the deque holds only the most recent seconds of
+    data; at low traffic it holds more history, which is fine because
+    the strategy engine benefits from a larger sample.
 
     Good for Lambda (resets on cold start, warms up quickly) and
     single-instance deployments.
@@ -156,26 +162,18 @@ class InMemoryMetricsStore(MetricsStore):
     def get_metrics(
         self, model_id: str, window_seconds: float = 3600.0
     ) -> ModelMetrics:
-        cutoff = time.monotonic() - window_seconds
-        records = [
-            r for r in self._records.get(model_id, []) if r.timestamp >= cutoff
-        ]
-        return self._aggregate(model_id, records, window_seconds)
+        # window_seconds is accepted for interface compatibility
+        # (used by DynamoDB backend) but ignored here — the deque's
+        # maxlen already bounds the data.
+        records = list(self._records.get(model_id, []))
+        return aggregate_metrics(model_id, records, window_seconds)
 
     def get_all_metrics(
         self, window_seconds: float = 3600.0
     ) -> dict[str, ModelMetrics]:
-        cutoff = time.monotonic() - window_seconds
         result: dict[str, ModelMetrics] = {}
         for model_id, recs in self._records.items():
-            filtered = [r for r in recs if r.timestamp >= cutoff]
-            result[model_id] = self._aggregate(model_id, filtered, window_seconds)
+            result[model_id] = aggregate_metrics(
+                model_id, list(recs), window_seconds,
+            )
         return result
-
-    @staticmethod
-    def _aggregate(
-        model_id: str,
-        records: list[RequestRecord],
-        window: float,
-    ) -> ModelMetrics:
-        return aggregate_metrics(model_id, records, window)

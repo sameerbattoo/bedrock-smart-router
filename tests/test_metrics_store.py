@@ -64,7 +64,26 @@ class TestInMemoryMetricsStore:
         m = self.store.get_metrics("model-a")
         assert m.avg_quality_score == pytest.approx(0.85)
 
-    def test_window_filtering(self):
+    def test_deque_eviction(self):
+        """Deque maxlen naturally evicts oldest records — no time filter needed."""
+        store = InMemoryMetricsStore(max_records_per_model=2)
+        now = time.monotonic()
+        store.record(RequestRecord(
+            model_id="model-a", timestamp=now - 100, latency_ms=999, success=True,
+        ))
+        store.record(RequestRecord(
+            model_id="model-a", timestamp=now - 50, latency_ms=500, success=True,
+        ))
+        store.record(RequestRecord(
+            model_id="model-a", timestamp=now, latency_ms=100, success=True,
+        ))
+        # Oldest record (999ms) evicted by deque maxlen=2
+        m = store.get_metrics("model-a")
+        assert m.sample_count == 2
+        assert m.avg_latency_ms == 300.0  # (500 + 100) / 2
+
+    def test_window_seconds_ignored_for_in_memory(self):
+        """window_seconds is accepted for interface compat but ignored."""
         old = time.monotonic() - 7200  # 2 hours ago
         now = time.monotonic()
         self.store.record(RequestRecord(
@@ -73,9 +92,9 @@ class TestInMemoryMetricsStore:
         self.store.record(RequestRecord(
             model_id="model-a", timestamp=now, latency_ms=100, success=True,
         ))
+        # Both records returned regardless of window_seconds
         m = self.store.get_metrics("model-a", window_seconds=3600)
-        assert m.sample_count == 1
-        assert m.avg_latency_ms == 100.0
+        assert m.sample_count == 2
 
     def test_get_all_metrics(self):
         now = time.monotonic()
