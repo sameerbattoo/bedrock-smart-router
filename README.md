@@ -1373,6 +1373,62 @@ docs/
   iam-permissions.md           # IAM policy reference (Bedrock, DynamoDB, Pricing, Guardrails)
 ```
 
+## Building & Using in Your Project
+
+### Install from source
+
+```bash
+git clone https://github.com/sameerbattoo/bedrock-smart-router.git
+cd bedrock-smart-router
+pip install .
+```
+
+With optional extras:
+```bash
+pip install ".[strands]"              # Strands Agents integration
+pip install ".[strands,faiss,redis]"  # Multiple extras
+pip install ".[opensearch]"           # OpenSearch Serverless vector store
+```
+
+### Build distributable packages
+
+```bash
+pip install build
+python -m build
+```
+
+This produces two files in `dist/`:
+- `bedrock_smart_router-0.1.0-py3-none-any.whl` — wheel (fast install)
+- `bedrock_smart_router-0.1.0.tar.gz` — source distribution
+
+### Install the built package in another project
+
+```bash
+# From the wheel
+pip install dist/bedrock_smart_router-0.1.0-py3-none-any.whl
+
+# Or from the tarball
+pip install dist/bedrock_smart_router-0.1.0.tar.gz
+
+# Or point pip at the directory
+pip install /path/to/bedrock-smart-router/dist/bedrock_smart_router-0.1.0-py3-none-any.whl
+```
+
+### Use in a Lambda layer or Docker image
+
+```dockerfile
+# In your Dockerfile
+COPY dist/bedrock_smart_router-0.1.0-py3-none-any.whl /tmp/
+RUN pip install /tmp/bedrock_smart_router-0.1.0-py3-none-any.whl
+```
+
+For Lambda, add the wheel to your deployment package or create a Lambda layer:
+```bash
+mkdir -p layer/python
+pip install dist/bedrock_smart_router-0.1.0-py3-none-any.whl -t layer/python/
+cd layer && zip -r ../bedrock-smart-router-layer.zip python/
+```
+
 ## Development
 
 ```bash
