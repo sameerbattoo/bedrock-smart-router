@@ -116,6 +116,29 @@ print(model.last_routing_decision.selected_model)  # e.g. "us.amazon.nova-lite-v
 print(model.last_routing_decision.actual_cost)      # e.g. $0.000012
 ```
 
+## Future: Native TypeScript SDK
+
+The current SDK is Python-only. To serve Node.js and TypeScript teams, a **native TypeScript port** is planned as the next major milestone.
+
+**Why a native port instead of a proxy?**
+
+A proxy mode (HTTP API wrapping the Python SDK) was considered and deliberately not implemented. While it would serve any language, it introduces significant operational complexity that contradicts the SDK's core design principle of being lightweight and embeddable:
+
+- **Authentication overhead** — the proxy needs its own auth layer (API keys, Cognito, IAM federation), adding infrastructure the SDK was designed to avoid
+- **Extra network hop** — adds latency and a new failure point between the application and Bedrock
+- **Deployment burden** — another service to deploy, monitor, scale, and secure (VPC, TLS, rate limiting)
+- **Credential management** — the proxy must manage or federate AWS credentials, whereas the SDK simply uses the caller's existing IAM role
+
+A native TypeScript SDK avoids all of this. Node.js developers would `npm install bedrock-smart-router` and use their own AWS credentials — the same pattern as `@aws-sdk/client-bedrock-runtime`. No proxy, no auth layer, no extra infrastructure.
+
+**What carries over from the Python SDK:**
+- `models.json` catalog — shared across both SDKs
+- Routing algorithms — same math, different syntax
+- Config schema — same YAML/JSON structure
+- Strands TypeScript SDK integration — the Strands Agents SDK already has a TypeScript version
+
+**Estimated effort:** 4–6 weeks for core routing + Strands TS integration.
+
 ## Links
 
 - **GitHub:** [github.com/sameerbattoo/bedrock-smart-router](https://github.com/sameerbattoo/bedrock-smart-router)
