@@ -45,7 +45,7 @@ Existing solutions fall into two camps:
 The Bedrock Smart Router fills this gap with:
 - **Zero-API-call request classification** for sub-millisecond routing overhead
 - **Cross-family routing** (e.g., Nova Micro for simple tasks, Claude Sonnet for complex ones)
-- **Bedrock-native awareness** of CRIS, inference tiers (Standard/Priority/Flex), prompt caching, provisioned throughput, guardrails, and application inference profiles
+- **Bedrock-native awareness** of CRIS, inference tiers (Standard/Priority/Flex), prompt caching, guardrails, and application inference profiles
 - **Two delivery modes**: embeddable Python SDK (single `pip install`) or standalone proxy server *(proxy mode planned, not yet implemented)*
 - **Production-grade reliability**: circuit breakers, multi-level fallbacks, cooldown tracking
 - **Built-in A/B testing and canary deployment** for safe model rollouts
@@ -84,7 +84,6 @@ LiteLLM is an open-source Python SDK and proxy server providing a unified OpenAI
 - No prompt caching-aware routing (Bedrock's native cache, not response caching)
 - No application inference profile support for multi-tenant cost tracking
 - No Bedrock Guardrails integration
-- No provisioned throughput detection or routing
 - Pricing data from community-maintained JSON (often stale for Bedrock)
 - Requires Redis for distributed routing strategies — not Lambda-friendly
 - No model distillation awareness
@@ -231,7 +230,6 @@ Academic framework from LMSYS for training and evaluating LLM routers.
 | No prompt caching-aware routing | Missed cost savings when cacheable models aren't preferred | Cache benefit estimator influences model selection |
 | No application inference profile integration | No per-tenant cost tracking through the router | Automatic AIP creation and tag propagation |
 | No model distillation awareness | Distilled models not considered as routing candidates | Registry includes distilled variants with quality metadata |
-| No provisioned throughput routing | Paid-for capacity goes underutilized | Provisioned capacity detection with overflow to on-demand |
 | No Bedrock Guardrails pre-routing | Content safety checked after model selection, not before | Pre-route guardrail check to select appropriate model |
 | No multi-turn complexity adaptation | Same model used for entire conversation regardless of turn complexity | Per-turn re-evaluation (inspired by NVIDIA blueprint) |
 | No historical quality routing from own data | Routing based on generic benchmarks, not your workload | Integration with evaluation/judge scores from DynamoDB or any store |
@@ -456,7 +454,6 @@ class BedrockModel:
     distilled_quality_delta: float   # Quality loss vs parent (e.g., -0.02 for 2% loss)
 
     # Runtime state (updated periodically)
-    provisioned_throughput: ProvisionedInfo | None  # If user has provisioned capacity
     current_health: HealthStatus     # healthy | degraded | down
     circuit_breaker_state: str       # closed | open | half-open
 ```
@@ -1465,7 +1462,6 @@ metrics_store:
 | `cris_manager.py` | CRIS profile detection and selection | P1 |
 | `inference_tier.py` | Standard/Priority/Flex tier-aware routing | P1 |
 | `prompt_cache_advisor.py` | Prompt caching benefit estimation | P1 |
-| `provisioned_throughput.py` | Detect and prefer provisioned capacity | P1 |
 | `guardrails_integration.py` | Pre/post-route guardrail checks via ApplyGuardrail API | P1 |
 | `aip_manager.py` | Application Inference Profile management for multi-tenant | P1 |
 | `distilled_models.py` | Registry support for distilled model variants | P2 |
@@ -1517,7 +1513,6 @@ metrics_store:
 | CRIS profile awareness | No | No | No | No | No | Yes | **Yes** |
 | Inference tier routing | No | No | No | No | No | Manual | **Auto (Std/Priority/Flex)** |
 | Prompt cache-aware routing | No | No | No | No | No | No | **Yes** |
-| Provisioned throughput routing | No | No | No | No | No | Manual | **Yes (auto-detect)** |
 | Application inference profiles | No | No | No | No | No | Manual | **Yes (auto-manage)** |
 | Model distillation awareness | No | No | No | No | No | Separate | **Yes (registry)** |
 | Bedrock Guardrails integration | No | No | Own guardrails | No | No | Separate | **Yes (pre/post route)** |

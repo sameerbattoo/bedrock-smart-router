@@ -306,26 +306,6 @@ If `auto_create` is `false`, you create the inference profiles yourself and the 
 
 ---
 
-## Provisioned Throughput Detection (optional)
-
-Required only when `provisioned_throughput.enabled` is `true`. The router lists active provisioned capacity to prefer already-paid throughput.
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "BedrockProvisionedThroughput",
-            "Effect": "Allow",
-            "Action": ["bedrock:ListProvisionedModelThroughputs"],
-            "Resource": "*"
-        }
-    ]
-}
-```
-
----
-
 ## Semantic Cache & Semantic Router (optional)
 
 Required only when using `SemanticCache` or `SemanticRouter`. These call the Bedrock embedding model (default: `amazon.titan-embed-text-v2:0`) via `InvokeModel`.
@@ -404,6 +384,5 @@ Add these only if you use the corresponding features:
 | Feature | Add these actions |
 |---|---|
 | Multi-tenant AIPs (`aip.auto_create: true`) | `bedrock:CreateInferenceProfile`, `sts:GetCallerIdentity` |
-| Provisioned throughput detection | `bedrock:ListProvisionedModelThroughputs` |
 | Semantic cache / semantic router | `bedrock:InvokeModel` on the embedding model ARN |
 | Pricing refresh | `bedrock:ListFoundationModels`, `pricing:GetProducts` |

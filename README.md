@@ -31,7 +31,6 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - Cross-Region Inference (CRIS) profile selection — regional (`us.*`) and global (`global.*`, ~10% cheaper) profiles as separate catalog entries
 - Inference tier auto-selection (Standard / Priority / Flex) with tier-aware cost estimation
 - Prompt cache benefit estimation — boosts cache-capable models (Claude and Nova) when savings are significant
-- Provisioned throughput detection — prefers already-paid capacity
 - Bedrock Guardrails integration — pre-route and post-route checks via ApplyGuardrail API
 - Application Inference Profile management for multi-tenant cost tracking
 - Distilled model support with derived pricing and tier from teacher models
