@@ -1,10 +1,8 @@
-"""Redis vector store — shared vector search via RediSearch.
+"""Redis/Valkey vector store — shared vector search via FT commands.
 
-Uses Redis with the RediSearch module for vector similarity search.
-Shared across all instances, works with ElastiCache and Valkey.
-
-Requires Redis 7+ with the RediSearch module, or ElastiCache with
-vector search enabled.
+Uses raw FT.CREATE / FT.SEARCH execute_command calls for compatibility
+with both Redis (RediSearch module) and Amazon ElastiCache Valkey
+(native vector search in Valkey 8.2+).
 
 Install::
 
@@ -14,7 +12,7 @@ Configuration::
 
     semantic_cache:
       vector_store: redis
-      redis_url: "redis://localhost:6379"
+      redis_url: "rediss://your-valkey-endpoint:6379"
       key_prefix: "bsr:vec:"
 """
 
@@ -33,10 +31,11 @@ _INDEX_NAME = "bsr_vectors"
 
 
 class RedisVectorStore(VectorStore):
-    """Redis-backed vector store using RediSearch vector similarity.
+    """Redis/Valkey-backed vector store using FT vector similarity search.
 
+    Uses raw execute_command calls for FT.CREATE and FT.SEARCH to ensure
+    compatibility with both Redis+RediSearch and ElastiCache Valkey.
     Each vector is stored as a Redis Hash with a VECTOR field.
-    Search uses RediSearch's KNN query.
     """
 
     def __init__(
@@ -62,51 +61,41 @@ class RedisVectorStore(VectorStore):
         self._ensure_index()
 
     def _ensure_index(self) -> None:
-        """Create the RediSearch index if it doesn't exist."""
+        """Create the vector search index if it doesn't exist.
+
+        Uses raw FT.CREATE via execute_command for Valkey compatibility.
+        """
         try:
-            from redis.commands.search.field import TagField, VectorField
-            from redis.commands.search.index_definition import IndexDefinition, IndexType
-
-            self._client.ft(_INDEX_NAME).info()
+            # Check if index already exists
+            self._client.execute_command("FT.INFO", _INDEX_NAME)
             self._index_created = True
-            logger.debug("RediSearch index '%s' already exists", _INDEX_NAME)
+            logger.debug("Vector index '%s' already exists", _INDEX_NAME)
         except Exception:
+            # Index doesn't exist — create it
             try:
-                from redis.commands.search.field import TagField, VectorField
-                from redis.commands.search.index_definition import IndexDefinition, IndexType
-
-                schema = (
-                    TagField("entry_id"),
-                    VectorField(
-                        "embedding",
-                        "FLAT",
-                        {
-                            "TYPE": "FLOAT32",
-                            "DIM": self._dimension,
-                            "DISTANCE_METRIC": "COSINE",
-                        },
-                    ),
-                )
-                self._client.ft(_INDEX_NAME).create_index(
-                    schema,
-                    definition=IndexDefinition(
-                        prefix=[self._prefix],
-                        index_type=IndexType.HASH,
-                    ),
+                self._client.execute_command(
+                    "FT.CREATE", _INDEX_NAME,
+                    "ON", "HASH",
+                    "PREFIX", "1", self._prefix,
+                    "SCHEMA",
+                    "entry_id", "TAG",
+                    "embedding", "VECTOR", "FLAT", "6",
+                    "TYPE", "FLOAT32",
+                    "DIM", str(self._dimension),
+                    "DISTANCE_METRIC", "COSINE",
                 )
                 self._index_created = True
-                logger.info("Created RediSearch index '%s'", _INDEX_NAME)
+                logger.info("Created vector index '%s' (dim=%d)", _INDEX_NAME, self._dimension)
             except Exception as exc:
                 logger.warning(
-                    "Could not create RediSearch index: %s. "
-                    "Vector search may not work. Ensure Redis has the "
-                    "RediSearch module loaded.",
-                    exc,
+                    "Could not create vector index '%s': %s. "
+                    "Vector search may not work.",
+                    _INDEX_NAME, exc,
                 )
 
     @staticmethod
     def _vec_to_bytes(vec: list[float]) -> bytes:
-        """Convert a float list to bytes for Redis VECTOR field."""
+        """Convert a float list to bytes for the VECTOR field."""
         return struct.pack(f"{len(vec)}f", *vec)
 
     def add(self, id: str, embedding: list[float], payload: dict[str, Any]) -> None:
@@ -124,39 +113,70 @@ class RedisVectorStore(VectorStore):
             return []
 
         try:
-            from redis.commands.search.query import Query
-
             query_vec = self._vec_to_bytes(embedding)
-            q = (
-                Query(f"*=>[KNN {top_k} @embedding $vec AS score]")
-                .sort_by("score")
-                .return_fields("entry_id", "payload", "score")
-                .dialect(2)
+            query = f"*=>[KNN {top_k} @embedding $vec AS score]"
+
+            result = self._client.execute_command(
+                "FT.SEARCH", _INDEX_NAME,
+                query,
+                "PARAMS", "2", "vec", query_vec,
+                "RETURN", "3", "entry_id", "payload", "score",
+                "DIALECT", "2",
             )
-            results = self._client.ft(_INDEX_NAME).search(
-                q, query_params={"vec": query_vec}
-            )
+
+            # Parse FT.SEARCH response: [count, key1, [field, val, ...], key2, ...]
+            if not result or result[0] == 0:
+                return []
 
             out: list[SearchResult] = []
-            for doc in results.docs:
-                # RediSearch COSINE distance: 0 = identical, 2 = opposite
-                # Convert to similarity: 1 - (distance / 2)
-                distance = float(doc.score)
+            i = 1
+            while i < len(result):
+                _key = result[i]
+                i += 1
+                if i >= len(result):
+                    break
+                fields_raw = result[i]
+                i += 1
+
+                # Parse field pairs into a dict
+                doc: dict[str, Any] = {}
+                for j in range(0, len(fields_raw), 2):
+                    fname = fields_raw[j]
+                    fval = fields_raw[j + 1] if j + 1 < len(fields_raw) else None
+                    if isinstance(fname, bytes):
+                        fname = fname.decode()
+                    doc[fname] = fval
+
+                # Extract score and convert to similarity
+                score_raw = doc.get("score")
+                if score_raw is None:
+                    continue
+                distance = float(score_raw.decode() if isinstance(score_raw, bytes) else score_raw)
+                # COSINE distance: 0 = identical, 2 = opposite
                 similarity = 1.0 - (distance / 2.0)
+
                 if similarity < threshold:
                     continue
-                payload_raw = getattr(doc, "payload", b"{}")
+
+                # Extract entry_id
+                entry_id_raw = doc.get("entry_id", b"")
+                entry_id = entry_id_raw.decode() if isinstance(entry_id_raw, bytes) else str(entry_id_raw)
+
+                # Extract payload
+                payload_raw = doc.get("payload", b"{}")
                 if isinstance(payload_raw, bytes):
                     payload_raw = payload_raw.decode()
+
                 out.append(SearchResult(
-                    id=getattr(doc, "entry_id", b"").decode() if isinstance(getattr(doc, "entry_id", ""), bytes) else str(getattr(doc, "entry_id", "")),
+                    id=entry_id,
                     score=round(similarity, 4),
                     payload=json.loads(payload_raw) if payload_raw else {},
                 ))
+
             return out
 
         except Exception as exc:
-            logger.warning("Redis vector search failed: %s", exc)
+            logger.warning("Vector search failed: %s", exc)
             return []
 
     def delete(self, id: str) -> bool:

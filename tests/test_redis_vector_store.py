@@ -1,39 +1,20 @@
-"""Tests for RedisVectorStore — validates imports and core logic.
+"""Tests for RedisVectorStore — validates raw FT command approach.
 
 These tests mock the Redis connection so they run without a live Redis
 instance.  They verify that:
-1. The redis-py imports resolve correctly (caught the indexDefinition →
-   index_definition rename in redis-py 7.x)
+1. The store uses raw execute_command (FT.CREATE, FT.SEARCH, FT.INFO)
+   instead of the redis.commands.search Python wrapper — avoiding
+   import compatibility issues across redis-py versions
 2. The vector store logic (add, search, delete, clear) works correctly
    against a mocked Redis client
+3. FT.SEARCH response parsing handles the raw array format correctly
 """
 
 import json
 import struct
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 import pytest
-
-
-class TestRedisImports:
-    """Verify that redis-py module imports used by RedisVectorStore resolve."""
-
-    def test_index_definition_import(self):
-        """The index_definition module should be importable (redis >= 7.x)."""
-        from redis.commands.search.index_definition import IndexDefinition, IndexType
-        assert IndexDefinition is not None
-        assert IndexType is not None
-
-    def test_search_field_import(self):
-        """TagField and VectorField should be importable."""
-        from redis.commands.search.field import TagField, VectorField
-        assert TagField is not None
-        assert VectorField is not None
-
-    def test_query_import(self):
-        """Query class should be importable."""
-        from redis.commands.search.query import Query
-        assert Query is not None
 
 
 class TestRedisVectorStoreUnit:
@@ -41,13 +22,16 @@ class TestRedisVectorStoreUnit:
 
     @pytest.fixture
     def mock_redis(self):
-        """Create a mock Redis client and patch Redis.from_url."""
+        """Create a mock Redis client."""
         mock_client = MagicMock()
-        # Make ft().info() raise so _ensure_index tries to create
-        mock_ft = MagicMock()
-        mock_ft.info.side_effect = Exception("Index not found")
-        mock_ft.create_index.return_value = True
-        mock_client.ft.return_value = mock_ft
+        # FT.INFO raises → index doesn't exist → FT.CREATE succeeds
+        def execute_side_effect(*args, **kwargs):
+            if args[0] == "FT.INFO":
+                raise Exception("Unknown index name")
+            if args[0] == "FT.CREATE":
+                return "OK"
+            return None
+        mock_client.execute_command.side_effect = execute_side_effect
         return mock_client
 
     @pytest.fixture
@@ -62,10 +46,45 @@ class TestRedisVectorStoreUnit:
             )
         return store
 
-    def test_init_creates_index(self, store, mock_redis):
-        """Store should attempt to create the RediSearch index on init."""
+    def test_init_uses_execute_command(self, store, mock_redis):
+        """Store should use raw FT.INFO and FT.CREATE, not ft() wrapper."""
+        calls = mock_redis.execute_command.call_args_list
+        # First call: FT.INFO to check if index exists
+        assert calls[0] == call("FT.INFO", "bsr_vectors")
+        # Second call: FT.CREATE to create the index
+        assert calls[1][0][0] == "FT.CREATE"
+        assert calls[1][0][1] == "bsr_vectors"
         assert store._index_created is True
-        mock_redis.ft.return_value.create_index.assert_called_once()
+
+    def test_init_existing_index(self):
+        """If FT.INFO succeeds, FT.CREATE should not be called."""
+        mock_client = MagicMock()
+        mock_client.execute_command.return_value = ["some", "info"]  # FT.INFO succeeds
+        with patch("redis.Redis.from_url", return_value=mock_client):
+            from bedrock_smart_router.redis_vector_store import RedisVectorStore
+            store = RedisVectorStore(
+                redis_url="redis://localhost:6379",
+                dimension=3,
+            )
+        assert store._index_created is True
+        # Only FT.INFO should have been called, not FT.CREATE
+        calls = mock_client.execute_command.call_args_list
+        assert len(calls) == 1
+        assert calls[0] == call("FT.INFO", "bsr_vectors")
+
+    def test_ft_create_includes_dimension(self, mock_redis):
+        """FT.CREATE should include the configured dimension."""
+        with patch("redis.Redis.from_url", return_value=mock_redis):
+            from bedrock_smart_router.redis_vector_store import RedisVectorStore
+            RedisVectorStore(
+                redis_url="redis://localhost:6379",
+                dimension=768,
+            )
+        create_call = mock_redis.execute_command.call_args_list[1]
+        args = create_call[0]
+        # Find DIM in the args
+        dim_idx = list(args).index("DIM")
+        assert args[dim_idx + 1] == "768"
 
     def test_add(self, store, mock_redis):
         """add() should store a hash with entry_id, embedding, and payload."""
@@ -77,9 +96,64 @@ class TestRedisVectorStoreUnit:
         assert key == "test:vec:doc1"
         assert mapping["entry_id"] == b"doc1"
         assert mapping["payload"] == json.dumps({"text": "hello"}).encode()
-        # Verify embedding is packed as float32
         expected_bytes = struct.pack("3f", 1.0, 0.0, 0.0)
         assert mapping["embedding"] == expected_bytes
+
+    def test_search_uses_execute_command(self, store, mock_redis):
+        """search() should use raw FT.SEARCH, not ft().search()."""
+        # Mock FT.SEARCH response: [count, key, [fields...]]
+        mock_redis.execute_command.side_effect = None
+        mock_redis.execute_command.return_value = [
+            1,  # total count
+            b"test:vec:doc1",
+            [b"entry_id", b"doc1", b"payload", b'{"text":"hello"}', b"score", b"0.1"],
+        ]
+        results = store.search([1.0, 0.0, 0.0], top_k=5, threshold=0.0)
+
+        # Verify FT.SEARCH was called via execute_command
+        ft_search_call = mock_redis.execute_command.call_args
+        assert ft_search_call[0][0] == "FT.SEARCH"
+        assert ft_search_call[0][1] == "bsr_vectors"
+
+        assert len(results) == 1
+        assert results[0].id == "doc1"
+        assert results[0].payload == {"text": "hello"}
+        # distance 0.1 → similarity = 1 - (0.1 / 2) = 0.95
+        assert results[0].score == pytest.approx(0.95)
+
+    def test_search_threshold_filtering(self, store, mock_redis):
+        """search() should filter results below the similarity threshold."""
+        mock_redis.execute_command.side_effect = None
+        mock_redis.execute_command.return_value = [
+            2,
+            b"test:vec:a", [b"entry_id", b"a", b"payload", b"{}", b"score", b"0.1"],
+            b"test:vec:b", [b"entry_id", b"b", b"payload", b"{}", b"score", b"1.8"],
+        ]
+        # threshold 0.5 → only doc "a" (similarity 0.95) passes, "b" (similarity 0.1) doesn't
+        results = store.search([1.0, 0.0, 0.0], top_k=5, threshold=0.5)
+        assert len(results) == 1
+        assert results[0].id == "a"
+
+    def test_search_empty_results(self, store, mock_redis):
+        """search() should return empty list when no results."""
+        mock_redis.execute_command.side_effect = None
+        mock_redis.execute_command.return_value = [0]
+        results = store.search([1.0, 0.0, 0.0], top_k=5, threshold=0.0)
+        assert results == []
+
+    def test_search_when_index_not_created(self):
+        """search() should return empty list if index creation failed."""
+        mock_client = MagicMock()
+        mock_client.execute_command.side_effect = Exception("no module")
+        with patch("redis.Redis.from_url", return_value=mock_client):
+            from bedrock_smart_router.redis_vector_store import RedisVectorStore
+            store = RedisVectorStore(
+                redis_url="redis://localhost:6379",
+                dimension=3,
+            )
+            assert store._index_created is False
+            results = store.search([1.0, 0.0, 0.0], top_k=5, threshold=0.0)
+            assert results == []
 
     def test_delete(self, store, mock_redis):
         """delete() should call Redis DELETE on the prefixed key."""
@@ -94,7 +168,6 @@ class TestRedisVectorStoreUnit:
 
     def test_clear(self, store, mock_redis):
         """clear() should scan and delete all prefixed keys."""
-        # Simulate scan returning some keys then finishing
         mock_redis.scan.side_effect = [
             (0, [b"test:vec:a", b"test:vec:b"]),
         ]
@@ -110,27 +183,23 @@ class TestRedisVectorStoreUnit:
         ]
         assert store.count() == 3
 
-    def test_search_when_index_not_created(self, mock_redis):
-        """search() should return empty list if index creation failed."""
-        with patch("redis.Redis.from_url", return_value=mock_redis):
-            from bedrock_smart_router.redis_vector_store import RedisVectorStore
-            # Make both info() and create_index() fail
-            mock_ft = MagicMock()
-            mock_ft.info.side_effect = Exception("no index")
-            mock_ft.create_index.side_effect = Exception("no RediSearch module")
-            mock_redis.ft.return_value = mock_ft
-
-            store = RedisVectorStore(
-                redis_url="redis://localhost:6379",
-                dimension=3,
-            )
-            assert store._index_created is False
-            results = store.search([1.0, 0.0, 0.0], top_k=5, threshold=0.0)
-            assert results == []
-
     def test_vec_to_bytes(self):
         """_vec_to_bytes should pack floats as little-endian float32."""
         from bedrock_smart_router.redis_vector_store import RedisVectorStore
         result = RedisVectorStore._vec_to_bytes([1.0, 2.0, 3.0])
         expected = struct.pack("3f", 1.0, 2.0, 3.0)
         assert result == expected
+
+    def test_no_redis_search_imports(self):
+        """The module should NOT import from redis.commands.search at all."""
+        import ast
+        from pathlib import Path
+        source = Path("bedrock_smart_router/redis_vector_store.py").read_text()
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                module = getattr(node, "module", "") or ""
+                assert "redis.commands.search" not in module, (
+                    f"Found import from redis.commands.search: {module}. "
+                    "The store should use raw execute_command for Valkey compatibility."
+                )
