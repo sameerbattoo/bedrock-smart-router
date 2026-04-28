@@ -6,8 +6,8 @@ Backends:
   - ``faiss``: Facebook AI Similarity Search. Fast in-process ANN.
     Good for single-instance with up to ~100K entries.
     Requires: ``pip install faiss-cpu``
-  - ``redis``: Redis with vector search (RediSearch module).
-    Shared across instances. Works with ElastiCache.
+  - ``redis``: Redis 7+ with RediSearch module, or ElastiCache Valkey 8.2+.
+    Shared across instances.
     Requires: ``pip install redis``
   - ``opensearch``: Amazon OpenSearch Serverless or managed.
     Scales to billions of vectors.

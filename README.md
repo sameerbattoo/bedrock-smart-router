@@ -50,7 +50,7 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 **Caching**
 - Response caching (in-memory LRU with TTL) — identical requests return instantly at zero cost
 - Redis / Valkey / ElastiCache shared cache for multi-instance deployments
-- Semantic caching via embeddings with pluggable vector stores (in-memory, FAISS, Redis)
+- Semantic caching via embeddings with pluggable vector stores (in-memory, FAISS, Redis/Valkey 8.2+, OpenSearch Serverless)
 - Variable-aware semantic cache — same intent + different parameters = cache miss
 - Auto-extracting semantic cache — LLM-based intent + variable extraction, no manual tagging needed
 - Multi-turn semantic cache — resolves conversation history into a single query for cache matching
@@ -101,7 +101,7 @@ pip install bedrock-smart-router[dev]
 |---|---|---|
 | *(none)* | Core SDK, boto3 only | Lambda, single-instance, in-memory cache and metrics |
 | `[strands]` | `strands-agents` package | Using the router as a Strands Agents model provider |
-| `[redis]` | `redis` package | Shared cache + vector store via Redis, Valkey, or ElastiCache |
+| `[redis]` | `redis` package | Shared cache + vector store via Redis 7+ (RediSearch), Valkey 8.2+, or ElastiCache |
 | `[faiss]` | `faiss-cpu` package | Fast in-process vector search for semantic cache (~100K entries) |
 | `[opensearch]` | `opensearch-py`, `requests-aws4auth` | OpenSearch Serverless vector store for semantic cache |
 | `[otel]` | `opentelemetry-api`, `opentelemetry-sdk` | Distributed tracing and OTEL metrics export |

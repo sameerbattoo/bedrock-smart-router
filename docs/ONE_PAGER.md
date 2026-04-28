@@ -65,7 +65,7 @@ For Strands Agents users, the same principle applies: `SmartRouterModel` is a dr
 - **Semantic cache** — matches queries by meaning using embedding similarity ("How do I reset my password?" matches "I forgot my password, help")
 - **Auto-extracting mode** — a cheap LLM (Nova Micro, ~$0.00003/call) automatically decomposes queries into canonical intent + variables, so "Count users by geo for 2026 with sales > $200" and "Show user distribution by geography, year 2026, sales over $200" are correctly matched — while "Count users by geo for 2025 with sales > $100" correctly misses
 - **Multi-turn resolution** — resolves conversation history into a single query, so a cached single-turn response matches a multi-turn conversation with the same intent
-- **4 vector store backends:** in-memory, FAISS, Redis/Valkey, and OpenSearch Serverless
+- **4 vector store backends:** in-memory, FAISS, Redis/Valkey (8.2+), and OpenSearch Serverless
 
 ### Production Reliability
 - **Circuit breakers** per model with separate throttle cooldowns (10s for 429s, 30s for hard errors)

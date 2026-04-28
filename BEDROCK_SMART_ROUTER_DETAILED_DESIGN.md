@@ -844,7 +844,7 @@ Two-tier caching system inspired by LiteLLM and Portkey:
 **Tier 2: Semantic cache (optional, requires `[embeddings]` extra)**
 - Key: embedding vector of the user message
 - Similarity threshold: configurable (default 0.95 cosine similarity)
-- Storage: Redis with vector search or in-memory FAISS
+- Storage: Redis 7+ with RediSearch, ElastiCache Valkey 8.2+, or in-memory FAISS
 - Hit rate: typically 40-60% for customer support / FAQ workloads
 - Adds ~50-100ms latency for embedding computation
 

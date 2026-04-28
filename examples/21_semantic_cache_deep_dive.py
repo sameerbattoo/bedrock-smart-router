@@ -7,7 +7,7 @@ backends, and the variable-aware caching feature.
 Demonstrates:
   - In-memory vector store (default, no dependencies)
   - FAISS vector store (fast in-process, pip install bedrock-smart-router[faiss])
-  - Redis vector store (shared across instances, pip install bedrock-smart-router[redis])
+  - Redis/Valkey vector store (shared across instances, requires Redis 7+ with RediSearch or Valkey 8.2+, pip install bedrock-smart-router[redis])
   - OpenSearch Serverless vector store (AWS managed, pip install bedrock-smart-router[opensearch])
   - FAISS with auto-extract (automatic intent + variable extraction)
   - Caching without variables (intent-only matching)
@@ -81,10 +81,11 @@ print(f"  Stats: {cache_faiss.stats}")
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Example 3: Redis Vector Store
+# Example 3: Redis / Valkey Vector Store
 # ═══════════════════════════════════════════════════════════════════
-# Shared across all instances via RediSearch.  Works with ElastiCache
-# and Valkey.  Requires Redis 7+ with the RediSearch module.
+# Shared across all instances.  Works with:
+#   - Redis 7+ with the RediSearch module
+#   - Amazon ElastiCache Valkey 8.2+ (native vector search)
 #
 # pip install bedrock-smart-router[redis]
 

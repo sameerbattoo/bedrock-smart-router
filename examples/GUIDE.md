@@ -649,7 +649,7 @@ Covers all vector store backends and configuration options:
 ```python
 SemanticCache(config=SemanticCacheConfig(
     threshold=0.90,
-    vector_store_backend="faiss",  # or "memory" or "redis"
+    vector_store_backend="faiss",  # or "memory" or "redis" (Redis 7+/Valkey 8.2+)
     embedding_model="amazon.titan-embed-text-v2:0",
 ))
 ```
