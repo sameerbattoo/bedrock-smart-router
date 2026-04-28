@@ -65,7 +65,7 @@ class RedisVectorStore(VectorStore):
         """Create the RediSearch index if it doesn't exist."""
         try:
             from redis.commands.search.field import TagField, VectorField
-            from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+            from redis.commands.search.index_definition import IndexDefinition, IndexType
 
             self._client.ft(_INDEX_NAME).info()
             self._index_created = True
@@ -73,7 +73,7 @@ class RedisVectorStore(VectorStore):
         except Exception:
             try:
                 from redis.commands.search.field import TagField, VectorField
-                from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+                from redis.commands.search.index_definition import IndexDefinition, IndexType
 
                 schema = (
                     TagField("entry_id"),
