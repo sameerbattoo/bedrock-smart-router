@@ -682,11 +682,22 @@ class BedrockRouter:
         if routing.preferred_model:
             override = self._registry.get(routing.preferred_model)
             result = strategy.select(available, analysis)
-            if override and override in available:
+            if override:
+                # User explicitly chose this model — respect it even if
+                # it wasn't in the eligible candidates (skip tier/capability
+                # filtering).  Only fall back if the model doesn't exist
+                # in the catalog at all.
                 primary = override
+                if override not in available:
+                    logger.info(
+                        "preferred_model '%s' was not in eligible candidates "
+                        "(filtered by complexity/capabilities), but using it "
+                        "as explicitly requested",
+                        routing.preferred_model,
+                    )
             else:
                 logger.warning(
-                    "preferred_model '%s' not in eligible candidates, "
+                    "preferred_model '%s' not found in model catalog, "
                     "falling back to strategy selection",
                     routing.preferred_model,
                 )
@@ -715,9 +726,13 @@ class BedrockRouter:
             result = strategy.select(available, analysis)
             primary = result.selected_model
 
-        # Prompt cache boost
+        # Prompt cache boost (skip if user explicitly set preferred_model)
         cache_savings = 0.0
-        if self._config.prompt_cache_boost and (system or len(messages) > 2):
+        if (
+            self._config.prompt_cache_boost
+            and not routing.preferred_model
+            and (system or len(messages) > 2)
+        ):
             benefit = self._cache_advisor.estimate(primary, messages, system)
             cache_savings = benefit.savings_per_request
             if not benefit.cache_eligible and cache_savings == 0:
