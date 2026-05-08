@@ -31,7 +31,17 @@ Usage:
     # Also regenerate global.* entries (10% discount) after fixing
     python scripts/refresh_pricing.py --fix --regen-global
 
-Requires: AWS credentials with pricing:GetProducts permission.
+    # Discover new models not yet in the catalog
+    python scripts/refresh_pricing.py --discover
+
+    # Discover and add them to the catalog
+    python scripts/refresh_pricing.py --discover --fix
+
+    # Discover only a specific provider
+    python scripts/refresh_pricing.py --discover --provider anthropic
+
+Requires: AWS credentials with pricing:GetProducts and
+bedrock:ListFoundationModels permissions.
 Note: The Pricing API endpoint is only in us-east-1 and ap-south-1.
 """
 
@@ -267,6 +277,292 @@ def check_legacy_models(
     return len(legacy_found)
 
 
+# ── Model Discovery ─────────────────────────────────────────────────
+
+# Family-based heuristics for capabilities the API doesn't expose.
+# These are conservative defaults — new models get these unless overridden.
+FAMILY_DEFAULTS: dict[str, dict[str, Any]] = {
+    "anthropic": {
+        "tool_use": True,
+        "vision": True,  # overridden by API inputModalities
+        "document_support": True,
+        "extended_thinking": False,  # only some models
+        "prompt_caching": True,
+        "streaming_tool_use": True,
+        "max_input_tokens": 200000,
+        "max_output_tokens": 64000,
+        "tier": "mid",
+        "guardrail_compatible": True,
+    },
+    "amazon": {
+        "tool_use": True,
+        "vision": True,  # overridden by API inputModalities
+        "document_support": True,
+        "extended_thinking": False,
+        "prompt_caching": True,
+        "streaming_tool_use": True,
+        "max_input_tokens": 300000,
+        "max_output_tokens": 5000,
+        "tier": "mid",
+        "guardrail_compatible": True,
+    },
+    "meta": {
+        "tool_use": True,
+        "vision": False,  # overridden by API inputModalities
+        "document_support": False,
+        "extended_thinking": False,
+        "prompt_caching": False,
+        "streaming_tool_use": False,
+        "max_input_tokens": 128000,
+        "max_output_tokens": 8192,
+        "tier": "mid",
+        "guardrail_compatible": True,
+    },
+    "mistral": {
+        "tool_use": True,
+        "vision": False,  # overridden by API inputModalities
+        "document_support": False,
+        "extended_thinking": False,
+        "prompt_caching": False,
+        "streaming_tool_use": True,
+        "max_input_tokens": 128000,
+        "max_output_tokens": 8192,
+        "tier": "mid",
+        "guardrail_compatible": True,
+    },
+    "deepseek": {
+        "tool_use": False,
+        "vision": False,
+        "document_support": False,
+        "extended_thinking": True,
+        "prompt_caching": False,
+        "streaming_tool_use": True,
+        "max_input_tokens": 128000,
+        "max_output_tokens": 8192,
+        "tier": "reasoning",
+        "guardrail_compatible": True,
+    },
+    "cohere": {
+        "tool_use": True,
+        "vision": False,
+        "document_support": False,
+        "extended_thinking": False,
+        "prompt_caching": False,
+        "streaming_tool_use": True,
+        "max_input_tokens": 128000,
+        "max_output_tokens": 4096,
+        "tier": "mid",
+        "guardrail_compatible": True,
+    },
+}
+
+# Default for unknown families
+_DEFAULT_FAMILY = {
+    "tool_use": False,
+    "vision": False,
+    "document_support": False,
+    "extended_thinking": False,
+    "prompt_caching": False,
+    "streaming_tool_use": True,
+    "max_input_tokens": 128000,
+    "max_output_tokens": 4096,
+    "tier": "mid",
+    "guardrail_compatible": True,
+}
+
+# Models that should be excluded from discovery (embeddings, image gen, etc.)
+_EXCLUDED_OUTPUT_MODALITIES = {"EMBEDDING", "IMAGE"}
+
+# Geography prefixes we use for CRIS profiles
+_GEO_PREFIXES = ("us.", "eu.", "ap.", "global.")
+
+
+def _infer_tier(model_name: str, family: str, defaults: dict) -> str:
+    """Infer the tier from model name heuristics."""
+    name_lower = model_name.lower()
+    if any(kw in name_lower for kw in ("micro", "mini", "1b", "3b", "8b", "nano")):
+        return "micro"
+    if any(kw in name_lower for kw in ("lite", "haiku", "small", "scout", "11b", "12b")):
+        return "lite"
+    if any(kw in name_lower for kw in ("pro", "sonnet", "large", "70b", "maverick")):
+        return "mid"
+    if any(kw in name_lower for kw in ("premier", "opus", "405b")):
+        return "heavy"
+    if any(kw in name_lower for kw in ("r1", "reasoning", "think")):
+        return "reasoning"
+    return defaults.get("tier", "mid")
+
+
+def _build_display_name(model_name: str, provider: str) -> str:
+    """Build a clean display name from the API model name."""
+    # The API modelName is usually good enough
+    return model_name
+
+
+def discover_new_models(
+    catalog: dict,
+    region: str,
+    provider_filter: str | None = None,
+    fix: bool = False,
+) -> int:
+    """Discover models in Bedrock that are not in our catalog.
+
+    Queries ``bedrock:ListFoundationModels`` and creates skeleton entries
+    for models not yet in ``models.json``.  Uses family-based heuristics
+    for capabilities the API doesn't expose.
+
+    Returns the number of new models discovered.
+    """
+    print(f"\n  {'─'*64}")
+    print(f"  Discovering new models via Bedrock API (region: {region})...")
+
+    bedrock = boto3.client("bedrock", region_name=region)
+    try:
+        resp = bedrock.list_foundation_models()
+    except Exception as exc:
+        print(f"    ✗ Failed to list foundation models: {exc}")
+        return 0
+
+    summaries = resp.get("modelSummaries", [])
+    print(f"    Bedrock reports {len(summaries)} foundation models")
+
+    # Build set of base model IDs already in catalog
+    existing_base_ids: set[str] = set()
+    for m in catalog["models"]:
+        mid = m["model_id"]
+        # Strip geo prefix to get base ID
+        base = mid
+        for prefix in _GEO_PREFIXES:
+            if base.startswith(prefix):
+                base = base[len(prefix):]
+                break
+        existing_base_ids.add(base)
+
+    discovered: list[dict] = []
+
+    for summary in summaries:
+        model_id = summary.get("modelId", "")
+        model_name = summary.get("modelName", "")
+        provider = summary.get("providerName", "").lower()
+        input_modalities = set(summary.get("inputModalities", []))
+        output_modalities = set(summary.get("outputModalities", []))
+        streaming = summary.get("responseStreamingSupported", True)
+        lifecycle = summary.get("modelLifecycle", {}).get("status", "ACTIVE")
+        inference_types = summary.get("inferenceTypesSupported", [])
+
+        # Skip non-text-output models (embeddings, image gen, video gen)
+        if output_modalities & _EXCLUDED_OUTPUT_MODALITIES:
+            continue
+
+        # Skip if output doesn't include TEXT
+        if "TEXT" not in output_modalities:
+            continue
+
+        # Skip LEGACY models
+        if lifecycle == "LEGACY":
+            continue
+
+        # Filter by provider if requested
+        if provider_filter and provider != provider_filter.lower():
+            continue
+
+        # Skip if already in catalog
+        if model_id in existing_base_ids:
+            continue
+
+        # Skip models that don't support on-demand or inference profiles
+        if not inference_types:
+            continue
+
+        # Get family defaults
+        defaults = FAMILY_DEFAULTS.get(provider, _DEFAULT_FAMILY)
+
+        # Derive capabilities from API + heuristics
+        has_vision = "IMAGE" in input_modalities
+        has_document = defaults.get("document_support", False) and has_vision
+        tier = _infer_tier(model_name, provider, defaults)
+
+        # Build the geo-prefixed model ID (us.*)
+        geo_model_id = f"us.{model_id}"
+
+        # Check if INFERENCE_PROFILE is supported (for CRIS)
+        has_cris = "INFERENCE_PROFILE" in inference_types
+
+        # Build capabilities dict
+        capabilities: dict[str, Any] = {
+            "tool_use": defaults["tool_use"],
+            "vision": has_vision,
+            "streaming": streaming,
+            "document_support": has_document,
+            "extended_thinking": defaults["extended_thinking"],
+            "prompt_caching": defaults["prompt_caching"],
+        }
+        # Only include streaming_tool_use if it differs from default (True)
+        if not defaults["streaming_tool_use"]:
+            capabilities["streaming_tool_use"] = False
+
+        entry: dict[str, Any] = {
+            "model_id": geo_model_id,
+            "family": provider,
+            "tier": tier,
+            "display_name": _build_display_name(model_name, provider),
+            "capabilities": capabilities,
+            "max_input_tokens": defaults["max_input_tokens"],
+            "max_output_tokens": defaults["max_output_tokens"],
+            "pricing": {
+                "input_per_1k": 0.0,
+                "output_per_1k": 0.0,
+                "cache_read_per_1k": 0.0,
+                "cache_write_per_1k": 0.0,
+            },
+            "cris_profiles": [geo_model_id] if has_cris else [],
+            "supported_inference_tiers": ["standard"],
+            "guardrail_compatible": defaults["guardrail_compatible"],
+            "_needs_review": True,
+        }
+
+        discovered.append(entry)
+
+    # Print results
+    if not discovered:
+        print(f"    ✓ No new models found — catalog is up to date")
+        return 0
+
+    print(f"\n    Found {len(discovered)} new model(s):\n")
+    for entry in discovered:
+        caps = entry["capabilities"]
+        cap_flags = []
+        if caps.get("tool_use"):
+            cap_flags.append("tool")
+        if caps.get("vision"):
+            cap_flags.append("vision")
+        if caps.get("document_support"):
+            cap_flags.append("doc")
+        if caps.get("extended_thinking"):
+            cap_flags.append("think")
+        if caps.get("prompt_caching"):
+            cap_flags.append("cache")
+        flags_str = ", ".join(cap_flags) if cap_flags else "text-only"
+
+        print(f"    + {entry['model_id']}")
+        print(f"      {entry['display_name']}  [{entry['family']}/{entry['tier']}]")
+        print(f"      capabilities: {flags_str}")
+        print(f"      context: {entry['max_input_tokens']:,} in / {entry['max_output_tokens']:,} out")
+        if entry["pricing"]["input_per_1k"] == 0.0:
+            print(f"      pricing: ⚠ not available (set to $0.00 — needs manual update)")
+        print()
+
+    if fix:
+        catalog["models"].extend(discovered)
+        print(f"    ✓ Added {len(discovered)} new models to catalog")
+        print(f"      ⚠ Models marked with _needs_review: true — verify capabilities and pricing")
+        print(f"      ⚠ Run with --regen-global to create global.* entries for models with CRIS")
+    else:
+        print(f"    Run with --fix to add these models to the catalog")
+
+    return len(discovered)
+
+
 # ── Main logic ──────────────────────────────────────────────────────
 
 def refresh(
@@ -275,6 +571,7 @@ def refresh(
     fix: bool = False,
     check_tiers: bool = False,
     check_legacy: bool = False,
+    discover: bool = False,
     regen_global: bool = False,
     verbose: bool = False,
 ) -> int:
@@ -367,6 +664,11 @@ def refresh(
         legacy_count = check_legacy_models(catalog, region, fix=fix)
         mismatches += legacy_count
 
+    # Discover new models if requested
+    discovered_count = 0
+    if discover:
+        discovered_count = discover_new_models(catalog, region, provider_filter, fix=fix)
+
     # Regenerate global entries if requested
     if regen_global and fix:
         print(f"\n  {'─'*64}")
@@ -405,23 +707,27 @@ def refresh(
     print(f"  No API data:    {skipped_no_api}")
     if legacy_count:
         print(f"  Legacy models:  {legacy_count}")
+    if discovered_count:
+        print(f"  Discovered:     {discovered_count} new models")
     if not_in_api:
         print(f"  Not mapped:     {len(not_in_api)} (no Pricing API mapping)")
         for n in not_in_api:
             print(f"                    - {n}")
-    if fix and mismatches > 0:
+    if fix and (mismatches > 0 or discovered_count > 0):
         save_catalog(catalog)
         print(f"\n  ✓ Applied fixes to {CATALOG_PATH}")
         print(f"    Total models in catalog: {len(catalog['models'])}")
         if legacy_count:
             print(f"    Legacy models removed: {legacy_count}")
-    elif mismatches > 0:
+        if discovered_count:
+            print(f"    New models added: {discovered_count}")
+    elif mismatches > 0 or discovered_count > 0:
         print(f"\n  Run with --fix to auto-update models.json")
     else:
         print(f"\n  ✓ All validated pricing matches!")
     print(f"  {'='*64}\n")
 
-    return mismatches
+    return mismatches + discovered_count
 
 
 def main() -> None:
@@ -434,6 +740,7 @@ def main() -> None:
     parser.add_argument("--fix", action="store_true", help="Auto-update models.json with correct pricing")
     parser.add_argument("--check-tiers", action="store_true", help="Also validate supported_inference_tiers")
     parser.add_argument("--check-legacy", action="store_true", help="Check for LEGACY models via Bedrock API and remove them")
+    parser.add_argument("--discover", action="store_true", help="Discover new models not yet in the catalog")
     parser.add_argument("--regen-global", action="store_true", help="Regenerate global.* entries after fixing")
     parser.add_argument("--verbose", action="store_true", help="Show raw pricing rows from AWS")
     args = parser.parse_args()
@@ -444,6 +751,7 @@ def main() -> None:
         fix=args.fix,
         check_tiers=args.check_tiers,
         check_legacy=args.check_legacy,
+        discover=args.discover,
         regen_global=args.regen_global,
         verbose=args.verbose,
     )

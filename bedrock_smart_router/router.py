@@ -54,7 +54,7 @@ from bedrock_smart_router.observability import ObservabilityManager, RoutingEven
 from bedrock_smart_router.otel_integration import OTelIntegration
 from bedrock_smart_router.prompt_cache_advisor import PromptCacheAdvisor
 from bedrock_smart_router.request_analyzer import RequestAnalyzer
-from bedrock_smart_router.retry_handler import RetryHandler
+from bedrock_smart_router.retry_handler import RetryConfig, RetryHandler
 from bedrock_smart_router.shadow_mode import ShadowManager
 from bedrock_smart_router.strategy_engine import resolve_strategy
 
@@ -81,10 +81,17 @@ class BedrockRouter:
         self,
         config: RouterConfig,
         boto_session: Any | None = None,
+        boto_config: Any | None = None,
         callbacks: list[Callable[[RoutingEvent], None]] | None = None,
     ) -> None:
         self._config = config
         session = boto_session or boto3.Session(region_name=config.region)
+
+        # Resolve botocore Config: explicit param > config dict > None
+        resolved_boto_config = boto_config
+        if resolved_boto_config is None and config.boto_config:
+            from botocore.config import Config as BotocoreConfig
+            resolved_boto_config = BotocoreConfig(**config.boto_config)
 
         # Phase 1: core
         self._registry = ModelRegistry(catalog_path=config.catalog_path)
@@ -93,6 +100,24 @@ class BedrockRouter:
         self._circuit_breakers = CircuitBreakerRegistry(config.circuit_breaker)
         self._fallback_handler = FallbackHandler(self._registry, config.fallback)
         self._retry_handler = RetryHandler(config.retry)
+
+        # If the user configured retries in boto_config, disable our native
+        # RetryHandler to avoid multiplicative retry storms (boto retries
+        # internally × our retries = excessive attempts).
+        if resolved_boto_config is not None:
+            has_user_retries = False
+            # Check explicit Config object
+            if hasattr(resolved_boto_config, 'retries') and resolved_boto_config.retries:
+                has_user_retries = True
+            # Check dict-based config
+            if config.boto_config and "retries" in config.boto_config:
+                has_user_retries = True
+            if has_user_retries:
+                logger.info(
+                    "boto_config includes retries — disabling native RetryHandler "
+                    "to avoid multiplicative retry storms. Boto3 will handle retries."
+                )
+                self._retry_handler = RetryHandler(RetryConfig(max_retries=0))
 
         # Phase 2: intelligence
         self._metrics_store = _build_metrics_store(config.metrics, config.region, session)
@@ -134,7 +159,10 @@ class BedrockRouter:
         )
 
         # Bedrock client
-        self._bedrock = session.client("bedrock-runtime")
+        client_kwargs: dict[str, Any] = {}
+        if resolved_boto_config is not None:
+            client_kwargs["config"] = resolved_boto_config
+        self._bedrock = session.client("bedrock-runtime", **client_kwargs)
         self._shadow._invoke_fn = self._bedrock.converse
 
         # OpenTelemetry (optional)
@@ -156,16 +184,26 @@ class BedrockRouter:
         config: dict[str, Any] | RouterConfig | None = None,
         *,
         boto_session: Any | None = None,
+        boto_config: Any | None = None,
         callbacks: list[Callable[[RoutingEvent], None]] | None = None,
     ) -> BedrockRouter:
-        """Create a router from a dict, RouterConfig, or defaults."""
+        """Create a router from a dict, RouterConfig, or defaults.
+
+        Args:
+            config: Router configuration as a dict, RouterConfig, or None for defaults.
+            boto_session: Optional pre-configured boto3 Session.
+            boto_config: Optional ``botocore.config.Config`` instance for the
+                Bedrock client (timeouts, retries, etc.).  Takes precedence
+                over ``boto_config`` in the config dict/YAML.
+            callbacks: Optional list of observability callbacks.
+        """
         if config is None:
             resolved = RouterConfig()
         elif isinstance(config, dict):
             resolved = RouterConfig.from_dict(config)
         else:
             resolved = config
-        return cls(resolved, boto_session=boto_session, callbacks=callbacks)
+        return cls(resolved, boto_session=boto_session, boto_config=boto_config, callbacks=callbacks)
 
     # ── Public API ──────────────────────────────────────────────
 
@@ -655,6 +693,7 @@ class BedrockRouter:
         candidates = self._registry.eligible_models(
             min_tier=min_tier,
             requires_vision=analysis.requires_vision,
+            requires_document_support=analysis.requires_document_support,
             requires_tool_use=analysis.requires_tool_use,
             requires_streaming_tool_use=requires_streaming_tool_use,
             min_context=routing.min_context_window,
@@ -899,6 +938,9 @@ class BedrockRouter:
             # Vision
             if analysis.requires_vision and not m.capabilities.vision:
                 reasons.append("no vision support")
+            # Document support
+            if analysis.requires_document_support and not m.capabilities.document_support:
+                reasons.append("no document support")
             # Tool use
             if analysis.requires_tool_use and not m.capabilities.tool_use:
                 reasons.append("no tool_use support")
@@ -957,6 +999,7 @@ class BedrockRouter:
             "estimated_tokens": est_tokens,
             "min_tier": min_tier.value if min_tier else None,
             "requires_vision": analysis.requires_vision,
+            "requires_document_support": analysis.requires_document_support,
             "requires_tool_use": analysis.requires_tool_use,
             "preferred_family": routing.preferred_family,
             "max_cost_per_request": routing.max_cost_per_request,

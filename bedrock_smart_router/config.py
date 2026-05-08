@@ -181,6 +181,7 @@ class RouterConfig:
 
     excluded_models: list[str] = field(default_factory=list)
     catalog_path: str | None = None
+    boto_config: dict[str, Any] | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RouterConfig:
@@ -226,6 +227,7 @@ class RouterConfig:
             shadow=_build_sub(ShadowConfig, data.get("shadow", {})),
             excluded_models=data.get("excluded_models", []),
             catalog_path=data.get("catalog_path"),
+            boto_config=data.get("boto_config"),
         )
 
 

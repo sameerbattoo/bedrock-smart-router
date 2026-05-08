@@ -17,7 +17,7 @@
       "tier": "micro",
       "display_name": "Amazon Nova Micro 1.0",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": false,
         "streaming": true,
         "document_support": false,
@@ -46,10 +46,10 @@
       "tier": "lite",
       "display_name": "Amazon Nova Lite 1.0",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": false,
         "prompt_caching": true
       },
@@ -78,12 +78,12 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
       "max_input_tokens": 1000000,
-      "max_output_tokens": 5000,
+      "max_output_tokens": 64000,
       "pricing": {
         "input_per_1k": 0.000525,
         "output_per_1k": 0.0048125,
@@ -108,7 +108,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": false,
         "prompt_caching": true
       },
@@ -137,12 +137,12 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
-        "extended_thinking": false,
+        "document_support": true,
+        "extended_thinking": true,
         "prompt_caching": true
       },
       "max_input_tokens": 200000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 64000,
       "pricing": {
         "input_per_1k": 0.001,
         "output_per_1k": 0.005,
@@ -168,7 +168,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -199,7 +199,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -230,7 +230,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -261,7 +261,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -292,7 +292,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -320,7 +320,7 @@
       "tier": "micro",
       "display_name": "Llama 3.1 8B Instruct",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": false,
         "streaming": true,
         "document_support": false,
@@ -328,7 +328,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 2048,
+      "max_output_tokens": 4096,
       "pricing": {
         "input_per_1k": 0.00022,
         "output_per_1k": 0.00022,
@@ -382,7 +382,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -446,8 +446,8 @@
         "prompt_caching": false,
         "streaming_tool_use": false
       },
-      "max_input_tokens": 3500000,
-      "max_output_tokens": 16384,
+      "max_input_tokens": 10000000,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00017,
         "output_per_1k": 0.00066,
@@ -477,7 +477,7 @@
         "streaming_tool_use": false
       },
       "max_input_tokens": 1000000,
-      "max_output_tokens": 16384,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00024,
         "output_per_1k": 0.00097,
@@ -531,12 +531,12 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": false,
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 16384,
       "pricing": {
         "input_per_1k": 0.002,
         "output_per_1k": 0.006,
@@ -560,12 +560,12 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
       "max_input_tokens": 1000000,
-      "max_output_tokens": 5000,
+      "max_output_tokens": 64000,
       "pricing": {
         "input_per_1k": 0.0004725,
         "output_per_1k": 0.00433125,
@@ -589,12 +589,12 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
-        "extended_thinking": false,
+        "document_support": true,
+        "extended_thinking": true,
         "prompt_caching": true
       },
       "max_input_tokens": 200000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 64000,
       "pricing": {
         "input_per_1k": 0.0009,
         "output_per_1k": 0.0045,
@@ -619,7 +619,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -649,7 +649,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -679,7 +679,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -709,7 +709,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },
@@ -739,7 +739,7 @@
         "tool_use": true,
         "vision": true,
         "streaming": true,
-        "document_support": false,
+        "document_support": true,
         "extended_thinking": true,
         "prompt_caching": true
       },

@@ -191,6 +191,7 @@ class ModelRegistry:
         *,
         min_tier: Tier | str | None = None,
         requires_vision: bool = False,
+        requires_document_support: bool = False,
         requires_tool_use: bool = False,
         requires_streaming_tool_use: bool = False,
         min_context: int | None = None,
@@ -217,6 +218,8 @@ class ModelRegistry:
             if min_tier and tier_order.index(m.tier) < tier_order.index(min_tier):
                 continue
             if requires_vision and not m.capabilities.vision:
+                continue
+            if requires_document_support and not m.capabilities.document_support:
                 continue
             if requires_tool_use and not m.capabilities.tool_use:
                 continue

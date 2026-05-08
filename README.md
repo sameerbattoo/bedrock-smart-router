@@ -26,6 +26,7 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - Automatic complexity detection: simple, moderate, complex, reasoning
 - Vision, tool use, long context, and code task detection
 - Context window pre-validation before sending to Bedrock
+- Multimodal-aware routing — automatically detects image and document content blocks, filters to capable models, and boosts complexity based on payload size
 
 **Bedrock-Native Awareness**
 - Cross-Region Inference (CRIS) profile selection — regional (`us.*`) and global (`global.*`, ~10% cheaper) profiles as separate catalog entries
@@ -658,6 +659,104 @@ The `BudgetTracker` is in-memory — it resets on process restart and doesn't sh
 
 For multi-instance persistent budget tracking, the DynamoDB metrics store (`metrics.backend: "dynamodb"`) records every request with `cost` and `tenant_id`, but there's no built-in query for "total spend by tenant in the last hour." You'd need to add a GSI on `tenant_id` or build a separate spend-tracking table. This is on the roadmap but not yet implemented.
 
+## Multimodal Routing: Images and Documents
+
+The router automatically detects image and document content blocks in your messages and makes intelligent routing decisions based on them.
+
+### Capability Filtering
+
+When your request contains multimodal content, the router automatically excludes models that can't handle it:
+
+- **Image content** (`{"image": {...}}`) → only routes to models with `vision: true`
+- **Document content** (`{"document": {...}}`) → only routes to models with `document_support: true`
+
+This happens transparently — you don't need to specify which models support what. Just send your content and the router picks a capable model:
+
+```python
+# PDF extraction — automatically routes to Claude/Nova Pro (not Llama/DeepSeek)
+response = router.converse(
+    messages=[{
+        "role": "user",
+        "content": [
+            {"document": {"format": "pdf", "name": "report", "source": {"bytes": pdf_bytes}}},
+            {"text": "Extract all tables from this document"},
+        ],
+    }],
+)
+```
+
+### Payload Size → Complexity Boost
+
+The router uses the byte size of multimodal payloads to influence model selection. Larger payloads indicate more complex tasks that benefit from more capable (higher-tier) models:
+
+| Payload Size | Complexity Boost | Typical Routing |
+|---|---|---|
+| < 100KB | +0.05 | Stays simple → lite tier (Haiku, Nova Lite) |
+| 100KB – 1MB | +0.10 | Nudges to moderate → mid tier |
+| 1MB – 5MB | +0.20 | Moderate → mid tier (Sonnet, Nova Pro) |
+| > 5MB | +0.30 | Complex → heavy tier (Opus) |
+
+This means:
+- A small screenshot + "what is this?" → routes to a cheap, fast model
+- A 50-page PDF + "summarize" → routes to a capable model with strong document understanding
+
+### Token Estimation for Multimodal Content
+
+The router estimates token consumption for images and documents so that context window pre-validation works correctly:
+
+- **Documents:** ~1,500 tokens per estimated page (~3KB per page)
+- **Images:** ~750 tokens per image
+
+This prevents the router from picking a model whose context window is too small for the payload.
+
+## Boto Client Configuration
+
+You can configure the underlying Bedrock client's timeouts, retries, and connection settings. This is important for large document/image payloads where the default 60-second read timeout may not be enough.
+
+### Option A: Pass a Config object
+
+```python
+from botocore.config import Config
+from bedrock_smart_router import BedrockRouter
+
+router = BedrockRouter.create(
+    {"region": "us-west-2"},
+    boto_config=Config(
+        read_timeout=300,
+        connect_timeout=10,
+        retries={"max_attempts": 3, "mode": "adaptive"},
+    ),
+)
+```
+
+### Option B: Configure via dict/YAML
+
+```python
+router = BedrockRouter.create({
+    "region": "us-west-2",
+    "boto_config": {
+        "read_timeout": 300,
+        "connect_timeout": 10,
+        "retries": {"max_attempts": 3, "mode": "adaptive"},
+    },
+})
+```
+
+Option A takes precedence if both are provided.
+
+### Retry Conflict Prevention
+
+The router has its own retry mechanism (exponential backoff on throttles and transient errors, then fallback to the next model). If you configure retries in `boto_config`, the router **automatically disables its native retry handler** to prevent multiplicative retry storms.
+
+Without this protection, a single throttled request could be retried up to `boto_retries × router_retries` times. With it:
+
+| Configuration | Who retries | Fallback |
+|---|---|---|
+| No `boto_config` retries | Router's RetryHandler (3 retries + backoff) | Then falls back to next model |
+| `boto_config` with retries | boto3/botocore (SDK-level) | Router skips its retries, falls back to next model on failure |
+
+If you want full control over retry behavior, set `boto_config` retries and the router will defer to boto3. The fallback chain (trying the next model) still works regardless.
+
 ## Strands Agents SDK Integration
 
 The Smart Router integrates with the [Strands Agents SDK](https://strandsagents.com/) as a custom model provider. Instead of Strands calling Bedrock directly with a fixed model, every agent call flows through the router — getting automatic model selection, fallbacks, circuit breakers, cost tracking, and all other routing features.
@@ -1145,6 +1244,7 @@ The model catalog (`bedrock_smart_router/data/models.json`) is a static file tha
 | *(default)* | Pricing API (`pricing:GetProducts`) | Compares catalog pricing against live on-demand Standard tier rates |
 | `--check-tiers` | Pricing API | Validates `supported_inference_tiers` (Standard/Priority/Flex) per model |
 | `--check-legacy` | Bedrock API (`bedrock:ListFoundationModels`) | Detects models marked LEGACY by the provider and flags them for removal |
+| `--discover` | Bedrock API (`bedrock:ListFoundationModels`) | Discovers new models not yet in the catalog and creates skeleton entries |
 | `--regen-global` | *(none — computed)* | Regenerates `global.*` CRIS entries at 90% of regional pricing |
 
 **Common workflows:**
@@ -1153,11 +1253,17 @@ The model catalog (`bedrock_smart_router/data/models.json`) is a static file tha
 # Dry run — see what's different, don't change anything
 python scripts/refresh_pricing.py
 
-# Check everything: pricing + tiers + legacy models
-python scripts/refresh_pricing.py --check-tiers --check-legacy
+# Check everything: pricing + tiers + legacy models + new models
+python scripts/refresh_pricing.py --check-tiers --check-legacy --discover
 
 # Fix everything automatically
-python scripts/refresh_pricing.py --fix --check-tiers --check-legacy --regen-global
+python scripts/refresh_pricing.py --fix --check-tiers --check-legacy --discover --regen-global
+
+# Discover new models only (dry run)
+python scripts/refresh_pricing.py --discover
+
+# Discover and add new models from a specific provider
+python scripts/refresh_pricing.py --discover --fix --provider anthropic --regen-global
 
 # Check a specific provider only
 python scripts/refresh_pricing.py --provider meta --check-legacy
@@ -1166,9 +1272,11 @@ python scripts/refresh_pricing.py --provider meta --check-legacy
 python scripts/refresh_pricing.py --region us-east-1 --check-legacy
 ```
 
+**How `--discover` works:** The script queries `bedrock:ListFoundationModels` to find all active text-output models, compares them against the catalog, and creates skeleton entries for any missing models. It uses family-based heuristics to infer capabilities the API doesn't expose (tool use, document support, prompt caching, etc.) and marks new entries with `_needs_review: true`. After discovery, verify the capabilities and pricing manually, then remove the `_needs_review` flag.
+
 **Why `--check-legacy` matters:** The Pricing API has no concept of model lifecycle — a model can have valid pricing while being marked LEGACY by the provider (e.g. Meta) in the Bedrock runtime. Legacy models still appear as inference profiles in the console but Bedrock blocks invocations if you haven't used them in the last 30 days. The `--check-legacy` flag queries `bedrock:ListFoundationModels` to detect these and remove them from the catalog.
 
-**Recommended schedule:** Run `--fix --check-tiers --check-legacy --regen-global` monthly, or after any AWS pricing announcement. The script requires `pricing:GetProducts` permission (Pricing API is only in us-east-1) and `bedrock:ListFoundationModels` permission for legacy detection.
+**Recommended schedule:** Run `--fix --check-tiers --check-legacy --discover --regen-global` monthly, or after any AWS model launch or pricing announcement. The script requires `pricing:GetProducts` permission (Pricing API is only in us-east-1) and `bedrock:ListFoundationModels` permission for legacy detection and discovery.
 
 **IAM permissions required:**
 

@@ -177,6 +177,22 @@ class RequestAnalyzer:
             w.aws_specificity, w.math_logical, w.creative_open,
         ]
         composite = sum(s * wt for s, wt in zip(scores, weight_list))
+
+        # ── Multimodal payload complexity boost ─────────────────
+        # Large images/documents are inherently complex tasks that
+        # need capable models.  Boost the composite directly so the
+        # payload size influences tier selection.
+        payload_bytes = self._multimodal_payload_bytes(messages)
+        if payload_bytes > 0:
+            if payload_bytes > 5_000_000:       # > 5MB
+                composite += 0.30
+            elif payload_bytes > 1_000_000:     # > 1MB
+                composite += 0.20
+            elif payload_bytes > 100_000:       # > 100KB
+                composite += 0.10
+            else:                               # < 100KB
+                composite += 0.05
+
         composite = max(0.0, min(1.0, composite))
 
         # ── Classify complexity ─────────────────────────────────
@@ -185,8 +201,28 @@ class RequestAnalyzer:
 
         # ── Detect capabilities needed ──────────────────────────
         has_images = self._has_images(messages)
+        has_documents = self._has_documents(messages)
         requires_tool = tool_config is not None or scores[6] > 0.3
         est_input = _estimate_tokens(full_text)
+
+        # Add estimated tokens for multimodal content.
+        # Bedrock converts images/documents to tokens internally:
+        # ~750 tokens per image, ~1500 tokens per document page (~3KB/page).
+        payload_bytes = self._multimodal_payload_bytes(messages)
+        if payload_bytes > 0:
+            if has_documents:
+                # Estimate pages: ~3KB per page, ~1500 tokens per page
+                est_pages = max(1, payload_bytes // 3000)
+                est_input += int(est_pages * 1500)
+            elif has_images:
+                # Estimate ~750 tokens per image (conservative)
+                image_count = sum(
+                    1 for msg in messages
+                    for block in (msg.get("content", []) if isinstance(msg.get("content"), list) else [])
+                    if isinstance(block, dict) and "image" in block
+                )
+                est_input += image_count * 750
+
         est_output = max(256, est_input // 3)
 
         return RequestAnalysis(
@@ -195,6 +231,7 @@ class RequestAnalyzer:
             estimated_input_tokens=est_input,
             estimated_output_tokens=est_output,
             requires_vision=has_images,
+            requires_document_support=has_documents,
             requires_tool_use=requires_tool,
             requires_long_context=est_input > 32_000,
             requires_extended_thinking=complexity == Complexity.REASONING,
@@ -249,6 +286,10 @@ class RequestAnalyzer:
         # 8. Document analysis
         doc_hits = _count_matches(text_lower, DOCUMENT_SIGNALS)
         doc_score = min(1.0, doc_hits * 0.2)
+        # Boost dimension score when actual multimodal content is present
+        payload_bytes = self._multimodal_payload_bytes(messages)
+        if payload_bytes > 0:
+            doc_score = min(1.0, doc_score + 0.3)
 
         # 9. Conversation depth
         turn_count = len(messages)
@@ -291,3 +332,38 @@ class RequestAnalyzer:
                     if isinstance(block, dict) and "image" in block:
                         return True
         return False
+
+    @staticmethod
+    def _has_documents(messages: list[dict[str, Any]]) -> bool:
+        for msg in messages:
+            content = msg.get("content", [])
+            if isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and "document" in block:
+                        return True
+        return False
+
+    @staticmethod
+    def _multimodal_payload_bytes(messages: list[dict[str, Any]]) -> int:
+        """Sum the byte size of all inline image and document payloads."""
+        total = 0
+        for msg in messages:
+            content = msg.get("content", [])
+            if not isinstance(content, list):
+                continue
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                # Image bytes
+                if "image" in block:
+                    source = block["image"].get("source", {})
+                    data = source.get("bytes")
+                    if isinstance(data, (bytes, bytearray)):
+                        total += len(data)
+                # Document bytes
+                if "document" in block:
+                    source = block["document"].get("source", {})
+                    data = source.get("bytes")
+                    if isinstance(data, (bytes, bytearray)):
+                        total += len(data)
+        return total

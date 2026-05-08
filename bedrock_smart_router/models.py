@@ -152,6 +152,7 @@ class RequestAnalysis:
     estimated_input_tokens: int = 0
     estimated_output_tokens: int = 0
     requires_vision: bool = False
+    requires_document_support: bool = False
     requires_tool_use: bool = False
     requires_streaming: bool = False
     requires_long_context: bool = False
