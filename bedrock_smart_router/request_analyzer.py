@@ -1,11 +1,12 @@
 """Zero-API-call request complexity analyzer.
 
-Classifies incoming requests across 12 scoring dimensions to determine
+Classifies incoming requests across 15 scoring dimensions to determine
 the appropriate model tier, entirely locally with sub-millisecond overhead.
 """
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -15,10 +16,15 @@ from bedrock_smart_router.models import Complexity, RequestAnalysis
 # ── Keyword / pattern sets ──────────────────────────────────────────
 
 REASONING_MARKERS = {
-    "step by step", "step-by-step", "analyze", "evaluate", "compare and contrast",
+    "step by step", "step-by-step", "analyze", "analyse", "analysis",
+    "evaluate", "compare and contrast",
     "prove", "derive", "reason through", "think through", "work through",
     "explain why", "explain how", "trade-off", "tradeoff", "pros and cons",
     "critically", "systematically", "deduce", "infer", "hypothesize",
+    "build a", "design a", "architect", "implement a", "construct",
+    "optimize", "refactor", "for each", "for every",
+    "calculate the", "compute the", "determine the",
+    "showing", "demonstrating", "comprehensive",
 }
 
 CODE_MARKERS = {
@@ -66,6 +72,25 @@ MATH_SIGNALS = {
     "algorithm", "complexity", "big-o", "matrix", "vector", "linear algebra",
 }
 
+DATA_ANALYSIS_SIGNALS = {
+    "cohort", "retention", "funnel", "segmentation", "rfm",
+    "churn", "lifetime value", "clv", "ltv",
+    "window function", "partition by", "over (", "over(",
+    "ntile", "percentile", "lag(", "lead(", "row_number",
+    "dense_rank", "rank()", "cte",
+    "regr_slope", "stddev", "variance", "correlation",
+    "pivot", "unpivot", "rollup", "cube", "grouping sets",
+    "generate_series", "date_trunc", "interval",
+    "subquery", "nested query", "self join", "cross join",
+    "full outer", "lateral join",
+    "month-over-month", "year-over-year", "yoy", "mom",
+    "forecast", "trend", "anomaly", "outlier",
+    "waterfall", "basket analysis", "market basket",
+    "running total", "moving average", "cumulative",
+    "top 5", "top 10", "top n", "bottom 5", "bottom 10",
+    "group by", "having", "case when",
+}
+
 CREATIVE_SIGNALS = {
     "write a story", "write a poem", "imagine", "creative", "brainstorm",
     "come up with", "invent", "fiction", "narrative", "compose",
@@ -80,25 +105,94 @@ AWS_SIGNALS = {
     "arn:", "arn:aws:",
 }
 
+COMPLEX_QUESTION_PATTERNS = {
+    "how would", "how can i", "how do i", "how to implement",
+    "what are the tradeoffs", "what are the pros", "what approach",
+    "design a", "build a", "create a system", "architect",
+    "optimize", "debug", "troubleshoot", "refactor",
+    "compare", "evaluate", "analyze the",
+}
+
+SIMPLE_QUESTION_PATTERNS = {
+    "what is", "what's", "who is", "when was", "where is",
+    "how old", "how many", "how much", "define ",
+    "what does", "is it", "can you",
+}
+
+# ── Output format constraint signals ───────────────────────────────
+
+OUTPUT_FORMAT_SIGNALS = {
+    "return as json", "return json", "output as json", "json format",
+    "format as", "output format", "in the format", "formatted as",
+    "as a table", "as a list", "as bullet points", "as markdown",
+    "```json", "```yaml", "```xml", "```csv",
+    "structured output", "json schema", "output schema",
+    "respond with json", "reply in json", "answer in json",
+    "return a json", "provide json", "give me json",
+    "xml format", "yaml format", "csv format",
+    "following format", "this format", "exact format",
+    "schema:", "fields:", "columns:",
+}
+
+# ── Constraint density signals ─────────────────────────────────────
+
+CONSTRAINT_SIGNALS = {
+    "must be", "must not", "must include", "must have",
+    "should be", "should not", "should include",
+    "no more than", "no less than", "no longer than",
+    "at least", "at most", "exactly", "precisely",
+    "without using", "only use", "do not use", "don't use",
+    "limited to", "restricted to", "confined to",
+    "between", "within", "not exceeding",
+    "ensure that", "make sure", "guarantee",
+    "required", "mandatory", "necessary",
+    "exclude", "avoid", "never",
+    "maximum", "minimum",
+}
+
+# ── Context reference signals ──────────────────────────────────────
+
+CONTEXT_REFERENCE_SIGNALS = {
+    "the above", "the following", "the below",
+    "given the", "based on the", "according to the",
+    "from the", "in the", "using the",
+    "this document", "this text", "this article", "this paper",
+    "the provided", "the attached", "the given",
+    "extract from", "summarize the", "analyze the",
+    "refer to", "as shown", "as described",
+}
+
+# ── Structural complexity patterns ──────────────────────────────────
+
+_TABLE_PATTERN = re.compile(r'[\|\+][-=+|]+[\|\+]|(\w+\s*[,\t]\s*){3,}')
+_CSV_DATA = re.compile(r'^[^,\n]+(?:,[^,\n]+){2,}$', re.MULTILINE)
+_PARAGRAPH_BREAK = re.compile(r'\n\s*\n')
+_NUMBERED_LIST = re.compile(r'^\s*\d+[\.\)]\s', re.MULTILINE)
+_CODE_BLOCK = re.compile(r'```[\s\S]*?```|^    \S', re.MULTILINE)
+
 
 # ── Dimension weights (must sum to 1.0) ─────────────────────────────
 
 @dataclass
 class AnalyzerWeights:
-    """Configurable weights for the 12 scoring dimensions."""
+    """Configurable weights for the 15 scoring dimensions."""
 
-    token_count: float = 0.07
-    code_presence: float = 0.12
-    reasoning_markers: float = 0.14
-    technical_depth: float = 0.10
-    simple_indicators: float = 0.05
-    multi_step: float = 0.08
-    tool_use: float = 0.09
-    document_analysis: float = 0.08
-    conversation_depth: float = 0.06
-    aws_specificity: float = 0.06
-    math_logical: float = 0.08
-    creative_open: float = 0.07
+    token_count: float = 0.3784
+    code_presence: float = 0.0573
+    reasoning_markers: float = 0.0813
+    technical_depth: float = 0.0486
+    simple_indicators: float = 0.0072
+    multi_step: float = 0.0010
+    tool_use: float = 0.0418
+    document_analysis: float = 0.1265
+    conversation_depth: float = 0.0097
+    aws_specificity: float = 0.0257
+    math_logical: float = 0.0257
+    creative_open: float = 0.0962
+    # New dimensions
+    output_format: float = 0.0987
+    constraint_density: float = 0.0010
+    context_ratio: float = 0.0010
 
 
 # ── Complexity thresholds ───────────────────────────────────────────
@@ -107,9 +201,9 @@ class AnalyzerWeights:
 class ComplexityThresholds:
     """Score boundaries for complexity classification."""
 
-    simple_max: float = 0.25
-    moderate_max: float = 0.55
-    complex_max: float = 0.80
+    simple_max: float = 0.125
+    moderate_max: float = 0.200
+    complex_max: float = 0.350
     reasoning_marker_count: int = 2  # Auto-promote to reasoning if >= N markers
 
 
@@ -119,9 +213,18 @@ from bedrock_smart_router.utils import estimate_tokens as _estimate_tokens
 
 
 def _extract_text(messages: list[dict[str, Any]]) -> str:
-    """Extract all text content from Bedrock Converse-format messages."""
+    """Extract all text content from Bedrock Converse-format messages.
+
+    Handles both message format (``[{"role": "user", "content": [{"text": "..."}]}]``)
+    and system prompt format (``[{"text": "..."}]``).
+    """
     parts: list[str] = []
     for msg in messages:
+        # System prompt format: [{"text": "..."}]
+        if "text" in msg and "content" not in msg:
+            parts.append(msg["text"])
+            continue
+        # Message format: [{"role": "...", "content": [{"text": "..."}]}]
         content = msg.get("content", [])
         if isinstance(content, str):
             parts.append(content)
@@ -140,7 +243,7 @@ def _count_matches(text_lower: str, keywords: set[str]) -> int:
 # ── Main analyzer ───────────────────────────────────────────────────
 
 class RequestAnalyzer:
-    """Classifies requests using 12 local scoring dimensions.
+    """Classifies requests using 15 local scoring dimensions.
 
     No API calls — runs in sub-millisecond time.
     """
@@ -175,6 +278,7 @@ class RequestAnalyzer:
             w.technical_depth, w.simple_indicators, w.multi_step,
             w.tool_use, w.document_analysis, w.conversation_depth,
             w.aws_specificity, w.math_logical, w.creative_open,
+            w.output_format, w.constraint_density, w.context_ratio,
         ]
         composite = sum(s * wt for s, wt in zip(scores, weight_list))
 
@@ -250,67 +354,127 @@ class RequestAnalyzer:
         messages: list[dict[str, Any]],
         tool_config: dict[str, Any] | None,
     ) -> list[float]:
-        """Return a list of 12 dimension scores in [0, 1]."""
+        """Return a list of 15 dimension scores in [0, 1].
+
+        Dimensions are calibrated to produce well-separated distributions
+        across simple/medium/complex prompts.
+        """
         text_len = len(text_lower)
 
-        # 1. Token count
-        token_score = min(1.0, text_len / 20_000)
+        # Also get the original (non-lowered) text for structural patterns
+        text_original = _extract_text(messages)
 
-        # 2. Code presence
+        # 1. Text length — log-scaled, strongest separation signal
+        if text_len <= 20:
+            token_score = 0.0
+        else:
+            token_score = min(1.0, max(0.0,
+                (math.log(text_len) - math.log(20)) / (math.log(3000) - math.log(20))
+            ))
+
+        # 2. Code presence — aggressive scaling
         code_hits = _count_matches(text_lower, CODE_MARKERS)
         lang_hits = _count_matches(text_lower, CODE_LANG_KEYWORDS)
-        code_score = min(1.0, (code_hits * 0.2 + lang_hits * 0.15))
+        code_score = min(1.0, (code_hits + lang_hits) * 0.35)
 
         # 3. Reasoning markers
         reasoning_hits = _count_matches(text_lower, REASONING_MARKERS)
-        reasoning_score = min(1.0, reasoning_hits * 0.25)
+        reasoning_score = min(1.0, reasoning_hits * 0.35)
 
-        # 4. Technical depth
-        tech_density = (code_hits + lang_hits + reasoning_hits) / max(1, text_len / 500)
-        tech_score = min(1.0, tech_density * 0.5)
+        # 4. Technical keyword density (hits per 200 chars)
+        total_tech = code_hits + lang_hits + reasoning_hits
+        if text_len > 0:
+            density = total_tech / max(1, text_len / 200)
+            tech_score = min(1.0, density * 0.5)
+        else:
+            tech_score = 0.0
 
-        # 5. Simple indicators (inverted — more simple = lower complexity)
+        # 5. Simple indicators — properly inverted
         simple_hits = _count_matches(text_lower, SIMPLE_INDICATORS)
-        simple_score = max(0.0, 1.0 - simple_hits * 0.2)
+        if text_len < 100 and simple_hits >= 1:
+            simple_score = 0.0
+        elif simple_hits >= 2:
+            simple_score = 0.05
+        elif simple_hits == 1:
+            simple_score = 0.2
+        else:
+            simple_score = 0.5
 
-        # 6. Multi-step patterns
-        multi_hits = _count_matches(text_lower, MULTI_STEP_PATTERNS)
-        multi_score = min(1.0, multi_hits * 0.2)
+        # 6. Structural complexity (tables, CSV, code blocks, paragraphs)
+        struct_signals = 0
+        if _TABLE_PATTERN.search(text_original):
+            struct_signals += 2
+        if _CSV_DATA.search(text_original):
+            struct_signals += 2
+        num_paragraphs = len(_PARAGRAPH_BREAK.findall(text_original))
+        if num_paragraphs >= 3:
+            struct_signals += 1
+        if num_paragraphs >= 6:
+            struct_signals += 1
+        numbered = len(_NUMBERED_LIST.findall(text_original))
+        if numbered >= 3:
+            struct_signals += 1
+        if _CODE_BLOCK.search(text_original):
+            struct_signals += 2
+        multi_score = min(1.0, struct_signals * 0.2)
 
         # 7. Tool use signals
         tool_hits = _count_matches(text_lower, TOOL_USE_SIGNALS)
-        tool_score = min(1.0, tool_hits * 0.25)
+        tool_score = min(1.0, tool_hits * 0.4)
         if tool_config:
-            tool_score = max(tool_score, 0.5)
+            tool_score = max(tool_score, 0.6)
 
-        # 8. Document analysis
-        doc_hits = _count_matches(text_lower, DOCUMENT_SIGNALS)
-        doc_score = min(1.0, doc_hits * 0.2)
-        # Boost dimension score when actual multimodal content is present
-        payload_bytes = self._multimodal_payload_bytes(messages)
-        if payload_bytes > 0:
-            doc_score = min(1.0, doc_score + 0.3)
+        # 8. Domain specificity (AWS + math + data analysis)
+        aws_hits = _count_matches(text_lower, AWS_SIGNALS)
+        math_hits = _count_matches(text_lower, MATH_SIGNALS)
+        data_hits = _count_matches(text_lower, DATA_ANALYSIS_SIGNALS)
+        doc_score = min(1.0, (aws_hits + math_hits + data_hits) * 0.25)
 
         # 9. Conversation depth
         turn_count = len(messages)
-        conv_score = min(1.0, turn_count / 10)
+        conv_score = min(1.0, (turn_count - 1) / 6) if turn_count > 1 else 0.0
 
-        # 10. AWS specificity
-        aws_hits = _count_matches(text_lower, AWS_SIGNALS)
-        aws_score = min(1.0, aws_hits * 0.15)
+        # 10. Multi-step patterns
+        multi_hits = _count_matches(text_lower, MULTI_STEP_PATTERNS)
+        aws_score = min(1.0, multi_hits * 0.25)
 
-        # 11. Math / logical
-        math_hits = _count_matches(text_lower, MATH_SIGNALS)
-        math_score = min(1.0, math_hits * 0.25)
+        # 11. Question complexity
+        complex_q_hits = _count_matches(text_lower, COMPLEX_QUESTION_PATTERNS)
+        simple_q_hits = _count_matches(text_lower, SIMPLE_QUESTION_PATTERNS)
+        if complex_q_hits > 0 and simple_q_hits == 0:
+            math_score = min(1.0, complex_q_hits * 0.4)
+        elif simple_q_hits > 0 and complex_q_hits == 0:
+            math_score = 0.0
+        else:
+            math_score = min(1.0, max(0, complex_q_hits - simple_q_hits) * 0.3)
 
         # 12. Creative / open-ended
         creative_hits = _count_matches(text_lower, CREATIVE_SIGNALS)
-        creative_score = min(1.0, creative_hits * 0.25)
+        creative_score = min(1.0, creative_hits * 0.35)
+
+        # 13. Output format constraints — structured output requests
+        format_hits = _count_matches(text_lower, OUTPUT_FORMAT_SIGNALS)
+        format_score = min(1.0, format_hits * 0.4)
+
+        # 14. Constraint density — more constraints = harder task
+        constraint_hits = _count_matches(text_lower, CONSTRAINT_SIGNALS)
+        constraint_score = min(1.0, constraint_hits * 0.2)
+
+        # 15. Context ratio — references to external context vs instruction
+        #     High context references + short instruction = extraction task (medium)
+        #     High context references + long instruction = complex analysis
+        context_hits = _count_matches(text_lower, CONTEXT_REFERENCE_SIGNALS)
+        if context_hits > 0:
+            # Scale by both presence and text length
+            context_score = min(1.0, context_hits * 0.2 + (0.2 if text_len > 500 else 0.0))
+        else:
+            context_score = 0.0
 
         return [
             token_score, code_score, reasoning_score, tech_score,
             simple_score, multi_score, tool_score, doc_score,
             conv_score, aws_score, math_score, creative_score,
+            format_score, constraint_score, context_score,
         ]
 
     def _classify(self, score: float, reasoning_count: int) -> Complexity:

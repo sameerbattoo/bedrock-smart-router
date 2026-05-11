@@ -22,7 +22,7 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - `preferred_model` override — pin a specific model while keeping fallbacks and reliability
 
 **Request Intelligence**
-- 12-dimension zero-API-call complexity classifier (sub-millisecond overhead)
+- 15-dimension zero-API-call complexity classifier (sub-millisecond overhead)
 - Automatic complexity detection: simple, moderate, complex, reasoning
 - Vision, tool use, long context, and code task detection
 - Context window pre-validation before sending to Bedrock
@@ -772,7 +772,7 @@ SmartRouterModel (implements strands.models.Model)
   │ Builds RoutingConfig from model config (preset, strategy, cost limits)
   ▼
 BedrockRouter
-  │ Analyzes complexity (12-dimension classifier)
+  │ Analyzes complexity (15-dimension classifier)
   │ Selects optimal model via strategy engine
   │ Applies CRIS profile, inference tier, guardrails
   │ Invokes Bedrock converse_stream with fallback chain
@@ -1038,7 +1038,7 @@ See [`examples/20_semantic_cache.py`](examples/20_semantic_cache.py), [`examples
 Request arrives
   |
   +-- Step 1:  Pre-route guardrail check (ApplyGuardrail INPUT)
-  +-- Step 2:  Request analysis (12-dimension complexity classifier)
+  +-- Step 2:  Request analysis (15-dimension complexity classifier)
   +-- Step 3:  Filter eligible models (tier, capabilities, family, exclusions)
   +-- Step 4:  Filter by context window
   +-- Step 5:  Filter by circuit breaker state
@@ -1125,30 +1125,33 @@ No cold-start problem — the heuristics are reasonable from day 1. The router g
 
 ### Request Complexity Classification
 
-Before strategy scoring, the router classifies each request across 12 dimensions to determine the minimum model tier:
+Before strategy scoring, the router classifies each request across 15 dimensions to determine the minimum model tier:
 
 | Dimension | Weight | What it detects |
 |---|---|---|
-| Token count | 0.07 | Longer input = more complex |
-| Code presence | 0.12 | `` ``` ``, `def`, `import`, language names |
-| Reasoning markers | 0.14 | "analyze", "step by step", "trade-off", "prove" |
-| Technical depth | 0.10 | Keyword density per 500 chars |
-| Simple indicators | 0.05 | "hello", "what is", "translate" (inverted) |
-| Multi-step patterns | 0.08 | "first", "then", "step 1" |
-| Tool use signals | 0.09 | "function call", "json schema", tool_config present |
-| Document analysis | 0.08 | "document", "pdf", "summarize the" |
-| Conversation depth | 0.06 | Number of messages / 10 |
-| AWS specificity | 0.06 | "s3", "ec2", "lambda", "cloudformation" |
-| Math/logical | 0.08 | "equation", "calculate", "proof", "algorithm" |
-| Creative/open-ended | 0.07 | "write a story", "brainstorm", "imagine" |
+| Text length | 0.378 | Log-scaled text length (strongest signal) |
+| Code presence | 0.057 | `` ``` ``, `def`, `import`, language names |
+| Reasoning markers | 0.081 | "analyze", "step by step", "trade-off", "prove" |
+| Technical depth | 0.049 | Keyword density per 200 chars |
+| Simple indicators | 0.007 | "hello", "what is", "translate" (inverted — presence lowers score) |
+| Structural complexity | 0.001 | Tables, CSV data, code blocks, multi-paragraph |
+| Tool use signals | 0.042 | "function call", "json schema", tool_config present |
+| Domain specificity | 0.127 | AWS services, math, data analysis keywords |
+| Conversation depth | 0.010 | Multi-turn message count |
+| Multi-step patterns | 0.026 | "first", "then", "step 1" |
+| Question complexity | 0.026 | "how would you design" vs "what is" |
+| Creative/open-ended | 0.096 | "write a story", "brainstorm", "imagine" |
+| Output format | 0.099 | "return as json", "format as table", structured output |
+| Constraint density | 0.001 | "must be", "at least", "without using" |
+| Context ratio | 0.001 | "based on the following", "the above document" |
 
 The weighted composite maps to a complexity level, which sets the minimum model tier:
 
 ```
-score < 0.25                          → SIMPLE    → min tier: MICRO
-0.25 ≤ score < 0.55                   → MODERATE  → min tier: LITE
-0.55 ≤ score < 0.80                   → COMPLEX   → min tier: MID
-score ≥ 0.80 OR 2+ reasoning markers  → REASONING → min tier: REASONING
+score < 0.125                         → SIMPLE    → min tier: MICRO
+0.125 ≤ score < 0.200                 → MODERATE  → min tier: LITE
+0.200 ≤ score < 0.350                 → COMPLEX   → min tier: MID
+score ≥ 0.350 OR 2+ reasoning markers → REASONING → min tier: REASONING
 ```
 
 Models below the minimum tier are excluded before strategy scoring begins. This ensures simple questions never go to expensive models, and complex questions never go to models that can't handle them.
@@ -1438,7 +1441,7 @@ bedrock_smart_router/
   data/models.json             # JSON model catalog (25 models, pricing, capabilities)
   # Phase 1: Core
   model_registry.py            # JSON-driven model catalog with filtering and overlays
-  request_analyzer.py          # 12-dimension zero-API-call complexity classifier
+  request_analyzer.py          # 15-dimension zero-API-call complexity classifier
   strategy_engine.py           # Cost, latency, balanced strategies + plugin base
   context_validator.py         # Pre-call context window validation
   fallback_handler.py          # Multi-level fallback chain

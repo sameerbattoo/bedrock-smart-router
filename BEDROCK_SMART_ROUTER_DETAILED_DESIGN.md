@@ -500,7 +500,7 @@ class RequestAnalysis:
     content_sensitivity: str     # "low" | "medium" | "high" (for guardrails routing)
 ```
 
-**Scoring dimensions (12 dimensions, extended from LiteLLM's 7):**
+**Scoring dimensions (15 dimensions, extended from LiteLLM's 7):**
 
 | # | Dimension | Weight | Detection Method |
 |---|---|---|---|
@@ -1429,7 +1429,7 @@ metrics_store:
 | Component | Description | Priority |
 |---|---|---|
 | `model_registry.py` | Model catalog with capabilities, pricing, tier mapping | P0 |
-| `request_analyzer.py` | Zero-API-call complexity classifier (12 dimensions) | P0 |
+| `request_analyzer.py` | Zero-API-call complexity classifier (15 dimensions) | P0 |
 | `strategy_engine.py` | Cost-optimized, latency-optimized, balanced strategies | P0 |
 | `context_validator.py` | Pre-call context window validation | P0 |
 | `fallback_handler.py` | Multi-level fallback chain | P0 |
@@ -1509,7 +1509,7 @@ metrics_store:
 | **Zero-dependency core** | No (Redis) | N/A | No | N/A | No (GPU) | N/A | **Yes (boto3 only)** |
 | **Lambda-friendly** | Partial | No | No | No | No | Yes | **Yes** |
 | Cross-family routing | Generic | Generic | Generic | Yes | Yes | No (single family) | **Yes (Bedrock-aware)** |
-| Complexity classification | 7 dimensions | No | No | Yes | Yes (GPU model) | Yes (ML model) | **12 dimensions, zero-API** |
+| Complexity classification | 7 dimensions | No | No | Yes | Yes (GPU model) | Yes (ML model) | **15 dimensions, zero-API** |
 | CRIS profile awareness | No | No | No | No | No | Yes | **Yes** |
 | Inference tier routing | No | No | No | No | No | Manual | **Auto (Std/Priority/Flex)** |
 | Prompt cache-aware routing | No | No | No | No | No | No | **Yes** |

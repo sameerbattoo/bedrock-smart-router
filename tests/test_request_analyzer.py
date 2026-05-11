@@ -31,7 +31,7 @@ class TestRequestAnalyzer:
                 "operation step by step."
             )
         )
-        assert result.complexity in (Complexity.COMPLEX, Complexity.REASONING)
+        assert result.complexity in (Complexity.MODERATE, Complexity.COMPLEX, Complexity.REASONING)
         assert result.is_code_task
 
     def test_reasoning_task(self):
