@@ -1,0 +1,1052 @@
+[
+  {
+    "id": "csqa_000",
+    "question": "A revolving door is convenient for two direction travel, but it also serves as a security measure at a what?\n  A) bank\n  B) library\n  C) department store\n  D) mall\n  E) new york",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_001",
+    "question": "What do people aim to do at work?\n  A) complete job\n  B) learn from each other\n  C) kill animals\n  D) wear hats\n  E) talk to each other",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_002",
+    "question": "Where would you find magazines along side many other printed works?\n  A) doctor\n  B) bookstore\n  C) market\n  D) train station\n  E) mortuary",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_003",
+    "question": "Where are  you likely to find a hamburger?\n  A) fast food restaurant\n  B) pizza\n  C) ground up dead cows\n  D) mouth\n  E) cow carcus",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_004",
+    "question": "James was looking for a good place to buy farmland.  Where might he look?\n  A) midwest\n  B) countryside\n  C) estate\n  D) farming areas\n  E) illinois",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_005",
+    "question": "What island country is ferret popular?\n  A) own home\n  B) north carolina\n  C) great britain\n  D) hutch\n  E) outdoors",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_006",
+    "question": "In what Spanish speaking North American country can you get a great cup of coffee?\n  A) mildred's coffee shop\n  B) mexico\n  C) diner\n  D) kitchen\n  E) canteen",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_007",
+    "question": "What do animals do when an enemy is approaching?\n  A) feel pleasure\n  B) procreate\n  C) pass water\n  D) listen to each other\n  E) sing",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_008",
+    "question": "Reading newspaper one of many ways to practice your what?\n  A) literacy\n  B) knowing how to read\n  C) money\n  D) buying\n  E) money bank",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_009",
+    "question": "What do people typically do while playing guitar?\n  A) cry\n  B) hear sounds\n  C) singing\n  D) arthritis\n  E) making music",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_010",
+    "question": "What would vinyl be an odd thing to replace?\n  A) pants\n  B) record albums\n  C) record store\n  D) cheese\n  E) wallpaper",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_011",
+    "question": "If you want harmony, what is something you should try to do with the world?\n  A) take time\n  B) make noise\n  C) make war\n  D) make peace\n  E) make haste",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_012",
+    "question": "Where does a heifer's master live?\n  A) farm house\n  B) barnyard\n  C) stockyard\n  D) slaughter house\n  E) eat cake",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_013",
+    "question": "Aside from water and nourishment what does your dog need?\n  A) bone\n  B) charm\n  C) petted\n  D) lots of attention\n  E) walked",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_014",
+    "question": "Janet was watching the film because she liked what?\n  A) erection\n  B) laughter\n  C) being entertained\n  D) fear\n  E) bordem",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_015",
+    "question": "What are you waiting alongside with when you're in a reception area?\n  A) motel\n  B) chair\n  C) hospital\n  D) people\n  E) hotels",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_016",
+    "question": "When drinking booze what can you do to stay busy?\n  A) reach tentative agreement\n  B) stay in bed\n  C) stop bicycle\n  D) examine thing\n  E) suicide",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_017",
+    "question": "A fencing thrust with a sharp sword towards a person would result in what?\n  A) injury\n  B) small cuts\n  C) fever\n  D) competition\n  E) puncture wound",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_018",
+    "question": "Unlike a spider and his many sight seers, people only have what?\n  A) tongues\n  B) names\n  C) brains\n  D) feelings\n  E) two eyes",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_019",
+    "question": "Where do adults use glue sticks?\n  A) classroom\n  B) desk drawer\n  C) at school\n  D) office\n  E) kitchen drawer",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_020",
+    "question": "What could go on top of wood?\n  A) lumberyard\n  B) synagogue\n  C) floor\n  D) carpet\n  E) hardware store",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_021",
+    "question": "The artist was sitting quietly pondering, then suddenly he began to paint when what struck him?\n  A) sadness\n  B) anxiety\n  C) inspiration\n  D) discomfort\n  E) insights",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_022",
+    "question": "Though the thin film seemed fragile, for it's intended purpose it was actually nearly what?\n  A) indestructible\n  B) durable\n  C) undestroyable\n  D) indestructible\n  E) unbreakable",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_023",
+    "question": "Where could you find a toilet that only friends can use?\n  A) rest area\n  B) school\n  C) stadium\n  D) apartment\n  E) hospital",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_024",
+    "question": "What is someone who isn't clever, bright, or competent called?\n  A) clumsy\n  B) ineffectual\n  C) dull\n  D) clumsy\n  E) stupid",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_025",
+    "question": "When wildlife reproduce we often refer to what comes out as what?\n  A) raise children\n  B) have children\n  C) photo copy\n  D) offspring\n  E) accidently got pregnant somehow",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_026",
+    "question": "The weasel was becoming a problem, it kept getting into the chicken eggs kept in the what?\n  A) forrest\n  B) barn\n  C) public office\n  D) out of doors\n  E) freezer",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_027",
+    "question": "Blue read material outside of his comfort zone because he wanted to gain what?\n  A) new perspective\n  B) entertained\n  C) understanding\n  D) hunger\n  E) tired eyes",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_028",
+    "question": "After he got hired he hoped for success at his what?\n  A) vocation\n  B) new job\n  C) michigan\n  D) working hard\n  E) manual",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_029",
+    "question": "Committing perjury is a serious what?\n  A) indictment\n  B) crime\n  C) violence\n  D) lie\n  E) go to jail",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_030",
+    "question": "If you are prone to postpone work what will you have to do in order to finish on time?\n  A) eat\n  B) hasten\n  C) antedate\n  D) bring forward\n  E) advance",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_031",
+    "question": "James wanted to find an old underground map from the 50s.  Where might he look for one?\n  A) library\n  B) subway station\n  C) county engineer's office\n  D) super market\n  E) home",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_032",
+    "question": "Sean was in a rush to get home, but the light turned yellow and he was forced to do what?\n  A) take time\n  B) dawdle\n  C) go slowly\n  D) ocean\n  E) slow down",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_033",
+    "question": "Where would a person be doing when having to wait their turn?\n  A) have patience\n  B) get in line\n  C) sing\n  D) stand in line\n  E) turn left",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_034",
+    "question": "She was always helping at the senior center, it brought her what?\n  A) satisfaction\n  B) heart\n  C) feel better\n  D) pay\n  E) happiness",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_035",
+    "question": "The lock kept the steering wheel from moving, but the thief still took his chances and began to work on the what?\n  A) keep cloesd\n  B) train\n  C) ignition switch\n  D) drawer\n  E) firearm",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_036",
+    "question": "Who is a police officer likely to work for?\n  A) beat\n  B) direct traffic\n  C) city\n  D) street\n  E) president",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_037",
+    "question": "If you have leftover cake, where would you put it?\n  A) quandry\n  B) refrigerator\n  C) oven\n  D) night stand\n  E) bakery",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_038",
+    "question": "A human wants to submerge himself in water, what should he use?\n  A) whirlpool bath\n  B) coffee cup\n  C) cup\n  D) soft drink\n  E) puddle",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_039",
+    "question": "Where is a doormat likely to be in front of?\n  A) facade\n  B) front door\n  C) doorway\n  D) entrance porch\n  E) hallway",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_040",
+    "question": "Bob the lizard lives in a warm place with lots of water.  Where does he probably live?\n  A) rock\n  B) tropical rainforest\n  C) jazz club\n  D) new mexico\n  E) rocky places",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_041",
+    "question": "August needed  money because he was afraid that he'd be kicked out of his house.  What did he need money to do?\n  A) control people\n  B) pay bills\n  C) hurt people\n  D) buy food\n  E) get things",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_042",
+    "question": "He needed more information to fix it, so he consulted the what?\n  A) chickens\n  B) google\n  C) newspaper\n  D) online\n  E) manual",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_043",
+    "question": "Where can you put a picture frame when it's not hung vertically?\n  A) art show\n  B) wall\n  C) newspaper\n  D) car\n  E) table",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_044",
+    "question": "James knew that he shouldn't have been buying beer for minors.  He didn't even get paid for it.  Why was this bad?\n  A) lose money\n  B) fun\n  C) have no money\n  D) broken law\n  E) relaxation",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_045",
+    "question": "What is the result of applying for  job?\n  A) anxiety and fear\n  B) increased workload\n  C) praise\n  D) less sleep\n  E) being employed",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_046",
+    "question": "What must someone do before they shop?\n  A) get money\n  B) have money\n  C) bring cash\n  D) go to market\n  E) bring cash",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_047",
+    "question": "Because John was first violin, he had to bring something important to work ever day. What did he need to bring to work?\n  A) music store\n  B) obesity\n  C) symphony orchestra\n  D) ochestra\n  E) violin case",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_048",
+    "question": "What is a place that usually does not have an elevator and that sometimes has a telephone book?\n  A) at hotel\n  B) kitchen\n  C) library\n  D) telephone booth\n  E) house",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_049",
+    "question": "Who is likely to be excited about a crab?\n  A) fish market\n  B) pet shop\n  C) fishmongers\n  D) intertidal zone\n  E) obesity",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_050",
+    "question": "Where can a human find clothes that aren't pants?\n  A) pants shop\n  B) on planet earth\n  C) dress shop\n  D) school\n  E) train wreck",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_051",
+    "question": "If I was getting drunk, and people couldn't understand me, what might I be having?\n  A) a seizure\n  B) slurred speech\n  C) death\n  D) forgetfulness\n  E) pass out",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_052",
+    "question": "When a person is beginning work, what are they building?\n  A) time\n  B) accomplishing\n  C) working\n  D) momentum\n  E) tiredness",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_053",
+    "question": "A child wants to play, what would they likely want?\n  A) fall down\n  B) breathe\n  C) play tag\n  D) be dismembered by a chainsaw\n  E) become adult",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_054",
+    "question": "Talking to the same person about the same thing over and over again is something someone can what?\n  A) social life\n  B) friendship\n  C) eye contact\n  D) get tired of\n  E) learn lessons from",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_055",
+    "question": "The teacher doesn't tolerate noise during a test in their what?\n  A) movie theatre\n  B) bowling alley\n  C) factory\n  D) store\n  E) classroom",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_056",
+    "question": "The freeway had no traffic and few buildings, where is it?\n  A) california\n  B) countryside\n  C) big town\n  D) florida\n  E) america",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_057",
+    "question": "Where would you go if you wanted to have fun with a few people?\n  A) watching television\n  B) good\n  C) cinema\n  D) friend's house\n  E) fairgrounds",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_058",
+    "question": "If there is a place that is hot and arid, what could it be?\n  A) bland\n  B) lifeless\n  C) sandy\n  D) neutral\n  E) freezing",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_059",
+    "question": "What is likely to satisfy someone's curiosity?\n  A) hear news\n  B) read book\n  C) see favorite show\n  D) comedy show\n  E) go somewhere",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_060",
+    "question": "If you are in a bar in a glove shaped state where are you?\n  A) in my pocket\n  B) michigan\n  C) new york city\n  D) restaurant\n  E) public house",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_061",
+    "question": "Where would a computer user be using their own computer?\n  A) hell\n  B) school\n  C) indoors\n  D) internet cafe\n  E) house",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_062",
+    "question": "Crabs live in what sort of environment?\n  A) maritime\n  B) bodies of water\n  C) saltwater\n  D) galapagos\n  E) fish market",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_063",
+    "question": "Where can you find a snake in tall grass?\n  A) tree\n  B) in a jar\n  C) pet shops\n  D) feild\n  E) tropical forest",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_064",
+    "question": "What is a place that has a bench nestled in trees?\n  A) state park\n  B) bus stop\n  C) bus depot\n  D) statue\n  E) train station",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_065",
+    "question": "Where is a human likely to go as a result of being hungry?\n  A) eat in restaurant\n  B) make bread\n  C) have lunch\n  D) cook dinner\n  E) friends house",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_066",
+    "question": "He was beginning to regret taking the fight when he saw how what his opponent was?\n  A) fun\n  B) joy\n  C) satisfaction\n  D) confident\n  E) pride",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_067",
+    "question": "Where would you find a single shower curtain being used?\n  A) bathtub\n  B) washing area\n  C) hotel\n  D) shower stall\n  E) department store",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_068",
+    "question": "Where is a good idea but not required to have a fire extinguisher?\n  A) school bus\n  B) boat\n  C) house\n  D) hospital\n  E) school",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_069",
+    "question": "What continent has the most castles?\n  A) fairy tale\n  B) edinburgh\n  C) germany\n  D) europe\n  E) antarctica",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_070",
+    "question": "If you have to read a book that is very dry and long you may become what?\n  A) have time\n  B) boring\n  C) learn new\n  D) enjoyable\n  E) bored",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_071",
+    "question": "Sally used a clipboard to hold her papers while she read off names at the beginning of the day.  Where might she work?\n  A) desk\n  B) windows 95\n  C) office supply store\n  D) see work\n  E) school",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_072",
+    "question": "The kids didn't clean up after they had done what?\n  A) learn things\n  B) play games\n  C) disneyland\n  D) play with toys\n  E) talking",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_073",
+    "question": "Despite the name a pawn can be quite versatile, all the parts are important in a what?\n  A) chess game\n  B) scheme\n  C) chess set\n  D) checkers\n  E) north carolina",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_074",
+    "question": "What would not be true about a basketball if it had a hole in it but it did not lose its general shape?\n  A) punctured\n  B) popular in america\n  C) full of air\n  D) gone\n  E) round",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_075",
+    "question": "If you are awaking multiple times throughout the night because a lot is on your mind, what is a likely cause?\n  A) irritability\n  B) depression\n  C) getting out of bed\n  D) happiness\n  E) discomfort",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_076",
+    "question": "Where does a wild bird usually live?\n  A) cage\n  B) sky\n  C) countryside\n  D) desert\n  E) windowsill",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_077",
+    "question": "Where would you expect to find white mice?\n  A) bell cat\n  B) bush\n  C) attic\n  D) countryside\n  E) laboratory",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_078",
+    "question": "John felt that his actions were fate.   Harry said that he could have always made a different what?\n  A) free will\n  B) choice\n  C) will\n  D) alcohol\n  E) freedom",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_079",
+    "question": "What could committing murder prevent someone from doing?\n  A) go to jail\n  B) cry\n  C) find god\n  D) guilty conscience\n  E) problems",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_080",
+    "question": "George didn't have a car, but he still had his two feet.   His socks were smelly and his soles were blistered, but that didn't matter.  He could still do what?\n  A) michigan\n  B) walk\n  C) stay still\n  D) stink\n  E) hands",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_081",
+    "question": "A crane uses many a steel cable when working a what?\n  A) abaft\n  B) ship\n  C) winch\n  D) construction site\n  E) building",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_082",
+    "question": "What is the main purpose of farmers?\n  A) raise cattle\n  B) grow corn\n  C) farm land\n  D) drive tractors\n  E) supply food",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_083",
+    "question": "Where can I put this penny to save for later?\n  A) piggy bank\n  B) wallet\n  C) toy\n  D) ground\n  E) pocket",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_084",
+    "question": "Where would you put uncooked crab meat?\n  A) wharf\n  B) red lobster\n  C) tidepools\n  D) boss's office\n  E) stew pot",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_085",
+    "question": "The man had a fear of illness, so he never visited friends who were a what?\n  A) sick person\n  B) hospital\n  C) elderly person\n  D) graveyard\n  E) doctor's office",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_086",
+    "question": "Where would you put pans if you want to bring them with you?\n  A) cooking\n  B) cook food\n  C) kitchen\n  D) backpack\n  E) drawer",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_087",
+    "question": "If you're remembering something, it's because of your what of it to begin with?\n  A) knowledge\n  B) knowing\n  C) forgetful\n  D) pleasure\n  E) depression",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_088",
+    "question": "Which large land mass is home to the most monkeys?\n  A) amazon basin\n  B) friend's house\n  C) lift number 3\n  D) research laboratory\n  E) african continent",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_089",
+    "question": "Friday was James's 5th Anniversary.  They planned on going to bed early so that they could spend a long time doing what?\n  A) rest\n  B) insomnia\n  C) making love\n  D) sleeping in\n  E) texting",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_090",
+    "question": "The teens were trying to hide that they get drink, but when they walked in the door their what gave it away?\n  A) health\n  B) fall down\n  C) stagger\n  D) get arrested\n  E) vomit",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_091",
+    "question": "You'll find a landing at the top of what?\n  A) ocean\n  B) apartment building\n  C) stairwell\n  D) airport\n  E) room",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_092",
+    "question": "Anybody could be hired in the kitchen, what was needed of them?\n  A) forget\n  B) oil squeaky hinge\n  C) question authority\n  D) wash dishes\n  E) oik squeaky hinge",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_093",
+    "question": "Where can you find a number of wind instruments together in public?\n  A) music store\n  B) create music\n  C) zoo\n  D) music room\n  E) symphony",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_094",
+    "question": "A mountie got off at a subway stop.  What city might he be in?\n  A) urban area\n  B) metropolis\n  C) chicago\n  D) new york city\n  E) toronto",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_095",
+    "question": "What do you want someone to do when you illustrate point?\n  A) did not understand\n  B) accepting\n  C) make clear\n  D) understood\n  E) understanding",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_096",
+    "question": "Billy set aside a block of time for having fun after work. Why might he do this?\n  A) happiness\n  B) stress relief\n  C) pleasure\n  D) ocean\n  E) may laugh",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_097",
+    "question": "The man in the white suit was very lazy.  He did nothing useful.  Meanwhile, the ban in the blue had put in effort and was very what?\n  A) restless\n  B) active\n  C) lazybutt\n  D) productive\n  E) hard work",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_098",
+    "question": "What would you be unable to do if you have too much greed?\n  A) keep things\n  B) make friends\n  C) play poker\n  D) conquer opponent\n  E) lie",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_099",
+    "question": "It was a long trip from the farm, so he stayed in a hotel when he arrived at the what?\n  A) bed away from home\n  B) wwii bunker\n  C) resort\n  D) las vegas\n  E) city",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_100",
+    "question": "I did not need a servant.  I was not a what?\n  A) freedom\n  B) rich person\n  C) hired help\n  D) in charge\n  E) busy",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_101",
+    "question": "How would you get from one side of a canal to another?\n  A) michigan\n  B) amsterdam\n  C) venice\n  D) bridge\n  E) barges to travel on",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_102",
+    "question": "When learning about the world and different cultures, what is important if you are committed to eliminating preconceived notions\n  A) newness\n  B) loss of innocence\n  C) enlightenment\n  D) open mind\n  E) smartness",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_103",
+    "question": "An underrated thing about computers is how they manage workflow, at one time it was a big deal when they could first do what?\n  A) share files\n  B) do arithmetic\n  C) turn on\n  D) cost money\n  E) multitask",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_104",
+    "question": "Obstructing justice is sometimes an excuse used for police brutality which causes what in people?\n  A) committing perjury\n  B) prosecution\n  C) attack\n  D) getting hurt\n  E) riot",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_105",
+    "question": "While washing clothes they became what when caught on the sharp object?\n  A) damaged\n  B) wet clothes\n  C) wear out\n  D) torn\n  E) have fun",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_106",
+    "question": "Seafood restaurants are used to draw tourists where?\n  A) maine\n  B) shoe shop\n  C) city\n  D) boston\n  E) coastal cities",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_107",
+    "question": "James's nice asked him about her grandfather. She was interested in learning about what?\n  A) family tree\n  B) family reunion\n  C) babysitting\n  D) brother's house\n  E) heirlooms",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_108",
+    "question": "James looked up and saw the start twinkling in the black yonder.  He marveled the sheer number of them and the size of what?\n  A) universe\n  B) orbit\n  C) night sky\n  D) outer space\n  E) his wallet",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_109",
+    "question": "What would encourage someone to continue playing tennis?\n  A) becoming tired\n  B) tennis elbow\n  C) exercise\n  D) hunger\n  E) victory",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_110",
+    "question": "James found the sound relaxing.   It was so relaxing he almost did what despite his efforts?\n  A) deep breathing\n  B) worried\n  C) fall asleep\n  D) invigorating\n  E) feeling good",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_111",
+    "question": "What regions of a town would you have found a dime store?\n  A) commercial building\n  B) old movie\n  C) small neighborhood\n  D) past\n  E) mall",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_112",
+    "question": "Where might an unused chess set be stored?\n  A) toy store\n  B) michigan\n  C) living room\n  D) attic\n  E) cupboard",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_113",
+    "question": "james told his son to settle down and be careful.  There were many frogs mating in the area, and James didn't want his son to do what to them?\n  A) wander\n  B) migrate\n  C) scare\n  D) disturb\n  E) agitate",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_114",
+    "question": "A man wants air conditioning while we watches the game on Saturday, where will it likely be installed?\n  A) car\n  B) house\n  C) offices\n  D) park\n  E) movie theatre",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_115",
+    "question": "What could be playing a balailaika?\n  A) movie dr\n  B) orchestra\n  C) music store\n  D) cat\n  E) symphony",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_116",
+    "question": "Sailors drive many different types of boats, what type of boat involves their namesake.\n  A) coming home\n  B) row boat\n  C) board ship\n  D) inflatable raft\n  E) sail boat",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_117",
+    "question": "Where could a person avoid the rain?\n  A) bus stop\n  B) tunnel\n  C) synagogue\n  D) fairy tale\n  E) street corner",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_118",
+    "question": "Why would a person like to have a large house?\n  A) have choice\n  B) mentally challenged\n  C) own house\n  D) obesity\n  E) lots of space",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_119",
+    "question": "Where will a cheap book be found?\n  A) bookstore\n  B) classroom\n  C) discount store\n  D) school room\n  E) bedside table",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_120",
+    "question": "John and James are idiots. They bought two tickets to the Falcons vs the Jets even though neither wanted to see the what?\n  A) internet cafe\n  B) sporting event\n  C) pressing wrong buttons\n  D) obesity\n  E) hockey game",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_121",
+    "question": "James noticed that his penis was bigger. .  How might he act toward his plastic surgeon?\n  A) accidental\n  B) detestable\n  C) effusive\n  D) enabled\n  E) apathetic",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_122",
+    "question": "Who do professors work with?\n  A) methods of facts\n  B) teach courses\n  C) wear wrinkled tweed jackets\n  D) school students\n  E) state facts",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_123",
+    "question": "Colorful anemone look somewhat like what object you find on window sills?\n  A) intertidal zone\n  B) coral sea\n  C) under water\n  D) flower bed\n  E) florida keys",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_124",
+    "question": "From where do aliens arrive?\n  A) outer space\n  B) weekly world news\n  C) roswell\n  D) universe\n  E) mars",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_125",
+    "question": "The hikers stopped to have a drink, simply put they what?\n  A) had a party\n  B) were thirsty\n  C) refreshment\n  D) getting drunk\n  E) celebrating",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_126",
+    "question": "When you get up in the morning before you begin work you should do what?\n  A) apply for job\n  B) sleep\n  C) concentrate\n  D) shower\n  E) just do",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_127",
+    "question": "The kitten had nothing to dig it's claws into, so when it tried to stop it slid across what?\n  A) living room\n  B) floor\n  C) warm place\n  D) carpet\n  E) farmhouse",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_128",
+    "question": "If a person is trying to keep something in their hand what should they do?\n  A) complete collection\n  B) own house\n  C) procrastinate\n  D) explode\n  E) have to hold",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_129",
+    "question": "Where could you find hundreds of thousands of home?\n  A) field\n  B) neighborhood\n  C) star can\n  D) city or town\n  E) apartment building",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_130",
+    "question": "Playing baseball is a lot like any other sport, there is always a risk of what?\n  A) sore muscles\n  B) errors\n  C) happiness\n  D) injury\n  E) fun",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_131",
+    "question": "If I want to watch a movie without leaving my home what might I use?\n  A) drive in movie\n  B) drive in movie\n  C) television\n  D) video store\n  E) show",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_132",
+    "question": "The victim was to take stand today, they were going to do what?\n  A) testify\n  B) runaway\n  C) witness\n  D) tell truth\n  E) go home",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_133",
+    "question": "What does a successful dog grooming session likely to make a owner feel?\n  A) cleanliness\n  B) mistakes\n  C) growth\n  D) satisfaction\n  E) late",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_134",
+    "question": "The runner was in third place, but he pushed harder and thought he might be able to reach second.  What was beginning to do?\n  A) near finish line\n  B) finish\n  C) get tired\n  D) gain ground\n  E) trip over",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_135",
+    "question": "The tourist entered Mammoth cave, what state were they in?\n  A) west virginia\n  B) kentucky\n  C) rocky hills\n  D) scotland\n  E) canyon",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_136",
+    "question": "What does someone typically feel when applying for a job?\n  A) horror\n  B) anxiety and fear\n  C) rejection\n  D) increased workload\n  E) being employed",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_137",
+    "question": "He was on trial for obstructing justice, during which he made a questionable comment and was also found guilty of what?\n  A) prosecution\n  B) getting hurt\n  C) sweat\n  D) steam\n  E) committing perjury",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_138",
+    "question": "What kind of feelings does buying presents for others create?\n  A) tears\n  B) please\n  C) like\n  D) thank\n  E) make happy",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_139",
+    "question": "What green area is a marmot likely to be found in?\n  A) countryside\n  B) great plains\n  C) encyclopedia\n  D) jungle\n  E) north america",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_140",
+    "question": "Jan tested the current, and noticed that it was high.  He thought that the wires might have too much what?\n  A) later\n  B) updated\n  C) still\n  D) resistance\n  E) now",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_141",
+    "question": "What does a kindergarten teacher do before nap time?\n  A) lower expectations\n  B) encourage\n  C) fear\n  D) time test\n  E) tell story",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_142",
+    "question": "Sam was a stranger.  Even so, Mark treated him like what?\n  A) friend\n  B) family\n  C) known person\n  D) park\n  E) outsider",
+    "answer_key": "B",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_143",
+    "question": "Bob's only light source was a small bulb.  There were four walls, if there was a door he couldn't see it.  What was Bob in?\n  A) closed room\n  B) sky\n  C) dard\n  D) his grave\n  E) house",
+    "answer_key": "A",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_144",
+    "question": "James thought of criminal justice like a computer program.  It need to work right.   What ideas might James not like?\n  A) manual\n  B) process information\n  C) power down\n  D) control model\n  E) reason exists",
+    "answer_key": "D",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_145",
+    "question": "With the card slot lit up he knew how to get started finding his balance with what?\n  A) slot machine\n  B) ticket machine\n  C) bank machine\n  D) telephone\n  E) automated teller",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_146",
+    "question": "To play sports professionally you must do what very often?\n  A) wash your clothes\n  B) get in shape\n  C) practice\n  D) take off uniform\n  E) stretch",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_147",
+    "question": "Some people prefer releasing energy through work while others prefer to release it through what?\n  A) motion\n  B) stretch\n  C) exercise\n  D) movement\n  E) muscles",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_148",
+    "question": "What will a person going for a jog likely be wearing?\n  A) grope\n  B) acknowledgment\n  C) comfortable clothes\n  D) ipod\n  E) passionate kisses",
+    "answer_key": "C",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "csqa_149",
+    "question": "The child pretended he was reading newspaper, he couldn't actually do it without what?\n  A) patience\n  B) falling down\n  C) literacy\n  D) buying\n  E) knowing how to read",
+    "answer_key": "E",
+    "task": "commonsense_qa",
+    "difficulty": "medium"
+  }
+]

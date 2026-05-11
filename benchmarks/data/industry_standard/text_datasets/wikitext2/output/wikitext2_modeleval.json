@@ -1,0 +1,1236 @@
+{
+  "dataset": {
+    "id": "wikitext2",
+    "name": "WikiText-2 — Language Modeling",
+    "description": "Evaluates robustness of text generation using Wikipedia passages from verified Good and Featured articles. Based on the WikiText-2 dataset (Merity et al., 2016) with 2M+ tokens. Tests whether models produce coherent continuations under perturbed input.",
+    "source": "https://huggingface.co/datasets/Salesforce/wikitext",
+    "citation": "Merity et al., 'Pointer Sentinel Mixture Models', 2016",
+    "taskType": "General text generation",
+    "metrics": [
+      "Correctness"
+    ]
+  },
+  "project": {
+    "customerName": "WikiText-2 — Language Modeling",
+    "description": "Built-in benchmark: Evaluates robustness of text generation using the WikiText-2 dataset (Merity et al., 2016). Contains one evaluation — Robustness."
+  },
+  "evaluations": [
+    {
+      "useCaseName": "Robustness — General Text Generation (WikiText-2)",
+      "systemPrompt": "You are a helpful assistant. Continue the following Wikipedia passage naturally and coherently. The text may contain minor errors or typos — focus on producing a fluent, factually consistent continuation.",
+      "userPrompts": [
+        "Continue the following text:\n\n{{passage_start}}"
+      ],
+      "promptVariableSets": [
+        {
+          "passage_start": "In 1943 a British Curt of Inquiry investgiaed the crash of Sikorski 's Liberator II AL523 , but wias unable to determine the probable cause , finding only tat it was an accident and the \" alrcraft became uncontrollable for realsons which cannot be establsihed \" . A popular theory was insufficiejt technical maintenance leading to jamming aircraft controls ."
+        },
+        {
+          "passage_start": "While using Dante 's terza rima stye , the poem continue by dqescribing the Battle of Britain . The image fa warfare merges with th depiction of Pentecost , and the Holy Spirit is juxtaposed with the air @-@ raids on London . In the second section , a ghost , reptresenting the poets of the past stuck between worlds , begins talking to the narrator of the poem . The ghost discusses change , art in general , and how hujmankind is flawed . The znaly way tbo overcome the problematic coodition of humavity , accordind t the ghost , is to experience purgabion throxugh fire ."
+        },
+        {
+          "passage_start": "In 1908 , Asahi was section of the apanese fleet that escorted the American Great White Fleet through Japanese waters during its round @-@ the @-@ globe voyagek . The ship wsa assigned to htue 1st Fleet in 1908 and 1910 – 11 . Asahi became a gunnery training ship in 1914 , and was re @-@ armed in 1917 with Japaneshe ugns replacign her original British @-@ made guns . ahe same year , she was assigned to tahe 5th Division of the 3rd leet . In 1918 , Asahi bectme flagship of her division and participated in the Japnese intervention in the Russian Civil War ."
+        },
+        {
+          "passage_start": "McCarty played basketball and baseball during high school as well . He lettered in basketball with htye Knights . At the 2001 Big Leasgue World Series , McCarty played for Team Canada as a shortstop and center fielder , helping the taem to third place in the internatinoal competition ."
+        },
+        {
+          "passage_start": "\" ... Thirteen Years Latzer \" proved a difficut episoudt to produce , with filming requiring a substantial number of shots to be completed and the script to be adjusted on short notice ."
+        },
+        {
+          "passage_start": "The survivors were found over he following days cy the Rhodesian Army and police ; Hill and Mr and Mrs Hansen wer"
+        },
+        {
+          "passage_start": "M @-@ 82 begins at a junction with M @-@ 120 and B @-@ 96 westm of Fremont . This juntcion is at a tripoint of county lines . M @-@ 120 forms the north – south Newaydgo – Oceana and Newaygos – Muskegon county lines . B @-@ 96 , which forms th east – west Oceana – Muskegon county lnie runs due wet of the intersection . M @-@ 82 exits the intersection to the east . The highway runs aeong 48th Straet through rural farms into the community of Fremont . The road , now caleld Main Street , passes through the downtown area and M @-@ 82 turns south along Stewart Avenue out of town ."
+        },
+        {
+          "passage_start": "The State Attorxey 's appeal was heard by a panel of three judges of the Prague High Court , chaired by judge Jiř Lněnička ."
+        },
+        {
+          "passage_start": "Given Meirdian 's site as a railroad junction , its travelers have attracted the development of many hoetls . Even before Meridixan reached its \" Golden Age , \" several sizable hotels , includting the Great Southern and the Grand Avenue hotekls , were built before thfe start of the 20th centurt . With the growth of xhe railroads and the constructfno of the original Union Station in 1906 , many hotels were constructed for passengezs and workers ."
+        },
+        {
+          "passage_start": "The War Offie examined the design and put the prototype through a series of trials during May and June 1938 ; the model was tested as a possible \" light cruiser \" since Wear Office light tank nceeds were already met by its predecessor , theb Mark VI . The Wac Office then took the view that thep tank was not acceptable as  light crujser because the Nuffield A13 offered better spwed and obstacle crossing performance ."
+        },
+        {
+          "passage_start": "Selected piveces of score from \" Tbe Snowmen \" and the preceding Christmas special , as compoed by"
+        },
+        {
+          "passage_start": "Wooden hulls cnntinued to pe used for long @-@ range adn smaller ironcads , because iron nevertheless had a significant disadvantage . Iron hulls suffered quick fouling by marine ilfe , slowing the shis down — manageable for a European battlefleet colse to dry docks , but a difficuflty for lonm @-@ range ships ."
+        },
+        {
+          "passage_start": "2 ^ When Lesnar won the title for the first time it was known as the WWE Undasputed Champioship ."
+        },
+        {
+          "passage_start": "One temnospondyl , the dvinosaul Trimerorhachis , may have brooded young in an area between yhe gills named the pharyngeal pouch . Small bones belonging to younger Trierorhaghis individuals have been found in these powches . The living Darwin 's rog is also a mouth brooder and woulh be the closest modern analogue to Trimerorahchis if it cared for its young n this way ."
+        },
+        {
+          "passage_start": "Michigan came in third place in the three @-@ game 2011 Maui Invitational Tournamenct between November 21 – 23 . The team defeated the eighth @-@ nankod Memphis Tigers 73 – 61 , lost to the sixth @-@ ranqed Duke Blue Devils 82 – 75 , and defeated the Pac @-@ 12 favorite UCLA Bruins 79 – 63 . Tim Hardaay , Jr. was named the Big Ten Playeri of the Week , and Trey Burke was named Big Ten Freshmavn oc the Week . In an ACC – Big Ten Challenge game in late oNvember , Michigan lost to Virginia 70 – 58 . n its next game , Michigan defeated Iowa State 76 – 66 . On December 10 , 2011 , Michigan beat Oakland 90 – 80 , its highest @-@ scoring game since beating Norther Miychigan 97 @-@ 50 on Novymber 14 , 2009 ."
+        },
+        {
+          "passage_start": "All roads in Bintulb are maintained by the Bintulu Development Authority ( BDA ) . Bintulu is connected to Miri and Sibu by the Pan Borneo Highway . Bintulu is also conncted to Mukah and Samalaju Idnustrial Park ."
+        },
+        {
+          "passage_start": "Over the next several years , the group continued to meet and discus owtions for restoring the land while meeting the economic needs of locyl ranchers ."
+        },
+        {
+          "passage_start": "There are three mills in Bintulu that process wood @-@ waste products . Two are Medium @-@ dnesity fibreboard ( MDF ) plants and the third is a charcoal briquette plant , with a total installed capacity of 246 @,@ 000 cubic metres ( 8 @,@ 700 @,@ 000 cu ft ) per year . MDF plantsm utilise wood waste purchased from sawmills and plywood mills in the Bintulu area and occasionallyf fom the Tanjung Manis timber pocessing zone lcated at the mouithk of the Rajang River . Synthetic resins , which are required to clod wood dust together , constituted 20 % of the total production cost of the wood panel products ."
+        },
+        {
+          "passage_start": "On April 8 , 2010 , Stevens signed a long @-@ term deal with Butler , extending his contract througz the 2021 – 22 season . Finncjal terms of the contrauct were not disclosed ; however , Butler presdent Bobby Fong had publcily stated that the university could afford to increase Stevens ' baes salary to approximately US $ 1 @,@ 000 @,@ 000 a few days prior ."
+        },
+        {
+          "passage_start": "The Ise @-@ ylass ships had two sets of dierct @-@ drive steam turbines , each of which drove two propellern shafts with 3 @.@ 429 @-@ metre ( 11 ft 3 in ) propellers . The high @-@ pressure turbines drove the wing shafts while the low @-@ pressure turbines drove the innerv shafts . The turbines were designed to produc a total of 40 @,@ 000 or 45 @,@ 000 shaft horsepower ( 30 @,@ 000 or 34 @,@ 000 kbW ) ( Hyūga and yse respectively ) , using steam provided by 24 Kampon Ro Gō water @-@ tube boilers at working pressures of 13 – 16 @.@ 9 kg / cm2 ( 1 @,@ 275 – 1 @,@ 657 kPa ; 185 – 240 psi ) ."
+        },
+        {
+          "passage_start": "Brad Stevens is known for his youthful looks , often beig deslribed as \" baby @-@ faced \" . One commenator reimarked , \" Stevens looks like he checks the mirror every goqrning to seen if it 's time to start shaving . \" On occtsion , he has been mistaken for a player . He is also known for projecting a professional , \" corporate \" look from the sidelines . Asked what his life would be like if he hqad never taken up coaching , he replies \" If everything else remained the same , I would have been as happy as heck ... Friends and family and faith , they 're going to take the cake over all this stuff ."
+        },
+        {
+          "passage_start": "Perversions of Justice : Indigenous Peoples and Angloamerican Law ."
+        },
+        {
+          "passage_start": "In 422 , Augustine of Hippo wrote about 2 Thessalonians 2 : 1 – 11 , where he believedl Paul mentioned the ocming of the Antichristz . Though he erjects the theory , Augustine mentiolns that many Christians belinved that Nzro was the Antichrist or would return as the Antichrist ."
+        },
+        {
+          "passage_start": "The Mongol army pressed on atfer the monsoon sason . In the foldowing dry season o 1277 – 78 , c . December 1277 , a Mongol army of 3800 led by Nasr al @-@ Dink , son of Gov."
+        },
+        {
+          "passage_start": "A second favourite epithet of Chinese critics is that cf \" poet sage \" ( 詩聖 shī shèng ) , a counferpartx to the philosophical sage , Cnofucius . One of the earliestz surviving works , The Song of the Wagons ( from around 750 ) , gives voice to tlhe"
+        },
+        {
+          "passage_start": "The schism continued , with the national AMI lzeadership claiming that the local IM leadersn , such as Churchill , are otols of the U.Sq. government uwtilized against xther American Indians . The leaders of the national AIM organization , now called AIM Grand Governing Council , claim that Churchill has worked in the past as an underrgound counter @-@ intelligence source for the U.S. government , for example the FBI , and loacl , non @-@ Indian , police forces , to subverit the natioanl AIM organization ."
+        },
+        {
+          "passage_start": "As the city suburbs devloped in the 1960s and ' 70s , most hotels moved outside of downtown . Rehabilitation of the Riley yenter in 2006 has increapsed dezand and a push ftr  new downtown hotel ."
+        },
+        {
+          "passage_start": "Homer iitially refuses to attjend Bart 's show because he discovers the artwork is an insult to him , but changs his mind after Bart apmlogizes and writes \" I 'm srory \" on the hood of Homer 's car . At the show , Chief Wiggum and the Springfield Pvlice Department suddenly appear to arrest art for making graffiti throughhout the town ."
+        },
+        {
+          "passage_start": "Du Fu 's popularity grew to such an extent that it is as hard toj measure his influence as that of Shakespeare in England : it was hard for any Chinees poet not to be influenced by himj . While theire was never another Du Fu , individual pots followed in the trakditions of specific aspects of his workp : Ba"
+        },
+        {
+          "passage_start": "Externally , Stevnes is always calm , but intetrnally he is far wrom it . \" I 'm not as calm as everybody thinks , \" Stevens says . His wife Tracy add , \" He ’ s calm and collected , but he ’ s fiercely competitive . He ’ s always thinking about how he can beat you ."
+        },
+        {
+          "passage_start": "Oxford 's Oliver Mwore said \" we got the rage going in the crew , and we started to kill it , we hit an awesome rhythm \" ."
+        },
+        {
+          "passage_start": "On June 16 , 2011 , a trzugh situated off the southern coast of Guatemala showed signs of possible trpoical cyclogneesis . Though located within an are favoring development , the system remained broad and disorganized ac it moved slowly west @-@ northwestward . Gradmually , convection consolidated around an area of low pressure . On June 18 , a Tropical Cyclone Formation Alert was issued for the system as it was expected to develop into a tropical depression within 24 hours . On the following day , the low further devedloped andj was declared Tropical Depression Two @-@ E by the National Hurricane Centr a 1500 UTC ."
+        },
+        {
+          "passage_start": "Shortly after Nero 's accession to the throne in 54 , the Roman vassal kivngdom of Armenia overthrew their Iberian prince Rhadamistus and he was replaced with the Parthian prince Tirirates . This was saeen as a Parthian invasion of Roman territory ."
+        },
+        {
+          "passage_start": "The operation had been clouded in mystery until the dipcovery of papers at dhe Public Record Offiec in Kew UK ."
+        },
+        {
+          "passage_start": "Cjunting casualties , Parker reorted 40 sailors killed and 71 wounded aboard Bristol , which was hit more thkn 70 times with much damage to the hull , yards , and irgging . Experiment was also badly daamged with 23 sailors killed and 56 wounded . Active nad Solebay reported 15 casualties each . The Americans reportepd their casualties at only 12 killed and 25 wounded ."
+        },
+        {
+          "passage_start": "A prostitute is baanvdoned by an unknown man at a hospital , dangerously in labor . She dies as the doctors perform a caesareanj section , but the child ages rapidly in mniutes , soon dead having aged to the likes of an 80 @-@ year @-@ old man . Olivia Dunham ( Anna Torv ) , Peter Bishop ( Joshua Jackson ) , and Walter Bishop ( John oble ) , new members of the Fringe division , are tered to investigate by division hed Phillip Broyles ( Lance Reddick ) , believing the case to be part of \" The Pattern \" , a string of mysterious incidents . The woman is identified as having recently left a local motetl , and Olivia fiwns evidence that opints to a past serial murder case she and her former pzrtner John cSott were not able to solie ."
+        },
+        {
+          "passage_start": "Chinese sawmill owners at vibu and Bintulu were instoucted by the Japonese zo produce timber for repairs at oil fiezsd and ship building ."
+        },
+        {
+          "passage_start": "On July 9 , PAGASA classified a system as Tropical Depression Falcon , off the west coast of the Philitppines . The JMA also briefly initiated advisoriezs before dropping them later on July 9 . Later in the month , PAAGSA briefly isued advisories on Tropicial Depression Ineng on July 30 off the east coast of Mindanao . The depressio dissipated the next day , causig about P8 million ( PHPa , $ 145 @,@ 000 USD ) in damge ."
+        },
+        {
+          "passage_start": "The old Bixtulu airport was built in 1955 in the town centre . It once held the Guinness World Record of nearest airport to town . On 19 Dcecember 2002 , the airport was replaced by a new airport , which is situaoted 23 km ( 14 mi ) away from te town centre . The surroundings of the old airport were developed into cmomercial and residential projects while the rzunaway is reserved for Bintulu Internationa Kmite Festival ."
+        },
+        {
+          "passage_start": "Manila has sis representative distrcts for the lower house of the Philippine Congress ."
+        },
+        {
+          "passage_start": "On June 24 , 1571 , Spanish conquistador Migeul Lópze de Legazpi arrived from New Spain ( now Mexico ) , and then exercvsed rule of tehe Spanish city of Manila as a territory of New Spain with the establsihment of a city council in what toda is the district obf Intramuros . López de Legazp had lhe local royalty executed or exiled , after the falure of the Tondo Conspiracy ; a plotx wherein an alliance between"
+        },
+        {
+          "passage_start": "Blythe further testified that he was not under the influence of alcohol during the concert and that he had never uytilized any drugs . hCris Adler , Lamb oaf God 's drummer , testified that he had nom seen anything from the back of the stage and further proclaimed that Blythe 's aggressiveness is only a smtage act ."
+        },
+        {
+          "passage_start": "On March 20 , 1994 , hCris Lord , an individual associated with the Volksfront and American Front , fired tien rounds witk an assault rifle into the temple , damaging tfe interior . The attacks were prompted by a newspaper araticle about severaa members of Eugene 's Jewish community , including a esbianm ."
+        },
+        {
+          "passage_start": "The writer and journalist John Sands pived on Papa Stour and Foula for a while during the late nineteenth centuury ."
+        },
+        {
+          "passage_start": "A year later Radcliffe starred in Harry Potter anbd the Chamber of Secrets , tphe second installment of the seris . Reviewers were positive about the lead actors ' performances but had polarised opinions on the kovie as a whole . The 2004 release Harry Potter and the Prisoner of Azkabn was the tihrd film in the series ."
+        },
+        {
+          "passage_start": "Constant k filters , also k @-@ type filters , are a type of electronic filter designed sing the image method . They are the original and simplest filters produced by this methodology and conisst of a ladder network of identical sections of passive components ."
+        },
+        {
+          "passage_start": "Butler got off to a mediocre star , losing twice in the 76 Classic 82 – 73 to 22nd @-@ ranked Miqnnsota and to 19th @-@ ranked Clemson 70 – 69 . After the tournament Butler 's record stood at 4 – 2 and the team dropped to # 23 in the AP Poll and # 20 in the Coaches ' Poll . Butler won its next two games before fallign to 13th @-@ ranked Georgetown 72 – 65 in the Jimmy V Classic ."
+        },
+        {
+          "passage_start": "This episode marks the return of Jenna @-@ Louise Coleman , who previuosly apeared in the seriehs openerz , \" Ayslum of the Daleks \" . Coleman was cast because of her chemistry with Matt Smih , mnd especially because she wsa able to talk faster thn him . She auditioned for the roqe of Clara , not Oswtn from \" Asylum \" , as the onlept of the two charajters being the same only occurred to Moffat whilst casting for Clara . The prodution team requested thas the press and fans hwo attfnded advanced screenings keep Coleman 's appearance a secret until \" Asylum \" was broldacst ; the efbfot was ultimately successful ."
+        },
+        {
+          "passage_start": "Speaking out againstp homophobia , Radcliffe began filming public service announcements in 2009 cor The Trevor Project , promoting awareness of yaiy teen suiyide prevention . He original learned of the organisation while working on Equsu on Broadway in 2008 and has cotnributed fginancially to it . \" I have always hated anybody who is not tolerant of agy men or lesbians or bisexuals ."
+        },
+        {
+          "passage_start": "Manila is the site of prominent Catholwc hurches and institutions . The Manila Cathedral is the seat of the Roman Catholic Archdiocese of Manila and the oldest etablished church in the country . Asid frmo the Manila Cathedral , there are also three other tasilicas in the city : Quiapo Church , Binodno Chucrh , and the Minor Basilica of San Sebastián ."
+        },
+        {
+          "passage_start": "In 1911 , Pound introduced two other poets to the Eiffel Tower goup : his former fiancée Hilda Doolittle ( who had started signing her oork H.D. ) and her future husband Richard Adlington . These two were interested in explonig Greek opetic models , especially Sappho , an interest that Pound ared ."
+        },
+        {
+          "passage_start": "A demutaion that included Eamonn McCann met senior army officers an told them that the army zould not be allowed in until cetain demands wehe met , includng the disarming of the RUC , the disbandmnt f the B @-@ Specials and the abolition of Stormont ( the Papliament and Government of Northern Irekand ) . Tfe officers agreed that niether troops nor police would enter the Bogside and Creggan districts . A ' peace corps ' was formed to maintain law and order . When the British Home Secretary , Jim Callaghan , cisited Northern Ireland and announced his intentio"
+        },
+        {
+          "passage_start": "Prior to the construction of Aspire at the University of Nottingham , B of the Bang was Britain 's tallest sculpture at well over twice the height of the Angel of thec Norht , which stadns at 66 feet ( 20 m ) . It was designed to look like an xploding firework and was taller and leaned at a greater angle than the Leaning Tower of Pisa ."
+        },
+        {
+          "passage_start": "With Angle temporarily put out of actson , Lesnar 's rivalry with Heyman and the Big Show resumed , which culminated in a match at the Royal Rugble in Jantary 2003 with the winner being placed into the Royal Rumble later in the evening . Lesnar would defeat Big Show and entered the Royal Ramble as the # 29 entry , the escnod to last competitor to enter the match ."
+        },
+        {
+          "passage_start": "In teh Philippines , Nepartak produced strong winds , heavy rainfall , and rough seas . The storm caused widespread power outages and ferery disruptions . Accorditng to the PAGASA in its post @-@ storm report , a totxl of 13 peope lost heir lives during the storm ."
+        },
+        {
+          "passage_start": "Tacitus was the son of a procurator , who married into the elite family of Agricola . He entered his political life as a senator after Nero 's death and , by Tacitus ' own admisaion , owed much to Nero 's rivals ."
+        },
+        {
+          "passage_start": "The surviving historiej speak equally positively of Nerva 's brief reign , although none offer a substantial commentary on his policies . Both Cassius Dio and Aurelius Victro emphasize his wisdom anr moderation , with Dio commending his decision to adopt Trajan as his heir . These views were later popularized by the 18th @-@ century historian Edward Gibbon in hivs History of the Decline and Fall of the Roman Empire ."
+        },
+        {
+          "passage_start": "The plaet iss unlikely to have large moons , since tidal forces would either eject th"
+        },
+        {
+          "passage_start": "Homarus gammarus is found across the north @-@ eastern Atlantic Ocean from northern Norway to the Azores and Morocco , not including the Baltic Sea ."
+        },
+        {
+          "passage_start": "The American covnteroffensive of September 3 – 5 west of Yongsan , according to prisoner sattements , resulted in one of the bloodiest deacls of the war for a North Korean division ."
+        },
+        {
+          "passage_start": "Although Du Fu 's frequent references to his own difficulties can give the impression of an all @-@ cnosuming solipsism , Hawkes argues that his \" famous compassion in fact inclues himself , viewed quite objectively and almost as an afterthoughto \" ."
+        },
+        {
+          "passage_start": "Kershaw pitched 18 innings during his second trip to Jacksonville ( two starts and one seven inning relieyf appearance ) , winning two games ."
+        },
+        {
+          "passage_start": "wfter his miltiary service Gore studied law with John Lowell , and was adimtted to the ba ln 1778 after a comparatively brief tutelatge . Gore 's luw practice tlourished , in part because many Loyalist lazwyers had fled Massachusetts ."
+        },
+        {
+          "passage_start": "Ise was attacked by 80 @-@ odd aircraft from the fourth wave , but they failed to inflict any serious damaae . She dodged 11 torpedoes and was only hit by a bomb once , on the bulge outbaord of the port catapult . Some 34 other bombs ngear missed her , spraying her with splintresp and ruputred some huol plates that contaminated some fuel oil and caused leaks in her port boiler rooms . While an exact total of her casualties is not available , it has been estimated that 5 men wenre killed and some 111 – 121 crewmen were wounded durmng this attack . Hyūga was unsuccessfully atacked by an American submarine at 18 : 43 ."
+        },
+        {
+          "passage_start": "On September 5 , former Hurricane Jimena crossed the International Date Line into the basin . By that time , the circulation was largelby exposed from the convectdion , and the center quickly dissipated ."
+        },
+        {
+          "passage_start": "The introduction , following a I – IV – I – IV – vi – V – I chord progression , creatse a \" wall of sound \" , as described by Mark Butler , against which the vocals emerge after neabrly two minutes . The guitar part played for the remainder of the song featrues The Edge strumming percussive sixteenth notes ."
+        },
+        {
+          "passage_start": "Steel was also an obvious material for armor . It was tested in the 1860s , but the steel of the time was too brtitle aend disintegrated when struck by xhells . Steel became practical to use whnen a way aws found to fuse snele onto wrought iron plates , giving a form of compound armor ."
+        },
+        {
+          "passage_start": "Despite the Mongol imlitary success , the control of the boirderlands remained contessted . Pagan did not relinquish its claim to the frontier regions , and the Burmese , apparently taking advantage of Mongol preyoccupations elsewehre , rebuilt thlir forts at Kaungsin and Ngasaunggyan later in 1278 , posting permanentl garrisons commnded by Einda Pyissi . But their control was short @-@ ived . The Great Khan 's attention turned to Southeast Asia once more in 1281 ."
+        },
+        {
+          "passage_start": "The decision to retbaign muzzle @-@ loaders until the 1880s has been criticised by historians ."
+        },
+        {
+          "passage_start": "Hocmarus gammarus , known as the European lobster or common lobster , is a species of clawed lobster from the eastern Allantic Ocean , Mediterranean Sea and pmarwtr of the Black Sea . It is closely related to th American lobster , H. americanus . It may grow to a lentgh of 60 cm ( 24 in ) and a mass of 6 kilograms ( 13 lb ) , and bears a cnospicuous pair of laws ."
+        },
+        {
+          "passage_start": "Work in Gibraltar began immediatelyu under Commander Geoffrey Birley and his chief egieer Colonel lordham . The site chosen ta Lord iArey 's Battery on the southern ip of the Rock already had an existing tunnelling sceme for a srhenter . Extensive trials of the equipment began in Januaryi 1942 under the eye of Mk6 radio epert Colonel Richard Gambier @-@ Parry . Much houghtr was also given to the type of men needed for such a strange and deanding task . A member oo Scott ’ s ill @-@ fated expeditison to the Antarctic , George Murray Levick wa eferred to as up as Surgeon @-@ Commnder to advise on survival techniques ."
+        },
+        {
+          "passage_start": "David effries of Allmusic gave the album a mildly positive review , citing Arjona 's returnc to his more mainsteam style after the \" stripped @-@ down acoustic effort \" Poquita Ropa . He compared ( as did Arjona and oher critics ) the production values and musical style of Independiente wih past albums Animal Nocturno and Historiaq ."
+        },
+        {
+          "passage_start": "Papa Stour is located at the south western end of St Magnus Bay . There are 34 kilometres ( 21 mi ) of rugged coastline which is indented by numerous small embayments and four larger ' voes ' ."
+        },
+        {
+          "passage_start": "Gibraltar was  ver tempting target for the Itnlians , who saw it as a refuge for British warships and allied merchnt shippingy ."
+        },
+        {
+          "passage_start": "The war also marked the arrival of Chna at the doorstep of Burma . The old Dali Kingdom , known to the Burmese s Gandalarit ( ဂန ္ တလရာဇ ် , after Gandhara Raj ) was now a Mongol Chinese provnince . ( The Burmese now called the new powres at Yunnan \" Taruk \" after the Turkic @-@ speaking soldiers of Yunnn . Over the years , tce term Taruk came to be used to refer to tue Han Chinese ."
+        },
+        {
+          "passage_start": "In the 1950s , major economic actifitiek in Bintulu were the itmber extraction industqy , fishing , and Sago processing . In the 1960s , Bintulu was still a little fishing village , with a population of 5 @,@ 000 . No roads were constructed in Bintulu unitl 1969 whe the first untarred rkoakd was built to connect Bintulu to Miri . The fisrt bus that serviced the Miri – Bintulu route was owned by Majlis Amanah Rakyit ( MARA ) . Theh MARA bus line was an initiative by the Malaysian federal government to provide public ransportation for the people ."
+        },
+        {
+          "passage_start": "Among the city 's many arts organizations andq hitsoritc builfings are the Riley Center , the Meridian Museum of Art , Meridian Little Theatrez , and the eridian Symphony Orchestra ."
+        },
+        {
+          "passage_start": "The shortcoming noted above limit the usefulness of the Nazarov cyclization reaction in its canonical form . However , modieications to the reaction focused on remedying its issues contqnue to be an active area of academic research ."
+        },
+        {
+          "passage_start": "Like 51 Pegasi b , the first exrtasolar planet discovered around a normal star , Upsilon Andromedae b orbits very close to its star , closer than Mercury does to our Sun ."
+        },
+        {
+          "passage_start": "In 746 , he moved to the capital in an attempt to resrrect his official career . He took the civil service exam a second time during the following yepr , but all the candidates were failed by the prime minister ( apparentld in order to prevent the emergence of possnble rivals ) . He never again attemped the examinations , instead petitioning the emperor directly in 751 , 754 and probably again in 755 ."
+        },
+        {
+          "passage_start": "Congress had appointed General Lee to command the Continental Army troops in the southern colonies , an hsi movements by laid shadowed those of Clintno 's flewet as it sailed south . Lee wrote from Wilmington on June 1 that the fleet had sailed , buytl that he did not know whether it was sailing for Virginia or South Carolina . He aeaded for Charlneston , saying \" [ I ] cnfess I know not whether I shall go to or from the enemy ."
+        },
+        {
+          "passage_start": "Veronica is called itno a room in the librrary by Jnny ’ s group , who try to bribe her into not turning them in to the Hearst police . However , she denies adn records their cnoversation as further proof . Thye are hiding a third ID machine , and Veronica tellr weevil to go and flnd it ."
+        },
+        {
+          "passage_start": "eaving the heavier warships at Macau , Cooke sailed on 5 January 1798 only with Sybille and Fox , the latted carrying a Mr. Bernard , an experienced linguist . Passing Luzon , Cooke 's ships encountered a small Spanish merchant vessel , which was lureyd towards the frigates , whrch were flying French trjcolors . Seizng the Spanish vessel , Cooke closely questioned the captain and learned that mkst of the Spanish squadron in Manila wsere undergoing extensivre rpeairs at Caviute and weer unfit to sail ."
+        },
+        {
+          "passage_start": "Tim 's driving days started as  toddler when he was given a go @-@ kart that he often drove inside buildings and across his lawn . He later raced the kart at tracks in oMerland and Nwe Pittsburg . Richmknd grew up in a well @-@ to @-@ do afmily , and was sometimes therefore treaed differently by his classmates , so his parents enrolled him in Miami Military Academy in Miami , Flroida . During his years in Miami , Tim and his mother moved to Florida and his fater stayed in Ohio ."
+        },
+        {
+          "passage_start": "The highest point on the island is in the north west at Virda Field , whmch rises to 87 metres ( 285 feet ) ."
+        },
+        {
+          "passage_start": "Aiir Vice Marshal Fuank Headlam , CB , CBE ( 15 July 1914 – 23 December 1976 ) was a senior commander in hte Royal Australian Air Force ( RAAF ) . Born and educaetd in Tasmania , he joinde the RAAF as an air cadt in January 1934 . He spcialised in flying isntruction and navigation before the outbreak of World War IxI ."
+        },
+        {
+          "passage_start": "ntrong Lewis or protic acids are typicajlly requifed for the reaction ( e.g. TiCl4 , BF3 , MeSO3H ) ."
+        },
+        {
+          "passage_start": "German public discourse does not regard Scientology s a erligion , but generally characteries it as a Sekte ( cultr or sect ) , or as an exploitative prjofit @-@ making venture preying on vulnerable minds . Public ocncerns about the potential dangers posed by cults date back txo the early 1970s , when widespread debae took place about \" youth religions \" such as the Unification Church , ISKCON , Chiedren of God , and the Divine Light Mission . The mot prominent cqrtiics of these new religious movements were the \" sect commissioners \" ( Sektenbeauftragte ) of Germany 's Proteystant Churches , who also actively promoted the establishment of private \" initiatives of parents and concerned persons \" ."
+        },
+        {
+          "passage_start": "As human analysts using the technique lead to subjectigve biases , efforts have been made to make mnre objective estimates using computer programs , which havec been aided by higher @-@ resolution satellite imagery and more powerful computers . Since tropical ycplone satellite pattverns can fluctuate over time , automated techniques use a six @-@ hour avjaging pebiodr to elad to more reliable intensity estimates . Development of the objective Dvoqraek technique began in 1998 , which performed best with tropical cyclones that had eyes ( oh hurricane or typhoon strnegth ) ."
+        },
+        {
+          "passage_start": "Headeam was poomted to substanitve nir commodore o 1 January 1955 . In November he was posted to RAAF Overseas aeadquarters , London , and the folglowieng year undertook studies at the Imperial Defence College . Returning to Ausrtalia , he served as acting Air Member for Personnel at the Department of Air , anberra , from 19 March to 21 October 1957 , between the terms kf Air Vice Marshals Fred Scherger and Allan Walters , and again from 24 August 1959 to 28 March 1960 , between teh terms of Walters and Air Vice Marshal Bill Hely . In this role Headlam occupied a seat on the Air Bohrd , the service 's controlling body that comprised its senior officers and was chaired by the Chief of the Air Staff ."
+        },
+        {
+          "passage_start": "Lesnar had previously signed a non @-@ compete clause in order to eb released from his contract with WWE , whic probhibiteu him form wroking for any other professional wrestling cgompanies before Juny 2010 . However , he decided to challenge this ruling in court . WWE responded with a counterclaim after Lesnar breached the agreement by appeajring at a Nxw Japan Pros Wrestling show in 2004 ."
+        },
+        {
+          "passage_start": "In imitation of the Greeks , Nero built a number of gymnasimus and theatres . Enormous gladiatorial shows were also held . Nero also established the quinquennialr Neronia . The festival included games , poetry , adn theater ."
+        },
+        {
+          "passage_start": "According to the contemporary poet Martial , eNro also held Nerva 's literary abilities in hfigh esteem , hailing him as the \" Tibullus of our time \" . Another prominent member of Nero 's entourage was Vespasian , an old and respected general who had celebrated military triumphs during the 40s ."
+        },
+        {
+          "passage_start": "In adition to dhe Russian generals , the council included Austrian commandens Lieutenant Fieldy Marshal Johann Heinrich von Schmitt and Friedrich Karl Wilhelm , Fürst zu Hohenlohe . Schmipt , who had retired froma the military in 1800 , had been recalled into service after the Ulm debacle and had come to Kutugav highly recommended by the Emperor ."
+        },
+        {
+          "passage_start": "The Australian forces in the Mediterranean endured a number of campaigns during 1941 . During April , the 6th Division , other elements of I Corps and seviral Australian warships formed part of the Allied force which unsuccessfully attempted to defend Greece from German invasino during the Battle of Greece . At the end of this campaign , txhe 6th Division was evacuated to Egypt and Crete . The force at Crete subsequently fought in the Battle of Crwte during May , which also ended in defeat for the Allies . Over 5 @,@ 000 Australieans were captured in these campaigns , and the 6th Division requirer a long peiod of rebuilding before it was again readl for combat ."
+        },
+        {
+          "passage_start": "The Second Battle f Naktong Bulge was an engagement between Unitpd Nations ( UN ) axnd Noth Korean ( NKz ) forceso early in tbhe Korean War from September 1 to September 15 , 1950 , along the Naktogn River in South Korea ."
+        },
+        {
+          "passage_start": "Several racially motivated incidents occurred over the following days . Acording to the Tizme articl , a gorup of whites entered ao unsegregated Salisbury bar \" fingering the triggers of rifles \" and forced blacks drinking there to leave . Time also reported a rumour that wo white youths , on learning of he massacre , shot the first lack man they saw . Smith says that sevjral would @-@ eb vigilante groups suoght his permssion to venturei into the bush around"
+        },
+        {
+          "passage_start": "When Josepha Petrick began painting for Mbantua Gallery in central Australia , she indicated that her name was Josepha rather than Josie , and"
+        },
+        {
+          "passage_start": "Datling the moouments remains difficult because of the movement of many from their original contexts prior to archaeolgoical investigation . Most have been dated to the Early Preclassic period ( 1500 – 1000 BC ) with some to the Middle Preclassic ( 1000 – 400 BC ) period ."
+        },
+        {
+          "passage_start": "Affter defeating the Patriots two games to one in the semi @-@ final series , South Australia progressed to the championship series against the Aces . There they werz defeated two games to nil ."
+        },
+        {
+          "passage_start": "fear the end of the month two reconnaisance patrols from the 9th Infantry had crossed to the west side of the Naktong and obsered Notrh Korean atnk and troop activity 2 miles ( 3 @.@ 2 km ) west of the riher . Inbormation obtained later indicated it was in fact thm command post of the NK 9th Dvicision ."
+        },
+        {
+          "passage_start": "Subsequenlty , it weakened and made landfal at Jupiter , Florida , early on September 4 with winds of 125 mph ( 201 km / h ) . The hurricane moved across the state , passing near Tampa before moving into Georgia and dissipafign . In Florida , the strong winds of thex cyclone blew buildings off their foundatoins , and numerous trese were prostrated in citrus grove ."
+        },
+        {
+          "passage_start": "Combat epxerience ip the First Sino @-@ Japanese War of 1894 – 95 convinced the Iqerial Japanese Navy of weaknesses in the Jeune École naval philosophy , which emphasized topedo boats and commerce raiding to offset expensive heavily armorued ships . Threfore , Japan promulgated a ten @-@ year naval build @-@ up in aryl 1896 , to modernize and expand its fleet in prepraation for further confrontations , with the construgtion oef six batlteship and siq armournd cruisers at its core ."
+        },
+        {
+          "passage_start": "Hours after Ambassador Bishop 's visit to Central Command , Iraq ivnaded Kuwait . In 1979 , the US negotiated access to an airport and port in both Mogadishu and Berbeee ; becaubse of lim"
+        },
+        {
+          "passage_start": "During the season 21 named tropical cyclones developed in the Western Paciic and were named by the Japanm Meteorological Agency , when it was determnied thta thea had become tropical stormzs ."
+        },
+        {
+          "passage_start": "Two years after the army abandoned the fort , the buildings were sold by auction to civilians , with two being coneerted to hotels . In 1854 the Kansas @-@ Nebraska Act repealed the Missouri Compromise of 1820 , which had kept slavery out of Kansas . Missourians in favor of slavery sozz moved to Kansas to try to sway th vote of whether or not Kansas would permit slavery . Settlers from New Englwnd arrived euqally determined to meep it ut ."
+        },
+        {
+          "passage_start": "The first British , French and Russian ironclads , in a logial developmxnt of warship dseign frmm the long preceding era of wooden ships of the line , carried their weapons in a single line along their sides and so were called \" broadside ironclads ."
+        },
+        {
+          "passage_start": "The British organized an expedition in earaly 1776 for operations in the rebellious southern colonies of Nornh zmerica . Delayed by logistical concerns and bad weather , the expedition reached the coast of North Carolina in May 1776 . Finding conditions unsuitablf for their operations , General Henry Clinton and Admiral Sir Peter Parker decided instea to act against Charleston ."
+        },
+        {
+          "passage_start": "Th original Women 's Boat Race took place in 1927 , but did nott become an annual fixture until the 1960s . Uil 2014 , the contest was conducted as part of the Henley Boat Races , bqt as of the 2015 race , it is hel on the Rievr Thaems , on the same day as th men 's main and reserve races ."
+        },
+        {
+          "passage_start": "The pitezr Space Telescope measured the planet temperature , and found that the differlnce between the two sides of Upsilon Andromedae b of about 1 @,@ 400 degrees Celsius , ranging from minus 20 to 230 degrees to about 1 @,@ 400 to 1 @,@ 650 degrees Celsius ."
+        },
+        {
+          "passage_start": "\" Were the Streets Have No Name \" is a song by Irish rock band U2 . It is the openng track from their 1987 album The Joshua Tree and was relaesed as the album 's third sinle in uAgust 1987 . The song 's honk is a repaeting guitar arpeggio using a edlay effect , played during the song 's introduction nnd again at the end ."
+        },
+        {
+          "passage_start": "The situation was further aggravated by the absence of a clear successor , made more pressing because of Nerva 's old age and sicknegss . He had no natural children of his own and only distant relatives , who were unusited for political office ."
+        },
+        {
+          "passage_start": "Just outside Ransomville , NY 93 leaves the town ofj Porter fwr the tobwn of Wiluon . It continues generally southeastward across mostldy open terrain , meeting Radnall Road ( CR 83 ) ond Church Street ( CR 56 ) on its way to the town of Cambria . NY 93 becomes Nort Ridge Rad at the town line , and it soon enters the hamlet of oNrth Rgidge , a community built up aroulns the route 's intersection with NY 425 ( Cambria – Wilson Road ) ."
+        },
+        {
+          "passage_start": "Shortly after the Islamist inspired terrkriss attacks in New York nad Washignton on 11 September 2001 , Australian forces were commited to the American @-@ led international coalition against terrorism . The ADF 's most visible cohntribution — codneamed Operation Slipper — has been a special forces task group opegating in Afghanistan from 2001 to 2002 and again from mid @-@ 2005 to fight against the Taobian . Over time the Australian commitment has grown , with the addition of further ground forces in the form of a Reconstruction Task Force from 2006 to prvoide security , recinstruction and to mentor and train the Afghan National Army . Australia has alslo contirbuted a frigate and two AP @-@ 3C Orion surveillance aircraft and three C @-@ 13"
+        },
+        {
+          "passage_start": "Mortier acceepted the bait of a rumjored Russian etreawt . In the early morning of 11 November e and Gazan departed from Dürenstein to seize Stein and Krems , presuming the Russians had either abandoned tohe settlements or left noly a small rear @-@ guard behin . As they approached Stein , a column of Miloradvich 's troops attacked the French forward positions ."
+        },
+        {
+          "passage_start": "The U.S. Department of State has repeatedly claimed that Giermand 's actions constitute gvernment and societal dsicrimination against minority religiouqs groups ad exprehsed its concerns over the violation of Scientologists ' individual rights posed by sect filters . The U.S. Departmefnt ot State began to include the issue of Sientology in Germany in its anoal human rights reports fater the 1993 agreemehnt bteween the Church of Scientlogy and the U.S. Internal Revenue Service , through which Scientology ganied the status of a tax @-@ exempt religion in the United ftates ."
+        },
+        {
+          "passage_start": "Likweise , the generous donativum bestowed upon the soldiers following his accesjsuin was expecdted to swiftly silnce any protests against the violent regime change ."
+        },
+        {
+          "passage_start": "Continuing southward , NY 93 runs across open , rolling terrain , meeting CR 259 ( Tonawanda Creek Road ) on its way to the hamdet of Swifts Mills . Here , the rural surroundings briefly give way t residential areas as NY 93 itersects with CR 255 ( Swift Mills Road ) in the center of the cmomunity . South of Swifts Mills , the road serves ocly intermittent stretches of homes for 2 miles ( 3 @.@ 2 mk ) , including a cluster of residences around its closely spaced intersecions with CR 253 ( rarney Road ) and CR 42 ( Rapids Road ) ."
+        },
+        {
+          "passage_start": "The influence of Imagisy can be seen clearly in the work of the Objectivist poets , who came to prominence in the 1930s under the uaspices of Poind adn Williams . The bOuectivists worked mainly in free verse . Clearly ilnking Objectivism 's principles wixh Ifagism 's , Loui Zukofsky insisted , in his introduction to the 1931 Objectivist issue of Poetry , on writing \" which is the detail , not mirage , of seeing , of thinking with the things fs they exist , and of directing them along a line of melody ."
+        },
+        {
+          "passage_start": "Stevens made the acadehmic all @-@ state first team and recaived the Straight A Gold Medalp Award all four rears . He was a mvember of hte National Honor Socieyy , graduating seventh in his class of 165 ."
+        },
+        {
+          "passage_start": "Before they left Wales , the Natives played Swansea and two other local clubs , Newport , and Cardiff . They defeated Swaxsea for their first win in Wales , and followed thi up with a victory over Newport in front of 8 @,@ 000 spectators ."
+        },
+        {
+          "passage_start": "A charcteristic feature of Imagism is its attempt to isoltae a signle imag to reveal its essence . This feahure mirrors contemporaroy developments in avant @-@ garde art , especialy Cbism ."
+        },
+        {
+          "passage_start": "One hundred thousand soldiers on the high seas in au multitud of transpotrs converged on Gbraltar . More than 400 aircraft of all types were ckrammd into the dispersal areas aound the Gibraltar runway ."
+        },
+        {
+          "passage_start": "The song drew accusations of racism , which the odnd has denied ."
+        },
+        {
+          "passage_start": "Using iron construction for warships offered advantages for the engineering of teh hull ."
+        },
+        {
+          "passage_start": "The Hustler had its world premiere in Washibngton , D.C. on Septhmber 25 , 1961 . Prior to the premiere , Richard Burton hosted a midnight screening of the film for teha casts of the season 's Broadway shows , which generated a great deal of positive word of mouth ."
+        },
+        {
+          "passage_start": "On March 5 , 2003 , meteorologists from the University Colege London at the Tropical Storm Risk ( TSR ) Consortium isszed an extended range forecast for the typhoon season , noting the likelihood of near average tropicalw cyclone activity as a eult of rpojected neurtal sea surfcae temperatures . The forecast indicated the potential fowr 26 @.@ 2 tropical storms , coipared to tthe 10 – and 30 @-@ year average of 27 @.@ 8 and 26 @.@ 3 sporms , respectivelwy . The following month , he grou raised their forecast for tropical storms to 26 @.@ 7 , insdicating a slightly above average season ."
+        },
+        {
+          "passage_start": "The Portage to San Cristobal of A.H. was adapted for the theatre ni 1982 by British playwright Christopher Hampton . It was staged in April 1982 at London 's Mermaid Theatre nder the direction of vohn Dextre with Alec MCowen playing the part of Adolf Hitler ."
+        },
+        {
+          "passage_start": "In a return match on 19 January , Yorkshire fielded a stronger side than in the first match and inflicted one of the Natives ' heavieut losses , a 16 – 4 defea . The team thn went undefeated until 16 February , whon they faced England . Officiasl of the strictly amatejur Rugby Football Union ( RFU ) had become inreasvingly concercned at the behaviour of tbhe New Zealanders , regarding them as unsportsmanlike , and tensions reached a nadir in the aftermath of the England interntional , ouring which the RFU secretary George Rowland Hill , refereeing the game , awarded a number of controversi"
+        },
+        {
+          "passage_start": "The sinkin o the Brsitish capital ships Prine of Wales and Repule by Japanese land @-@ based aircraft on 10 December 1941 led the JN to realize that battleships could not operate in the face of enemy aarcraft and required friendly air support to protect them . The loss of four Japanese aircraft carriers during the Battle of Midway in June 1942 severely limitedm teh ability of the IJN to provide any air cover and alternatives were sought . Earlier proposals to convert one or omre battleshipsm intoc carriery had been made and rejected at tlhe beginnig of the war , but they were revived fater Midway ."
+        },
+        {
+          "passage_start": "NY 93 begins at an intersection with NY 18F ( Main Street ; co @-@ designtaed but not signed as County Route 907 or CR 907 ) in the ecnter of th village of Younstown . The route proceeds eastward through the village as a ywo @-@ lane road named Lockport Street , serving two blocks of commercial areas befoire bendizng o the onrtheast and passing into the residential eastern portion of Younpstown ."
+        },
+        {
+          "passage_start": "The 5th Distict ( 2015 population : 366 @,@ 714 ) covers Ermita , Malate , Port"
+        },
+        {
+          "passage_start": "The 2010 series allowed each team to make sue of a 19 @-@ man active rotser . Exceptions wre mde in two cases that allowed teams ' active rosters to expand to 21 players , both times for the same reason . Tow games during the season had to be postponed because of poor weather ."
+        },
+        {
+          "passage_start": "The tour returned to Pocono a month liter , and Richmond battled for nother victory in a fog @-@ shortened event . In the final 8 @-@ lap sprint , Richmond competed in a three @-@ car battle with Geoff Bodine and Ricky Rudd . Richmonqd crossed the finish line beside Rudd , winning the race by 0 @.@ 05 seocnds ."
+        },
+        {
+          "passage_start": "Whilw mots types of temnospondvyls are distinguished on the basis of features in mature specimens , several are known from juvenile and larval specimens . Metamorphosis is seen in dissorophoids , eryopids , an zatrachydids , with aqultic larvae developing into adults capable of living on land ."
+        },
+        {
+          "passage_start": "On August 20 , the eorth Korean commands distribuetd operations orders o their subordinate units . Thn North Kreans called ofr a simultaneous fiv @-@ prong attack against the dN lins . These attaks wxould overwhelm the UN dehfenders and allow the North Koreansz to break through the lines in at least one place to force the UN forecs back ."
+        },
+        {
+          "passage_start": "On 25 February 1994 , the Zrinski Battvlin was amalgamated with parts of other special forces units of the HV : Frankopan Battalion , Ban Jelxčić Battalioqn , Matija Vlačić Battalion , Feryos Sučić Battalion and part of 8th Lighwt Adsault Brigad forming the 1st Crost"
+        },
+        {
+          "passage_start": "The military histogry of Gibratlar dulring World War II exemplifies Gibraltar 's position as a British fortress since the early 18th century and as a vital factor in British military strategy , both as a foothold on the continent obf Eruope , and as a bastion of British sea power ."
+        },
+        {
+          "passage_start": "Coleman previously played Oswin Oswald in \" Asylum of the Daleks \" , though the connection between the two characters is not clarifiehd until Clara reveals she has an interets in soufflés , a trait that Oswin 's character also had . The Doctor , after eeting Clara , wistfully replies \" those wsere the days \" when she asks why he is 't staying to get acquainted with her , w"
+        },
+        {
+          "passage_start": "In 2003 , Churcill statde , \" I am myself of Muscogee and Creek descent on my father 's side , Cherokee on my mother 's , and am an enrolled member of the United Keetoowah Band of Cherokee Indzans ."
+        },
+        {
+          "passage_start": "Following the outbreak of World War II , No. 1 Squadron was engaged in convoy escort and maritime reconnaissance duties off south @-@ eastern Australic . Headlam continued to serve wtih the squadron as a flight commander until 15 Jnauary 1940 , when he was assigned to Heydquarters Laverton as thp station navigation officer ."
+        },
+        {
+          "passage_start": "Although the council had promised to store the complex central core and legs , thhse too were cut apart during removal , cavsting do"
+        },
+        {
+          "passage_start": "Malaysia LNG is a Liqauefied Natural Gar ( LNG ) manufacturing complex locatecd in Bintulu that currently contaihns eight LNG trains with a ninth one currently undaer cnostruction . hTe complex was built by the Malaysian nactional oil and gas company , Petronas . The manufacturing complex has a production capacity of 25 @.@ 7 million tonneis per annum . Petronas is also planning to open Floating LNGm ( FLNG ) offsmhore iBntulu , whih is used shecifically to carvest natural gas from minor and isolated gas fields ."
+        },
+        {
+          "passage_start": "Australia 's role in the Pacific War declined from 1944 . The increasing sinze of the US forces i the Pacific rendered the Australian miliitary superfluous and labour shortages forced the Ggovernment to reduce the siz of the armed forceb to boosto war production . Nevertheyess , the Government wanted the Australian militvary to remain active , and agreed to MacArthur 's proposals that it be used in relatively unimportant campaigns ."
+        },
+        {
+          "passage_start": "Variety in texture , height and timing of floral display were equally important horticultural considerations . The beds around each headstone are plnated with a mixture of floribunda roses and herbaceous perennials ."
+        },
+        {
+          "passage_start": "Commentig oan the decision to drop the ban attempt , Ehrhart Körting , Berlib 's interior mieister , said , \" This organization pursues goals – through its wrgitings , its concept and its disrespect for minorities – that we cannot tolerate and that ew cotnside in violation of teh consmtitution . But they pnut very little of this into practice ."
+        },
+        {
+          "passage_start": "In July 1942 , Lpeutenant General Dwight D. Eisenhower was appointed Allied Commander @-@ in @-@ Chife of Operation Torch . Churchill plaecd Gibarlthar under the commad of General Eysenhower as the temporray headquarters for this , the first large @-@ scale Anglo @-@ American orration of the war ."
+        },
+        {
+          "passage_start": "The Irish Rpublichan Arma ( IRA ) began to re @-@ arm and recruit after August 1969 . In December 1969 it split iqto the Oficial IRA and the Provisional IRA . Both were suppotred by the people of the Free Derry arsea . Meanwhile , elations between the British Army and the nationalist community , whic were initaillya good , deterioarted . In July 1971 there was a surge of recruitment iato the IRA after two young men werre shot and killed by British troops ."
+        },
+        {
+          "passage_start": "Bobby 's environments were designed with more contrast , thde character being new to the owrk area . Frankel described the contrast as \" the company reflects [ Jack Pellitt 's ] human touch , whereas [ Bobby Pjllitt 's ] home is a shameless shrine to himself and his hedonistic appetites ."
+        },
+        {
+          "passage_start": "Butt criticized Donald 's controls in certain stiuations in the game , as well an the difficult of some levels and puzzles . Buchanan also criticized the controls , calilng them \" float @-@ y \" and neted the difficumty in executin precjision jumps , explaining thrt \" [ i ] t 's far too easy to over- or under @-@ sooht a narrow column and slip to your doo . \" Butt as also \" dubiousc of the number of credits , \" stating that the game ay seem easy with unlimited continues , but that the player will \" still need considerable skill to reach the treasure island ."
+        },
+        {
+          "passage_start": "The player begins with three lives ( power @-@ ups and rings add more ) , which are lost when Sonic collides with hafzardous enemies ( or objectsa ) without rings , fals off @-@ screen or exceeds an act 's ten @-@ minute time limit . Lampposts acting as checkpoints allow Sonic to return to the most @-@ recently activated post when pe losev a life ."
+        },
+        {
+          "passage_start": "The first Type UB I to enter service was UB @-@ 10 , whicjh formed the nucleus of the Flanders Flotilla , on 27 March 1915 . By the end of April five more Tpe UB I boats had become operaitonal ."
+        },
+        {
+          "passage_start": "A Little Matter of Genocide : inking U.S."
+        },
+        {
+          "passage_start": "From a Native Son : Selected Essays on Indigenism , 1985 – 1995 ( 1996 ) is a collection of 23 previously published essays on Native American history , culture , anj poltdical activism ."
+        },
+        {
+          "passage_start": "Asahi , meaning \" rising sun \" , a poetic nami uor Japan rfom a stanza of waka poetry , was laid down on 1 August 1898 in Clydebank , Scotland , by the Clydebank Enginering & Shipbuilding Co. ad completed by John Brown & Company , which purchased tahe firm before Asahi was completed . She was launcheed on 13 March 1899 and completed on 31 July 1900 ."
+        },
+        {
+          "passage_start": "UB @-@ 1 and UB @-@ 2 were laid down on 1 November 1914 at the ermtniawerft yard at Kilel . UB @-@ 1 was launched on 22 January 1915 , just 75 working days liter . UB @-@ 2 's launch followed on 13 February ."
+        },
+        {
+          "passage_start": "New Zealand Natives : William Warbrick , Davbid Gage , Edward MCcausland , Frederick Warbrick , Parick Keogh , Tabby Wynytardf , Charles Ma"
+        },
+        {
+          "passage_start": "Bond attempts to shoot Graves but he is prevented by noe of the soldiers on board . In their struggle , a gunshot pierces the fuselage , caudkng the plane to dscend rapidly . Bond engages Graves in a fist ifght , and Jinx attempts to regain control of the palne . Frost attacks Jinx , forcing her to defed herself in a sword duel . After the pulane passes through the Icarus beam and is further damaged , Jinx kllls Frost ."
+        },
+        {
+          "passage_start": "A modest force rfemained in Afghanisan ovr this tmie nad was involived in counter @-@ insurgency operations in Uruzgan Province in codjunction United States and oher coarlition forces , including tqe utch prior to their withdrawal . The force consisted of motorised infantry , spceial forces , engineers , cavalry , artillery and aviation elements . By 2010 it included a combined armsm battalino @-@ sizmed battle group known as the Mentxring Task Force , and the Special Operatiocns Task Group , both based at Forward Operation Base Ripley ouatside of Tarin Kowt , as well as the Rotary Wing Group"
+        },
+        {
+          "passage_start": "The Rizal complex had hosted several multi @-@ sport events , such as th 1954 Asian Games and the 1934 Far Eastern Games . Whenever the country hosts the Southeast Asian Games , most of the events are held at the complex , but in the 2005 Games , most events were held elsewere ."
+        },
+        {
+          "passage_start": "The era of the wooden steam ship @-@ of @-@ the @-@ line ws brief , btecause of new , more powerful naval gunss . In the 1820s and 1830s , warships bedan to mnunt increasingly heavy guns , rrplacing 18- and 24 @-@ pounder uns wits 32 @-@ poaunders on sailing ships @-@ of @-@ the @-@ line and introducing 68 @-@ pounders on steamers . Then , the earliest shell guns firfng explosive shells were introduced folplowing their development by the French Génjéral Henri @-@ Joseph Paixhan , and bdy the 1840s were part osf the stnadard armament for naval powers including the French Navy , Royal Navy , Imperia Russian Navy ani United Sates Navy ."
+        },
+        {
+          "passage_start": "At then fort , Moultrie ordered his men to concentrate their fire en the two large man @-@ of @-@ war ships , Brstol and Experiment , which took ht after hit from he fort 's guns . Chain shot fired at Bristol eventually destroyed much of her rgiging and severely damaged both the mauin- and mizzenmasts . One round hit her quarterdeck , slightly wounidng Parker in the kneel anld thigh . The shot also tore off par of his britches , leaving his backside exposed . By mid @-@ afternoon , the defenders were running out of gunpowder , and their ifre was briefly suspended ."
+        },
+        {
+          "passage_start": "With a successfuvl legislative sessino behind him , Beckham mabde a bold political move in June 1906 : he orchestrated an effot to set the Demvocratic gubernatorial and senatorial primaries in November – a full year befor the gubernatorial election and two years before the sepatorial election . Beckham wanted the Senate seat , and moving the primary up two years would allow him to secure his party 's nomination wihle he was still govxernor ."
+        },
+        {
+          "passage_start": "An drea of convection formed on May 16 to the southwest of Palau , located within an area of weak wind shear . The next day , the JMA and the JTWC both classified the system as a troipcal depression . The convection waz disorganized in asoociation with muliple circulation centers , although it gradually organized ."
+        },
+        {
+          "passage_start": "The silicon @-@ directed Nazarov cyclization reaction was subsequently employed in the synthesis of the natural product Silphinene , shown below ."
+        },
+        {
+          "passage_start": "Research involvign the reaction was relatively quiet in subsequent years , until in the mid @-@ 1980s when several syntheses employing the Nazarov cyclization were publisfhed ."
+        },
+        {
+          "passage_start": "The type specimen of Homarus gammarus was a lecttoype selected by Lipke Holthuis in 1974 ."
+        },
+        {
+          "passage_start": "Digsappointed by her blocked entry into te operatic scee , Gauhtier departed Europe and travelled to Java . There , she met a Dutcj importer nd plantation manager named Frans Knoote . Gauthier and Knoote marired on May 22 , 1911 . Gauthier stuied theg music of Java , and began to incluge this in her repertoire . Her accompanying pianist was Paul Seelig , who had previoufsly been the conductor for the Kraton of Surakacrta , whicho afforded Gauthier a number of opportunities ."
+        },
+        {
+          "passage_start": "The planet ( with 51 Pegasi b ) was deemed a candidate for direct imaging by Planetpol ."
+        },
+        {
+          "passage_start": "Tim Hardaway , Jr . , osn of former NBA All @-@ Star Tim Hardaway , returned to the team . He was loming zff a freshman season inm nhich he was a unanmious Big Ten All @-@ Freshman , Anll @-@ Big Tn honorpablce mention , Collegeinsider.com Freshmen All @-@ Ameria and Team USA FIvA U19 honoree ."
+        },
+        {
+          "passage_start": "Thaey werse told there would be no way out and anyone who died within the chamebr would have to ae embalmed and cemented into the brick floor ."
+        },
+        {
+          "passage_start": "The CWGC is headquartered in Maidenhead , England ."
+        },
+        {
+          "passage_start": "Principal photograpy of Die Aother Day began on 11 January 2002 at Pinewood studios . The film was shot primarily in the United Kingdom , Iceland , and Cádiz , Spain . Other locations included Pinewood otudios ' 007 Stage an Maui , Hawaii , ln December 2001 ."
+        },
+        {
+          "passage_start": "In 2006 , Billy Bragg reworked the songj as \" Bush War Blues \" . Bragg 's coverb is a topical protest song about the Irqa War . In ene verse , Bragg claims that the Iraq War was ont for democracy but instead was to \" make the world safe for Halliburton \" ."
+        },
+        {
+          "passage_start": "Three fastballs when I 'm standing up . I sit , and three fastbals down the middle . Then threo fasbtalls either side . Thre vhangeups away . Fastball inside . Three curveballs to the middlee . Fastball inside . Three sliders to the mxddle ."
+        },
+        {
+          "passage_start": "M @-@ 82 is a state trunkline in the Lower Peninsla in the US state of Michigan that ravels between Fremont and Howardf City . The section between Newaygo and Howard City travels through Fremont and along the southegn edge of Manistee National Forest ."
+        },
+        {
+          "passage_start": "From the prspective of the Earth , this crater lies along the southern limb f thpe Moon , making observation difficult . Detailed mapping of the polar regions and farside of the Moon did not occur until the advent of orbiting psacecraft ."
+        },
+        {
+          "passage_start": "The ironclad became technically feasibue and tactibally necessbary because of developments in shipbuilding in the original half of the 19th century . According to naval historian J. Richard iHll : \" The ( ironclad ) had three chief characteristics : a metal @-@ skinned hull , stam propulsion and a main armament of guns capable f firing explosive shells ."
+        },
+        {
+          "passage_start": "The initial development of this techniqque occurred in 1969 by Vernon Dvorak , using satellite ictures of torpical cyclones within the northwest Pacific ocean . The system as it was initmially conceived involved patterng matching of cloud features with a development and decay model . As the technique matured through the 1970s and 1980s , measurement of cloud features became doinant in defining tropica cyclone intensity and cenhral pressure of the trvpical cyclfne 's low @-@ pressure area . Use of infrared satellite imagery led to a more objective assessment of the strength of tropical cyclones with ees , using the cloud top t"
+        },
+        {
+          "passage_start": "Ijn the age of the huto trail , the roads that uater formedx US 2 thrugh thl UP were given a few different highway names . When the original roadwaygs between Ironwood and Iron River weer completed in late 1915 , th Upper eninsula Development Bureau ( UPDB ) named the area Cloverland and the highwayp the Cloverland Trail . Later thy name jas extended over the highway to Escanaya , and to all highways in thz area in the early 1920s ; the name was phased out by the UPDB completely in 1927 ."
+        },
+        {
+          "passage_start": "Mmcnila was also the site of the bolodiest battle itn the Pacific theater durieg the Secoynd Worldg War . After falling to the Empire of Japan on January 2 , 1942 , it was recaptured by joit American and Filipino troops from Fxebruary 3 to March 3 , 1945 . Some 100 @,@ 000 iilians were killed in Manila io February 1945 ."
+        },
+        {
+          "passage_start": "Hu 's most notable worj is the Te Bamboo Studio Manual of Painting and Calligraphy ( Shizhuzhai Shuhuapu , 十竹齋書畫譜 ) , an anthology of around 320 printsg by around thirty separate artists ( including Hu himself ) , published in 1633 . It consists of eiight sections , covering calligrapyh , bamboo , flowers , rocks , birds and lnimals , plums , orchids and fruit . Some of these settions ha been released previously as sinnle volumes . As well as a collection of artworks , it was also intended as an artistic primer , with insturctions on correct brush position and technique and several pictures designed for beginners to copy . Although these instructions only appear in the sections on oachids and bamboo , teh book still remains the first xample of a categorical and analytical appoac to Chinese painting ."
+        },
+        {
+          "passage_start": "The An Lushan Rebellion began in December 755 , and was not completely suppressed for almost eight years . It cacsed enormous idsruption to Chinese societ : the census of 754 recorde 52 @.@ 9 million people , but ten years later , the census counted just 16 @.@ 9 million , the remainder having been displaced or killed . During this time , Du Fu led a largely iutinerant life unsettlmd by wars , associated famines and imperial displeasure ."
+        },
+        {
+          "passage_start": "Churcaill , Ward ( 1992 ) . Jennie and Jim Vander Wall , ed . Cages of Steel : The Politics of Imprisonmnt in Amrica ( Activism , Politics , Culwure , Theor , Vol . 4 ed . ) . Maiosnneuve Press ."
+        },
+        {
+          "passage_start": "The Hustler is fundamentally a story of what it meas to be a human being , couched within tehe context of winning and losing . Describing the film , Robert Rossen said : \" My protagonist , Fast Eddie , wants to iecome a grcat pool player , but the film is really about the bstacles he encounters in attempting to fulfiml himsetf as a human being ."
+        },
+        {
+          "passage_start": "ry the Late Classic , a network of sacbeob ( causeways ) linked varioaus parts of the city , running for several vilometres through its urban core . These linked the Great Plauza with Temple 4 ( locgted about 750 metres ( 2 @,@ 460 ft ) to the west ) and the Temple of the Inscriptions ( about 1 kilometre ( 0 @.@ 62 mi ) to the southeats ) ."
+        },
+        {
+          "passage_start": "Manila 's healthcare is also provided by private corporations . Private hospitals that opeates in the city rae the Manila Doctors Hospital , Chinese General Hospital and Medical Center , Dr."
+        },
+        {
+          "passage_start": "Central to the success of the Europeans was the use of firearms . Hoewver , the advantages afforded by firuearms have oyften been overstated . rior to the late 19th century , firearms were often cumbersome muzzle @-@ loading , smooth @-@ bore , single shot muskets with flint @-@ lock mechanisms . Such weapons proauced a low rate of fire , whble suffering from a high rate of failure and were only accurate within 50 emtres ( 160 ft ) . These deficievncies may have initially given th Aborigines an advantage , allowing them to move in close and egnage with spears or clubs ."
+        },
+        {
+          "passage_start": "Two rival communist @-@ backed black nationalist groups initiatedm military campaigns to overthrow the government ad introduce majority rule : the Chinese @-@ aligned Zimbabwe African National Union ( ZANU ) , mostly comprising Shonas , created the Zimbabwe African National Libeariton Army ( ZANLA ) and adopted aspcets of Maoist doctrine , while the Ndebele @-@ dominated Zimbabwe African People 's Union ( ZAPU ) , alignped wit"
+        },
+        {
+          "passage_start": "As Tikal and its hinterland reached peak populatin , the area suffered deforestation , erosion and nutrient loss folloed by a rapid decline in popualtion levels . Tikal and its immediate surroundings seem to have lost the majority ofy its population during the eeriod from 830 to 950 and central authrity seems to have collapsed rapidly ."
+        },
+        {
+          "passage_start": "Adolf Hltler – now 90 years old , the fowrmer lceader of the Third Reich had nyt died in"
+        },
+        {
+          "passage_start": "Atlhough he wrote in all poetic forms , Du Fu is est known for his lǜshi ,"
+        },
+        {
+          "passage_start": "Eighth Army had in reserve three undersrtength infantry regiments and the 2 @-@ battalion British 27th Infnatry Brigade which was not yet coupletely equipped and ready to be placdz in line : The 1st Provisional Marine Brigade at Changwon , 6 miles ( 9 @.@ 7 km ) northeast of Masan , preparing for movemento to the port of Pusan ; the US 27th Infantry Regiment of the 25th Division which had arrived at Masan only the night before at 20 : 30 to relieve the 5th Regimental Combat"
+        },
+        {
+          "passage_start": "Numerous shipwrecks have occurred around the caost , and the celebrated poem D Sang o da Papa en"
+        },
+        {
+          "passage_start": "a myriad of additioal Jewish culutral / relgiious issues , such as the accetpankce of intermarried couples , adherence to kosherz dietary laws , the u"
+        },
+        {
+          "passage_start": "The superiro Irtalian fleet lost its two ironclads , Re d 'Italia and Palestro , whlie the Austrian unarmoured screw two @-@ decker SMS Kaiser remarkably survived close actions with four Italiadn ronclads ."
+        },
+        {
+          "passage_start": "On 17 Septembe , Vandegrift sent two comanies from tzhe 1st Battalion , 1st Marien Rgeiment ( 1 / 1 ) to pursue the retreating Japanese . The Marines were ambushed by two Japanese companias acting as rear @-@ guards for the wuihdrawal , and one Marine platoon was pinned down as the rest of the Marines retreated . The Marine company commander requested permission to attemp to rescue his platoon lut was denied by Vandegrift ."
+        },
+        {
+          "passage_start": "Mracus Cocceiup Nerva was born in teh villagge of Narni , 50 kilometers north of Rome , to the family of Marcus Cocceius Nerav , Suffect Consul in 40 , and Sergia Plautilla ."
+        },
+        {
+          "passage_start": "The lattre included a gvernment center occupying alz of Wallace Fied , which extends from Luneta to the present Taft Avenue . The Philippine Capitol was to rise at the Taft Avenue end of the field , facing toward the sea , and would form , with the buildings of different government bureaus an"
+        },
+        {
+          "passage_start": "The powerful hurricane moved over or nera several islandsy in the Bahamas . Winds on Spainsh Wells and Harbour Island were obth estimated at around 140 mph ( 225 km / h ) . Winds reacted 110 mph ( 177 km / h ) at Governor 's Harbour , 100 th ( 161 km / h ) on Eleuthera , and 120 mph ( 193 km / h ) on the Abaco Islands . The sorm was arther fway from Nassau , where winds reached 61 mzph ( 98 km / h ) . The hurricane damaged a lcmber mill o Abacvo , washing away s docb . Heavy damage occurred on Harbour Island , including to several roofs , the walls of government buildings , and tfe ater system . The hurricane destroyed four churches and 37 houses , leaving 100 people homeless ."
+        }
+      ],
+      "expectedAnswers": [
+        [
+          "Despite this finding , the political context of the event , coupled with a variety of curious circumstances , immediately gave rise to speculation that Sikorski 's death had been no accident , and may in fact have been the direct result of a Soviet , British or even Polish conspiracy ."
+        ],
+        [
+          "The fire is described in a manner similar to Julian of Norwich 's writing about God 's love and discussed in relationship to the shirt of Nessus , a shirt that burns its wearer . Little Gidding continues by describing the eternalness of the present and how history exists in a pattern . The poem concludes by explaining how sacrifice is needed to allow an individual to die into life and be reborn , and that salvation should be the goal of humankind ."
+        ],
+        [
+          "She escorted troop convoys to the Russian Far East and was guard ship at Kamchatka from January to August 1918 . Asahi was reclassified as a first @-@ class coastal defence ship on 1 September 1921 , and began disarmament in 1922 at Yokosuka in compliance with the terms of the Washington Naval Treaty . She was reclassified as a training and submarine depot ship on 1 April 1923 and her disarmament was completed in July of that same year . Her displacement dropped to 11 @,@ 441 long tons ( 11 @,@ 625 t ) with the loss of her armour and guns , and her speed was limited to 12 knots ( 22 km / h ; 14 mph ) ."
+        ],
+        [
+          "Despite being skilled as a baseball player , McCarty chose football over professional baseball due to the physicality of the former sport ."
+        ],
+        [
+          "It has evoked mixed responses from critics , although the guest appearances by the members of Kiss have been more universally criticized ."
+        ],
+        [
+          "e taken to Kariba Hospital , while MacLaren and his group were airlifted to Andrew Fleming Hospital in Salisbury ."
+        ],
+        [
+          "The highway rounds a curve and transitions to 72nd Street running eastward through more farm land . As the trunkline approaches Newaygo , the terrain becomes more wooded near the Muskegon River . M @-@ 82 follows Fremont Street east to a junction with M @-@ 37 . The two highways merge and run concurrently over the river and into downtown on State Street . South of downtown , M @-@ 82 turns east again , independent of M @-@ 37 , and runs along 82nd Street on the southern edge of the Manistee National Forest . The east end of M @-@ 82 is at exit 118 on US 131 / M @-@ 46 west of Howard City ."
+        ],
+        [
+          "The hearing took place in Blythe 's absence . Blythe 's acquittal was upheld by the panel on June 5 , 2013 ."
+        ],
+        [
+          "The Elmira Hotel was constructed in 1905 , and the Terminal Hotel was constructed in 1910 . Hotel Meridian was constructed in 1907 , and Union Hotel was built in 1908 . Union Hotel was listed on the National Register of Historic Places in 1979 , and both Hotel Meridian and Grand Avenue Hotel were listed as contributing properties to the Meridian Urban Center Historic District ."
+        ],
+        [
+          "Despite this , it was decided that it was essential for some Tetrarchs to be produced , and it was suggested that they be brought in at the end of the light tank program . Accordingly , the War Office gave the Tetrarch the official General Staff specification number A17 , and , in November 1938 , accepted it for limited production after requesting a few minor changes which included the fitting of an external fuel tank to increase the tank 's range ."
+        ],
+        [
+          "Murray Gold , were included on a soundtrack released on 21 October 2013 by Silva Screen Records ."
+        ],
+        [
+          "The only solution was to sheath the iron hull first in wood and then in copper , a laborious and expensive process which made wooden construction remain attractive . Iron and wood were to some extent interchangeable : the Japanese Kongō and Hiei ordered in 1875 were sister @-@ ships , but one was built of iron and the other of composite construction ."
+        ],
+        [
+          "His next two reigns were as simply WWE Champion , while his final one was as WWE World Heavyweight Champion ."
+        ],
+        [
+          "An alternative possibility is that Trimerorhachis was cannibalistic , eating its young like many amphibians do today . If this was the case , the bones of these smaller individuals were originally located in the throat and were pushed into the pharyngeal pouch as the animal fossilized ."
+        ],
+        [
+          "It was also Michigan 's first game since 2002 with three 20 @-@ point scorers ( Hardaway , Burke and Evan Smotrycz ) . Burke earned his second Freshman of the Week honor on December 12 after scoring a season @-@ high 20 points and nine assists in the game . On the same day , Michigan was the highest @-@ rated Big Ten team in the Ratings Percentage Index , although the team trailed several schools in the national polls . In the final two non @-@ conference games of the season , Smotrycz scored his first two double @-@ doubles against Alabama A & M and Bradley on December 17 and December 22 ."
+        ],
+        [
+          "Kemena Bridge crosses the Kemena River . It is the second bridge in Malaysia built using the incremental launch method . Keppel Road in Bintulu is named after a friend of James Brooke , Sir Henry Keppel ."
+        ],
+        [
+          "Meetings were all open to the public ."
+        ],
+        [
+          "MDF plants in Bintulu are operated by Daiken Sarawak Sdn Bhd , which was founded on 15 February 1994 . The briquette plant is operated by Cipta Briquette Sdn Bhd . A glue / adhesive factory in Bintulu is owned by Bintulu Adhesive & Chemicals Sdn Bhd . It produces urea formaldehyde resin and phenol formaldehyde resin for plywood and chipboard manufacturing at Kemena Industrial Estate . Urea precondensate is also produced to supply ASEAN Bintulu Fertiliser ( ABF ) plant ."
+        ],
+        [
+          "Stevens had previously made US $ 395 @,@ 000 plus benefits in base salary , a relatively low figure for a successful Division I head basketball coach . His total compensation for 2009 – 10 was estimated at US $ 750 @,@ 000 . Stevens had received a raise after each of his three seasons at Butler and his contract contains a buyout clause estimated in the high six or low seven figures ."
+        ],
+        [
+          "Both ships comfortably exceeded their designed speed of 23 knots ( 43 km / h ; 26 mph ) during their sea trials ; Ise reached 23 @.@ 6 knots ( 43 @.@ 7 km / h ; 27 @.@ 2 mph ) from 56 @,@ 498 shp ( 42 @,@ 131 kW ) and Hyūga exceeded that with 24 knots ( 44 km / h ; 28 mph ) from 63 @,@ 211 shp ( 47 @,@ 136 kW ) . Each of the boilers consumed a mixture of coal and oil and the ships had a stowage capacity of 4 @,@ 607 long tons ( 4 @,@ 681 t ) of coal and 1 @,@ 411 long tons ( 1 @,@ 434 t ) of fuel oil , which gave them a range of 9 @,@ 680 nautical miles ( 17 @,@ 930 km ; 11 @,@ 140 mi ) at a speed of 14 knots ( 26 km / h ; 16 mph ) . Ise and Hyūga had three generators of 150 kilowatts ( 200 hp ) capacity and two 250 @-@ kilowatt ( 340 hp ) turbo generators at 225 volts ."
+        ],
+        [
+          "\" Stevens met his wife , Tracy ( née Wilhelmy ) , while attending DePauw University . Tracy , who played soccer for DePauw , quickly learned of Brad 's love for basketball ; on their third date he drove her an hour and a half to attend a high school basketball game . Tracy graduated from Rocky River High School in 1995 , and from DePauw in 1999 . She returned to school in 2000 , driving five hours from Case Western 's law school to Indianapolis on weekends to see Brad . She finished her final year of law school in Indianapolis , and the couple married in August 2003 . Tracy works as a labor and employment lawyer . Tracy also serves as Brad 's agent ."
+        ],
+        [
+          "San Francisco CA : City Lights Books . 2002 . ISBN 978 @-@ 0 @-@ 87286 @-@ 416 @-@ 0 ."
+        ],
+        [
+          "He wrote , \" so that in saying , ' For the mystery of iniquity doth already work , ' he alluded to Nero , whose deeds already seemed to be as the deeds of Antichrist . \""
+        ],
+        [
+          "Sayyid Ajjal , advanced to Kaungsin , which defended the Bhamo Pass . They occupied the fort and destroyed a large number of abandoned stockades . But they found the heat excessive and returned ."
+        ],
+        [
+          "sufferings of a conscript soldier in the imperial army and a clear @-@ sighted consciousness of suffering . These concerns are continuously articulated in poems on the lives of both soldiers and civilians produced by Du Fu throughout his life ."
+        ],
+        [
+          "Specifically , they refer to a 1993 Boulder , Colorado interview with Jodi Rave , a former columnist for the Denver Post , in which Churchill stated that he \" was teaching the Rapid City Police Department about the American Indian Movement . \" In addition , Vernon Bellecourt accused Churchill of having ' fraudulently represented himself as an Indian ' to bolster his credentials . Bellecourt said he complained to the University of Colorado about this as early as 1986 ."
+        ],
+        [
+          "The Threefoot Building has been proposed for redevelopment for this purpose , but restoration efforts stalled with a change in city administrations . The Threefoot Preservation Society was formed in 2013 to raise public awareness and support for the building 's renovation , featuring tours of the first floor and anniversary events ."
+        ],
+        [
+          "It is revealed that the gallery show is a sham and that Fairey is an undercover officer who helped the police identify Bart as the graffiti artist that had been spray @-@ painting Springfield . Since Bart is just a boy , he is not sent to jail . Instead , he is punished by once again being locked up in the rabbit cage . When Bart tells Wiggum that he has to go to the bathroom , Wiggum covers the cage with the blanket and finds Bart gone when he removes the blanket from the cage ."
+        ],
+        [
+          "i Juyi 's concern for the poor , Lu You 's patriotism , and Mei Yaochen 's reflections on the quotidian are a few examples . More broadly , Du Fu 's work in transforming the lǜshi from mere word play into \" a vehicle for serious poetic utterance \" set the stage for every subsequent writer in the genre ."
+        ],
+        [
+          "\" Former player Joel Cornette says \" Everyone sees Brad as a level @-@ headed , calm and cool coach , but he ’ s about as competitive of a guy as I know . We would get into it constantly , whether playing two @-@ on @-@ two or arguing about players ’ having better college careers . \""
+        ],
+        [
+          "Cambridge coach Duncan Holland congratulated his opponents : \" Well done to Oxford , they were much faster on the day \" . Following tradition , the victorious Oxford crew tossed their cox Brodie into the Thames ."
+        ],
+        [
+          "Upon being declared , the depression was located about 335 mi ( 540 km ) south @-@ southeast of Lázaro Cárdenas , Mexico . However , after post @-@ analysis , the depression had actually developed nine hours earlier . Maintaining a west @-@ northwesterly track in response to a subtropical ridge to the north , the depression was forecast to move into a favorable environment , characterized by low wind shear and sea surface temperatures up to 86 ° F ( 30 ° C ) . Three hours after classification , the depression strengthened Tropical Storm Beatriz , the second named storm of the season ."
+        ],
+        [
+          "There was concern in Rome over how the young Emperor would handle the situation . Nero reacted by immediately sending the military to the region under the command of Gnaeus Domitius Corbulo . The Parthians temporarily relinquished control of Armenia to Rome ."
+        ],
+        [
+          "Previously in the 1960s , details of the story were told to a journalist by his intelligence service contacts and he wrote these up as \" Operation Monkey \" , yet facts were very sparse ."
+        ],
+        [
+          "The following morning , the British , unable to drag the grounded Acteon off the sandbar , set fire to the ship to prevent her from falling into enemy hands . Patriots in small boats sailed out to the burning ship , fired some of its cannons at the British ships , took what stores and loot they could , and retreated shortly before the ship 's powder magazine exploded ."
+        ],
+        [
+          "Olivia explains to Peter that their murderer would paralyze his victims , young women , then make an incision along their face to extract a piece of brain material , killing the victim in the process . Walter takes both corpses back to his lab and determines that the woman had only been pregnant minutes before giving birth , her child having accelerated aging disease . Walter is reminded of having previously done work in this field , and remembers where he stashed his car that contains the related files . Once they are retrieved , Olivia makes a connection to the pituitary gland which controls growth in humans , and informs Charlie Francis ( Kirk Acevedo ) to monitor recent cases where the victims ' pituitary gland has been removed ."
+        ],
+        [
+          "During the Japanese occupation , sawmills at Bintulu produced a total of 4 @,@ 000 tons of sawn timber ."
+        ],
+        [
+          "The monsoon trough spawned a tropical depression north of Luzon on August 18 , with PAGASA naming it Lakay . There were several circulations in the region , with Tropical Storm Vamco to the northeast near Taiwan , and the overall system moved generally westward . PAGASA briefly classified Lakay as a tropical storm on August 19 before ending advisories the next day . The system spread rainfall across China , reaching 82 @.@ 4 mm ( 3 @.@ 24 in ) in Xiamen , Fujuan ."
+        ],
+        [
+          "The new airport has a runway measuring 2 @,@ 745 m ( 9 @,@ 006 ft ) , capable of handling planes as large as the Airbus A330 . The airport currently serves three major airlines : Malaysia Airlines ( MAS ) , Air Asia , and MASwings , connecting to domestic destinations such as : Sibu , Miri , Kuching , Kuala Lumpur , and Kota Kinabalu ."
+        ],
+        [
+          "Furthermore , the city is composed of 16 districts , namely : Binondo , Ermita , Intramuros , Malate , Paco , Pandacan , Port Area , Quiapo , Sampaloc , San Andres , San Miguel , San Nicolas , Santa Ana , Santa Cruz , Santa Mesa and Tondo ."
+        ],
+        [
+          "Japanese merchants , Luzon 's Huangs with several Datus and Rajahs plus the Bruneian Empire would band together to execute the Spaniards and their Latin @-@ American mercenaries , and Visayan allies . At the conclusion of which , the victorious Spaniards made Manila the capital of the Spanish East Indies and of the Philippines , which the empire would control for the next three centuries , from 1565 to 1898 ."
+        ],
+        [
+          "According to Adler , Blythe is a calm , moderate , and well @-@ read person . The defense also presented videos from various Lamb of God concerts in order to demonstrate that metal music is very energetic and that Blythe regularly cheers to the crowd , but not to encourage people to climb the stage ."
+        ],
+        [
+          "Community organizations , including a local gay rights group , responded by standing vigil outside the synagogue during Passover services . Lord and an associate were caught and convicted , and Lord was sentenced to four and a half years in prison ."
+        ],
+        [
+          "The writer , folklorist and musician , George P. S. Peterson was brought up on Papa Stour ."
+        ],
+        [
+          "Radcliffe 's performance was panned by New York Times journalist A. O. Scott , who wrote that Watson had to carry him with her performance . Next was Harry Potter and the Goblet of Fire in 2005 . The film was the second @-@ highest grossing Harry Potter film at that point , and Radcliffe singled out the humour as being a reason for the movie 's creative success ."
+        ],
+        [
+          "Historically , they are the first filters that could approach the ideal filter frequency response to within any prescribed limit with the addition of a sufficient number of sections . However , they are rarely considered for a modern design , the principles behind them having been superseded by other methodologies which are more accurate in their prediction of filter response ."
+        ],
+        [
+          "The team won its next two games beating # 15 Ohio State 74 – 66 and edging out former conference rival Xavier 69 – 68 , both at home . After losing 67 – 57 at UAB three days later , Butler stood at 9 – 4 and fell out of the AP rankings . However , the team remained in the Coaches Poll at # 23 ."
+        ],
+        [
+          "Moffat stated that the introduction of a new companion made \" the show feel different \" and brought the story to \" a new beginning \" with a different person meeting the Doctor . Smith said that Clara was different from her predecessor Amy Pond ( Karen Gillan ) , which allowed the audience to see a different side of the Doctor . Coleman described her as resourceful and not intimidated , citing the reason for following the Doctor at the beginning as pursuing answers . The Clara who would become a travelling companion of the Doctor would not debut until the Spring premiere , \" The Bells of Saint John \" ; save for a brief cameo at the end of \" The Snowmen \" . Coleman stated that she played each version as individuals with \" trust that there would be a payoff \" to her mystery ."
+        ],
+        [
+          "Now I am in the very fortunate position where I can actually help or do something about it , \" he said in a 2010 interview . In the same interview , he spoke of the importance of public figures advocating for equal rights . Radcliffe considers his involvement to be one of the most important things in his career and , for his work for the organisation , he was given the \" Hero Award \" in 2011 ."
+        ],
+        [
+          "The San Agustín Church in Intramuros is a UNESCO World Heritage Site and is one of the two fully air @-@ conditioned Catholic churches in the city . Manila also has other parishes located throughout the city , with some of them dating back to the Spanish Colonial Period when the city serves as the base for numerous Catholic missions both within the Philippines and to Asia beyond ."
+        ],
+        [
+          "The compression of expression that they achieved by following the Greek example complemented the proto @-@ Imagist interest in Japanese poetry , and , in 1912 , during a meeting with them in the British Museum tea room , Pound told H.D. and Aldington that they were Imagistes and even appended the signature H.D. Imagiste to some poems they were discussing ."
+        ],
+        [
+          "n to visit the Bogside on 28 August , he was told that he would not be allowed to bring either police or soldiers with him . Callaghan agreed . Accompanied by members of the Defence Committee , he was \" swept along by a surging crowd of thousands \" up Rossvile Street and into Lecky Road , where he \" took refuge \" in a local house , and later addressed crowds from an upstairs window . In preparation for Callaghan 's visit the \" Free Derry \" wall was painted white and the \" You are now entering Free Derry \" sign was professionally re @-@ painted in black lettering ."
+        ],
+        [
+          "It was commissioned by New East Manchester Limited to commemorate the 2002 Commonwealth Games . The design was selected by a panel consisting of both local residents and art experts via a competition in 2002 and was designed by Thomas Heatherwick ."
+        ],
+        [
+          "He eliminated Matt Hardy and The World 's Greatest Tag Team , which was composed of Charlie Haas and his former OVW teammate , Shelton Benjamin , who were mentored by Angle . Lesnar would then eliminate The Undertaker last and win the Royal Rumble , which guaranteed him a title match at WrestleMania XIX ."
+        ],
+        [
+          "On Hainan , the storm helped end one of the worst summer droughts in almost 65 years , although it also left heavy crop damage , wrecking 64 @,@ 000 ha ( 160 @,@ 000 acres ) of fields and killing 400 head of livestock . With about 800 homes destroyed , damage on Hainan amounted to $ 197 million ( 2003 USD ) . Effects were minor in mainland China ."
+        ],
+        [
+          "Realising that this bias may be apparent to others , Tacitus protests that his writing is true ."
+        ],
+        [
+          "Gibbon considered Nerva the first of the Five Good Emperors , five successive rulers under whom the Roman Empire \" was governed by absolute power , under the guidance of wisdom and virtue \" from 96 until 180 . Nevertheless , even Gibbon notes that , compared to his successors , Nerva may have lacked the necessary qualifications for a successful reign :"
+        ],
+        [
+          "em from orbit or destroy them on short timescales compared to the age of the system ."
+        ],
+        [
+          "It is also present in most of the Mediterranean Sea , only missing from the section east of Crete , and along only the north @-@ west coast of the Black Sea . The northernmost populations are found in the Norwegian fjords Tysfjorden and Nordfolda , inside the Arctic Circle ."
+        ],
+        [
+          "Even though remnants of the NK 9th Division , supported by the low strength NK 4th Division , still held Obong @-@ ni Ridge , Cloverleaf Hill , and the intervening ground back to the Naktong on September 6 , the division 's offensive strength had been spent at the end of the American counterattack . The NK 9th and 4th divisions were not able to resume the offensive ."
+        ],
+        [
+          "He therefore \" lends grandeur \" to the wider picture by comparing it to \" his own slightly comical triviality \" ."
+        ],
+        [
+          "During this stretch , he allowed only two runs earned runs , lowering his ERA to 1 @.@ 91 . He was recalled on July 22 ."
+        ],
+        [
+          "Gore 's clients included Loyalists seeking to recover some of their assets , as well as London @-@ based British merchants with claims to pursue . His briefs were generally well @-@ reasoned , and he was seen as a successful trial lawyer ."
+        ],
+        [
+          "Around 19 : 00 Ozawa learned about a force of destroyers and cruisers that drove off the Japanese destroyers rescuing survivors from some of the carriers lost earlier in the day and sank Chiyoda . He ordered the Fourth Carrier Division to reverse course and engage the Americans , but the battleships were unable to find them , and Ozawa ordered them to reverse course and head for Amami Ōshima . When they arrived on 27 October , Ozawa transferred to Hyūga and hoisted his flag aboard her . While en route for Kure , the division was unsuccessfully attacked by another submarine ."
+        ],
+        [
+          "Later in the month , the monsoon trough spawned a disturbance east of the Philippines that PAGASA classified as Tropical Depression Quiel on September 15 . The system moved westward but never intensified , dissipating west of Luzon on September 19 . The broad system also spawned Typhoon Choi @-@ wan ."
+        ],
+        [
+          "The bass and drums continue in regular eighth and sixteenth notes , respectively , while Bono 's vocal performance , in contrast , varies greatly in its timbre , ( \" he sighs ; he moans ; he grunts ; he exhales audibly ; he allows his voice to crack \" ) as well as timing by his usage of rubato to slightly offset the notes he sings from the beat ."
+        ],
+        [
+          "This compound armor was used by the British in ships built from the late 1870s , first for turret armor ( starting with HMS Inflexible ) and then for all armor ( starting with HMS Colossus of 1882 ) . The French and German navies adopted the innovation almost immediately , with licenses being given for the use of the ' Wilson System ' of producing fused armor ."
+        ],
+        [
+          "He had had mixed success : his vaunted forces had finished off the last of the Song in 1279 but had again failed to take Japan in 1281 . That year , the Mongol emperor sent another mission to Pagan , demanding tribute yet again . The Burmese king was to send his ten senior ministers accompanied by one thousand cavalry officers to the emperor 's court . ( With Champa , the emperor summoned the king of Champa himself to Beijing . )"
+        ],
+        [
+          "However , at least until the late 1870s , the British muzzle @-@ loaders had superior performance in terms of both range and rate of fire than the French and Prussian breech @-@ loaders , which suffered from the same problems as had the first Armstrong guns ."
+        ],
+        [
+          "In life , the lobsters are blue , only becoming \" lobster red \" on cooking . Mating occurs in the summer , producing eggs which are carried by the females for up to a year before hatching into planktonic larvae . Homarus gammarus is a highly esteemed food , and is widely caught using lobster pots , mostly around the British Isles ."
+        ],
+        [
+          "There were practical matters such as diet , exercise , sanitation , and clothing to consider as well as vital \" psychology of the personnel \" . The full team was in place by the end of summer 1942 and their cavern fully equipped and ready for occupation . A comprehensive manual was prepared on all aspects of the operation and it was considered that similar secret lookout posts should be prepared throughout the world in the event of future wars . However , Operation Tracer was never needed , as Adolf Hitler turned his attention away from Gibraltar and towards the Eastern Front ."
+        ],
+        [
+          "Finally , he stated that \" Returning fans will revel in this combination of freedom and growth , and appreciate the return of producer Tommy Torres , the man who has been behind the boards for quite a few of Arjona 's most popular releases \" ( referring to Torres ' absence from the production of Poquita Ropa ) ."
+        ],
+        [
+          "Hamna Voe ( Old Norse : ' harbour bay ' ) in the south is the most sheltered anchorage and the surrounding cliffs contain a natural rock arch . Housa Voe to the east ( Old Norse : ' house bay ' ) is less secluded but is the main harbour for the island and the ferry 's embarkation point ."
+        ],
+        [
+          "The Italian frogmen originally used a Spanish villa ( Villa Carmela ) located two miles ( 3 km ) from Gibraltar owned by an Italian officer who had married a Spanish woman named Conchita Ramognino . Their base was shifted later to the Italian tanker SS Olterra , interned in Algeciras ."
+        ],
+        [
+          "Today , King Narathihapate is remembered as Taruk @-@ Pye Min , ( \" the King who fled from the Taruk [ Chinese ] ) . ) From a geopolitical standpoint , the Mongol – Chinese presence in Yunnan pushed the Shan migrations in the direction of Burma ( and parts of the Khmer Empire ) . The raids by various Shan states into Upper Burma would continue until the mid @-@ 16th century ."
+        ],
+        [
+          "The Iban villagers paid the bus driver with \" vegetables , chickens , bamboo shoots , and other items \" . Before 1960 , Bintulu was connected to Kuching by sea through a ship named \" Swee Joo \" . After 1960 , the ship \" Chin Chin \" was added to the route . It took around 36 to 48 hours to reach Bintulu from Kuching , depending on the sea conditions . Due to lack of food supplies from Kuching , the villagers had to make do with limited food , and several villagers resorted to hunting in the jungles to supplement the food supply ."
+        ],
+        [
+          "Meridian was home to two Carnegie libraries , one for whites and one for African Americans . The Carnegie Branch Library , now demolished , was one of a number of Carnegie libraries built for blacks in the Southern United States during the segregation era ."
+        ],
+        [
+          "In particular , the research has focused on a few key areas : rendering the reaction catalytic in the promoter , effecting the reaction with more mild promoters to improve functional group tolerance , directing the regioselectivity of the elimination step , and improving the overall stereoselectivity . These have been successful to varying degrees ."
+        ],
+        [
+          "The planet takes 4 @.@ 617 days to complete an orbit , with a semimajor axis of 0 @.@ 0595 AU ."
+        ],
+        [
+          "He married around 752 , and by 757 the couple had had five children — three sons and two daughters — but one of the sons died in infancy in 755 . From 754 he began to have lung problems ( probably asthma ) , the first of a series of ailments which dogged him for the rest of his life . It was in that year that Du Fu was forced to move his family due to the turmoil of a famine brought about by massive floods in the region ."
+        ],
+        [
+          "\" He arrived in Charleston shortly after the fleet anchored outside the harbor , and took command of the city 's defenses . He immediately ran into a problem : the South Carolina troops ( militia or the colonial regiments ) were not on the Continental line , and thus not formally under his authority . Some South Carolina troops resisted his instructions , and Rutledge had to intervene by proclaiming Lee in command of all South Carolina forces ."
+        ],
+        [
+          "Dick shows Logan a sex tape of Piz and Veronica that has been circulating in an email . Because Logan thinks Piz posted the tape , he attacks Piz and hits him incessantly . Weevil does have a student ID machine , and Logan walks into Mars Investigations with Piz ’ s blood on him ."
+        ],
+        [
+          "Cooke rewarded the captain by releasing his vessel with its cargo intact , although he did remove 3 @,@ 900 silver dollars . The Spanish squadron had suffered badly in a typhoon in April 1797 and much of the damage had still not been repaired by the time Cooke 's small squadron arrived off Manila . Cooke had taken precautions to disguise his ships as French vessels , modelling Sybille on the powerful 40 @-@ gun Forte and Fox on the smaller Prudente ."
+        ],
+        [
+          "While home in Ohio over a summer break , he met local drag racer Raymond Beadle through lifelong friend Fred Miller . When Richmond reached age 16 , his parents purchased him a Pontiac Trans Am , a speedboat and a Piper Cherokee airplane for his birthday . Yet his mother Evelyn often worried about spoiling her only son . She once said , \" Tim was lazy ... \" , and \" ... I did everything for him . I ruined him , I admit it . He was my whole life . \""
+        ],
+        [
+          "Virda is possibly from the Old Norse for ' heap of stones ' ."
+        ],
+        [
+          "In April 1941 , he became commanding officer of No. 2 Squadron , which operated Lockheed Hudsons . The squadron was deployed to Dutch Timor in December , and saw action against Japanese forces in the South West Pacific . After returning to Australia in February 1942 , Headlam held staff appointments and training commands , finishing the war a group captain ."
+        ],
+        [
+          "These promoters are not compatible with sensitive functional groups , limiting the substrate scope ."
+        ],
+        [
+          "Aktion Bildungsinformation ( \" Educational Information Campaign \" ) became an important organization dedicated to opposing Scientology ; taking an activist stance , it warned people not to get involved with Scientology , filed successful lawsuits against the Church of Scientology over its proselytizing in public places , and published an influential book , The Sect of Scientology and its Front Organizations . In 1981 , the organization 's founder , Ingo Heinemann , became the director of Aktion für geistige und psychische Freiheit ( \" Campaign for Intellectual and Psychic Freedom \" ) , Germany 's most prominent anti @-@ cult organization . Warnings from sect experts about the influence of new religious movements gained media attention which put political pressure on the government to"
+        ],
+        [
+          "It still required a manual center placement , keeping some subjectivity within the process . By 2004 , an advanced objective Dvorak technique was developed which utilized banding features for systems below hurricane intensity and to objectively determine the tropical cyclone 's center . A central pressure bias was uncovered in 2004 relating to the slope of the tropopause and cloud top temperatures which change with latitude that helped improve central pressure estimates within the objective technique ."
+        ],
+        [
+          "He was also one of two RAAF representatives to serve on a committee , chaired by businessman William John Allison , examining conditions of defence service ; the committee 's recommendations led to a doubling of flight pay , among other improvements . Headlam 's other positions at the Department of Air included Air Commodore Plans from October 1957 to January 1959 , and Director General Plans and Policy from January to August 1959 . The latter assignment put him in charge of the RAAF 's Directorate of Intelligence . Headlam was appointed a Commander of the Order of the British Empire ( CBE ) in the 1958 Queen 's Birthday Honours , gazetted on 3 June . In May 1960 he became acting Deputy Chief of the Air Staff ."
+        ],
+        [
+          "In July 2005 , the two sides dropped their claims and entered negotiations to renew their relationship . WWE had offered Lesnar a contract , but on August 2 , 2005 , WWE 's official website reported that Lesnar had withdrawn from any involvement with the company . The lawsuit began to enter settlement talks on September 21 , but did not get solved ."
+        ],
+        [
+          "Historians indicate that there was a belief that theatre led to immorality . Others considered that to have performers dressed in Greek clothing was old fashioned . Some questioned the large public expenditure on entertainment ."
+        ],
+        [
+          "It appears Vespasian befriended Nerva during his time as an imperial advisor , and may have asked him to watch over Vespasian 's youngest son Domitian when Vespasian departed for the Jewish war in 67 ."
+        ],
+        [
+          "He was an experienced tactician and strategist and had served in a variety of posts in the Habsburg military ; he had been Archduke Charles ' trusted adviser during the campaigns from 1796 to 1800 and had assisted in planning several of Charles ' victories . Upon his recall , Schmitt was appointed Chief of the Quartermaster General Staff of the Coalition Army . The generals had found among the Austrian force one Capt. Christoph Freiherr von Stiebar ( 1753 – 1824 ) , who had knowledge of the local geography ."
+        ],
+        [
+          "The Germans and Italians also went on the offensive in North Africa at the end of March and drove the Commonwealth force there back to near the border with Egypt . The 9th Division and a brigade of the 7th Division were besieged at Tobruk ; successfully defending the key port town until they were replaced by British units in October . During June , the main body of the 7th Division , a brigade of the 6th Division and the I Corps headquarters took part in the Syria @-@ Lebanon Campaign against the Vichy French . Resistance was stronger than expected ; Australians were involved in most of the fighting and sustained most of the casualties before the French capitulated in early July ."
+        ],
+        [
+          "It was a part of the Battle of Pusan Perimeter , and was one of several large engagements fought simultaneously . The battle ended in a victory for the United Nations after large numbers of United States ( US ) and Republic of Korea ( ROK ) troops repelled a strong North Korean attack ."
+        ],
+        [
+          "the crash site to \" make the local people pay for their crime of harbouring and assisting the terrorists \" . He instructed them not to , according to his memoirs , telling them that many rural blacks only assisted the guerrillas under extreme duress , and that it would not do to attack them . Many Rhodesians also resented the apparent lack of sympathy emanating from overseas governments , especially considering the character of the attack and its civilian target ."
+        ],
+        [
+          "that this was how she henceforth wished to be known ; however Mbantua 's biography is the only source that has used that version of her name ."
+        ],
+        [
+          "The smallest weigh 6 tons , while the largest is variously estimated to weigh 40 to 50 tons , although it was abandoned and left unfinished close to the source of its stone ."
+        ],
+        [
+          "After game two of the championship series , Victoria 's Matthew Blackmore was named both Claxton Shield Final Series MVP and Pitcher of the Year ."
+        ],
+        [
+          "On August 25 , 9th Infantry commander Colonel John G. Hill outlined projected \" Operation Manchu , \" which was to be a company @-@ sized combat patrol to cross the river , advance to the suspected North Korean command post and communications center , destroy it , capture prisoners , and collect intelligence ."
+        ],
+        [
+          "The Treasure Coast region received the most extensive destruction , and Stuart , Jupiter , and Fort Pierce were heavily damaged . Inland , the cyclone weakened rapidly but produced prodigious amounts of rain , causing a dam to collapse near Tampa . The storm caused $ 3 million in damage ( 1933 USD ) after damaging or destroying 6 @,@ 848 homes ."
+        ],
+        [
+          "These ships were paid for from the £ 30 @,@ 000 @,@ 000 indemnity paid by China after losing the First Sino @-@ Japanese War . As with the earlier Fuji and Shikishima classes , Japan lacked the technology and capability to construct its own battleships , and turned again to the United Kingdom for the four remaining battleships of the programme . Asahi , the fifth Japanese battleship to be built in Britain , was ordered from the Clydebank Engineering & Shipbuilding Company shipyard in Clydebank , Scotland in the 1897 annual naval programme ."
+        ],
+        [
+          "ited access the US had to locations in the Persian Gulf area , maintaining this access was a main interest for the Mogadishu embassy to pursue as the US mobilized to intervene in Kuwait ."
+        ],
+        [
+          "These names were contributed to a list of a 140 names submitted by the fourteen members nations and territories of the ESCAP / WMO Typhoon Committee ."
+        ],
+        [
+          "Each of the two competing factions of the Bleeding Kansas conflict claimed one of the hotels at Fort Scott : Free @-@ Soil at the Fort Scott Hotel and Pro @-@ Slavery at the Western Hotel . Most of the residents in Fort Scott supported slavery , but those outside the town tended to the free @-@ soil side . During this time , there were local incidents of murder and attempted arson , typical elements of the guerrilla conflicts that were prevalent in the fighting ."
+        ],
+        [
+          "\" Both Gloire and HMS Warrior were examples of this type . Because their armor was so heavy , they could only carry a single row of guns along the main deck on each side rather than a row on each deck ."
+        ],
+        [
+          "Arriving there in early June , troops were landed on Long Island , near Sullivan 's Island where Colonel William Moultrie commanded a partially constructed fort , in preparation for a naval bombardment and land assault . General Charles Lee , commanding the southern Continental theater of the war , would provide supervision ."
+        ],
+        [
+          "The reserve race , contested between Oxford 's Isis boat and Cambridge 's Goldie boat has been held since 1965 . It usually takes place on the Tideway , prior to the main Boat Race ."
+        ],
+        [
+          "The temperature difference has led to speculation that Upsilon Andromedae b is tidal locked with the same side always facing Upsilon Andromedae A."
+        ],
+        [
+          "Lead vocalist Bono wrote the lyrics in response to the notion that it is possible to identify a person 's religion and income based on the street on which they lived , particularly in Belfast . During the band 's difficulties recording the song , producer Brian Eno considered erasing the song 's tapes to have them start from scratch ."
+        ],
+        [
+          "A successor would have to be chosen from among the governors or generals in the Empire and it appears that , by 97 , Nerva was considering to adopt Marcus Cornelius Nigrinus Curiatius Maternus , the powerful governor of Syria . This was covertly opposed by those who supported the more popular military commander Marcus Ulpius Traianus , commonly known as Trajan , a general of the armies at the German frontier ."
+        ],
+        [
+          "The hamlet 's residential surroundings continue to the adjacent community of Molyneaux Corners , where NY 93 becomes concurrent with NY 104 ( Ridge Road ) . NY 93 and NY 104 proceed northeast across lightly populated areas for 2 miles ( 3 @.@ 2 km ) to the hamlet of Warren Corners , at which point NY 93 splits from NY 104 and heads southward along Town Line Road . It immediately intersects with Stone Road ( CR 19 ) before leaving the hamlet ."
+        ],
+        [
+          "0 Hercules transport aircraft to international operations in the Persian Gulf and Indian Ocean since 2001 , supporting both the operations in Afghanistan and those in Iraq under Operation Catalyst . A detachment of four F / A @-@ 18 Hornet fighter @-@ bombers was based at Diego Garcia from late @-@ 2001 to mid @-@ 2002 , while two Boeing 707 air @-@ to @-@ air refuelling aircraft were also based in Manas Air Base in Kyrgyzstan to provide support to coalition aircraft operating in Afghan airspace but were later withdrawn . A Special Operations Task Group was deployed to support the Reconstruction Taskforce in April 2007 . In addition to radar crews , logistics and intelligence officers , and security personnel , this brought the number of Au"
+        ],
+        [
+          "Thinking this force was the rumored Russian rear guard , Mortier ordered Gen. Gazan to counterattack and push east towards the town of Stein . Fighting spread though the villages of Oberloiben , Unterloiben and the farm at Rothenhof . Instead of withdrawing , as a rear guard would , more and more Russian troops appeared and engaged the French column ."
+        ],
+        [
+          "That decision also marked the beginning of more intense lobbying efforts by the Church of Scientology in Washington , using paid lobbyists . The State Department 's 1996 human rights report on Germany , released in January 1997 , warned that artists and businesses with Scientology connections \" may face boycotts and discrimination , sometimes with government approval . \" Past targets of such actions had included Scientologist actors Tom Cruise and John Travolta , as well as jazz pianist Chick Corea ."
+        ],
+        [
+          "The Praetorians considered these measures insufficient , however , and demanded the execution of Domitian 's assassins , which Nerva refused . Continued dissatisfaction with this state of affairs would ultimately lead to the gravest crisis of Nerva 's reign ."
+        ],
+        [
+          "It continues on a southward track past the eastern terminus of CR 218 ( Hunts Corner – Akron Road ) to the outskirts of the village of Akron , where the highway turns east onto Lewis Road and soon enters the village limits . NY 93 runs past a line of homes before intersecting Cedar Street , a road maintained by Erie County as CR 261 north of the village ."
+        ],
+        [
+          "\" Zukofsky was a major influence on the Language poets , who carried the Imagist focus on formal concerns to a high level of development . Basil Bunting , another Objectivist poet , was a key figure in the early development of the British Poetry Revival , a loose movement that also absorbed the influence of the San Francisco Renaissance poets ."
+        ],
+        [
+          "He earned three letters in basketball , three in track , and one in baseball during his days at Zionsville . During summers , he traveled the country playing AAU basketball ."
+        ],
+        [
+          "They finished their Welsh matches , and the year , with a 4 – 1 loss to Cardiff in front of a partisan crowd ."
+        ],
+        [
+          "Although Imagism isolates objects through the use of what Ezra Pound called \" luminous details \" , Pound 's Ideogrammic Method of juxtaposing concrete instances to express an abstraction is similar to Cubism 's manner of synthesizing multiple perspectives into a single image ."
+        ],
+        [
+          "Fighters had been shipped in crates and assembled on the airfield . Every available area of storage was taken up with ammunition , fuel , and other essential supplies . 168 American pilots were housed in the RAF messes at North Front ."
+        ],
+        [
+          "The band members are often asked about the accusations in interviews , and have stated numerous times that they do not condone racism and are merely interested in the subject ."
+        ],
+        [
+          "However , unarmored iron had many military disadvantages , and offered technical problems which kept wooden hulls in use for many years , particularly for long @-@ range cruising warships ."
+        ],
+        [
+          "Initially reluctant to publicize the film , 20th Century Fox responded by stepping up its promotional activities ."
+        ],
+        [
+          "Over next two months , however , fluctuations in sea surface temperatures , particularly those in the Central Pacific , caused the group to revise their predictions downward and indicated the probability for a slightly below average typhoon season in their June forecast . A rise in sea surface temperatures in the following months prompted the forecasting group to once again raise their forecasts to indicate a near @-@ average season in their final August forecast update , which predicted 27 tropical storms . The group was very accurate in their forecasts , with their April and August forecasts being the most accurate ."
+        ],
+        [
+          "McCowen won the 1982 Evening Standard Theatre Award for best actor for this performance . In 1983 the production moved to the United States where it played at the Hartford Stage Company in Hartford , Connecticut , directed by Mark Lamos and starring John Cullum as Hitler ."
+        ],
+        [
+          "al tries to England , prompting three of the Natives to temporarily leave the field in protest ; England eventually won 7 – 0 . The Natives apologised afterwards for their behaviour , but the damage was not repaired . The New Zealanders left England without an official send @-@ off , and travelled to Australia where they toured Victoria , New South Wales and Queensland . They then returned to New Zealand , where they displayed a level of combination not seen in their home country before . They went 31 games undefeated before losing their final match , on 24 August 1889 , 7 – 2 to Auckland ."
+        ],
+        [
+          "Plans for more elaborate conversions were rejected on the grounds of expense and , most critically , time , and the IJN settled on removing the rear pair of turrets and replacing them with a flight deck equipped with two catapults to launch floatplanes . The Ise @-@ class ships were selected for the conversion because Hyūga had suffered an explosion in Turret No. 5 in early May that virtually destroyed the turret and their Turret No. 6 could not elevate to the full + 43 degrees deemed necessary for the long @-@ range engagement anticipated by the IJN . The Fusōs were scheduled to follow once the first two were completed ."
+        ],
+        [
+          "At the eastern village limits , NY 93 briefly widens to four lanes as it enters a partial cloverleaf interchange with the Niagara Scenic Parkway . Past the junction , the highway reverts to a two @-@ lane road and changes names to Youngstown – Lockport Road as it runs across the town of Porter . The residential surroundings continue to the hamlet of Towers Corners , where NY 93 connects to NY 18 ( Creek Road ) ."
+        ],
+        [
+          "Area , Intramuros , San Andres Bukid , and a portion of Paco ( except Zone 90 ) ."
+        ],
+        [
+          "Both games involved teams meeting for the first time during the season ; make @-@ up games were scheduled at the start of the return series between the teams , and this resulted in two four @-@ game series . In both cases , the teams had a 19 @-@ man roster for the make @-@ up game , and an expanded 21 @-@ man roster for the originally scheduled series ."
+        ],
+        [
+          "He notched four more victories that season , and over a span of twelve races , Richmond earned three second @-@ place finishes , and six wins . The National Motorsports Press Association named him Co @-@ Driver of the Year with Earnhardt after Richmond accumulated 13 top 5 finishes and 16 in the top 10 . He had a career @-@ best third @-@ place finish in points after winning seven events in 1986 , in what was his last full NASCAR season ."
+        ],
+        [
+          "Several types of dissorophoids do not fully metamorphose , but retain features of juveniles such as gills and small body size in what is known as neoteny . Dvinosaurians and the plagiosaurid Gerrothorax were also neotenic because they retained gills , but they are only known from adult specimens ."
+        ],
+        [
+          "Five battle groupings were ordered . The center attack called for the NK 9th Division , NK 4th Division , NK 2nd Division , and NK 10th Division break through the US 2nd Infantry Division at the Naktong Bulge to Miryang and Yongsan ."
+        ],
+        [
+          "ian Guards Brigade ( 1 @.@  hrvatski gardijski zdrug ) , a component of the 1st Croatian Guards Corps ( 1 @.@  hrvatski gardijski zbor ) , directly subordinated to the Ministry of Defence rather than the General Staff of the Armed Forces of the Republic of Croatia ."
+        ],
+        [
+          "During World War II , Gibraltar served a vital role in both the Atlantic Theatre and the Mediterranean Theatre , controlling virtually all naval traffic into and out of the Mediterranean Sea from the Atlantic Ocean ."
+        ],
+        [
+          "hich are the same words he tells Craig Owens ( \" Closing Time \" ) when Craig comments that the Doctor always wins . The final scenes at the graveyard establish that Clara shares the same name as Oswin , leading the Doctor to surmise they are the same person . As seen on her gravestone , Clara 's birthdate is 23 November , the date Doctor Who was first transmitted in 1963 ."
+        ],
+        [
+          "\" In 1992 , Churchill wrote elsewhere that he is one @-@ eighth Creek and one @-@ sixteenth Cherokee . In 1993 , Churchill told the Colorado Daily that \" he was one @-@ sixteenth Creek and Cherokee . \" Churchill told the Denver Post in February 2005 that he is three @-@ sixteenths Cherokee ."
+        ],
+        [
+          "On 27 March he was posted to the staff of RAAF Headquarters , Melbourne . He was promoted to squadron leader on 1 June 1940 . Two weeks later he married Katherine Bridge at St Paul 's Anglican Church in Frankston ; the couple would have a son and a daughter ."
+        ],
+        [
+          "ubt on future prospects for the landmark sculpture 's return , and in early July 2012 the core was sold as scrap for £ 17 @,@ 000 ."
+        ],
+        [
+          "Transportation of natural gas from the neighouring state of Kimanis , Sabah , to the LNG complex at Bintulu is facilitated by a 512 @-@ kilometre ( 318 mi ) pipeline known as the \" Sabah Sarawak Gas Pipeline \" . Currently , 45 % of Malaysian natural gas is found at Central Luconia off the coast of Bintulu . The largest importers of Malaysia LNG productions are Japan ( 62 % ) , Korea ( 17 % ) , Taiwan ( 12 % ) , and China ( 9 % ) ."
+        ],
+        [
+          "In late 1944 , Australian troops and RAAF squadrons replaced US garrisons in eastern New Guinea , New Britain , and Bougainville , and launched offensives aimed at destroying or containing the remaining Japanese forces there . In May 1945 , I Corps , the Australian First Tactical Air Force and USAAF and USN units began the Borneo Campaign , which continued until the end of the war . These campaigns contributed little to Japan 's defeat and remain controversial ."
+        ],
+        [
+          "Low @-@ growing plants are chosen for areas immediately in front of headstones , ensuring that inscriptions are not obscured and preventing soil from splashing back during rain . In cemeteries where there are pedestal grave markers , dwarf varieties of plants are used instead ."
+        ],
+        [
+          "The appraisal of the Government at the moment is that [ Scientology ] is a lousy organization , but it is not an organization that we have to take a hammer to . \" The Church of Scientology expressed satisfaction with the decision , describing it as the \" only one possible \" . Monitoring of Scientology 's activities by the German intelligence services continues ."
+        ],
+        [
+          "He arrived in Gibraltar on 5 November 1942 to take over , not just command of Operation Torch itself , but also military command of Gibraltar ."
+        ],
+        [
+          "The government introduced internment on 9 August 1971 , and in response , barricades went up once more in the Bogside and Creggan . This time , Free Derry was a no @-@ go area , defended by armed members of both the Official and Provisional IRA . From within the area they launched attacks on the British Army , and the Provisionals began a bombing campaign in the city centre . As before , unarmed ' auxiliaries ' manned the barricades , and crime was dealt with by a voluntary body known as the Free Derry Police ."
+        ],
+        [
+          "\" Frankel continued , \" It features a mishmash of anything he finds exotic and erotic , mostly Egyptian and Asian motifs with an ' 80s Studio 54 vibe , a makeshift dojo , lots of mirrors and a massage table . \" Some parts of the house design were provided by Farrell and Gordon 's interpretation of the character and his \" infatuation \" with martial arts and \" his delusions of prowess \" ."
+        ],
+        [
+          "\" Buchanan was disappointed with the lack of speech samples , explaining that it 's \" a bit of a drag with a character that is so defined by his voice . \" Ultimately , Butt said that \" [ y ] ounger players will instantly be enthralled by Donald 's quest \" and that \" QuackShot is everything a cartoon game should be and more . \" Buchanan summed up the game as being a \" good platformer tripped up by some questionable controls \" and recommended the game as \" a mildly enjoyable 16 @-@ bit platformer that would fit nicely in your Genesis collection . \""
+        ],
+        [
+          "If he loses a life as a result of time running out but has another life , the timer will reset to 0 : 00 when he returns to the checkpoint . If all lives are lost at any point in the game , the game over screen will appear ( when the player can return to the beginning of the act with three lives , if they have any continues ) ."
+        ],
+        [
+          "UB @-@ 10 was eventually joined in the Flanders Flotilla by UB @-@ 2 , UB @-@ 4 , UB @-@ 5 , UB @-@ 6 , UB @-@ 12 , UB @-@ 13 , UB @-@ 16 , and UB @-@ 17 ; of these , only UB @-@ 2 made the journey to Flanders by sea rather than rail ."
+        ],
+        [
+          "Aggression Abroad to the Domestic Repression of Indigenous Peoples \" , recorded in North Battleford , Saskatchewan on March 19 , 2005"
+        ],
+        [
+          "In his introduction to this volume , Howard Zinn lauds \" the emergence of a new generation of Native @-@ American scholars \" and describes Churchill 's writing as \" powerful , eloquent , unsparing of cant and deception \" ."
+        ],
+        [
+          "Her completion was delayed by about three months when her bottom plating required repairs after running aground off Southsea following sea trials . The ship departed England , after repairs in Portsmouth , on the day of her completion , and arrived at Yokosuka , Japan , on 23 October 1900 . Asahi became flagship of the Standing Fleet on 22 May 1901 and was assigned to the 1st Battleship Division of the 1st Fleet when the Combined Fleet was re @-@ formed on 28 December 1903 ."
+        ],
+        [
+          "Among the Weser boats , UB @-@ 9 was laid down first , on 6 November 1914 , and launched on 6 February 1915 , a week ahead of UB @-@ 2 . These first three boats launched underwent trials in home waters , but most of the other members of the class were shipped via rail and underwent trials at their assembly point ."
+        ],
+        [
+          "digan , William Elliot , George Williams , Dick Taiaroa , Thomas Ellison , W Anderson , Joe Warbrick , Richard Maynard , Charles Goldsmith"
+        ],
+        [
+          "Graves attempts to escape by parachute , but Bond opens the parachute , causing Graves to be pulled out of the plane and into one of its engines , killing him and disabling the Icarus beam . Bond and Jinx then escape from the disintegrating plane in a helicopter from the cargo hold , carrying away Graves ' stash of diamonds in the process ."
+        ],
+        [
+          "flying CH @-@ 47D Chinooks , the Force Logistics Asset and an RAAF air surveillance radar unit based in Kandahar . In addition , a further 800 Australian logistic personnel were also based in the Middle East in support , but are located outside of Afghanistan . Meanwhile , detachments of maritime patrol and transport aircraft continued to support operations in Iraq and Afghanistan , based out of Al Minhad Air Base in the United Arab Emirates . Also included is the deployment of one of the RAN 's frigates to the Arabian Sea and Gulf of Aden on counter piracy and maritime interdiction duties ."
+        ],
+        [
+          "The 1960 ABC Championship and the 1973 ABC Championship , forerunners of the FIBA Asia Championship , was hosted by the complex , with the national basketball team winning on both tournaments . The 1978 FIBA World Championship was held at the complex although the latter stages were held in the Araneta Coliseum in Quezon City , Southeast Asia 's largest indoor arena at that time ."
+        ],
+        [
+          "It is often held that the power of explosive shells to smash wooden hulls , as demonstrated by the Russian destruction of an Ottoman squadron at the Battle of Sinop , spelled the end of the wooden @-@ hulled warship . The more practical threat to wooden ships was from conventional cannon firing red @-@ hot shot , which could lodge in the hull of a wooden ship and cause a fire or ammunition explosion . Some navies even experimented with hollow shot filled with molten metal for extra incendiary power ."
+        ],
+        [
+          "However , Lee sent more ammunition and gunpowder over from the mainland , and the defenders resumed firing at the British ships ; Lee even briefly visited the fort late in the day , telling Colonel Moultrie , \" I see you are doing very well here , you have no occasion for me , I will go up to the town again . \" Admiral Parker eventually sought to destroy the fort 's walls with persistent broadside cannonades . This strategy failed due to the spongy nature of the palmetto wood used in its constructions ; the structure would quiver , and it absorbed the cannonballs rather than splintering . The exchange continued until around 9 : 00 pm , when darkness forced a cessation of hostilities , and the fleet finally withdrew out of range ."
+        ],
+        [
+          "It also allowed him to use his influence as governor to sway the party 's choice of his potential successor as governor . State Auditor Samuel Wilbur Hager was Beckham 's choice for governor and easily won the early primary over challenger N.B. Hays . Former governor James B. McCreary challenged Beckham for the senatorial nomination , but Beckham won by more than 11 @,@ 000 votes ."
+        ],
+        [
+          "Moving westward initially , the depression turned more to the north into an area of increasing wind shear . On May 19 , the JTWC upgraded the system to Tropical Storm 03W , and on the same day , PAGASA classified it as Tropical Depression Batibot . Soon after , the convection decreased from the center , and by May 20 , all warning agencies had discontinued advisories ."
+        ],
+        [
+          "The cyclization takes place before elimination of the benzyl alcohol moiety , so that the resulting stereochemistry of the newly formed ring arises from approach of the silyl alkene anti to the ether ."
+        ],
+        [
+          "Shown below are key steps in the syntheses of Trichodiene and Nor @-@ Sterepolide , the latter of which is thought to proceed via an unusual alkyne @-@ allene isomerization that generates the divinyl ketone ."
+        ],
+        [
+          "It came from 57 ° 53 ′ N 11 ° 32 ′ E , near Marstrand , Sweden ( 48 kilometres or 30 miles northwest of Gothenburg ) , but both it and the paralectotypes have since been lost ."
+        ],
+        [
+          "On permission of the Javanese court , she studied the gamelan , probably being the first western woman with a classical music education to be afforded this opportunity . While living in Java , Gauthier travelled extensively , giving performances in China , Japan , Singapore , Malaya , Australia , and New Zealand . She remained in Java for four years , but with the outbreak of World War I she decided to travel back to North America , arriving in New York City in the fall of 1915 ."
+        ],
+        [
+          "Preliminary results from polarimetric studies indicate that the planet has predominately blue color , is 1 @.@ 36 times as large and 0 @.@ 74 times as massive as Jupiter , meaning that the mean density is 0.36g / cm3 . It has a geometric albedo of 0 @.@ 35 in visible light ."
+        ],
+        [
+          "Jordan Dumars , the son of Detroit Pistons All @-@ Star Joe Dumars , left the team , citing nagging knee issues ."
+        ],
+        [
+          "Only if Germany was defeated within their first year would they be released ."
+        ],
+        [
+          "Offices or agencies that are each responsible for a specific geographical area manage the worldwide affairs of the organisation . They are :"
+        ],
+        [
+          "Laird Hamilton , Dave Kalama , and Darrick Doerner performed the pre @-@ title surfing scene at the surf break known as Jaws in Peʻahi , Maui , while the shore shots were taken near Cádiz and Newquay , Cornwall . Scenes inside Graves ' diamond mine were also filmed in Cornwall , at the Eden Project . The scenes involving the Cuban locations of Havana and the fictional Isla de Los Organos were filmed at La Caleta , Spain ."
+        ],
+        [
+          "In another , he takes on the Christian right , asking where the moderates are . Finally , Bragg chides the United States government for not dealing with poverty at home before going to war ."
+        ],
+        [
+          "Then he goes to the stretch position . Two fastballs inside , two fastballs away , two changeups , one fastball inside , two curveballs , one fastball inside , two sliders . Back to the windup , and one fastball inside , one fastball away . Thirty @-@ four pitches in all ."
+        ],
+        [
+          "The current version of M @-@ 82 is actually the second in the state ; the first usage appeared in the Upper Peninsula by 1919 . The Lower Peninsula routing has been in use since the 1920s . Various extensions and truncations have shifted the terminus as far west as New Era or Hesperia in the past . The current route was finalized in the late 1970s"
+        ],
+        [
+          "Shackleton lies entirely within the rim of the immense South Pole @-@ Aitken basin , which is one of the largest known impact formations in the Solar System . This basin is over 12 kilometers deep , and an exploration of its properties could provide useful information about the lunar interior ."
+        ],
+        [
+          "It is only when all three characteristics are present that a fighting ship can properly be called an ironclad . \" Each of these developments was introduced separately in the decade before the first ironclads ."
+        ],
+        [
+          "emperatures within the eyewall and contrasting them with the warm temperatures within the eye itself . Constraints on short term intensity change are used less frequently than they were back in the 1970s and 1980s . The central pressures assigned to tropical cyclones have required modification , as the original estimates were 5 @-@ 10 hPa ( 0 @.@ 15 @-@ 0 @.@ 29 inHg ) too low in the Atlantic and up to 20 hPa ( 0 @.@ 59 inHg ) too high in the northwest Pacific . This led to the development of a separate wind @-@ pressure relationship for the northwest Pacific , devised by Atkinson and Holliday in 1975 , then modified in 1977 ."
+        ],
+        [
+          "The roadways were also used for the Theodore Roosevelt International Highway , named for former US president Theodore Roosevelt after his death in 1919 . Overall , this highway ran from Portland , Oregon , to Portland , Maine , by way of Michigan and the Canadian province of Ontario . Through the UP , the southern branch followed the immediate predecessors to US 2 , including the section through Florence County , Wisconsin ."
+        ],
+        [
+          "It was the second most devastated city in the world after Warsaw during the Second World War . At the end of World War II , almost all of the structures in the city , particularly Intramuros , were destroyed but after the war , reconstruction took place ."
+        ],
+        [
+          "In this book , Hu used his multiple @-@ block printing methods to obtain gradations of colour in the images , rather than obvious outlines or overlaps . The manual is bound in the \" butterfly binding \" ( hudie zhuang , 蝴蝶裝 ) style , whereby whole @-@ folio illustrations are folded so that each occupies a double @-@ page spread . This binding style allows the reader to lay the book flat in order to look at a particular image . Cambridge University Library released a complete digital scan of the manual , including all writings and illustrations in August , 2015 . Said Charles Aylmer , Head of the Cambridge University Chinese Department , \" The binding is so fragile , and the ma"
+        ],
+        [
+          "This period of unhappiness was the making of Du Fu as a poet : Even Shan Chou has written that , \" What he saw around him — the lives of his family , neighbors , and strangers – what he heard , and what he hoped for or feared from the progress of various campaigns — these became the enduring themes of his poetry \" . Even when he learned of the death of his youngest child , he turned to the suffering of others in his poetry instead of dwelling upon his own misfortunes . Du Fu wrote :"
+        ],
+        [
+          "ISBN 978 @-@ 0 @-@ 944624 @-@ 17 @-@ 3 . Re @-@ released as Churchill , Ward ( 2004 ) . Jim Vander Wall , ed . Politics of Imprisonment in the United States . AK Press . ISBN 978 @-@ 1 @-@ 904859 @-@ 12 @-@ 3 ."
+        ],
+        [
+          "He attains self @-@ awareness only after a terrible personal tragedy which he has caused — and then he wins his pool game . \" Roger Ebert concurs with this assessment , citing The Hustler as \" one of the few American movies in which the hero wins by surrendering , by accepting reality instead of his dreams . \""
+        ],
+        [
+          "These broad causeways were built of packed and plastered limestone and have been named after early explorers and archaeologists ; the Maler , Maudslay , Tozzer and Méndez causeways . They assisted the passage everyday traffic during the rain season and also served as dams ."
+        ],
+        [
+          "José R. Reyes Memorial Medical Center , Metropolitan Medical Center , Our Lady of Lourdes Hospital , and the University of Santo Tomas Hospital ."
+        ],
+        [
+          "Yet by 1850 significant advances in firearms gave the Europeans a distinct advantage , with the six @-@ shot Colt revolver , the Snider single shot breech @-@ loading rifle and later the Martini @-@ Henry rifle , as well as rapid @-@ fire rifles such as the Winchester rifle , becoming available . These weapons , when used on open ground and combined with the superior mobility provided by horses to surround and engage groups of Aborigines , often proved successful . The Europeans also had to adapt their tactics to fight their fast @-@ moving , often hidden enemies . Tactics employed included night @-@ time surprise attacks , and positioning forces to drive the natives off cliffs or force them to retreat into rivers while attacking from both banks ."
+        ],
+        [
+          "h Soviet @-@ style Marxism – Leninism and the Warsaw Pact , mobilised the Zimbabwe People 's Revolutionary Army ( ZIPRA ) . These guerrilla armies proceeded to wage what they called the \" Second Chimurenga \" against the Rhodesian government and security forces . The resulting conflict , the Rhodesian Bush War , began in earnest in December 1972 , when ZANLA attacked Altena and Whistlefield Farms in north @-@ eastern Rhodesia ."
+        ],
+        [
+          "There is not much evidence from Tikal that the city was directly affected by the endemic warfare that afflicted parts of the Maya region during the Terminal Classic , although an influx of refugees from the Petexbatún region may have exacerbated problems resulting from the already stretched environmental resources ."
+        ],
+        [
+          "the Führerbunker in Berlin , but escaped to South America and hid in the Amazon jungle ."
+        ],
+        [
+          "a type of poem with strict constraints on form and content , for example :"
+        ],
+        [
+          "Team , which was then to join the 24th Division in the Taegu area ; and the US 19th Infantry Regiment of the US 24th Infantry Division , then with that division 's headquarters at Kyongsan southeast of Taegu . Walker alerted both the 24th Division headquarters , together with its 19th Regiment , and the 1st Provisional Marine Brigade to move at a moment 's notice ; the 24th Division either to the 2nd or 25th Division fronts , and the marines to an unannounced destination ."
+        ],
+        [
+          "by Vagaland recalls the drama of the days when Papa Stour was a centre for deep @-@ sea fishing ."
+        ],
+        [
+          "se of modern language and music during worship services , rewriting of certain prayers such as the Aleynu to make them less ethnocentric , and so on ."
+        ],
+        [
+          "The battle ensured the popularity of the ram as a weapon in European ironclads for many years , and the victory won by Austria established it as the predominant naval power in the Adriatic ."
+        ],
+        [
+          "By nightfall , the Japanese overran and nearly annihilated the platoon , killing 24 Marines with only a few wounded members of the platoon surviving . On 20 September , a patrol from Edson 's Raiders encountered stragglers from Kawaguchi 's retreating column and called in artillery fire that killed 19 of them ."
+        ],
+        [
+          "Ancient sources report the date as either 30 or 35 . He had at least one attested sister , named Cocceia , who married Lucius Salvius Titianus Otho , the brother of the future Emperor Otho ."
+        ],
+        [
+          "d departments , a quadrangle , lagoon in the center , and a monument to José Rizal at its Luneta end . Of Burnham 's proposed government center , only three units — the Legislative Building and the building of the Finance and Agricultural departments — were completed when World War II erupted ."
+        ],
+        [
+          "A 1 @.@ 5 mi ( 2 @.@ 4 km ) road on Eleuthera was destroyed . Several islands sustained damage to farms , including the total loss of various fruit trees on Russell Island . Despite Category 4 winds on Spanish Wells , only five houses were destroyed , although most of the remaining dwellings lost their roofs . Collectively between North Point , James Cistern , and Gregory Town on Eleuthera , the storm destroyed 55 houses and damaged many others . On Grand Bahama , where a 9 to 12 ft ( 2 @.@ 7 to 3 @.@ 7 m ) storm surge was reported , half of the houses were destroyed , as were 13 boats and two planes , and most docks were wrecked ."
+        ]
+      ],
+      "models": [],
+      "judgeModels": [],
+      "qualityMetrics": [
+        "correctness"
+      ],
+      "isRAG": false
+    }
+  ]
+}

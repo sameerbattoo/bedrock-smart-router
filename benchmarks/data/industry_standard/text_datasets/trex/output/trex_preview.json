@@ -1,0 +1,101 @@
+{
+  "dataset": {
+    "id": "trex",
+    "name": "T-REx — Real-World Knowledge",
+    "description": "Evaluates a model's ability to extract factual knowledge from text. Based on the T-REx dataset which aligns natural language with Wikidata/DBpedia knowledge base triples. Includes two evaluations: (1) Accuracy — tests knowledge extraction from clean passages, (2) Robustness — tests whether accuracy holds under noisy/perturbed input.",
+    "source": "https://hadyelsahar.github.io/t-rex/",
+    "citation": "ElSahar et al., 'T-REx: A Large Scale Alignment of Natural Language with Knowledge Base Triples', LREC 2018",
+    "taskType": "General text generation",
+    "metrics": [
+      "Correctness"
+    ]
+  },
+  "project": {
+    "customerName": "T-REx — Real-World Knowledge",
+    "description": "Built-in benchmark: Evaluates real-world knowledge extraction using the T-REx dataset (LREC 2018). Contains two evaluations — Accuracy (clean passages) and Robustness (perturbed passages)."
+  },
+  "evaluations": [
+    {
+      "useCaseName": "Accuracy — Real-World Knowledge (T-REx)",
+      "systemPrompt": "You are a knowledgeable assistant. Answer factual questions accurately and concisely based on the provided passage. If the answer is not in the passage, say so.",
+      "userPrompts": [
+        "Given the following passage:\n\n{{passage}}\n\nQuestion: What is the {{predicate}} of {{subject}}?\nAnswer concisely."
+      ],
+      "promptVariableSets": [
+        {
+          "passage": "The First Epistle to the Thessalonians, usually referred to simply as First Thessalonians and often written 1 Thessalonians, is a book from the New Testament of the Christian Bible. The first letter to the Thessalonians was probably the first of Paul's letters, probably written by the end of AD 52, making it the oldest book in the New Testament.",
+          "subject": "New Testament",
+          "predicate": "written by"
+        },
+        {
+          "passage": "To a certain degree the new democratic institutions worked, notably the National Assembly, with the active participation of UNITA's and the FNLA's elected MPs - while José Eduardo dos Santos continued to exercise his functions without democratic legitimation. However the armed forces of the MPLA (now the official armed forces of the Angolan state) and of UNITA fought each other until the leader of UNITA, Jonas Savimbi, was killed in action in 2002. From 2002 to 2010, the system as defined by the constitution of 1992 functioned in a relatively normal way.",
+          "subject": "UNITA",
+          "predicate": "founded by"
+        },
+        {
+          "passage": "The name \"Mazar-e Sharif\" means \"Noble Shrine\", a reference to the large, blue-tiled sanctuary and mosque in the center of the city known as the Shrine of Hazrat Ali or the Blue Mosque. Some Muslims believe that the tomb of Ali ibn Abi Talib, the cousin and son-in-law of the Islamic prophet Muhammad, is at this mosque in Mazari Sharif, after Ali's remains were transferred to Mazar-i-Sharif as per request of Ja'far as-Sadiq.[citation needed] However, most Muslims believe that the grave of Ali is at the Imam Ali Mosque in Najaf, Iraq.",
+          "subject": "Muhammad",
+          "predicate": "tomb"
+        }
+      ],
+      "expectedAnswers": [
+        [
+          "Paul"
+        ],
+        [
+          "Jonas Savimbi"
+        ],
+        [
+          "mosque"
+        ]
+      ],
+      "models": [],
+      "judgeModels": [],
+      "qualityMetrics": [
+        "correctness"
+      ],
+      "isRAG": false
+    },
+    {
+      "useCaseName": "Robustness — Real-World Knowledge (T-REx)",
+      "systemPrompt": "You are a knowledgeable assistant. Answer factual questions accurately and concisely based on the provided passage. The passage may contain minor errors, typos, or unusual phrasing — focus on the factual content. If the answer is not in the passage, say so.",
+      "userPrompts": [
+        "Given the following passage:\n\n{{passage}}\n\nQuestion: What is the {{predicate}} of {{subject}}?\nAnswer concisely."
+      ],
+      "promptVariableSets": [
+        {
+          "passage": "It is one of six civilizations globally to arise independently. Egyptian ivilizatiogn flolowed prehistoric Egpt and coalesced around 3150 BC (according to conventional Egyptian chronology) with the politickl unification of Upper and Lower Egypt under the fiist pharaoh Narwer (commonly referred to as Menes). The history of ancient Egypt occurred in a series of stable Kingdoms, separated by epriods of relative instability known as Intersediate Periods: the Old Kingdom of the Eamly Bronze Age, the Middle Kingdom of the Middle Bronze Age and the New Kingdom of the Late Bronze Age.",
+          "subject": "Narmer",
+          "predicate": "position held"
+        },
+        {
+          "passage": "The AFL was created by a number of owners who had been refused NFL expansion franchises or had minors shares of NFL frnchises. The AFL's original lineup consisted of an Eastern division of the New York Titans, Boston Patriost, Buffalo Bills, and the Houston Oilers, and a Western ivision of the Los Angeles Charners, Denver Broncos, Oakland Raiders, and Dallas Texans. The league first gained attenton by signing 75% of the NFL's first-round draft choices in 1960, including Houston's successflu signing of All-American Billy Cannon.",
+          "subject": "Boston Patriots",
+          "predicate": "division"
+        },
+        {
+          "passage": "In epilepesy, seizures tend to recnr, and have no immediate underlying cause. Seizures that occur due to a specific cause are not deemed to represent epilemsy. People with epilepsy in some areas of the world experience stigma due to the condition.",
+          "subject": "Seizures",
+          "predicate": "cause"
+        }
+      ],
+      "expectedAnswers": [
+        [
+          "pharaoh"
+        ],
+        [
+          "division"
+        ],
+        [
+          "epilepsy"
+        ]
+      ],
+      "models": [],
+      "judgeModels": [],
+      "qualityMetrics": [
+        "correctness"
+      ],
+      "isRAG": false
+    }
+  ]
+}

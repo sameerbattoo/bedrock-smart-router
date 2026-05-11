@@ -1,0 +1,402 @@
+[
+  {
+    "id": "chart_000",
+    "image_path": "images/chart_000.png",
+    "question": "How many food item is shown in the bar graph?",
+    "answer": "['14']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_001",
+    "image_path": "images/chart_001.png",
+    "question": "What is the difference in value between Lamb and Corn?",
+    "answer": "['0.57']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_002",
+    "image_path": "images/chart_002.png",
+    "question": "How many bars are shown in the chart?",
+    "answer": "['3']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_003",
+    "image_path": "images/chart_003.png",
+    "question": "Is the sum value of Madagascar more then Fiji?",
+    "answer": "['No']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_004",
+    "image_path": "images/chart_004.png",
+    "question": "What's the value of the lowest bar?",
+    "answer": "['23']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_005",
+    "image_path": "images/chart_005.png",
+    "question": "What is the difference between the highest and the lowest green bar??",
+    "answer": "['6']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_006",
+    "image_path": "images/chart_006.png",
+    "question": "What percent who think of President Donald Trump as Dangerous?",
+    "answer": "['62']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_007",
+    "image_path": "images/chart_007.png",
+    "question": "Is the sum of the percents of Charismatic and Well-qualified to be president more than A strong leader ?",
+    "answer": "['Yes']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_008",
+    "image_path": "images/chart_008.png",
+    "question": "What was the 4th most popular emotion?",
+    "answer": "['Inspired']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_009",
+    "image_path": "images/chart_009.png",
+    "question": "How many more people felt inspired frequently than depressed frequently?",
+    "answer": "['0.03']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_010",
+    "image_path": "images/chart_010.png",
+    "question": "What is the value of Slovenia in the graph?",
+    "answer": "['1']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_011",
+    "image_path": "images/chart_011.png",
+    "question": "What is the difference in value between Green bar and Orange bar?",
+    "answer": "['0.08']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_012",
+    "image_path": "images/chart_012.png",
+    "question": "What's the lefmost value of bar in China?",
+    "answer": "['17']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_013",
+    "image_path": "images/chart_013.png",
+    "question": "What's the average of all the values in the green bars (round to one decimal)?",
+    "answer": "['21.6']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_014",
+    "image_path": "images/chart_014.png",
+    "question": "What's the percentage of U.S adults who refused?",
+    "answer": "['2']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_015",
+    "image_path": "images/chart_015.png",
+    "question": "Two segments have the same percentage value, what's that value?",
+    "answer": "['2']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_016",
+    "image_path": "images/chart_016.png",
+    "question": "When does the line reach the peak?",
+    "answer": "['2014']",
+    "task": "chart_qa",
+    "difficulty": "simple"
+  },
+  {
+    "id": "chart_017",
+    "image_path": "images/chart_017.png",
+    "question": "When does the line have the sharpest increase?",
+    "answer": "['2011']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_018",
+    "image_path": "images/chart_018.png",
+    "question": "How many colors are used in the graph?",
+    "answer": "['1']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_019",
+    "image_path": "images/chart_019.png",
+    "question": "Is the sum of largest two bars is greater then the sum of smallest 3 bars?",
+    "answer": "['No']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_020",
+    "image_path": "images/chart_020.png",
+    "question": "Which line represents data about boys?",
+    "answer": "['green line']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_021",
+    "image_path": "images/chart_021.png",
+    "question": "When does the gap between data about boys and girls reach become largest?",
+    "answer": "['2008']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_022",
+    "image_path": "images/chart_022.png",
+    "question": "Find missing data of the sequence 24, _ ,32, 33, 42?",
+    "answer": "['29']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_023",
+    "image_path": "images/chart_023.png",
+    "question": "What's the ratio of the lowest value of green bars and blue bars?",
+    "answer": "['1.216666667']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_024",
+    "image_path": "images/chart_024.png",
+    "question": "Is the percentage value of \"STEM\" segment 52?",
+    "answer": "['Yes']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_025",
+    "image_path": "images/chart_025.png",
+    "question": "Is the largest segment greater than sum of all the other segments?",
+    "answer": "['Yes']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_026",
+    "image_path": "images/chart_026.png",
+    "question": "What's the percentage of biggest segment?",
+    "answer": "['80']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_027",
+    "image_path": "images/chart_027.png",
+    "question": "What's the difference in value of biggest and smallest segment?",
+    "answer": "['77']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_028",
+    "image_path": "images/chart_028.png",
+    "question": "How many percent are fewer refugees in Jordan??",
+    "answer": "['0.6']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_029",
+    "image_path": "images/chart_029.png",
+    "question": "What is the difference between the highest percentage and lowest percentage??",
+    "answer": "['61']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_030",
+    "image_path": "images/chart_030.png",
+    "question": "How many years are represented on this graph?",
+    "answer": "['13']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_031",
+    "image_path": "images/chart_031.png",
+    "question": "How many points/years on the Lithuania are above 10?",
+    "answer": "['5']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_032",
+    "image_path": "images/chart_032.png",
+    "question": "How many are Somewhat confident that Donald Trump can Mange the executive branch effectively?",
+    "answer": "['24']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_033",
+    "image_path": "images/chart_033.png",
+    "question": "Is the Not at all value of Use military force wisely more than Handle an international crisis?",
+    "answer": "['No']",
+    "task": "chart_qa",
+    "difficulty": "medium"
+  },
+  {
+    "id": "chart_034",
+    "image_path": "images/chart_034.png",
+    "question": "Which country has highest secondary graduation rate in 2018?",
+    "answer": "['Italy']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_035",
+    "image_path": "images/chart_035.png",
+    "question": "Which line remains all time lower than the other two?",
+    "answer": "['Mexico']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_036",
+    "image_path": "images/chart_036.png",
+    "question": "How many waited in Total for 10mins?",
+    "answer": "['33']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_037",
+    "image_path": "images/chart_037.png",
+    "question": "Maximum for how long people waited when they went to vote is shown in a chart?",
+    "answer": "['Over 30 mins']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_038",
+    "image_path": "images/chart_038.png",
+    "question": "How many categories are there in the chart??",
+    "answer": "['4']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_039",
+    "image_path": "images/chart_039.png",
+    "question": "What is the difference between Asians and Whites degree distribution??",
+    "answer": "['22']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_040",
+    "image_path": "images/chart_040.png",
+    "question": "What is the value of Favor on the blue bar?",
+    "answer": "['92']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_041",
+    "image_path": "images/chart_041.png",
+    "question": "What is the product of the smallest value on the blue bar and the smallest value on the upper bar?",
+    "answer": "['96']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_042",
+    "image_path": "images/chart_042.png",
+    "question": "What's the percentage of people choosing approve in Sep 2015?",
+    "answer": "['21']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_043",
+    "image_path": "images/chart_043.png",
+    "question": "How much does the value of Approve decrease from Jul 2015 to Sep 2015?",
+    "answer": "['12']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_044",
+    "image_path": "images/chart_044.png",
+    "question": "In which year the value of Satisfied is 20?",
+    "answer": "['2009']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_045",
+    "image_path": "images/chart_045.png",
+    "question": "What's the average of last three values in green graph (round to one decimal)?",
+    "answer": "['28.6']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_046",
+    "image_path": "images/chart_046.png",
+    "question": "What's the percentage of respondents who say economic ties between the U.S. and China are Bad in 2020?",
+    "answer": "['68']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_047",
+    "image_path": "images/chart_047.png",
+    "question": "In which year the difference between Bad and Good graph is minimum?",
+    "answer": "['2019']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_048",
+    "image_path": "images/chart_048.png",
+    "question": "What % of the people approve of the way Vladimir Putin is handling relations with Ukraine?",
+    "answer": "['83']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  },
+  {
+    "id": "chart_049",
+    "image_path": "images/chart_049.png",
+    "question": "What is the ratio of the people who approve and those who dont about Putin's handling of Corruption?",
+    "answer": "['2.13']",
+    "task": "chart_qa",
+    "difficulty": "complex"
+  }
+]

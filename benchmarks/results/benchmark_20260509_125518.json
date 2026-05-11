@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-09T12:55:16.071840",
+    "region": "us-west-2",
+    "total_prompts": 2,
+    "runners": [
+      "sonnet"
+    ]
+  },
+  "results": [
+    {
+      "prompt_id": "sql_001",
+      "category": "text_to_sql",
+      "difficulty": "simple",
+      "runner": "sonnet",
+      "response_text": "```sql\nSELECT *\nFROM customers\nWHERE country = 'United States';\n```",
+      "latency_ms": 1050.6,
+      "input_tokens": 483,
+      "output_tokens": 22,
+      "model_used": "us.anthropic.claude-sonnet-4-6",
+      "stop_reason": "end_turn",
+      "actual_cost": 0.001779,
+      "success": true
+    },
+    {
+      "prompt_id": "sql_002",
+      "category": "text_to_sql",
+      "difficulty": "simple",
+      "runner": "sonnet",
+      "response_text": "```sql\nSELECT COUNT(*) AS total_orders FROM orders;\n```",
+      "latency_ms": 884.5,
+      "input_tokens": 482,
+      "output_tokens": 19,
+      "model_used": "us.anthropic.claude-sonnet-4-6",
+      "stop_reason": "end_turn",
+      "actual_cost": 0.001731,
+      "success": true
+    }
+  ]
+}

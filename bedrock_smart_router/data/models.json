@@ -246,10 +246,7 @@
         "us.anthropic.claude-opus-4-5-20251101-v1:0",
         "global.anthropic.claude-opus-4-5-20251101-v1:0"
       ],
-      "supported_inference_tiers": [
-        "standard",
-        "priority"
-      ],
+      "supported_inference_tiers": [],
       "guardrail_compatible": true
     },
     {
@@ -277,10 +274,7 @@
         "us.anthropic.claude-opus-4-6-v1",
         "global.anthropic.claude-opus-4-6-v1"
       ],
-      "supported_inference_tiers": [
-        "standard",
-        "priority"
-      ],
+      "supported_inference_tiers": [],
       "guardrail_compatible": true
     },
     {
@@ -308,10 +302,7 @@
         "us.anthropic.claude-opus-4-7",
         "global.anthropic.claude-opus-4-7"
       ],
-      "supported_inference_tiers": [
-        "standard",
-        "priority"
-      ],
+      "supported_inference_tiers": [],
       "guardrail_compatible": true
     },
     {
@@ -397,10 +388,7 @@
       "cris_profiles": [
         "us.anthropic.claude-opus-4-1-20250805-v1:0"
       ],
-      "supported_inference_tiers": [
-        "standard",
-        "priority"
-      ],
+      "supported_inference_tiers": [],
       "guardrail_compatible": true
     },
     {
@@ -694,10 +682,7 @@
       "cris_profiles": [
         "global.anthropic.claude-opus-4-5-20251101-v1:0"
       ],
-      "supported_inference_tiers": [
-        "standard",
-        "priority"
-      ],
+      "supported_inference_tiers": [],
       "guardrail_compatible": true
     },
     {
@@ -724,10 +709,7 @@
       "cris_profiles": [
         "global.anthropic.claude-opus-4-6-v1"
       ],
-      "supported_inference_tiers": [
-        "standard",
-        "priority"
-      ],
+      "supported_inference_tiers": [],
       "guardrail_compatible": true
     },
     {
@@ -754,10 +736,7 @@
       "cris_profiles": [
         "global.anthropic.claude-opus-4-7"
       ],
-      "supported_inference_tiers": [
-        "standard",
-        "priority"
-      ],
+      "supported_inference_tiers": [],
       "guardrail_compatible": true
     }
   ]

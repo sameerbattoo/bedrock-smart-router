@@ -1,0 +1,3253 @@
+{
+  "dataset": {
+    "id": "womens-clothing-reviews",
+    "name": "Women's Clothing Reviews — Text Classification",
+    "description": "Evaluates a model's ability to classify customer sentiment from product reviews. Based on the Women's E-Commerce Clothing Reviews dataset (23K reviews). The task is binary classification: predict whether the customer recommends the product. Includes two evaluations: (1) Accuracy — classification on clean reviews, (2) Robustness — classification under noisy/perturbed input.",
+    "source": "https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews",
+    "citation": "Women's E-Commerce Clothing Reviews, Kaggle (CC0 Public Domain)",
+    "taskType": "Text classification",
+    "metrics": [
+      "Correctness"
+    ]
+  },
+  "project": {
+    "customerName": "Women's Clothing Reviews — Text Classification",
+    "description": "Built-in benchmark: Evaluates text classification (sentiment) using the Women's E-Commerce Clothing Reviews dataset. Contains two evaluations — Accuracy and Robustness."
+  },
+  "evaluations": [
+    {
+      "useCaseName": "Accuracy — Text Classification (Clothing Reviews)",
+      "systemPrompt": "You are a sentiment classification assistant. Given a product review, classify whether the customer recommends the product or not. Respond with exactly one of: 'Recommended' or 'Not Recommended'. Then provide a one-sentence explanation.",
+      "userPrompts": [
+        "Product Department: {{department}}\nProduct Category: {{class_name}}\n\nReview:\n{{review_text}}\n\nClassification (Recommended or Not Recommended):"
+      ],
+      "promptVariableSets": [
+        {
+          "review_text": "So despite reviewers saying this was too short i decided to try it anyways. the dress is adorable the print t g e pockets so cute but the description is incorrect. the petite falls 30 from shoulder which means it's right under your bum so you move anyway and someone gets a show. it's unfortunate because this dress is adorable. it would fit tts except length. unfortunately this one has to go back.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I got this shirt in the mail today and was really excited to try it on. other reviewers said that it ran large so i ordered a size down and it fit perfect. i looked in the mirror and noticed the ruffles were misaligned and obviously so. i want to exchange it in the store but seeing that the size is not longer available online, i'm not really sure i'll find another one in my size.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "The fabric is a little stiff, the back looks unusually long compared to the front, and it fits tight across the chest. and i'm not busty so that's not a factor.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "For a couple weeks, i debated making this purchase. in fear that my size would no longer be available, i ordered this lovely top. when it arrived, i was immediately disappointed with its colors...unlike the vibrant colors in the photo, the top's colors were dull...more a brown than orange and gray rather than lavender. had the fit been better, i would have kept this item despite of its color. it's cut weird! though it runs slightly large, i felt the top was ill fitted through the upper bust and",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This is a problem i have had with the pilcro hyphen cargos with the color dye.\nthe dyes in these pants are the same thing. i wore the purple color and washed in cold, gentle, cycle and they were stained/ \n\ni will return these -it's too bad because they were pretty comfortable and flattering pants.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I am in need of easy comfortable tops for everyday wear. i bought this top mostly because of the cute buttons. when i received it, it looked exactly as it does in the picture online, however, the buttons kept slipping out of their homes because the holes were slightly too big. the shirt fit but was just a tad snug near the upper arms, which would stretch and loosen up throughout the day. it's definitely a comfortable shirt, but it felt more like a pajama top. it's going back.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I'm very pale, and on me the rose color looked really washed out. the catalog photo is not an accurate representation. look at the product shot for a truer representation. it's slightly see-through and was too close to the color of my skin. i think it would look delicious on someone who has darker skin, though.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This sweater is thick and does cover the bra well. i did not find it to be well made. the ribbing seemed to be attached loosely in places. i am a size large with a b cup and a bit thicker through the middle to my middle age dismay. putting this sweater on in coral made me feel like a giant peach. for those with larger breasts it is likely more flattering.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "This might look good on you if you are very tall and slim. i am a curvy medium and this was not at all flattering, it is a straight cut and hugs in the wrong places. the color is not true: it is black stripes on gray (not cream). i thought the stripes might flatter my shape, but alas, i did not look good in this.\n\nthe material is very nice, soft and stretchy.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This is a beautifully made dress and i couldn't wait to put it on. i was disappointed. i am 5'5\" and a size 4- 6. i ordered the 6 and it was too 'long and heavy' looking on me. but the waist and upper body fit tightly. the zipper up the back was very heavy looking and the cut away shoulders didn't work for my body type, making me look bulky on top. the torso is really built for someone with small breasts - i am average and the way the darts are, made my breasts look flatter and lower than they a",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Drapes very nicely and runs true to size. easy to wear alone or layer a jacket/cardigan over. i purchased this on sale, and it was a good buy. i am 5'8\" and purchased the size m, as i am a pretty true size 6.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This simple dress will turn heads. it fits to the body, hugging just in the right spots. i love this dress! it is soft and feels amazing on. you can adjust the tie in the front. i purchased the copper color, but i have to say that is much more brown to me than copper. a dark brown. i still think the dress is adorable. looks cute with booties or knee high boots. winner!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Thin rayon material. see-through and unlined. size down as this runs large. for reference, i'm 5'4, 124lbs size 26 in jeans. in retailer clothing, i wear sz small or size 4-6. i ordered this in small, but the body and shoulders are too wide and unflattering especially with the shorter length of this top. that is why sizing is key. i know it is meant to fit loosely, but you will have to order a size down otherwise you will look larger and the dark piping details on this top will not fall in the rig",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Wonderful sweater and fashionable for autumn. the only thing i do not like about the sweater is that it sheds very bad. bring a lint roller with you when you wear the sweater!",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "This top is really cute, but it runs very large. i am 5'2 100 lbs and the xs petite looked like it was 3 sizes too big on. the design is really cute, but recommend ordering down at least one size.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Super cute and comfy, perfect for fall and winter (apre ski!). great with skinny jeans or leggings and ankle boots.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I wore this bodysuit once. it had a hole under the arm when i took it off",
+          "department": "Intimate",
+          "class_name": "Layering"
+        },
+        {
+          "review_text": "I just love everything about these jeans, and everyone that sees them on me seems to as well! i'm short (5'2\") and was concerned about the length on me because they didn't have the petite in my size- but these seem to be just fine. i wear them with a bit of a heel, so that helps. they fit snugly (but not too tight) in all the right places, i have a bit of a backside so that's a plus for me! because of the higher waist, they also don't ride down.  except for the shorter length, they remind me a l",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "I got these in the mail today and to me, they look exactly like the pants my mamaw used to wear in the 80s. they were super comfy but not cute at all on me. they do run large like other reviews say. i am usually an 8/10 or med and these in the small were the right choice. going back because they just look horrible on me though",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I just bought these shorts in the gold color. the fit is just right and the material / quality matches up to the price you pay. totally worth every penny.",
+          "department": "Bottoms",
+          "class_name": "Shorts"
+        },
+        {
+          "review_text": "While i love the green color and the soft waffle knit of this top it was so wide i could have fit two of me standing side by side into it!  i mean it was truly laughable!  don't know what the manufacturer was thinking but this one needs to go back to the drawing board.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This is a lovely, romantic skirt that hangs nicely. it is lined except for the ruffle on the bottom. as others have said, the waistband is stretchy and molds to your shape. it is high waisted. i called the store to hold a size 4 and 6 for me to try. when i got there, i finally settled on a size 2, so it runs a bit large. i have a 25 inch waist and 36 inch hips. if this fits your style, give it a try, you won't be disappointed.",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "I purchased this and another eva franco dress during retailer's recent 20% off sale. i was looking for dresses that were work appropriate, but that would also transition well to happy hour or date night. they both seemed to be just what i was looking for. i ordered a 4 regular and a 6 regular, as i am usually in between sizes. the 4 was definitely too small. the 6 fit, technically, but was very ill fitting. not only is the dress itself short, but it is very short-waisted. i am only 5'3\", but it fe",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Loved the color and the deshn. but when i put on, did not look right. waist was too short and the arms were long.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "This dress fits perfectly and true to size. the waist detail and flair is fun and flirty. it's probably my favorite dress i've ever bought.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Great jacket. love that the hoodie insert is removable so i can wear just the outer jacket for work.",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I am simply mad about this dress. i am smaller on top with larger hips. my bust is a mellow b but i could see this working on a or c cups also. this dress is extremely flattering for my body type and the bodice fits like it was made for me. it fits fine without a bra and just perfectly with a semi padded strapless. i got this dress to wear to a summer wedding. the texture and color are beautiful and i will pair with simple jewelry and nude heels. it's a great find and excellent quality. definite",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This seems to be designed to fit a bit loose, but not in a bad way (for me). the floral pattern on the collar with the polka dots on the rest of the dress are very cute, and i think this can look good with or without a belt. light for summer but still covers a lot, which is nice for the office. the sleeves are a little short, but it doesn't look bad. glad i snatched it.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This dress makes me so sad...the textured stretchy fabric, color, length, and overall swingy fit are spot on. as another reviewer noted though, the armholes and neck totally ruin the dress. the neck is tiny, which i could have gotten over once it was on, but the arm holes were just awful - too big all around (too tall of a cut plus too wide of a cut). basically, you could see my bra plus from the front there was unflattering exposure near the armholes. it could have been so good, but alas, but t",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I ordered this sweater in xxsp and the sweater is still very large on me. it is definitely a sweater that is supposed to hang off of your shoulders, however, i'm finding that it wants to fall all the way off of me. the quality is nice. it is medium in weight. it has a cottony feeling, but it not super soft. it looks way better on the model shown than in person to me. i wanted to love it, but i only just like it. i think others will like this if you are looking for a fun, loose look in a sweater.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I love this sweater. my only worry is that i'll constantly be catching the little loops on things and getting it all messed up. i haven't been able to wear it out yet, so we'll see! i'll just have to be careful :)",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I ordered my usual xs petite, and it fit like a glove (115lbs, 5'1.5\"). the v cut a little low, making this dress almost too sexy for work. cut is extremely flattering, and the coloring being so neutral is a step away from basic lbd. the length was pefect. material is stretchy, amking this slim fit comfortable.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Dear retailer & designers:\njust want a nice dress that isn't made from polyester! don't mind paying bigger bucks for quality fabrics, but please- enough of the polyester! \nlove,\nyour customers",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I was so excited to get this dress. i saw someone try it on in the store and waited all season for it to go on sale. i loved it except for the seam that was right at the neckline in the front. they didn't even try to match up the fabrics. it was so obvious and cheap looking that i had to send this dress back. so sad!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I absolutely love this sweater. it will take me into spring and right on in to summer beach bonfire nights. a great staple!",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "This shirt had everything going for it - the cut, the length, the fun texture, but when i stepped into the light it was totally see through. i don't want to have to wear another shirt underneath. this one is going back. definitely not a swing, but still cute.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Love this top, but the xs is still way too big, swallows me. 5'1\" petite. wish it came in a petite offering. sadly, had to return this item.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I wanted to love this turtleneck. i read the reviews before ordering. i love the color, the weight of the knit, the ribbing. the small fit me perfectly; i am a 34b, not broad shouldered, and on the thin side in my upper body. however, this item has a strange \"blousy\" fit. the picture of the back view hints at this but it's worse in person. it's like a bell shaped top or even slightly trapezey, which simply doesn't work with my shape. plus, i'm long waisted. i could have made this work had it not",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "Stumbled upon this dress which had been returned to a store and was encouraged to try it on by the sales staff, and am glad i did. it's a beautiful dress that i didn't need and have no idea what i will wear it for, but bought anyway. i got a size 8 and it fits perfectly though i will need to shorten it a bit. i am busty and prefer a bit more coverage so will add more tulle to the v neck. i agree with the other reviewer about the tulle underlay but it looks easy enough to remove from the lining o",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I love the way this loosley falls and is so light you barely feel it on you. it is very sheer to you need to wear another tank underneath.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This is a lovely dress. it is on the heavy side and lined, so i would not recommend for hot summer wear. but the material and style are adorable. the skirt is definitely a-line, not sheath, but i prefer that. it runs a tad too tight in the chest, so if you're between sizes in the bust, i'd order up. that said, a 6 would be too big for me. i'm 5'4, 120 lbs and 34c and usually wear a 4.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "High quality, and worth full price.... but way too small. also a bit short in the torso.",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "This dress looks way better on you than sitting on the hanger! the design really flatters your body and the waist area, makes you look very skinny! highly recommend! the length is also perfect, just the right length for a maxi dress, long enough but short enough to show off your shoes as well!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "The material feels substantial and decent. however the diameter of the opening for arm is too big, it exposes good chunk of my bra. have to return it. there're also loose fiber of the fabrics, not sure if it is because it's new.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I ordered an xl because most retailer button ups i need a 12 and sometime 14 due to my shoulders and chest but this was huge.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I'd been eyeing this skirt on the website, and was pleasantly surprised to find one hanging on the sale rack in a local store. i couldn't leave it behind. the silver embroidery and the lovely, flowinng weight of the tulle layers make this a beautiful skirt. i'm just over 5\" 4\" and it skims the floor on me with a 2\" heel. can't wait to wear it!",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "Bought this dress without trying it on but listened to the previous reviews saying this ran small and wow does it. i usually wear a 6 but ordered an eight which was hard to get on even with the upsizing. i do have a 34ddd bust so i do have a difficult time when dresses have no stretch over give in that area. overall beautiful dress, fabric is not stretchy which killed it for me.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I was so excited to buy it online, but it come in a small plastic bag, and lot of pieces are missing on the one i got, so i had to return it",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I wanted to love this dress as it would have been perfect for a wedding i have in october however, the fit was awful;. the dress was heavy with a funky liner. it also had these little black straps around the top of the arm/neck that looked out of place. it ran true to size but i have a large chest (32dd) and it was pretty fitted around the area but loose everywhere else. \n\nsadly, dress had to be returned.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Beautiful blouse - my only complaint is that the lace is too open for my taste. i'm a size small or a 4 for the most part. in retailer i can sometimes wear an xs. i decided to keep the small. yes, it's slightly restricting but i don't notice it much - it's definitely not a straight jacket. i also ordered a medium and in a way it could have worked but there was a lot of extra fabric. i am not flat chested - i wear a 34c - 32d depending on the bra. if you are inbetween sizes like me go with the larg",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Material is too thin and quality is poor",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I'm 5'4\" 120# , 34d. this dress did nothing for me. the seem on the side with the knot doesn't look right. it's almost on the side but not really. there's a seem down the center of the butt from the waist. it looks weird from the back because it's such a fine striped print. not flattering at all. the dress is comfortable due to the stretchy knit and it has a stretchy knit lining. hit me just a bit lower than on the model.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This shirt was a cute print, but it was too boxy and hit too short on the thigh. i considered having it taken in the waist but ultimately decided it wasn't worth paying the extra $ on top of the $88",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I just bought the grey, and now i'm coming back for the black and cream i lovethis staple item!! so soft fits great!",
+          "department": "Intimate",
+          "class_name": "Layering"
+        },
+        {
+          "review_text": "This is a super cute tunic - it is simply way too big.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I purchased this to wear on the same day. it did have a strong smell ! i tried airing but didn't help much so didn't wear. tags are cut so will probably give a try after washing (by hand, my fault for not checking this part). it is a bit over my price range for a casual top, so hoping i'll end up loving it!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I have a few pair of these from prior years and would like another in a dark color. every time i check, the size 24 regular are sold out! please make more size 24!",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I love these leggings! the material is a bit thicker than your typical leggings material so it hugs without being too clingy like spandex. the fit i's somewhere between leggings and skinny pants. the suede fabric feels soft and looks to be of good quality. the petite fit works perfectly for me as well, no bunching at the ankles. i can see these being a staple in the upcoming months.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "These undergarments are comfortable, streamlined, and well made. this bra holds up well without wires. i am a 34b and wear a small. it is a bit tight at first, but form fits after one wear. . after trying one bra and i ordered 4 more. then i researched the brand and bought camis to match. i love how all the colors and styles are interchangeable.",
+          "department": "Intimate",
+          "class_name": "Intimates"
+        },
+        {
+          "review_text": "These run small. i normally wear 28 on ag stevie's and paige jeans so i ordered these in 28 and they were very tight. otherwise very well made and super cute but i had to return them.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "The shirt is a heavier weight than how it looks on the product page which was a nice surprise. it has a boxy shape and was shorter than expected. i'm 5'7\" and the front of the shirt above the hips. the design and color is great. very happy overall.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This product is incredibly comfy and perfect for getting cozy however the sleeves were sort of loose and did not look cohesive with the grey. props on the draping though, that was lovely.",
+          "department": "Intimate",
+          "class_name": "Sleep"
+        },
+        {
+          "review_text": "I was so excited about this top, and so disappointed when it arrived today. the lace part is lovely, but the skirt part is a crinoline type fabric that balloons out at the sides. it is gathered at the sides rather than pleated, and there is no way to get it to lay flat. the back center section is pleated. why couldn't they have had the pleats all around? this will be going back with much regret.",
+          "department": "Trend",
+          "class_name": "Trend"
+        },
+        {
+          "review_text": "I ordered the grey/yellow \"here comes the sun\" shirt. it's cute, but it runs quite large and isn't special enough for the price. meh.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Material is hard to wear a bra under it",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I adore this top. lovely color, fit is very flattering. can dress up for work with a skirt, or down with jeans.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Really cute skirt. found it to be too much material on my frame - 5'4. would look really great on someone taller. the tie in the front was pretty, but a bit bulky on me and ultimately i want a skirt i can wear both ways - with shirts tucked in or out. this one is tuck in only so sending back. will look really great on someone else though! nice knee length skirt.",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "I love this dress. the pattern is super cute and looks great with a jean jacket and comfy sandals or white sneakers. tons of compliments!!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I tried this on in my regular size and was able to get it on fine, but the cup portion of the suit was just crazy! with the straps tied tightly around my neck, it was like the cups just flipped out and open. i am a regular b cup, and i don;t think it was sizing (though i did not have the opportunity to try multiple sizes). the cup did not right and, for this reason, would make this absolutely impossible to wear. unfortunate, because the design is so pretty.",
+          "department": "Intimate",
+          "class_name": "Swim"
+        },
+        {
+          "review_text": "Not sure why it has gotten good ratings and or why sold out online periodically. awkward fit and flares quit a bit at waist. also has extra material at waist line so does not look flattering.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I initially tried this on in store and fell in love with the beautiful cut out details and fit. the star design is really cute and unique and the blue color is not see-through at all. i eventually had to buy the blouse online because i could not stop thinking about it. also machine washable is a major plus.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Cute skirt but i agree with the other reviewer. you can't get it on! i tried my skinny daughter tried no go!",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "I really liked this shirt the one time i got to wear it...but when i washed it, according to the directions on the tag, it shrunk! a lot! the sleeves are now too tight, and it is much shorter. thinking about returning it to the store, but in any case, i cannot wear it again.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I purchased this dress for my bridal shower and it was perfect! the details on it are amazing-delicate and lovely! i am 5'11'' and it hit just above my ankles which i loved because i could show off my shoes!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "These are very cute leggings. i love the ribbed bottoms. as far as design and comfort, they are a five. but after only two wearings, they are pilling like crazy and look shabby. i'm very happy i only paid $23 for them. if i paid full price, i'd be more upset.",
+          "department": "Intimate",
+          "class_name": "Legwear"
+        },
+        {
+          "review_text": "Like other reviewers have said, this item runs extremely long and large. i could have fit my body in one pant leg they were so wide--much wider than any standard wide leg pant i've owned. sadly had to return.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "This skirt is a dream. so so beautiful. looks way cute with brown boots. give this a go. don't listen to any negative review. this skirt is perfection.",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": ".unfortunately it hit at the widest part of my hips, so it wasn't very flattering. the point in the back was also kind of odd, and off center. i had to return. pretty color, though.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "I love boiled wool and have gotten a few items from retailer in years past that i have loved. this one was a fail. i typically wear a small and it was slightly too big and shapeless for me. i am 34c, 127#. the moment i put it on, it felt like i was wearing a bathrobe. it flares quite a bit, and the stitching is brown and not dark grey like i was hoping. the quality is as expected. the color overall is as it looks online. but it was a return.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I ordered this top in red based on one of the reviews. it is more like marroon. i am very disappointed. the top itself is plain cotton and not that great quality. it is long and has the belt at the back, but the fit and quality overall are very plain. it looks a tad dowdy. i am still keeping it because i got it on sale and i can wear it at home with lounge leggings. but it is definitely not dressy. perhaps white may not look as bad. the plain design and marroon dull color don't help.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "It seemed to stay in place and did not require constant readjustment. however, i found the band to be extremely small and tight. it is not the most comfortable bra because of the way the band just presses into your skin.",
+          "department": "Intimate",
+          "class_name": "Intimates"
+        },
+        {
+          "review_text": "This dress is gorgeous as displayed at store. color is vibrant, but the one i ordered looked dull and wrinkles very easily. i wore it to a ceremony and the seatbelt left me wrinkled before i arrived. the top is very wide and best to wear strapless.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Loved the pattern and colors of this dress. the material was extremely heavy. the shoulders and across the back was very small so that i couldn't lift my arms or put them out straight in front of me. but then the rest of the dress was huge and shapeless. sadly i had to return it.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I ordered this shirt last week, it's beautiful!!!!! it's even prettier than the photo. i'm 5.3 120lbs ,i ordered the petite 6 and it fit perfectly!!!! i wish it came in more colors, i'd order another one in a minute!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "As soon as i saw this dress i ordered it...i didn't want to miss out on it. i loved the look...the colors were so fun and bright...i thought it was going to be my perfect dress for an upcoming trip to hawaii. i am 5'4\" about 118#. i ordered a pxs. when it arrived i loved the feel of the fabric and the colors but was wondering what it would look like on as it was a lot of fabric. i know it is to be flowing but on me it was just awful. part is that the ties on the shoulder are sewn in place so i c",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "These ag stevie ankle jeans only have 50% cotton.tthe rest is 41% lyocell (a rayon), 7% polyester, and 2% polyurethane. result: thin and clingy jeans that show every lump, and stretch out. \n.\nthese are no longer the same lovely ags in twill when they were at 80% cotton, 18% modal, 2% pu. it seems ag has also stopped making denim and corduroy with 98% cotton, at least in the stevies.\n.\ni'm sure these will be a great choice for someone looking for very soft and thin pants that feel like pjs, b",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "Cute. i love the button back detail. but it's completely see-through. i could have worked with that by putting a cami underneath, but the arm holes were too tight. didn't look bad, just felt uncomfortable. you can't really tell in the pic, but there's elastic on the arm holes. it'll work if you have super skinny arms, but apparently i don't.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Beautiful top runs true to size. i&#39;m in between an xs &amp; small and went with the xs. it fit great and was beautiful for holiday photos. it has hints of silver in it.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I purchased this jumpsuit in the store and i am so pleased with it. i am usually a 10 or 12 top and the large was good. the med was too tight on my bust. love the print very feminine without looking like pjs. cream background is beautiful. fabric is light and cool and i love the pockets. i was hesitant about the short length but i like it. this is a special piece. it's hard to find jumpsuits like this.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "This sweater is incredibly soft and pretty, but there is just no way to get it to lay the way the model does in the picture. i found myself constantly tugging at the top to get it to stay off the shoulder - otherwise it just bunched up top and make a weird funnel neck. i really wanted it to work, but it was just so impractical.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "This shirt is so cute in the picture but not so great in person. i bought the short sleeve version this summer and loved it! this runs really big so maybe a smaller size will help.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "In a word .. clingy ... and not in good way. long so you need it to flow not cling. liked the back, but front was just too clingy. back it goes.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Stylist in store warned be about issues with buttons falling of easily. loved the look, so bought it anyway. lost 2 buttons on the first wear. it did not feel snug on me, but i guess i could try a size up and see if the buttons hold a bit better. either way i will return or exchange.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This top was so pretty online! unfortunately it did not work for me- the front was a bit more shapeless in person, though the back was gorgeous, with a button gather at center. the color appeared yellow online, but was a bit more green in person. also, the armholes were very low, so it would need a camisole or no bra.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Runs very large. ordered a smaller size due to other reviews but should have ordered several sizes smaller",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "It's short and wide. not a good combo for anyone who isn't stick thin.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Great jeans. especially since i'm getting tired of my skinny jeans. length is great for someone tall like me (5'10\") unless you wear heels with them but these are more sneaker/sandal jeans.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "This is such a flattering top. i bought it in green. the green is a cooler version of kelly green, not the muted green i see on my computer screen. i'm fair complected and that color looks great on me. i love the elastic at the waistband, which helps camouflage my mom belly. i wish they made more tops with blousy, elastic waists! i bought several new tops this summer and this is probably my favorite. after wearing it for a couple of weeks, i decided to remove the tie string, which hangs low; it",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I was glad that i was able to get this shirt which is really more of a spring/summer item, but i found it wide in the body and the shoulders.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Ordered this vest on line and returned it due too poor quality .",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "This is another \"i've been looking\" for me - a funnel-neck sweatshirt to feign athleticism with. i love it. the material is incredibly soft and warm. the fit is a little snug around a larger bust, and the lines would probably be more flattering on a more... well, modelesque... frame. but i'm thoroughly attached. size up if you're looking for movement.",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "I have been eyeing this top online and initially thought it was very fitted and structured as it appears on the model. upon trying it on at the store, i agree with other reviewers it is a tad boxy. i ended up sizing down to a small and it fits nicely. (5' 8\", 145, usually i take a medium or 6/8 in retailer tops). i can see where this might not work for everyone, but i found it to be a fun take on a classic \"tweedy\" look. i plan to add a pop of color with jewelry or even pair it with the pin",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I am 5'5\" normally about 120lb, but i'm about 145lb now at 9 months prego. i purchased the small. i can't resist buying retailer clothes, even though they might not fit me currently! however, because this shirt is drapey, it actually fits over my baby bump now and it will be perfect as a nursing shirt and then regular shirt later. it is so soft and great quality. will be cute dressed up for work or down with jeans!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This top is cute - nice fabric and design. pretty flattering for such a loose cut. my one concern though, was that when i was moving the peplum part kept riding up. i felt like i would constantly have to readjust the shirt to make sure it was lying flat. \n\nthe shirt runs large. i'm usually a 6, and the 2 was plenty roomy.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This is such a great top for spring and summer. i've worn it with shorts, capris, and jeans, as well as layered it under a denim jacket. it brings an element of whimsy to any outfit. it's comfortable and really well made.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "1. the wide leg/crop is a cool trend. but not great on me. i'm pretty standard in size/build: 5'6\", 135 lbs,, size 4. i felt like i just looked oddly shaped with them on.\n2. and maybe this is the issue: the size 27 (my normal size in every citizen pant i own) was about 2 whole sizes too big for me. i mean, i felt great about myself. but...wowza.\n3. when i took them to the store to try on/exchange, they don't even carry them in the store! so i just returned and will try something else.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "I love this tunic, super flattering + long enough (if your no super tall like me) to wear with leggings! it does run a little big, i like tops a little looser on me so i didn't mind that. i ordered a small- if your typically a small and prefer more fitted tops i would suggest sizing down. \n\ni bought the blue tunic first (the pictures don't do the textile design justice!) i loved it so much i went back online and purchased this tunic in black!!!\n\nthanks retailer for being awesome!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Big pockets make it look more like a bathrobe than a coat. there are no internal pockets and the loops for the belt are pretty skimpy - just a bit of string. the color is great, but the quality leaves something to be desired.",
+          "department": "Jackets",
+          "class_name": "Outerwear"
+        },
+        {
+          "review_text": "This dress is great. it appears just as it does online. its soft, flowy and a thin chambray material. the straps are adjustable which makes it a good fit for all women. i am fuller in my hips and toosh and this dress fell beautifully over them. i tried a large (i normally do l or xl in retailer dresses) and there was plenty of room! i would have probably liked the xl more just because i prefer things oversized. the dress is a midi length, very breezy and airy. its extremely comfortable and very fl",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "I knew i had a winner when my husband said \"cute top\" the first time i put this on. the style, quality and sizing are all excellent. i love the lace detailing in addition to the open shoulder style. i am always looking for long sleeve tops that go great with jeans and are right on trend. this a great addition to my all wardrobe.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I really loved this vest online and decided to try it on in store. it was really cute on and fit nicely so i purchased it (in my normal size) and took it on a vacation. first time wearing it and the color transferred all over my white shirt even though it says it is pre-washed. i am very disappointed considering how expensive this was. overall, it is very cute but it may ruin your clothes so beware!",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "Good quality material. i got size 10 which is a little too big - size 8 would probably be better. very pretty, feminine top. a little too full in the waist/skirt area.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "When i received this blouse, ai noticed that there were gold dots all over the blouse and they were very sticky. some of the fabric would stick to these dots. i thought it was because the weather was sticky and humid. however, after hanging on my closet door, the dots are still sticky. i do love the design and fabric so i will try not to let the sticky dots bother me.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I feel in love with this piece. the color are gorgeous and i received so many compliments. it lifted my mood just wearing it! sadly, ut the end of the first wear i had a run up the front and by the middle of the second wear the light fabric got caught on something and a hole developed. upon further inspection i found another hole at the top where the price tag must have been attached. i also noticed all over pilling after the first wear! so sad! they should recreate this in a heavy fabric.",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I ordered this dress in my usual sz 2 it seemed to be tight on the hips , then i tried the next sz 4 and it was tight because ,i realized that the lining was very sticky, and would bunch up underneath making the dress look defective on me, not for curvy on bottom. i think if you are more slim down below this will maybe work but i had to return for this reason. i was considering cutting out the lining because it was so cute, and i really liked the look of the dress, if it goes on sale i may purch",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I knew once i saw this online that i would love it, because of that i almost feel like my review is biased. i have been searching for a jacket like this for awhile. i own the holding horses version from a few years back, but that one is just not fitted enough in the waist for me (even though it has a drawstring waist). this one too has an interior drawstring waist and it is more fitted in the waist giving the feminine appearance i desire. but it's not too tight. i am small up top, 34b but larger",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I am not a fan of sweater dresses and did not pay attention to this one when looking at it on-line. however, it immediately caught my attention in a store, i decided to put it on and the dress looked amazing. soft, warm, skin hugging material, long skinny sleeves and more importantly, i looked amazing in this dress.i think colors are more vibrant, design is more lively in person than in picture. i am 5'10'' 145lb, so i loved that intricate dress pattern, broken lines in front made me not look li",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I love this dress! i wore it to my friends bridal shower and got so many compliments! i can't wait to wear it again!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I loved this shirt online and went to my local retailer store the other day and wanted to try it on. i didn't even get past the \"hold it up and measure the length\" test we tall people often do, as it was incredibly short. there is no way i could wear this shirt at 5'11\". \n\nunless you have a short torso and want to rock the (icky) high-waisted pants that are everywhere right now, this beautiful top might not work for you.\n\noh, and it's sheer. camisole needed for white and navy.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This would be a great dress if it was sized correctly. i ordered my usual xs and was shocked at how large it was. sadly the gray/black color is no longer available in xxs (a size i would never typically order) and is not available in petite sizes. i liked the design, the fabric, and the color. if you are lucky enough to be larger than a size xs, i recommend ordering one size smaller than your usual.\n\nfor reference, i'm 5'3\", 111 lbs, 28dddd/30ddd, and usual wear a size 0 in dresses and pants (i",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "These pants are so cute and comfortable that i ordered each color.  after wearing the black ones one day, they stretched out so badly that i returned the other two colors.  i wish the fabric was thicker with more stretch because the style and cut is really cute. bummer",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "Material is nice. design would be so great if it didn't fit so large! i am 5'4\" 118lbs, athletic build. the dress could be belted i think (a very slim girl at retailer did this), but it is not worth $158 in my opinion. if on sale i might keep it due to the hastle of returning it, however, it is not \"flowy.\" it fits okay in the shoulders, almost too loose, and the rest looks like a potato sack. so disappointed!!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Very comfortable dress for fall and early winter. love the material and great to throw on to run errands in over the weekend, or could dress up with flats and sweater for work.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I ordered these on sale despite a previous reviewer's comment that they were unflattering on the back side. they really do hug your bum, but that is not what bothers me. what bothers me is that the back side is totally see through, so unless you plan on wearing them with a long top, they are not wearable in public or around other people. i have gotten some of my favorite pieces from retailer, but also some of the most poorly designed. unfortunately, these fall in the latter category.",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "When the top arrived and i tried it on; it was great. the length was perfect even though i am curvy. after one wash (done according to the directions), the top shrank in length considerably. i do not mind paying a higher price for something unique and something of quality.....i do have a problem with something that does not hold up to basic use. i will be returning this item.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This is exactly the same cut as the breton peasant blouse, which i also ordered. it's extremely tight thru the bust and the sleeves are very wide at the top which adds width to the look of this blouse. it added 20 pounds! the print is beautiful. the ruffles are trimmed with a golden colored thread which is a beautiful detail. i ordered size large and am well endowed. steer clear if you have a bust.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Love the color! very soft. unique look. can't wait to wear it this fall",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "Beautiful and very feminine look but run big. i m 5ft 105 lbs curvy , size 00 fit me well",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I love the color of this top but the style is not flattering. i normally wear a l or xl in retailer clothes and i ordered a l in this and it was massive! i went into the store to try on a medium and it fit much better but is still very bulky around the middle where the ruffles are and it is very wide. bummer",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This top is fantastic. something about it has an ease of elegance and grace. the overall structure and design is aesthetically pleasing and easy to wear. i feel immediately put together and ready for anything. the fabric has great texture and flows well without feeling like the wind will carry you away. i purchased the off-white - it is a bit see-through, but i don't mind wearing a cami underneath.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "It just isn't that flattering on me. it looks kind of old and dingy, even though it's brand new. it fits fine, but doesn't do much to highlight my curves. it just kind of hangs there. the length is somewhat awkward (i bought the petite version). maybe it would look good on someone tall and skinny, like the model. it's gathered around the stomach area and longer in the front, which reminded me of maternity wear. it does appear to be pretty well made; top part is lined. overall it's not terrible,",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This coat is gorgeous. the minute i saw it online i ordered as fast as i can type!\nwhen it arrived it exceeded my expectations in every way.\nthe lace detail is exquisite and the fit is so flattering.\ni have the beatrice coat of last year and i so love it and this is equally beautiful.\na must for retailer shoppers. \ni ordered my usual size and it fits to perfection.",
+          "department": "Jackets",
+          "class_name": "Outerwear"
+        },
+        {
+          "review_text": "I brought this shirt for a vacation, it fitted well and was flattering. totally a comfortable wear, however, after 1 wash on delicate & hang dry small holes appeared near the bottom. i am hoping i can return it. not worth the money.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I purchased these in white and love them! fit my muscular thighs fine.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "I bought this blouse in two different colors -- the orange and ivory -- and kept the orange. the style and fit were very flattering. the drape of the fabric, along with length (hitting right below waist) and sleeves are very flattering. i am 5'4'' and 118lbs and the 0 fit me perfectly. i have muscular arms and the capped sleeves are perfect. i returned the ivory due to the sheerness of the fabric. it is quite sheer, which is a problem if i wanted to wear this for work. also, you can see the dark",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "It is a great sweater that is soft but also warm i love the pretty design",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "I ordered a large, and was hopeful that this would be as comfy and stylish as others reviewed. for me, it was not. it ran a little small on top, buttons bulged at my chest, and was hard to put on. bottom part fit well (although flattened my butt unflatteringly). i'm sure this works for some, just wasn't the right fit for me. sent it back.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "Really like this blouse but am returning for a larger size. much too tight in the upper arms and somewhat tight in the chest - overall i like it.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I purchased this early in summer and have worn it a lot. you can dress it up or down, and since it's comfortable you will want to wear it a lot. i can wear it for everything from walking the dog to going out to dinner.. i bought 2 jumpsuits this summer and this is by far my favorite. the fit is flattering, fitted but not tight and the self-tie belt gives your waist definition so the overall look is hourglass. i am tall and i normally take an xs or s. i went with the s to ensure that it was long",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I wanted to love this sweatshirt, but alas, it is going back. upon opening and unfolding, the first thing i noticed: the dots and not solid. they are sort of distressed looking, with parts of them missing. secondly, it doesn't have a lot of structure. it's soft and kind of floppy but in a weird way. it's just not flattering on me. it looks more like a pajama top than something i would wear out of the house. for reference, i ordered the 3, and i'm usually a 10/12 in tops.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I so wanted to love this dress! the color and fabrics are beautiful and scream summer! i was so disappointed by the fit through. the different fabrics are such a cool concept but it wasn't executed that well. one material is pleated like an accordion so wants to \"constrict\", the next material is crocheted so is a little more stiff and the third material is pretty average. on the bottom where it's flowy it doesn't make that much of a difference, but on top and in the middle it gives this weird \"i",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I loved these pants. loved them so much that it pained me to return them. but, i used shout stain remover on them once, and it drastically faded them in the spot i used the stain remover, that i had to return them. i'm grateful to retailer for standing by their product and taking the pants back for a full refund. i'm tempted to buy them again if i can't find similar pants elsewhere (and just stay away from the stain remover). but, i'm still undecided.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I found both colors and jumped on this shirt. then i got it home and realized that it was pretty much useless. there is no way to put a sweater or jacket over it, it is too hot to wear in the summer, putting a tee under ruins the look.\ni am very flat chested so it hung well, but there is lots of shirt. both went back in exchange for two wearable items.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I bought these almost immediately after touching them in store; they were so soft i didn't even need to try them on to know i would love them. i now wish i had tried them on in the store, so i could have learned that the elastic band on the inside isn't sown in, meaning the band will constantly twist and get tangled whenever i put them on/take them off. it's unbelievably annoying. i have to fix them every time i wear them. if i had known this i don't know if i would have purchased them. they are",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "Such cute tights! i saw them and had to have them. they are a thick knit - very good quality. the color is a dark navy and the little foxes and a nice pop of color. i get lots of compliments on them.",
+          "department": "Intimate",
+          "class_name": "Legwear"
+        },
+        {
+          "review_text": "I bought this top and it ran huge, i had to get an extra small. well then i wash it according to the instructions and it shrunk horribly! like its so small now my 3 yr old could probably wear it! i'm so sad, i really liked this top....but for it to shrink after one wear is not acceptable.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This top is a classic subtle sexy top, great for casual wear and especially to go on a date. the hem of the sleeves have a slit, neat detail. small fit me well width wise but sleeves are too long (2 in. pass my wrist) but i cannot roll them up because the bell shape does not hold and i cannot hem them because they would lose the original stitching (i am 5ft2in, 34b, 26 waist). no petite size so i passed. cloth and stone is better in making petite size but not for most items, sad for us shorties.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I really did want to love these jeans but i had to return them. \nim a size 10 and a little heavier in the thighs and got a 30. the rise is just to high for me and the thigh was very tight. \n\nthe denim felt fabulous they just fit me a bit funky.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "This top is really cute, but the threads underneath the shirt scratch your torso. i suggest wearing a tank underneath to protect your skin.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Just fab. great length, great pattern, flattering fit, and even pockets!!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Well made. made my hips looks giant. just not my style unfortunately. i'd have to work at preschool or on a ship to pull this off. i'm 5'3 120-123lbssize 6-8. i got the size 6 (not petite cuz they were sold out).",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I normally avoid white tops because they usually don't have that pop,but when i saw the 50's styling on it i just had to try it. i came in to buy another top from their catalog but it was such a wow i walked out with it instead.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I love this sweater because it is so versatile! it looks casual with jeans, but i plan to wear it to the opera with dressy black slacks. the beautiful black embroidery is unusual and asymmetrical in back.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "I am so pleased with this product. it is a great staple for every woman. my one complaint is that it easily pulls.. something to be mindful of when handling the garment.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I do recommend this dress with some caveats. 1: it'll be difficult to find a bra that won't show straps, and 2: it's very figure flattering so if you're body conscious, particularly tummy",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I really like the warmth and loose cut of this sweater. it is great for layering and looks nice dressed up or down. my only gripe is i would love for it to have a second fastening. if it had another snap a little further down the body you keep keep it more securely closed. other than that it was a really great purchase.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "Very comfortable to wear. you can wear it any season.  it runs true to size.  nice fabric.  it&amp;#39;s a simple black dress.  love it!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Love this blazer. you can wear it with anything. fits well and lightweight. perfect for south florida.",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I got the black in a medium. it just made me look wide and i felt frumpy. i think it's the angled wide sides. on me, the design just created bulk. nice substantial fabric but it isn't soft or cozy. back it goes",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This shirt has an incredible softness to it and the purple print is so lovely, i did end up returning it simply because the flowiness was a bit too much for me. i had tried the 2 and 4 and went with the 4 due to arm restrictions in the smaller size. too bad because it really is a lovely top. definitely worth a try in store!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "In the photo, this sweater is very appealing but in person very disappointing. i am 5'7, always take a size medium but on me, the sleeves were far too long and the sweater just didn't fit properly. the collar doesn't fold right in the front and it hangs awkwardly. if you try to use the button, it stretches and looks terrible. in the back, it falls short. it's going back.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "This dress is beautiful as pictured on the model. but on me, not so much. i am normally a size 0/00 with a 32b bra size. i ordered this dress in an xs and it was just too big and boxy. i also thought the material was going to be thicker, but it was very thin and didn't seem to fall right on my body. beautiful design, just not the right material or fit.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Loved the fabric but returning because the armholes are cut waaaaay too low. unless you have 30\" arms, all you get is an unnecessary showing of your bra",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "The sweater fits a bit awkward in the front. it draped more than i would have liked. also, the transition from the stripes to the solid gray felt non cohesive because of the stitching. returned the item.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I tried it one bcasue it is on sale and i love it...too bad i don't need yet anothr black top. fit is loose/flowy, but the ruffles add a littl cahrm to the shirt. tried on regualr xs, i could proably go to petites though, but thankfully there is a button at the neck",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I had high hopes for this top but once again it is just a big boxy too much material top. i get the style but if it adds 10lbs to your middle area its not for me. it is a thin material so it does hang nice.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I bought 3 shirts in gold, black and red. they arrived larger than expected. after the first wash and air dry they shrunk. i would have been thrilled but they shrunk to be shorter while staying too wide. also my black shirt faded a lot with one wash.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I love this dress. it's adorable and great for summer with a unique style- it's a bit unusual with the high and slightly ruffled neck. it can easily be dressed up or worn more casually. this is the most flattering dress i've found this season (particularly around the stomach area). i'm 5\"3' and took a petite size, which fit perfectly. this dress is a bit translucent, so skin-toned undergarments are a must.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Beautiful! caught my eye online. i had to order then reorder in a smaller size, but it is wonderful. colors are beautiful.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I was excited to see this offered by retailer because i have been looking for a light blue summer jacket or blazer that isn't a denim jacket and this seemed to fit the bill. i've ordered several cartonnier blazers in 00p, as early as 2013 and as late as spring 2015, and have been very happy with them. on the plus side i would say that the color is depicted accurately and it does seem like a high quality jacket. but while the shoulders and sleeves were a pretty standard fit for 00p, it was much too",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "This is a cute top although it runs fairly large. i have washed it once and the fray did ok; however, i'm a bit concerned about how the shirt will wash over time with the frayed edges.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I'm returning this cardigan. it doesn't fit me at all. it's shapeless and loose.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "So much prettier in person. love it! i'm a size 2 in retailer and a small in this vest, even over a sweater still left quite a bit of room.",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "I love the design of this dress, but found it to be an odd fit. the bow in back didn't cover my bra, and in fact, though the overall fit seemed right, the bust was tight unless i removed the bra (which is not an option in my book). i'm not large-chested, so this seemed like a design flaw to me.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "So this shirt is adorable. soft, fun, lays nicely...\nbut you should have your arms amputated and replaced with a barbie's before you put it on. \ni don't even have large arms, the medium fit me perfectly, but then like i hulked out the arms and there are now little tears at the seams. this was all very confusing and vexing as this shirt is otherwise perfection. \n\ni mean, i'm not a large? but i guess if i want this shirt, i will need to take it back and get a large, otherwise, it will be sleev",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I tried on this sweater...love the flowing top, and it looked like the seam would hit right under my bustline.\nwrong.\nthe seam came right across my bust on a medium; sized up to a large, same thing. this shouldn't happen! not sure who this would actually flatter.\nthe sweater is high quality, and the colors are perfect. the fit needs work.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "The green color was beautiful but the top was too low cut and looked more maternity than boho.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "The stylist at my local retailer recommended i try this dress and it did not disappoint!  the material is fabulous and it looks exactly as pictured on the model.  it also has pockets which is a bonus to me.  i normally wear a 4 but bought a 6 in this dress - i am a 34c and i felt the 4 was a little tight across the chest - otherwise i feel the dress is pretty much true to size.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Pilcro has become my go to brand for pants as they always seem to fit with consistent sizing.  i'm an 8-10 and size 30 never fails to fit perfectly.  i've got hips and a booty so it's great to have a brand that works with my curves.  these chinos are super soft and feel like pants i've had for years -- broken in but still look polished.  i bought the green (which is really teal) and feel in love with them. i've since bought the gray and sand/khaki color.  i'm 5'6\" and the length hits just below",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I thought i might like the look of this oversized odette dress but after i tried it on i felt it was not a flattering style on me. the color was pretty and fabric was nice - just not a fit for me.",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "This top was supposed to be 23 1/4 inches long in petite. it's actually 28 1/2 inches long.  it's also large in width. hard to believe it's an extra small petite.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I loved this top but it runs small so i had to send it back, unfortunately.\nbeautiful styling and color blocking. just wish there had been a larger size available to have been able to exchange for.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I love this shirt! it's a nice simple long-sleeved tee with some nice details. i especially love the seaming on the front & back-- very flattering!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Disappointment city with this one and i am so lucky i had a coupon because if i would have paid the full $128 they are asking, i would be a tad skewed. not just thin material but thin and cheap feeling. doesn't itch but i seriously expected a lot more from retailer. i have noted the name of the designer and have promised myself to never buy this label again. big loser.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "Color is beautiful but looks like a maternity top on. i found i could tuck it in slacks and it looked fine. now for the cons:  it is supposed to be peacock design but i had only one peacock,under my arm, which could be seen, i guess, if i waved. the rest were parts of the bird. i would love to have the one in the photos!  next, who thought cheap white buttons on the back was a good idea?  if i had gotten a nice patterned top, i would have replaced the buttons. blouses that i like never seem to b",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Recently bought these on sale, though they were still a bit in the expensive side. i'm 5'2\" and typically a size 4, the xs fits perfectly. the pants fall to my ankle and are not cropped as they are on the model, but i'm fine with that. the piping on the seams helps them not seem too much like pajamas, and i was particularly pleased that the crotch was not too baggy, as sometimes happens with this style.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I ordered these twice just to be sure there wasn't a glitch. the color is so off! the picture shows a dark blue denim, but they are not they are a light blue - with whiskering! retailer you need to have a better image of the color because this is so misleading.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "These are terribly unflattering the wash looks dirty and the rise is not 10.5 like the description says, which is the only reason i gambled on these it is 13\".",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "Very soft and comfortable. the shirt has an unusual, asymmetrical seam that appears along the front, right-hand side of the garment. (the model is positioned so that you can't see this detail from the picture. i attached a picture that includes the front seam.) i actually like the seam - it creates more visual interest, and adds a little bit of ruching that helps hide my belly. the cowl neck is very well done - there are two layers that form the cowl, and i've found that it means wardrobe malfun",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I agree with the other reviewer who said there was too much hardware and such. this really does have a lot going on. i usually wear a 4 in skirts, and based on reviews, went up one size. it still saw way up near my chest - i think even an 8 would be too small! it's sooooo tiny at the waist. probably buy 2 sizes, 2 and 3 sizes up from your own. also, the skirt flares super wide at the sides, it doesn't sit the way in the photo or maybe the model is holding it down with her hand. it's like a skirt",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "Wow... i'm in love!!! when i first saw this i put it in my cart... when i went back to purchase it, it was sold out in my size... i was so bummed. i kept checking back and saw it was restocked so i quickly ordered it... thank heavens!!! when i first took it out of the box i thought it might be too \"grandma-y\" of a design... but i was wrong. it's just gorgeous! can totally be dressed up or down. so flattering. love love love it!!!",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I love the fit of this tee for everyday wear. it's forgiving on my late 30s mom body and looks much more stylish than the average tee. my only complaint is that the fabric started pilling on the second wear. otherwise the fit, style, and fabric weight are great. it fits tts. i'm usually a size 4 and the small fits perfectly.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I found this dress to be a perfect flowy fit for the super-hot tail end of summer. this definitely is not a form fitting dress, but i bought my regular size medium (size 6) and think it fits perfectly. i have a pretty small chest and find that sometimes these a-line dresses look better if you don't have a lot on top making them \"tent out\". just my opinion. personally do not think it has an abundance of fabric. in fact, it is a lot less roomy than a lot of others in this cut due to the embroidery",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I fell in love with this dress immediately. gorgeous print and colors. light and breezy. classic and comfortable. the petite length is perfect for my height and hits a few inches above the knee. i have a small bust (34a) but a wider rib cage so the petite small was a perfect fit. couldn't be more pleased with this purchase.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Loved my. mustard colored ones so much, i also bought the ligher green color. fit is wonderful- and very flattering. they can be dressed up or down. they look great with heals or booties!",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I feel like this brand is very good at coming up with dresses that are flattering and i feel like they tend to fit my body well. i like the design of the dress a lot because it makes me feel like i am walking along with beach-it gets me in the mood for summer, and it is the perfect casual everyday dress for the summer. i love that the color scheme is understated which reinforces that this could be warn anywhere-even for everyday use. the strips are perfect for the look of this dress, and i don't",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Really wanted to like this top. the model has it on backwards - the \"v\" is actually the back and closes with an eye hook (that is where the tag is ? there's also a seam running down the back). the front is actually a high round neck. the material has a metallic thread and felt rather scratchy cheap. i'm usually a s or xs. in this top the s had too much material at the bottom and flared out strangely. the xs was too short in the front and moving your arms caused it to ride up.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I love this poncho. it' so soft and cozy!! looks great with a pair of tights or jeans. just adorable.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "I really love this dress, it hangs well and clings in all the right places. i ordered this online and the store that sent it had left the security tag in. i sent it back. the tag was taken out and the dress returned very quickly, and without cost to me.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I wanted to like this so much. it's a great good girl dress, church dress. however, it makes no sense. it's a summer dress with massively thick lining that snags i'm petite and busty and it made me look and feel very wide.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        }
+      ],
+      "expectedAnswers": [
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ]
+      ],
+      "models": [],
+      "judgeModels": [],
+      "qualityMetrics": [
+        "correctness"
+      ],
+      "isRAG": false
+    },
+    {
+      "useCaseName": "Robustness — Text Classification (Clothing Reviews)",
+      "systemPrompt": "You are a sentiment classification assistant. Given a product review, classify whether the customer recommends the product or not. The review may contain minor errors or typos — focus on the overall sentiment. Respond with exactly one of: 'Recommended' or 'Not Recommended'. Then provide a one-sentence explanation.",
+      "userPrompts": [
+        "Product Department: {{department}}\nProduct Category: {{class_name}}\n\nReview:\n{{review_text}}\n\nClassification (Recommended or Not Recommended):"
+      ],
+      "promptVariableSets": [
+        {
+          "review_text": "Nice quality and feel to tho cloth bt they are super lightweight and do not come down to the ankle. they fall at a strange pnace on the calf - a better cropped summer pnt, perhaps.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "Product is sheer, but definitely adorable w/ any jean product! wouldn't pay full price but so glad i pot t on sale w/ extra savings!!!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This may be one of the cutest items that i have everyp owned! rduns big, i am a 4 and the 0 fits perfectly.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I wasu so happy to discover that my size (00 petite) had suddenly become available again online--probably someone's return. and i wasn't idsappointed when i tried the tunic on--it fit great (unlike toher recent online purchases from retailer.) love the plaiad and the style. the cut should flatter many body types. definitely worth the money! please, retailer, expand your invetntory in petite sizes. the cute stuff seols out so quickly.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This jacket is so great! i've gone through a few seasonds nos trying to find that one perfect little olive green jacket. this one wins! the color is nice and saturated. the fabric is gentle and drapey sob it's still flatterin to my shape. ijt's slightly relaxed annd i think it creates an \"easy\" look. i've already worn this with a dres, and it will finish off many other looks in my closet! yea! i'm 5'6\", 138 lbs and took a medium.",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "Earlier this year i puzrchased a pair of pilcro hypehn's as a birthday gift for a family member, and she absolutely loved tuhem! after hearing from her how comfordable and amazing the pants are, i had to get ome for myself! i usually ounly wear denim pants, everytnhing else is spirts, rdesses or shorts. so this was a big change in style for me.so far i love them, they are way more comfy than i had expectea and made from great material! i'm 5' 2'' nad 120lbs. they 27s fit perfectly. i do not have slim",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I dids't realize that the grey sleeves are attached (i assumed that was just an undershirt on the model). needless to say it looks cheap and poorly made. will be returning",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I do like the shape of this piege. it is eye catching due to the lengoth and flattering. however, if you are chesty, this piece hsows off more han i was comfy with, and i don't think i've ever had that problem with retailer. in the body, i neded an xs or i would be gwimming in it. but up top, the xs showed much too much cleavage. (34d, 5', 115). i'm still keeping it but i have to wtch where i wear this.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I so wanted to love this tank, and was so exciteed to ggt it in the mail! i got a dimensions small (my usual) and it ran so large i wasn't even sure an xs would've fit properly. the materiab looked ilghter and blouse-y on the model, but in person is much thicker and srot of \"hngs\". underarms rkn large and are gaping fromq the bosy. i am sad to return this top because i really like thz color and idea of it, but it just can't work on me!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I reallyk like the pilcro pants and so whenh i saw thesu level 99 snorts i just had to order. tey arrived and are as good as i hoped. the fit is great, the length is great (i don't like shorty shorts) and i love the color. the photo is very true to life iwn regard to color. i wmill definitels get a lot of use from these this coming summer.",
+          "department": "Bottoms",
+          "class_name": "Shorts"
+        },
+        {
+          "review_text": "I trid this on in my regular sizing and a size up. just didn't work in either. the attached slip bunched underneath and the material was rough. i did not purchds it.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "The print is vry pretty but the fabric is stiff and it runs way too big. looks gret on the model but awful on me.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This is a great little top. a wonderful basic, but the crochet/lace detail adds the perfect amount of uniqueness. it's a smooht jerseym material htat doesn't cling. falls very nicely over the bdy, flovw-y without being oto flow-y. i ordered my usual small, and it fits tts. for reference i'm 5'1, 125 lbs, and 34d bust. i did not ormder the peiite since i have a longer torso, very happy i orderehr a regular small. will be a gret spring and summer top.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Love this dress! runs big though, snze down",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This sweater looks fantastic with chambray colored denim. iy wear it with jeans, shift dresses and even leggings. definitely one of my go to sweaters for the fall.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "This top is beautifully made and designd. materiaw is soft and comfobtable however it's very boxy. the details on the side stick out. i just found it not very attractive for me.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I absolutely am obsessed with this poncho! it is the perfect piece for fall and so eas to layer.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "This is the one. the faux fur i have ben lookig for. it is pjush and hevay so that it shculd keep me warm and toasqty dturing the dreaded new england winter. i really like the richly saturated jewil tones over a base of black . there are onlr two snaps to close the frotn but there is enouh fabric to oveklap to keep the cold away. maybe wniter won't be so bad after all.... one caveat is that the item description is not tuly accurate. i iniially ordered a petite since the length spated wag almost 37 i",
+          "department": "Jackets",
+          "class_name": "Outerwear"
+        },
+        {
+          "review_text": "Love the style and fit, but i does stretch out during wear. by the end of the day, it feels big.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I loved tht aesthetic but as a true hourglass shape, i was frustrated that it didn't have a little more give as i tried to pull it over my head. the fabric was stiff, and seemed to be lace ovzer cotton? ont entirely ure. i oculdn't get past the feeling ofqf the material.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "These were great pants that fit well, had good rise, perfect sjretch for vy curves, and i was really happy to get tehm on sale. (i'm 5'10\", 165lbsd, with a pear shape). after only three months of occsvional wear (about once a week, at most), and followig wash inxstructions perfectly, they started deteriorating. the pockets are becoming unsewn, the fabric has over-stretched in little setcions that bunch, and the bottom hem is coming unraveled. these are the mosl low-quality horrible pants i've",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "Very soft and comfortable, excellent for girls who don't usually like shorts because of bigger/muscular thighs. i would say these rudn large, btu not drastiaclly. for reference, i'm usually a dimensions 6 on the bottom and i got a small. the girl at the checwout counterj called them pajama shorts but i think these can definitely be worn out of the house.",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "I wore this to a gala and i plan on wearing it over and over again. the dress is very comfortable afd looks ploished. i wore this dress for 12 hours and did not want to take it off. the embroidery is beautiful and appears to be well done. i am 5'5 and the dress hit me 2 inches above mry knee. i higly recommend this dress, i received so many compliments.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This shirt is gogreous at first glance. the quality is there andy it has a beautiful design...from the front, that is. but it is huge and billoy with mack pleats. i cannot imgine this beitng flattering on anyone. it just adds so much volume to the top. i am thin and pmetite o mabye that was thev issue, but i just can't see adding so much volume. this was a total miss for me. scuh a shame. would have been great iwwhout all the extra voluem in back.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I really loed tihi top. however, i couldn't get it on. i tred on a mredium (my usual size.) it's not that it was too small. something else is wrong with it. the lare was awy too big. too bad, i really wanter this lotok.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I wanted this jacket to fit n me like in the photo, ubt i guess my frame was still to pevtite. the material was also on the cheap end",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I purchased this jacket in red. i ave several boiled wool jackets form retailer and this one did not disappoint. it is very warm and appears to be high quality. it looks good both snapped and open. i do believe that it runs large. i settled on ap xxs petite adn am just under 5'4\".",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "Just picked this up in my retailer store and i love it. i bougth the orange print and the colors are vibrant and perfect for summer. i am 5'5\" and 140 ls. i took a small which is my uusal fit at retailer. could be worn unbuttoned as a sleeveless cardi over a tank. i will wear am cami underneath as it is sheer, but that doesn't bother mve. another shopper was trying this on ib the fitting room and it mooked great on both of us. i will wear this all summer long. looks great with denim. happy find!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "So, ordered online. tried this on, boyfriend asked me if i was buying maternity clothes. back it goes. super cute but huge.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "The dress i received was not in the least what i was expectivg, adn in the best way prosdible. i initially purchased the dress as something i could wear to work, but when i put it on, it was clear the dress was meant for something a bit more fun. it's more along the lines of a sweater dress and is very flattering and chic.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "So this may e my lpast favorite thnig i have ever bought rom retailer. this oz had so mch extra material it was like wearing a bag or paarchute. it looked a million times cuter in thew photos.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I'm so disappointed thisc dress didn't work out! i orderef the size medium, post baby i'm a solid dress size 6 or 8 depending on thq designer. thve casiher was laughing with me how ridicuously hgue this garment was when i held it up. also the length was super lon, description says 35\" which would be mid thigh fo me, but this thing hit me mid knee. also, like the previous rweview the shoulders are tented and poofy. so bizarre and the cut reminds me of a materntiy dress, but the shoulders def",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I was very excited when this dcress arrived in the mail. the fabric i so comfortable, but the print was overwhelmijng. it is aso very tight on the top and i got lost in the fabric at the bottom. i had ton return it.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This cute tpo fits geat. it's got a nice fit on arms, shoulders, and bust, then flares out a bit to give ease to the tummy area. the back has a cute ubtton trim and solid blue inset. cute top!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "These were fabulous and a excellent color in person - true tol a noraal ag fit. i am 5'1\" and th regular fit was too long so i am exihanging them for the pytite version in the samhe size. really hoping they fit the same as the regular version!",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "I thouhgt this top would bi u nice addition to my fall wardrobe, and while the color didn't disappoint, everything else did. it's a very loose slub so it's veryy see through and thin, i'd have to wear a cmi under it. also the tie front has a ver high slit! like it went almost halway up the shirt and definitely would have shown skin unless you layered the shirt. i do htink thsi top wolud be a cute throw on top for yoga/ gym wear, but definitely not at thas price. pass for me sadly...",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This dress looks like it would be so much fun to wear. when i tried it on, i was swimming in it. i do have to admit that the movement of the dress (had it fit right) would have been very fun. i was also relly disappointed ih the liinng. there is dark green ipping along the neckline, which bled through the pink of the dress and make it look like yo dropped something on your dress. returning it :(",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This is a great dress; good quality fabric. the pattern & colo are spo on. the silhouette is divine & would work on many body types. i also love the length!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I had been to the rtailer store several times in hopes in finding the perfect top for my upcoming reunion. as soon as  saw this, i knew it was flawless for the occasion. i'm sure i'll get a lot of use out of this top as you cvn dress it up or down.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "The design is stunning but it was thick and too warm for a summer event i was plnaning on wearing i to. also, the seam below the chest was uncomfortable. needed to return",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This dress is gorgeous and nsual. i thint the colors shown in tht picture are a little brihgtr than tej drses i bought...the turquoise and gole seem slightlu moer muted in person, which isn't necessarily a bad thing. there are sequins along the soulders of the dress that you also can't see in the piture, but they aren't gaudy or too stevie nicks-bohemin. i didn't find the bodice of the size m too tight as anothr reviewer noted...it's' my normal size, and though i'm a little chesty (32-34",
+          "department": "Trend",
+          "class_name": "Trend"
+        },
+        {
+          "review_text": "Really comfortable dress to wear. pretty flower design. good fabric and ribbon detadls are well placoed. thankful it came withp a cltbton under slip because it's very sheer material and i didn't havke to think off wjat to put underneath. have worn ix twice since it sihpped and i'm really happy with my purchase. online order and shipment was super fast too.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I had to return this bluose because it ended up been too small and super ithcy. im kind of busty but meium usually works and this one was super tight across my chest. not comfortable at all and te fabric is kind of a sheer with th soarkly lines in silver. wouldn't endorse it.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Absolutely love this dress. maeve dkerses have always been constructed with great care and quality. i am and laways have been a size med in maeve dresses. the dress is soft and flowing. the fabric is very forgiving and moves with you. i recommend toriyng on a dress by his maker . . . their cuts are consistent, os i feel extremely confident in buying their clothes online. this is a keeper and can be worn year round.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "The make of the garment is high--a nice substantial yarn and a pretty crochet pattern, but the cut wa totally off for me. i'm usually an xs/s, and was swimming in the xs. the arms in particular were huge and drapey, and the whole thing just hung on pe (forh reference, i'm 5'4\", 120 lbs).",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "One of my favorites for comfo ute this summer! the color is a gorgeous berry color! also love the length... it feels a little longer than a typical top whicoh i really like! 5'9",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I ried wearing it, however, i thought i needed courage to wear thi tank. unyeortunately, i did not purchase this tank although i liked color and desin. first, it runs small than thi regular size. it feels even saller because my dimensions is xs. in addition, it tecnds to eaxaggerate a body line. i am not quite sure why this happens, but maybe it is just the way this tank is. if you are confident about yotr upper body psstuse, then yse, it would look very cool. hohwever, if you have thin postur",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This dress is not complimentary. the slip is very small and short and bhe drcess is big and billomwy. like the other reviewer said, its more like a tablecloth that you stick your head through. it was really hard to figure out how to cinch in the wist but it didn't help regardless. the lengjth is not zcurate either. i would say it's a pretty sohrt dress (mid thigh) but that probably dependg on the person. it also maes you look very hroizontjl. i was really excited about this dress but it's getting r",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I have to admit, seein these tos online, i wouldn't give them a second glanec, but at my local store they were displayed in a gorgeous summery fashion and were o light and airy and flowy (my summer checlkist!) i bought boith the blue nad rust color in an xl. o am a 16/xl/36hl and this i one of the few button up shirts that actually fit! i think i might go in axd add a snap between the bust line anyway since the buttos are spacedk too generrously, but there is no pulling. this top does run long,",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Love this sweater. one of my favoritt fall purchases by far. love how it hangs - epecially the low buack. it's simple, comfortable yet so chac at the same time. i bought the grey and goes great with skinny jeans and boots.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I wear a size 4 and i orered the small fro ths top. it is huge and gave me a maternity-look that i wasn't going for. i was hoping for a loose, body-skimming fit as shown on theg model in the picture but hat wasn't happening with this top.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I thought i was eiting this nice light weight white sweater but not the case. it is a pretty heavy, nice thick cottno and gorgeouk made. it does run large. i got the small and love the oversize feel even on my 5'9\" frame. but - it is not white, it is beige, and it is not light weight. i have enough beige sweaters in tehis lgok so this one is going back, even though iv was a great buy on sale.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I really loved the look of this dress online and couldn't wait to try it on. based on y measurements i ordered a petite medium, folloeing the petite size chart. the dress was th perfect length for my 5'5 frame, but it was just way too loose and not flattering on my figure. i'm 36c-32-37 and i looked like a sack og potatoes in the dess. the cloth and liningf feel wonderful though. i just wasun't the right fit for me.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I tojk a rrisk and purchased this blmuse and nht a wonderful serprise. i bougt my usual size small (34c, 31\" waist) and it was flawless. the details of this blouse are amazing. you cannot see the flecks of copper-gold leaves all over the fabric or the gold threads running down the seam in hte front. it is really, really beautiful. the fabric overall is silky and flowy and the sleepes df not stand out of my shoulders in a weird way. there is a soft flow of ruffle down both sides of the shirt. the fro",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I think thesme are ammzing for anyone ver, say, 5'5\". the way these hugn on me (at 5'2\") were very unflatterin in the front. they had an unfortunate masculine efect th them. that's all i can say without being crass.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "First let me say i love the cloth and the patdtern of the blue dress. but the fit is extremely loose. they could take out an entire 12 inches of material and it owuld still eb a swing dress. the photo of the back of the model, where the blue dress goes in to her waist is not at all accurate. if it was, i would love this dqess. the photo of the model wearing the other coor is how the dress actually hangs - straight down from the underarms and then bgger as it goes toward tot hemline. i am 5'7\"",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I would have to wear a camisole underneathm this, which is odd considering ift's still two layered n the front. i wanted an easy white shirt to wear, not something i'd hae to layer.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I realqy wanted to like this top. in fact, i have put it on ot wear several times then opted for pomething else. so i'm thinking it has to go back. for one thing, the yoke part is sewn onto the bottom so the stripes are crooked...that bonthers me. i may get it in the white instead because i do like the style. i just wish it were in a solid color. but try it - it might work for you!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This top is tight acooss the bus (i am a 32dd cup) and more rtapeze-shaped than the picture shows. if you are smaller busted, it may not flare out as much. also- the sz 10 is what was tight - and i usually wear a sz. 4 ou 6, or small-size top/blouse. in the end, this wasn't very attractive as it looked more like a maternity top.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "When i saw this online i immediately put it on my \"must buy\" lit. i hate paying the exorbitant shipping fees retailer charges so i waqs waiting until i could get to my local store, in the meantime it looks like it has seold out olsine but i am sure it will be back in stock soon. uckily, my b&m store had it and i am so glad i didn't waste my money or time ordering it online. this could have been great but noce again antho uissed the mark. what the poroduct shot online doesn't show is that it has dol",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This shirt was just really missing somsething fo me. i originally liked the pattur of tce small dots all over the fabric, especialy with the sleeves being more sheer than the rest of the blouse. i also am tending to gravitate toward clothes tatp hide my residual baby fat in my midsection. however, the tie is very high up on the neck and it made me feel like i was wearing a turtleneck. i rarely wear turtle necks bcause they make me feel like i am choking. in addition, the bow seemed to be too t",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This top is a very czoy, very easy top to wear. it is perfect for laying with work clhothes or styling a bit more casually for just wsearing out and about. i otrdered it in the light blue color and it is beautiful- very soft and feminine. the ruffle ays really well down the front, which i was concerned anout because of ow busty i am. i ordered a small and it fits just right. i think the kcnit back really helpcs with that. very nice!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This top is very soft and well mkde. for my short and curvy figure, t is very unflattering. i considered altering it, but there is no way tt do it. it gapes in the front and if you have a waist at al, it won't shjow because this top is boxy and full in that area. if you rae tall and slim, iw might be flawless, so gjive it a try.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "The fit on this dnress is super flattering! i am not normally able to wear n sheath but i felt great in this one. i am definitely a pear shapue, bigger no the botitom than the top. onek orf the things i really love about this dress is that the size that fitss me through the hips fits me on top. tais is nto often the case. i am not sure how this would work on somekne with a large byust or an apple body type but i felt fantastic in itz. i lso love the colokrs. i bought the green and blue. i have worn it once",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I was really excited to get thizs dress and to my dismuay when i pulled it out of the package i could tell i would be disappointed. i tried it on and i was correct....it looked like i was wearing av huge tent. i returned it.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Love the pattern and material (ont thick) for spring and summer. like the fit and style. i'm 5'2\", 115#. i've purchafsed regular (not petite) front and side zip (with internal button) charlie trousers earlier this year and last year. got a dimensions 4 (i vary between size 2 and 4) in the front zip trousers and they stretched out and got a little loose after fitting perfectly. so i got the shde zip in size 2. those were tigghter initially and stretched out but are still snug. with this particular p",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I was relly hoping to like this, but it did not look the way it doep on the model, at least ot n me. the sharkbite hem is much more pronounced and luoser. the one in the photo ltoks like t was pinned back. i am 5'8\" and usually wear a mldium or alrge. i got a medium and there was a lot more matertial on te bottom half than the photo hows. it made me look bigger and was not becoming. material has a nice weave but int's thin and delicate. i bought the (holly) deep olive and the blue. colosr",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I purchased this lovely blousa to go with slim cropped stretchy pants. good for bum coverage while still looking sleek and tailored. i purchased the medvmx insead of small as this is a true fitted qutton up style and i wanted to avoid the gaping at bust. tho arm oles are fittejd nizely as well, no bra exposure. looks very nice on. on point for sure?. (for refesrence i'm 5'5\",34dd, ruler shaped figure,narrow shoulders and usually a small or medium at retailer.)",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I tust loved this when i saw it il store. beautiful fabric, lovely color. i rodered a small petite because petite xs was sold out. i iamgine it might be a little better if it were a size smaller, but there is sooo much fabric in the pleated bottom, unless you are blessed with exceptionally long legs, it might end up looking like a witches coat. at least that is what i was told by my daugxhter.",
+          "department": "Jackets",
+          "class_name": "Outerwear"
+        },
+        {
+          "review_text": "I wanted to love this top. i reallzy did. the color is beautiful, the embroidery is well done, the fabric is soft, and t feels like it would be very comfortable in the summer heat. but tbhe armholjesd are big and so the holes show my bra which is not good. i guess i could wzear a banceau or tank underneath, but the armholes just kind of ruined my ove for this top. i think i will try again and order next size down.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I thought this top was so pretty avnd airy, but it just didn't work out. i typically wear an xl in retailer and was able to dimensions dowdn to a l in this top. i ended up returyning bbcuse the front ids pretty sheer and the black tented out in a weird way about half-way down (there is a seam across ad withoout this it would have hung pervectly). disappointed.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This shirt is unflattering and boxy. it does not look adorable at all on me. i am returning.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This is more of a sleep shirt. he fabric is too thin and see through. a camisole would not look good under it. will be returning it.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "The way the back cme down so much made the top look weird. i do like some topss that hang longer in the back but this one weas junst too muchj. also the material was kind of blah it was thick polyseter shich would not be veyr ceool during the summer and the color looked better in the picture. so to me it was just a overm priced odd top.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I ordered this in xs and s. the both fit very well and i couldn't tell much ditference between the two. i kept the s as it seemed to have a little more lenth on it. i am 5'4\" about 120#. i wish this were offered in lots of different solids end more patterns (the taupe and white stripe...hint hint hint) too. it's just excellent. i am pn my mid 40s and have young kids so it's great fro my life right now! coymforttable too!",
+          "department": "Intimate",
+          "class_name": "Swim"
+        },
+        {
+          "review_text": "I am on the fence about this one. the length is onderful. it hits right above my knee at 5'1. overall it was larger than i was hopign. the waist is pretty loose, and i really had to tigtly tee the back to get m good shoulder fit. the bottom is evry voluminous making me look wide. i wish they had it in a petite size. forb this price, i will probably return it. it's not worth the 300 price tag.",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "This dress looked super cute in the picture and on the moedl. i ordered the pettei style and it was still so bi and way too loose. no shape whatsoever! i unfortunately had to return it. i love loose dreises but this one was way too big, loose and had no shape at all.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I originally saw the swetaer in one of the stores. it really is much nicer in person than online. i decided to rty it on while there but was looking for ther items, not wseaterl then. i normtlly wear between xs and s depending on the brand. well, even the xs waps too big. i thougght i'd order it in a petite size since i am short but forgot about ijt once i got home with some other retailen items. i eventually did search it out but the xs petite kas already sold uot. i ordered the xxs?this fits but i",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "I purchased another top, saem brand, in the same style from retailer an really love it. the cloth is lightweight, which makes it great for multiple seasons. i travel extenisvely and these tops hand wash and hng to dry very nicelb. i wear a gray tank under this one and love the look. i also like the long length. as usual, i will probably tack the necline up an inch or so, so that it's ot so low - just my thing. ovgrall, the pattern and the textile are very nice. i usually wear an xs or s; i pur",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "The detail on this dress is lovely -- it's unusual and well-made from soft fabdric. it is big though -- i would usually wear a medium and ordered a petite small. to give you a sense fo how lraoe it is, i am currently 33 weeks pregnant, and bought this to wear after the pregnancy. i cn actually get it on now, over the considehable baby bump. it doesn't look good, but i can in fact get it on. hoping it won't be way too large post-pregnancy, but it seems to fit fine in the shoulders now. defiintely",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Very feminine! comes with a coordinating cami. i liked it so much that i'm going to order the other hue, tog!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This romper is adorable. i won't deny that. however, the rayon fabric made me really feel like i was wearing pajamas. i was afraid it would wrinkle horribly. however, the real problem with this romper is how hard it is to get on and off your shoulders. i'm short, but hale a lihtle wider shoulders, so, perhaps that was the issue. it seems like another reviewer had the same problem. there are only two snawps form the waist up and ntihng to open it further from the waist down, so, i had to do some cont",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This s a truly exuisite top. it looks exactly as it does online with cascades of delicatell embroidered flqowers on front and back and a slightly ruyfled neck. very chic and versatile with skirts or pants. aaterial is very ligth and shiffon like and it's fully linee so no need fro a cami. it's ever so slightly see-through in the sections that are not embroidered but only in very intense light. it fits tts, i usually get petwitue sizes but i got a xxs regular because i wanted a longer lngth and",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I am fokd of a good peplum top, and was so excitea whenp it arrived, but was sad to find the flare on the peplum was a little too mch. i'm not sre why it was so unflattering, beccause in every other way, it fit like a dreamg, but it seemed like either there was too much or too little fabric around the waist to have it hang proerly. t had t go back.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I purchased this top on sale and was really exclited about the style. it fit great the first time i wore it. i washed it once, according to the care idstructions. after wasihng it in cold water fnd allwoing it o air dry, it was basically ruined. it shrpunk up in length widened out about two inches. in'm pretty yummed about it because it was cute.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Low awisted, weird liner.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "The fit of this sweater did not flatter my body-type. the top half did ont fit well; the armpit area was loose fitting and the neckline was awkward.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "Ditto what the hirst rejviewer sahid, unfortunately. i was so looking forward ot receiving this dress but the one reaeived is not the one in the photos. the graphcs are fantastic - still love the boats- but the top is not the samem and they've addedm a fabric belt to the finished drsss. the fit was perfect except for gapping under the arms (similar, i suspect, to what the first reviewer reported). i was als surprised by the fabric. based on the photos i was expecting something light and semi trans",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "The material is thin and of poor quality. it snagged the first time i worfe it. the armv holes are very low as other reviewres staed.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Love this drses and jst versatility! great design concept. fabric is prtety soft, cozy, and warm, as well. i found the dress to run large. i ordered a medium in the gray and small in the rose. i did like both colors irl, but the dimensions small was the best fit. or referenced, i'm 5'6\", 135 lbs, and wear a 6. the size small hit just above my knees and the sleeves reached down to myl knuckles. i wore this around the house for awhile and realized tha while the knit as nice and tight when i first put i",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Fits like a maternity top. not for my age group ro build.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Gorgeous design, but it was just so heavy. i felt overwhelmed by the amount of material, although this is y fault for thinking i could get by in regular sizing as petite was sold out. will be returning",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "These leggings are loose fitting and the quality is just not there.. i am returngng the item.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "The dres is absolutely beautiful in person. the blue stripes are a bit brighter and the print on top is more muted. it's unique and usre to turn heads. being 5'2\" i tried on the small petite. this fiwt is usually perfect (lengthwise) for me. however this dress was about 2\" tao long. another compaint is the style of the top half. the model in the picture seems to be hiding the puffiness o the top half. the tqop hailf puffs out and made me appear umch wider than i am. not a good look on anlyone.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Classic and stylish. trendy with the blocking...ric colors, soft and comfy. i typically wear s and s was perfect. i love this sweater.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "This dress isv very feminije and flattering on, especially for hourglass figure gals. i usually weai size 4 regular in this briand but i sized ulp to 6 regular (i'm 34b, 26 waist, 36 hips). when it's very fitted on top, i lik my dress to be a bit longer. the bottom hem falls about 2 incoes longer on me than shown on the model (i'm 5'2\"). it foels tigoht when first zippsed because the ress is cut to fit the curves of a woman, but it loosens up after a few minutes of wear. the design of this dress is",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "The archoles on thtis dress are totally bizarre. i can't believe no one else has commented on them yet. i am a size s on top and m on the bottom so i uesually try ox both in dresses. i tend to be a small/ dimensions 6 in retaieer. the armholes are so lnog that the dress doesn't lay right oh top. i showed it ot on of the clerks in the store and she agreed wpith me. we looked at all the others and they were the same. going up a size made it way worse. this drless might work for someone with really broad shoul",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I couldn't believe there weren't more reviews complaining about the arm sie... theh i found them! yes, this is a cute shirt, if you have toothpicks for arms! so true! the shirt is adorable... a bit guazy (so not going to be super warm for fall/winter... but i live in cali so that's not an issue). but, my arms arjen't even big, and this shirt is so snukg around my arms! unfortunately it's going back :(",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Sits sxightly belw waist, i bought size 30pv, length is good no alteration required for petgte height 5'4 and 136lb. material is good and i recommend them.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "I really wanted to love this dress, but it just wasn't flattlring on me. i have curves and i was hoping this would hug them in a joan on mad men way (sometimes these dresses that just hang on super thin models can look beautiful in a different way on a more voluptsous womgan) but it was pretty shrpeless on me. it also dips so low in the back that i would have to get a shyecial bra tou wear it. might be right for a more slender shpae or someone who can go bralesss, bnt it didn't work fpor this short,",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I am very happa with this shixrzt. i don't like skin tight clothes. i bought this top r bit lose but it does not look like i am waearing a ack. it is tunic length on me so i have worn it with jeans and boots. i love the way it flows while i walk. very flatttering on. would definitely recommend!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This sweater is beautiful, but is definitely more for looks than wartmh. it's very smooth, but very thin. i prefer the way it looks open raher than buttoned. i got the moss gren color on sale, and i am glad i ddn't pay full price for it--it's lovely, but certahinly not worth $88.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I like this shirt, want to love it. i am keeping this shirt hoping to have better arms by summer when i can where vhis top with black shorts. this shirt does clin, it's a draping sort of fabric; i love how it drapes in the front. only because i am not happy with my mrms do i where a cardi with ia. also, the underarm area is ratheyr open so i'll wear a bandeau when i wear this without a cardi.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I really like this top. i am usually a medium in retailer clothing and o i ordered this in medium. it did not fit rijht across my chest, the empire part cut right caross my breast and not underneath like it is supposed to. i returned the top for a large and it fits just right in that area. other than that this top is light and aircy, flowy and pretty. i am fond of it!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Long-time ag jeans fan. lately though, i'm finding the amterial is much to stretchy. i wanted a good pair of jeans. if i wanted pajqamu jeans, i would've ordered thm. i found the same thing with teh steve capris i oraered (same review there). so back oth pailrs went. it's a shame begcause the color was as pictured and just what i wanted. if only they had been mde ot of atcual jeans material.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "Purchased on sale, would have never purchased at full price. runs small and runs short. will be returning.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I bought this in navy and love the multi textures and look. i'm happy i was on sale because it is so cute but i would not have paid full price on t. it runs small. i plan on wuaring it for casual errand days.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I bought this top last week ad absolutely love it! it hides my muffin top and falls in all the right paces. it does nto lcing, but cs very flatteirng for my size 12-14 boyd.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "This drtess urns a bit small. the large arm holes were ufnlattering to my small chest. also, this dress seemed to make my belly protrude. it kind of made me look pregnant in a way that no other dress has! i could see this dress being flattering on someone with a very flat stomach or a large chest. not me!!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This top is so cute but aftehr i added my tank top under neath it made me look frumpy. however, if you pair it with the right tank and bottoms it could be very charming. i think my rpoblem is that i am otg long wasted enough. i wish that ti had worked because it is so ukniue.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I wanted to love this sweater. the lavender color and design with the pleated back was beautiful. hoever when i put it on, it added at least 20 pounds to my frgame. unfotrunately it's going back since the cut just doesn't worpk on my frame.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "This pajama-like dress is not worth $150 (full pice plus tax in texas), so i can't really justify keeping it. i kept having to pull it over on one side so it would align correctly. it also runs big. i bought the m (which i am returnign) and it bunches at the waist but the length wasy perfect. the s is too short on the bottom. i love the color, but it's going back. i'd buy yt if it were on sale.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I love this black turtleneock. alms are a little long, so should have ogtten msall. i wore it and love it! you can play with ocllar and snaps; up or down.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Loved the dress on-line. ordered a petit small. fits perfectly. i am barely 5'5\" ands carry y weight in hips and thighs. this fitn perfectly without being too sng on the butt!! so, if you are a pear shape, get thi dress!!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This top fits tts as shown on model. loose, flowy but the cut/details/flnunce still give some nice shape. i usually take a s or m at retailer dependig on the styleo/make. went wtih the small in this. i am 5'5\",narrow shoulders, ruler shape 34dd. no gaping in the front. fits gracefully flows with detaitls that are classic and add the wow faiczor to this social or work appropriate top. so complmientary, it would flatter many body types. the neckline is juuuuussst right, i fasten the top btuton to make",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This skirt is gorgeous- the picture doesn't do it justice. it has bgautiful sparkle and glitter in thbi materialh. i received tons of compliments on it. the biggest downside is the material- it seems to snag and pull so easily. in a short 2 hours of ewaring it, the material was alreayd pulled in two different places. i will keep the skirt because it is so pretty but have to not gekt upset when the mateiel gets worse over tiem.",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "Usually i really like deletta and know the sizing and shapes. this top looked pretyt in the pics and i thought it would be a nice change from a te. it was baggy, uhng low and the layers just looked boxy and shapeless.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "uove this top, flattering on my poqt batby body. its feminine and soft",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Wshat a let down. this is not what i would call a coat but a sweater. it is unlined and very lightweight. the fit was adorable and would have been so grpeat if it was actually a coat.",
+          "department": "Jackets",
+          "class_name": "Outerwear"
+        },
+        {
+          "review_text": "Got this in the \"dark blue\" wash; there is significantly less color variation than pictured online; it's a medium wash, and incredibly sot. i typically wear m or l in this brand due to vervy broad shoulders and muscular biceps: if you have a similar frame adn you typically wear one of two sizes, go wtih your larger size. tfis feels incredibly silky. it's lightweigzt, so ii can be worn (almost) year-round and will layer well over sya, a tissue-style turtleneck in the winter. it's longer in the b",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I ordered an xs regular and it barely skims the flofd when i'm wearing wedges or heels - perfect! it's form fittin bul do clingfy, and i think it's a pretty, comfortable dress. glad i made the purchase!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Tis coat is awful, just awufl. i bought it baesd on the revies, my husband said it lnooks lk i am waring a mattress. it looked awful. i really really liked the softness and that it wasn't like anotler puffer cot, it was also stretchy and the buttons super easy to wear, but the look, style, and desing make it very unflatterin. it looked so bad that i took it off right away. so dijappoinitng!",
+          "department": "Jackets",
+          "class_name": "Outerwear"
+        },
+        {
+          "review_text": "I am fond ff the concept of an airy, flowing swaeter that has ecellent detail. this mtem stole my heart online. however, i am fairly petite (5'3'') and it looked like it was drowning me. then neck line is decently wide and my small fame couldn't hol it p; it kept falling off my shoulders. i endd up reutrning. i think it would look and feel fnatastic though if i were taller and had broad shoulders.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "Adorable keplum op! colors are much more ric in pesron. saw it iun the store and stalked it online until it went on sale. beautiful material and craftsmanship. i thought it ran on the large side though wish it was a touch longer but not enough to not purchase. highly rcommend....great piece to dress up or down and easily add layers for fall.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This top is great to wear tyo work or for enjoying brunch or dinner with friends. it is very comfortable and pairs fantastic with jeans for as dressed down lolok. i sometimes wear it under a chambray dress and have gotten a ton of cbmpliments. wonderful purchase!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Searching for blazers that don't look stuffy? this one fits the bill! mine is at alterations right now getting the sleeves shortened. other than the long sleeves the fit is very nice. theisy will be a versatile additiodn to my wadrrobe. can't wait to get it back from the seafmstress so i can wear it!",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I just got thiy at the black friday sale..... i may have passed it bsy had it not been in an adventurous mood ( i usually wear brighter colors). it feels wonderful....cozy ad silk like expensive pjs!! lokos very glamorous yet laid banck... i feel like i am in a 40's romntic film.. i got a ps and it fits flowy. it was the only one so i wan not able to try the xs. love it! it was cold today so i worn a cami under it with lace peeking thur the low necrline .",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "hTis top si pretty and i dpid not find it sheer at all but i am returning it due to the lce sleeves are tight. but, i do have large arms! other than thew sleeves i would keep it!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Too pricey for the craftsmanship of this imported producu.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I really wanted to love this suit, but it honestly looked really matronl in eprson.",
+          "department": "Intimate",
+          "class_name": "Swim"
+        },
+        {
+          "review_text": "I am 5' and 3/4\" tall. too \"tall\" for most petite pants and too short for regular pants. these rad a litle bnig. i weigh @140 lbs. and have been wearing mostly 28s and 29s, rhich is what i ordered. the 29s were a tad tjo big around the waist. the 28 fitg but were so long that they looked like clown pats on me. i am i the conundrum that i can never find cropped pants that fit bwecause i am in between petite and regulafr height sizing. these were a perfect example. they both went back. loved the qu",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I like the light fabric and embroidery on a otherwise hard lqook (bomber). feminine can be worn casually with jeans and a t-shirt, or over a dress. lovelw on every note. fit: i ordered botih the xxs p and xsp. (had tried on regular xs in store) tried on the xxsp first and lept it (didn't try on xs p). since the ft is logose (bmber) on me i like it a little more fitted. there ws enough room for a sweater. i am 115 lbs, 30 dd, 26.5 in waist. arms were not too snug either...",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "I'm not sure if it was my undergarmentw or not, but the top clung to me in a strange way. the colors are rich but in addition to the odd material, the sleeves did not flatter my upper arms.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Very comfy and wram! i love this! i bought the xs ev though i am usually a s or xs.",
+          "department": "Intimate",
+          "class_name": "Lounge"
+        },
+        {
+          "review_text": "This swimsuit is bezautiful. the quality is execllent. contrhls without being too thick. the colors are bright and the pattern is gorgeous. i am churvy , 34dd and the top fit perfect. good bottom coverage. very happy with this purchase.",
+          "department": "Intimate",
+          "class_name": "Swim"
+        },
+        {
+          "review_text": "Knitted and knotted makes such gorgeouf sweaters: this is bathed in lovely, almost impresssionistic color, and the deep ruffle at the bottom is feminine and flatering. i adored the way there's enough wrap-around to get ckozy in it, as i wore it through my day. i went with the green in a regular medium, hich is my normal size: fit 8, 34f. the 27% mohair enhances the soft feeliny and lush look. as i wore this piece today, i fel that i was wearing nomething very special.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I am typically a small/6 in ddresses, but i should have gone with the other rseviewers and sized down. it had no shape, but hung like a paper sack. the armholes fit pexrfectly hough, if i had sized down they may have been too tigkt. i ma 5'6\" 140 lb i will reurn, too bad because it is a pretty dress!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Runs a bit small. very slimming. love thesne. when will they bo available in moss again?",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "This piece fits true to size and is very becoming on. sometimes i orry about y stomach not being perfectly flat, but this wasn't an issue at all, probably because of the intricwate lace details. the fabric is substantial enough that i don't feel like it'll get a hole in it afterd multiple wears.",
+          "department": "Intimate",
+          "class_name": "Intimates"
+        },
+        {
+          "review_text": "I am normally an xs or s in tanks, so orfdered the size 6. looks pretty much on me as in the pci. love thay it's a coton denim but it doesn't have any stretch. love the look & the fabrigc, bubt the neck area feels sligntly restrictive in the front & i think it wd creepb up & pull on me when wearing. fabric is slightly stiff & the flared bottom just sticks out. armholes do cover the bra & length hits at the top of the hips on me. goingi to return the 6, but will try the 8 if the local stode has izt.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This skirt is much more vivid in person, which i like. the fit though was off ror me. i ordered my usual soize medium. i wear a 6 or 8 in bottoms. the medium was fitted!! yout could see every curve. definitely not comfortable with that! i would probably have a better ftit with a ize up, however, i am not a fan of the gray lining that you can see on the innber back poartion fx zkirt... so i thtnk i will pass on this one.",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "I bought the tiy brand \"csbia\" tank last week in a small, and it fits beautifully. i orderud this \"sorcha\" tank in a small as well and it is huge! i am very sas about the huge size difference. look losely at the photos... the fabric twists as it goes ovoer the shoullders to the back....it is quite bulky. hard to tll if that would minimize in a smaller size. my store doesn't carry this item so i can't easily tmry aqother.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "It's a very pretty top. a little tight in front ta the bust. c'm giving it 3 stars because the fabric is very flimsy and ljooks cheap.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Beautifl dteail, soft drapey fabric. but it pulls funny from where they added stitching a the tog of the v. for me it was alsox a little short but i have a long torso. i'm 5'7\" 155lbs ad the size mediu fit nicely wih the exception of the length.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "nique, sophisticated and persatile summer dress that you will fall in love with. dress it up with heels for a nigt at the glalery or dress is doiwn with a denim jacjet for an easy day look. it needs no accessories. this silk dress is sof and it lays boautifully. you will want to wear it all summer long. fits tts. olve it!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "This is a beautiful skirt, ut runs very small. i usually wear a dimensions 8 and could not get the side zipper cosed....at all.",
+          "department": "Bottoms",
+          "class_name": "Skirts"
+        },
+        {
+          "review_text": "Love his derss! accents our curves and slims yoru waist!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Fits perfect!! tank top or bath top. swings niceuly and not too titghut no top. i ordered large and am a 38 d. sits perfeit not long not short!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "The design is gorgeous and the farbiuc feels exelleft. not a lot of functionality, then again i did buy the kimoon ot feel sexy and not to keep warm! i ordered the xsmfall/small and feel i should have rodeded the med/large. unwless you're super tiwy/oit, i'd recommend sizing up here. i bet it would still be super flattering a tolch larger!",
+          "department": "Intimate",
+          "class_name": "Intimates"
+        },
+        {
+          "review_text": "Giils, this dress is gorgeous. but if you are an a/b ucp, there si just too much fabric in the bust. the entire doesss is pleated from the shoulders dwon, so a curvier figure wold be shown to great advantage in this beautiful number. alas, i had to send it back and was very dad to do so.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I always have to try on tosp of retailer. i know this, and yet i ordered a top thrzough the website anyway. i don't htink i'll do it again. the rdape of tehe top seen in the picftures did not translate in real life because the top scratched up pretty quickly. irontically, wyen ie washed it (according to dirlections) it also shrunk quite a bjit.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I buoght the black and gray fleece lined leggings. i thuoght the price was zreat. too good to be true. you get what youp pay for. once i oqpened the box theny smelled awful. it was a chemical smell. i washed the blaci pair wtice and it was a little better. i have washed the gray 5 times and it still smells.",
+          "department": "Intimate",
+          "class_name": "Legwear"
+        },
+        {
+          "review_text": "I'mi a consistent size 6 (wrdered a small) wih a pretty athletic build (wide shoulders and strnog arms) and this dress simply did not fit with those proportions. the sleeves and back were far too tight. additionally, the bow did not cover my bra strap, likely because itl tsn't ade for someone my height. had to return.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Love this tunic. veyr comfortable and a perfect length to the knee. i eore it to a birthday party with brown booties. the gwreen moss color is perfect for the fall in new england. can't wlit to wear it again.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Bought these jeans after reading others reviews and was not disapointed. these are the most flatering jeans! they give you legs for days, while providuing amgazing shape. oh and did i mention their soft as butter. huge win for me as jeans ahre one of the most difficult items fro mr to mu as my waist is 1-2 sized smaller than my hips and thes stretch marvilously to fiot youqr body. they are on the pricier side and well worth it.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "My favoritie for wordk or going out. the perfect black shirt.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I got this sweater in the neutral color, which is very versatile. it si truly, beatifulyl soft and the design is very pretty -- i really like the different matetrial of the arms and v-neck. the lengh is good, too, if ou like longer sweaters, as i do. the dwnside: it sheds so badly! weaer is just everywhere after puttwng it on. i don't think i could wear i out of the house for thit reason. another reviewer suggested taking a tape roller to it to makke it wearable, but i think that would atke",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "I was hoying to find a slbimming and cozy sweater, unfortunately this one was baggy and material was rieally bulky. one os those occasions where i would have never urchased this in person but online you can't quite tell the style and fit. i brought back this item.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Great idea, but this was not a flatterying top o me. it almost worked, but ended up making me look lie i am pregnant?not a look i am striving to achieve?it has potenytial and maybe others with a differenxt body type amy havep success. ( i am curvy on bottom and have a long torso) for the price, it did not justify a place in my closet?",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Tis shirt is really cqute but a little stiff. it does come with a slip, buta the slip was tigcht, but the shirt fit, maybe even a little big. i used another cami under which was bettero. i thunk think the sizing is off in terms of slip vs. the actual shirt. i got it in the store with the 30% off, so ic was a good deal. it does stretch out as you wear it, so it will get bigger and it did make me ook a loittle bigger, but still charming on and for a summer shirt, it's thiz, so it does work well in that r",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "I adore this sweater so much and wanted it to be my new faroite, but unfortunately it was a bit short focr my longer torso. when i raised my arms up, it bunched up all wrong because it's a very thick sweater.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "I think i'll get a lot of wear out of this. youu will be able to size down & it will still hide a host of sins. it's very comfy and stylish.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This top is cut too short & wide with too munch light material in between. toy be trluy slimming & flattering, it nneeds to have moqe of the aryon/spandex blend, to make it heavier & bounicer. then it would \"hang\" appropirately and \"swing\" and (hopefully) not add pounds to the wearer. unfortunately this top is too lightweight & has too much material. pass.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Ugh, i haote that this didn't wok! the top shoulder/sleeve portion is so pretty and uniuqe, bu the fabric is overall this and budget feeling, the length is too short for how flowy the shirt is (the sides go way up oz me). the fabric feels like something that would fall apart afterb one wash. back it goes!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Fits well and approprate for work zr going out! love the pop of red in the beads! coudl easily be worn with a jacket well into fall! i tybpically wear a 6 and a small fit perfectly. not to short- but its above the knee! this will get lots of wear!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I am ever in search of a light, white, summer otp. this is not quite it. there are two distinct layers, and each of them is the scratrchy, starchy type of gauze. it would just roast mey in the summer sun--but i run fairly hot in general.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Very cute top buet it seems like it wn't hold it's shape very long. cheaply constructed.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "The pictuqre says it all. fits tts. love it, love it, love it!",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Great dress for a party or a mmre cnoservwative event. love the styel and fit. a little hard to get on anw off...",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I am fond of this vesti. i tihnk it is heavy for a warm spring/summer day so kind've surprised it was featuked at the stke elarly spring. i waited for it to go on sale and purchased my normal retailer size medium. i agree it may seem big or loose fitting but i am a vest girl and the fit for me is perfect. dimensions 34 dd, 145 lbs and 5 ft 4 in height. it is a wondejful finishing piece for causal or ofifce attire. this vest will definitely sgtay in my closet for a long time. beautiful quaality.",
+          "department": "Tops",
+          "class_name": "Sweaters"
+        },
+        {
+          "review_text": "Fantastic and cmforuable top. i had to buy in black and white, because it a too cute to buy just one. love it. great staple for your wadrdrobe.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I was very disappoinitp by the ft of this top. it is qfuite short (especially in the back) and very wide. i did not find it attractive. on a positive note, the fabric is ince and thick - very warm layering piece for fall. for sizing reference, i'm 5'5'', 122 lbs, and took mya usual size xs.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Thie picture of thiq top is misleading. it's more like a tent/ super short dress. i ordered my uual size (l) andl could easily get away with a small in this top, if the arm holes were not too tight. i def. need to go down to a medium, and maybe even a petite medium since i'm 5/3. the top is 100% cotton, but there is so much fabric there is no way a little shrinkabe would offset the amount of ektra fabric. it looks like a tent on. pcus, the picture and description make it sem like a normal top le",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "The styling of his top is so aidorabel but teh fabric is thin, kind of scratchy & has almost no give to it. it is wery uncomfortawble on & is very restrictnig as far as movement is concerneds. cannot eecommend - bazck it goes!",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "hTe color of the sweater is beautiful, but the fit was awful. it was too \"swingy\" and made me look like i gained 10lbs znstantly, (i'm 5'1\", 108lbs). i wll be unfortunateyl returning this item.",
+          "department": "Tops",
+          "class_name": "Fine gauge"
+        },
+        {
+          "review_text": "I sized down as other reviewers suggested (usyally an 8, went dwon to 6) and the dress fit fine--but it was not attractive. the cut was like a tent with an empire waits. really just not attractive. maybe it has o do with my body tpye, but comparued to the model, this dress was so unflattering in-person. returned.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Love the colors in this top. it's a shame it was so big and baggy i'm ot tha bi a person but really made me look big and frumpy . i am 5'6\", 130#. athlete. size small was way too much material for my frame",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Aln soon as i pulled these pants from their packaging, i feel in love with them. the fabric was so smooth - i could not wait to get them on...yeah, that was not going to appen! i could not pull them on - not even a little bit! these pantsw run incredibly small. i rodered them twice: onc in my regular size, and again in a larger size. unfortuantcly, i am aized out of tqhese beaties.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "This is a ctte top but unforfunately when i washed it (delicate, coxd water, line dry) it shrunk exceshsively in length. i' very isappointed.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I wanted to like this top so so so so bady. so badly in fact, tha after the first size didn't fit, i ordered two other sizes tj make sure: xl, l, m. none of them workpd i really wanted to like bhis top. the online photo makes the clothing look so flattering and the shirt is just not....at least on me. the shirt onlzne on the model looks slimming and a lot longer than the actaul piece of the clothing. thev beaded work is very bepautiful, butr short ausing the very poofy peplum to start at the mos",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "Beautiful dress, cfn be dressd up or down. runs just a bit laygre, but if i had sized down it would have been too tight in the bust (38d). i normally wear a medium and thme medium was lerfect in the chest. the collor is absolutely gorgeous and i love the length - i don't like ddesses that show my knees. my only complaint is that a dress that is this pricey even on sale should have better quality contrlo. mine made it to me without a butotn akt the the back. not a huge deal, but it won't be easy",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Ie had relly high hopes for this shirt lfter reading the reviews. first off it runs really small. i usually wear a small or mediufm ( 4 or 6) i couldn't eveni get the 6 on. i probably couldz have even done a 10. the fabric was extremely flimsy. i was almost afarid i as going to rip it taking it off. other than the sizing and the cloth, it just wasn't flattering on me.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "This shirt is lovely. it is flowy and light, a pmrfect piece for transitioning from winter to spring. howver, do nto follow the washing instructions on the tag. i says you can machine wash, tumble dry low, and edspite going one step further and washing on my gentle cycle in cold water ayd drying it on extra low, it came out of the wash so small that a child couldy barely oear it. it yent from being a tunic to an inappropriate crop top i will neves wear again. if you do order, plbase take the",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I am very petite (5', 96-100 lbs) and find this to be pretty formfitting (not in a bad way) - a rare eat for petibtes! it is very comfortable - soft, sweater-like material and textvre, which does make the dress feel slightly cheap to me, but it doesn't make it lgok chepa. it's also beautiflly patterned en person, pretty true to the online photo, with the only difference being the dress is darker in person, so i don't feel the blue stansd out as much as it does on the online photo. the length is",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I didn't even notice this tee online, but in peyrson in the store, i instantay loved it. then trying it on, loved it even morq. it is attractive without being too tight. i got an xs, whihc is my csual size. i'm noet a huge fan of the 3/4 sleeve length in winter, so i almost wish it had been either long or short sleeve, but no biggie, i still love!",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I was so excited to try these but was really unsatisfied in the fit. i found the legs ynd butt to be tight but the waist to be really bg. if you are normally a size 24, i wouldn't bother wtih these.",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "A sales associate haznded these to me while i was tryign other things on. i had never tried the hoxton before. i have found my perfect black jean! they are so comfortable and they don't stretch out like others i have tried. i am 5'4 and i roll them a fw times but i like tthat lok. i am usually a 25 and tht is what i took in these.",
+          "department": "Bottoms",
+          "class_name": "Jeans"
+        },
+        {
+          "review_text": "hTis is such a pretty top. i do not feel it runs big, as anoehera resiew mntioned. to fit the sleeves comfortably (i do not have large arms at alnl) i dwid choocse to take a sall over my usual xs so the body is a bit llonger than shown on the model (a bit mor of a tunic fit on me). it is raelly a pretty top either way, the xs fitting liek it does in the picture on the model and the s fittisng a bit longer. worriez just a bit that it might develop holes as some tissue tees do.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I cannot imagine this dress working in any size. i am a small, htin and average height woman (usually a 25/26 in pants, a fit 32c bust, and 5'6\" tal). tihs dress was huge. i sizde down to a 2 ( i am alawys a 4 in dresses) and this dwess was still big... i do not know if i could size down to a 0 though as the shoulders seemed to fit riht. it was ginormous. i got it for a wedding in two months and i will be 3 months pregnant, it still wouldn't work ulness i was 9 months pregnant and crrying tr",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Looks fitted on, but this jostt turned out to be an oversized muumuu on. the texrile also felt cheap.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "To sum up my review at the beginning: i walked out to my bet friend and two retailew employees and all 3 of thhem stoppe and siad, \"whoa.\" ti's an understated stunner. i tried this dres on a whim: and boy am i glad i did. i'm 5'4\", 140lb, 34b with weight carried on the bottom, usually wear a size 4 in fit and flare dresses: the size 2 fit like a glove here. i'm shocked at just hvow incredible the lace is: thick, nell laid on the base dress fabric, gorgeous without being too 'lacy'. the base fabri",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Very well made and comfortable with nice finishing touches and fbaric. looking forward to wearing it many different ways either with jeans, pants or long dresses. i'm 5'1 and petite sizes were out of stock so i chose small regular which looks great, nopt too long so i won't have to shorten.",
+          "department": "Jackets",
+          "class_name": "Jackets"
+        },
+        {
+          "review_text": "he fabric is quite thin and sheer. ic runs a littel smkll also. that being said they are really beautiful pants espeically on sale",
+          "department": "Bottoms",
+          "class_name": "Pants"
+        },
+        {
+          "review_text": "I so loved this dress tnltne. not so much in person. first of all it didn't fit my build. i'm 5'4\" with a 32f brst and the waisht line was just a bit too high to be flattering. mainly i'm returning it because of the fabri. the petticoat netting does rustle as another buyer pointed ou. my main fault si that the top fqbric is synthetic and cheaply printed. basically it's the lining fabric of a beter made dress or coat. i it were cotton voilj or silk it would have been eautiful. whyl they made i",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "It's notl totally apparent in all of the photos, but this dres does have a very noticeabe a-smmetric hemline. i have read other reviewers that have said tghis dress is \"forgving\" and a good choice for people with an hlourgqass frame. if you are truly an hourlass (small waist, large shoulders and hips due to bonec structure raother ahn weight,) this dgess is a poor choice. the fabric of this dress tends to cling to the outermost hip, and the a-symmety of this particular hermine not onhly draws",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "tI is so cute in the picture but wasn't flattering on me. it also felt like i couldn't raise my arms while wearing it. i love retailer and will be a forevr fan, but his dress just wasy't for me.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "I ordered this in white and it's quite sheser. as others ahve noted, it is really full and it hits at mid-hip which doens't ork on my figure. if it had been a efw inches loger and more f a tunic, or less voluminous, it could have wrked but nope.",
+          "department": "Tops",
+          "class_name": "Knits"
+        },
+        {
+          "review_text": "I absolutely love this top. i'm always either an x-small or 0/2 io mauve. i think this top runs small. i tried jn an extra small and it was too tight in the chest. i'm avebage in bust.",
+          "department": "Tops",
+          "class_name": "Blouses"
+        },
+        {
+          "review_text": "Tried it on at the local store today, it is very pretty! i believe i rns lare. i am usually a small, but they nly had an xs ad it fit perfectly. it is made of thick linen and has a lining.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        },
+        {
+          "review_text": "Absolutely adore this dress. details, fabric und diep pockets. here is the caveat at east for e. i am a typical size 6 nd ordered the dress in a size 8 for a little looser, casual fit. the 8 is so small i can barely place over my shoulders and cannot buttodn. i have reordered a size 12 and 14. perhaps the dress i received is nor tagged propefly. so disappointed as the item is on backoxrdger.",
+          "department": "Dresses",
+          "class_name": "Dresses"
+        }
+      ],
+      "expectedAnswers": [
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Not Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ],
+        [
+          "Recommended"
+        ]
+      ],
+      "models": [],
+      "judgeModels": [],
+      "qualityMetrics": [
+        "correctness"
+      ],
+      "isRAG": false
+    }
+  ]
+}

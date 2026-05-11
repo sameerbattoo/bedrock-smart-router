@@ -1,0 +1,452 @@
+[
+  {
+    "id": "code_001",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that checks if a string is a palindrome, ignoring case and non-alphanumeric characters.",
+    "context": "Function signature: def is_palindrome(s: str) -> bool",
+    "expected_answer": "def is_palindrome(s: str) -> bool:\n    cleaned = ''.join(c.lower() for c in s if c.isalnum())\n    return cleaned == cleaned[::-1]"
+  },
+  {
+    "id": "code_002",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that finds the two numbers in a list that add up to a target sum.",
+    "context": "Function signature: def two_sum(nums: list[int], target: int) -> tuple[int, int]\nReturn the indices of the two numbers.",
+    "expected_answer": "def two_sum(nums: list[int], target: int) -> tuple[int, int]:\n    seen = {}\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in seen:\n            return (seen[complement], i)\n        seen[num] = i\n    return (-1, -1)"
+  },
+  {
+    "id": "code_003",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that flattens a nested list of arbitrary depth.",
+    "context": "Function signature: def flatten(lst: list) -> list\nExample: flatten([1, [2, [3, 4]], 5]) -> [1, 2, 3, 4, 5]",
+    "expected_answer": "def flatten(lst: list) -> list:\n    result = []\n    for item in lst:\n        if isinstance(item, list):\n            result.extend(flatten(item))\n        else:\n            result.append(item)\n    return result"
+  },
+  {
+    "id": "code_004",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that implements binary search on a sorted list.",
+    "context": "Function signature: def binary_search(arr: list[int], target: int) -> int\nReturn the index of target, or -1 if not found.",
+    "expected_answer": "def binary_search(arr: list[int], target: int) -> int:\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1"
+  },
+  {
+    "id": "code_005",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that groups a list of strings by their first character.",
+    "context": "Function signature: def group_by_first_char(words: list[str]) -> dict[str, list[str]]",
+    "expected_answer": "def group_by_first_char(words: list[str]) -> dict[str, list[str]]:\n    groups = {}\n    for word in words:\n        if word:\n            key = word[0].lower()\n            groups.setdefault(key, []).append(word)\n    return groups"
+  },
+  {
+    "id": "code_006",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a decorator that caches function results (memoization).",
+    "context": "The decorator should work with any function that takes hashable arguments.",
+    "expected_answer": "def memoize(func):\n    cache = {}\n    def wrapper(*args, **kwargs):\n        key = (args, tuple(sorted(kwargs.items())))\n        if key not in cache:\n            cache[key] = func(*args, **kwargs)\n        return cache[key]\n    return wrapper"
+  },
+  {
+    "id": "code_007",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that validates an email address using regex.",
+    "context": "Function signature: def is_valid_email(email: str) -> bool",
+    "expected_answer": "import re\n\ndef is_valid_email(email: str) -> bool:\n    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'\n    return bool(re.match(pattern, email))"
+  },
+  {
+    "id": "code_008",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that converts a Roman numeral string to an integer.",
+    "context": "Function signature: def roman_to_int(s: str) -> int\nHandle I, V, X, L, C, D, M and subtractive notation.",
+    "expected_answer": "def roman_to_int(s: str) -> int:\n    values = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}\n    result = 0\n    for i in range(len(s)):\n        if i + 1 < len(s) and values[s[i]] < values[s[i + 1]]:\n            result -= values[s[i]]\n        else:\n            result += values[s[i]]\n    return result"
+  },
+  {
+    "id": "code_009",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a Stack class with push, pop, peek, and is_empty methods.",
+    "context": "Implement as a class using a list internally.",
+    "expected_answer": "class Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError('pop from empty stack')\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError('peek from empty stack')\n        return self._items[-1]\n    def is_empty(self) -> bool:\n        return len(self._items) == 0"
+  },
+  {
+    "id": "code_010",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that merges two sorted lists into one sorted list without using built-in sort.",
+    "context": "Function signature: def merge_sorted(list1: list[int], list2: list[int]) -> list[int]",
+    "expected_answer": "def merge_sorted(list1: list[int], list2: list[int]) -> list[int]:\n    result = []\n    i, j = 0, 0\n    while i < len(list1) and j < len(list2):\n        if list1[i] <= list2[j]:\n            result.append(list1[i])\n            i += 1\n        else:\n            result.append(list2[j])\n            j += 1\n    result.extend(list1[i:])\n    result.extend(list2[j:])\n    return result"
+  },
+  {
+    "id": "code_011",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that finds the longest common prefix among a list of strings.",
+    "context": "Function signature: def longest_common_prefix(strs: list[str]) -> str",
+    "expected_answer": "def longest_common_prefix(strs: list[str]) -> str:\n    if not strs:\n        return ''\n    prefix = strs[0]\n    for s in strs[1:]:\n        while not s.startswith(prefix):\n            prefix = prefix[:-1]\n            if not prefix:\n                return ''\n    return prefix"
+  },
+  {
+    "id": "code_012",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that generates all permutations of a list.",
+    "context": "Function signature: def permutations(lst: list) -> list[list]",
+    "expected_answer": "def permutations(lst: list) -> list[list]:\n    if len(lst) <= 1:\n        return [lst]\n    result = []\n    for i, item in enumerate(lst):\n        rest = lst[:i] + lst[i+1:]\n        for perm in permutations(rest):\n            result.append([item] + perm)\n    return result"
+  },
+  {
+    "id": "code_013",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a retry decorator with exponential backoff.",
+    "context": "Decorator: @retry(max_retries=3, base_delay=1.0). Should catch exceptions and retry.",
+    "expected_answer": "import time\nimport functools\n\ndef retry(max_retries=3, base_delay=1.0):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(max_retries + 1):\n                try:\n                    return func(*args, **kwargs)\n                except Exception:\n                    if attempt == max_retries:\n                        raise\n                    time.sleep(base_delay * (2 ** attempt))\n        return wrapper\n    return decorator"
+  },
+  {
+    "id": "code_014",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that converts a dictionary to a URL query string with encoding.",
+    "context": "Function signature: def dict_to_query_string(params: dict) -> str\nExample: {'name': 'John Doe', 'age': 30} -> 'name=John+Doe&age=30'",
+    "expected_answer": "from urllib.parse import urlencode\n\ndef dict_to_query_string(params: dict) -> str:\n    return urlencode(params)"
+  },
+  {
+    "id": "code_015",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that calculates the nth Fibonacci number using dynamic programming.",
+    "context": "Function signature: def fibonacci(n: int) -> int\nUse bottom-up DP.",
+    "expected_answer": "def fibonacci(n: int) -> int:\n    if n <= 1:\n        return n\n    prev, curr = 0, 1\n    for _ in range(2, n + 1):\n        prev, curr = curr, prev + curr\n    return curr"
+  },
+  {
+    "id": "code_016",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a context manager that measures execution time.",
+    "context": "Usage: with Timer() as t: ... ; print(t.elapsed)",
+    "expected_answer": "import time\n\nclass Timer:\n    def __init__(self):\n        self.elapsed = 0.0\n    def __enter__(self):\n        self._start = time.perf_counter()\n        return self\n    def __exit__(self, *args):\n        self.elapsed = time.perf_counter() - self._start"
+  },
+  {
+    "id": "code_017",
+    "category": "code_generation",
+    "difficulty": "simple",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a function that chunks a list into sublists of a given size.",
+    "context": "Function signature: def chunk(lst: list, size: int) -> list[list]\nExample: chunk([1,2,3,4,5], 2) -> [[1,2], [3,4], [5]]",
+    "expected_answer": "def chunk(lst: list, size: int) -> list[list]:\n    return [lst[i:i + size] for i in range(0, len(lst), size)]"
+  },
+  {
+    "id": "code_018",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write an LRU cache class with O(1) get and put operations.",
+    "context": "Class: LRUCache(capacity: int). Methods: get(key) -> value or -1, put(key, value). Evict least recently used when full.",
+    "expected_answer": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.capacity = capacity\n        self.cache = OrderedDict()\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n    def put(self, key, value):\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)"
+  },
+  {
+    "id": "code_019",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a rate limiter using the token bucket algorithm.",
+    "context": "Class: TokenBucketRateLimiter(rate: float, capacity: int). Method: allow() -> bool.",
+    "expected_answer": "import time\n\nclass TokenBucketRateLimiter:\n    def __init__(self, rate: float, capacity: int):\n        self.rate = rate\n        self.capacity = capacity\n        self.tokens = capacity\n        self.last_refill = time.monotonic()\n    def _refill(self):\n        now = time.monotonic()\n        self.tokens = min(self.capacity, self.tokens + (now - self.last_refill) * self.rate)\n        self.last_refill = now\n    def allow(self) -> bool:\n        self._refill()\n        if self.tokens >= 1:\n            self.tokens -= 1\n            return True\n        return False"
+  },
+  {
+    "id": "code_020",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a pub/sub event system.",
+    "context": "Class: EventBus. Methods: subscribe(event, callback), unsubscribe(event, callback), publish(event, *args, **kwargs).",
+    "expected_answer": "from collections import defaultdict\n\nclass EventBus:\n    def __init__(self):\n        self._subscribers = defaultdict(list)\n    def subscribe(self, event: str, callback):\n        self._subscribers[event].append(callback)\n    def unsubscribe(self, event: str, callback):\n        self._subscribers[event] = [cb for cb in self._subscribers[event] if cb != callback]\n    def publish(self, event: str, *args, **kwargs):\n        for callback in self._subscribers.get(event, []):\n            callback(*args, **kwargs)"
+  },
+  {
+    "id": "code_021",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a thread-safe connection pool.",
+    "context": "Class: ConnectionPool(max_size, create_fn). Methods: acquire() -> conn, release(conn), close_all().",
+    "expected_answer": "import threading\nfrom queue import Queue\n\nclass ConnectionPool:\n    def __init__(self, max_size: int, create_fn):\n        self.max_size = max_size\n        self._create = create_fn\n        self._pool = Queue(maxsize=max_size)\n        self._size = 0\n        self._lock = threading.Lock()\n    def acquire(self):\n        if not self._pool.empty():\n            return self._pool.get()\n        with self._lock:\n            if self._size < self.max_size:\n                self._size += 1\n                return self._create()\n        return self._pool.get()\n    def release(self, conn):\n        self._pool.put(conn)\n    def close_all(self):\n        while not self._pool.empty():\n            conn = self._pool.get_nowait()\n            if hasattr(conn, 'close'):\n                conn.close()"
+  },
+  {
+    "id": "code_022",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a middleware pipeline for processing requests.",
+    "context": "Class: Pipeline. Methods: use(middleware_fn), execute(request) -> response. Middleware signature: (request, next_fn) -> response.",
+    "expected_answer": "class Pipeline:\n    def __init__(self):\n        self._middlewares = []\n    def use(self, middleware):\n        self._middlewares.append(middleware)\n        return self\n    def execute(self, request):\n        index = 0\n        def next_fn(req):\n            nonlocal index\n            if index >= len(self._middlewares):\n                return req\n            mw = self._middlewares[index]\n            index += 1\n            return mw(req, next_fn)\n        return next_fn(request)"
+  },
+  {
+    "id": "code_023",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write Dijkstra's shortest path algorithm.",
+    "context": "Function: def dijkstra(graph: dict[str, dict[str, int]], start: str, end: str) -> tuple[int, list[str]]. Return (distance, path).",
+    "expected_answer": "import heapq\n\ndef dijkstra(graph, start, end):\n    distances = {node: float('inf') for node in graph}\n    distances[start] = 0\n    previous = {}\n    pq = [(0, start)]\n    while pq:\n        dist, node = heapq.heappop(pq)\n        if dist > distances[node]:\n            continue\n        if node == end:\n            break\n        for neighbor, weight in graph.get(node, {}).items():\n            new_dist = dist + weight\n            if new_dist < distances.get(neighbor, float('inf')):\n                distances[neighbor] = new_dist\n                previous[neighbor] = node\n                heapq.heappush(pq, (new_dist, neighbor))\n    path = []\n    current = end\n    while current in previous:\n        path.append(current)\n        current = previous[current]\n    path.append(start)\n    path.reverse()\n    return (distances[end], path)"
+  },
+  {
+    "id": "code_024",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a data validation library with chainable validators.",
+    "context": "Class: Validator. Usage: Validator().string().min_length(3).max_length(50). Method: validate(value) -> (bool, list[str]).",
+    "expected_answer": "import re\n\nclass Validator:\n    def __init__(self):\n        self._rules = []\n    def string(self):\n        self._rules.append(lambda v: (isinstance(v, str), 'Must be a string'))\n        return self\n    def min_length(self, n):\n        self._rules.append(lambda v, n=n: (len(str(v)) >= n, f'Min length {n}'))\n        return self\n    def max_length(self, n):\n        self._rules.append(lambda v, n=n: (len(str(v)) <= n, f'Max length {n}'))\n        return self\n    def matches(self, pattern):\n        self._rules.append(lambda v, p=pattern: (bool(re.match(p, str(v))), f'Must match {p}'))\n        return self\n    def validate(self, value):\n        errors = []\n        for rule in self._rules:\n            ok, msg = rule(value)\n            if not ok:\n                errors.append(msg)\n        return (len(errors) == 0, errors)"
+  },
+  {
+    "id": "code_025",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a TTL cache (key-value store with expiration).",
+    "context": "Class: TTLCache. Methods: set(key, value, ttl_seconds), get(key) -> value or None, delete(key). Thread-safe.",
+    "expected_answer": "import time\nimport threading\n\nclass TTLCache:\n    def __init__(self):\n        self._store = {}\n        self._lock = threading.Lock()\n    def set(self, key, value, ttl_seconds):\n        with self._lock:\n            self._store[key] = (value, time.monotonic() + ttl_seconds)\n    def get(self, key):\n        with self._lock:\n            if key not in self._store:\n                return None\n            value, expires = self._store[key]\n            if time.monotonic() > expires:\n                del self._store[key]\n                return None\n            return value\n    def delete(self, key):\n        with self._lock:\n            self._store.pop(key, None)"
+  },
+  {
+    "id": "code_026",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a circuit breaker implementation.",
+    "context": "Class: CircuitBreaker(failure_threshold=5, recovery_timeout=30). States: CLOSED, OPEN, HALF_OPEN. Method: call(func).",
+    "expected_answer": "import time\n\nclass CircuitBreakerOpen(Exception): pass\n\nclass CircuitBreaker:\n    def __init__(self, failure_threshold=5, recovery_timeout=30):\n        self.threshold = failure_threshold\n        self.timeout = recovery_timeout\n        self.failures = 0\n        self.state = 'closed'\n        self.last_failure = 0\n    def call(self, func):\n        if self.state == 'open':\n            if time.monotonic() - self.last_failure >= self.timeout:\n                self.state = 'half_open'\n            else:\n                raise CircuitBreakerOpen()\n        try:\n            result = func()\n            self.failures = 0\n            self.state = 'closed'\n            return result\n        except Exception:\n            self.failures += 1\n            self.last_failure = time.monotonic()\n            if self.failures >= self.threshold:\n                self.state = 'open'\n            raise"
+  },
+  {
+    "id": "code_027",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a JSON schema validator.",
+    "context": "Function: def validate_schema(data: dict, schema: dict) -> tuple[bool, list[str]]. Schema: {'field': {'type': 'string|int|float|bool', 'required': bool, 'min': N, 'max': N}}.",
+    "expected_answer": "def validate_schema(data, schema):\n    errors = []\n    type_map = {'string': str, 'int': int, 'float': (int, float), 'bool': bool, 'list': list, 'dict': dict}\n    for field, rules in schema.items():\n        value = data.get(field)\n        if value is None:\n            if rules.get('required'):\n                errors.append(f'{field}: required')\n            continue\n        expected = type_map.get(rules.get('type', ''))\n        if expected and not isinstance(value, expected):\n            errors.append(f'{field}: wrong type')\n            continue\n        if 'min' in rules:\n            v = len(value) if isinstance(value, (str, list)) else value\n            if v < rules['min']:\n                errors.append(f'{field}: below min')\n        if 'max' in rules:\n            v = len(value) if isinstance(value, (str, list)) else value\n            if v > rules['max']:\n                errors.append(f'{field}: above max')\n    return (len(errors) == 0, errors)"
+  },
+  {
+    "id": "code_028",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a priority task queue with worker threads.",
+    "context": "Class: TaskQueue(num_workers=4). Methods: submit(task_fn, priority=0) -> Future, shutdown(). Higher priority runs first.",
+    "expected_answer": "import threading\nimport heapq\nfrom concurrent.futures import Future\n\nclass TaskQueue:\n    def __init__(self, num_workers=4):\n        self._queue = []\n        self._lock = threading.Lock()\n        self._cond = threading.Condition(self._lock)\n        self._counter = 0\n        self._shutdown = False\n        self._workers = [threading.Thread(target=self._work, daemon=True) for _ in range(num_workers)]\n        for w in self._workers: w.start()\n    def submit(self, fn, priority=0):\n        future = Future()\n        with self._cond:\n            self._counter += 1\n            heapq.heappush(self._queue, (-priority, self._counter, fn, future))\n            self._cond.notify()\n        return future\n    def _work(self):\n        while True:\n            with self._cond:\n                while not self._queue and not self._shutdown:\n                    self._cond.wait()\n                if self._shutdown and not self._queue: return\n                _, _, fn, future = heapq.heappop(self._queue)\n            try: future.set_result(fn())\n            except Exception as e: future.set_exception(e)\n    def shutdown(self):\n        with self._cond:\n            self._shutdown = True\n            self._cond.notify_all()\n        for w in self._workers: w.join()"
+  },
+  {
+    "id": "code_029",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a simple REST API router with path parameters.",
+    "context": "Class: Router. Decorator: @router.route('/users/{id}', method='GET'). Method: dispatch(method, path) -> response.",
+    "expected_answer": "import re\n\nclass Router:\n    def __init__(self):\n        self._routes = []\n    def route(self, path, method='GET'):\n        def decorator(fn):\n            pattern = re.sub(r'\\{(\\w+)\\}', r'(?P<\\1>[^/]+)', path)\n            self._routes.append((method.upper(), re.compile(f'^{pattern}$'), fn))\n            return fn\n        return decorator\n    def dispatch(self, method, path):\n        for route_method, pattern, handler in self._routes:\n            if route_method != method.upper(): continue\n            match = pattern.match(path)\n            if match:\n                return handler(**match.groupdict())\n        return {'error': 'Not Found', 'status': 404}"
+  },
+  {
+    "id": "code_030",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write an async HTTP client with retries and rate limiting.",
+    "context": "Class: AsyncHTTPClient(base_url, max_retries=3, rate_limit=10). Methods: get(path), post(path, data), close(). Use aiohttp.",
+    "expected_answer": "import asyncio\nimport aiohttp\n\nclass AsyncHTTPClient:\n    def __init__(self, base_url, max_retries=3, rate_limit=10):\n        self.base_url = base_url.rstrip('/')\n        self.max_retries = max_retries\n        self._sem = asyncio.Semaphore(rate_limit)\n        self._session = None\n    async def _session_get(self):\n        if not self._session:\n            self._session = aiohttp.ClientSession()\n        return self._session\n    async def _request(self, method, path, **kwargs):\n        url = f'{self.base_url}/{path.lstrip(\"/\")}'\n        async with self._sem:\n            for attempt in range(self.max_retries + 1):\n                try:\n                    session = await self._session_get()\n                    async with session.request(method, url, **kwargs) as r:\n                        r.raise_for_status()\n                        return await r.json()\n                except Exception:\n                    if attempt == self.max_retries: raise\n                    await asyncio.sleep(2 ** attempt)\n    async def get(self, path): return await self._request('GET', path)\n    async def post(self, path, data): return await self._request('POST', path, json=data)\n    async def close(self):\n        if self._session: await self._session.close()"
+  },
+  {
+    "id": "code_031",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a simple ORM-like query builder.",
+    "context": "Class: Query(table_name). Methods: select(*cols), where(condition), order_by(col, desc=False), limit(n), build() -> SQL string. Chainable.",
+    "expected_answer": "class Query:\n    def __init__(self, table):\n        self._table = table\n        self._cols = ['*']\n        self._wheres = []\n        self._order = None\n        self._limit = None\n    def select(self, *cols):\n        self._cols = list(cols) if cols else ['*']\n        return self\n    def where(self, condition):\n        self._wheres.append(condition)\n        return self\n    def order_by(self, col, desc=False):\n        self._order = f'{col} DESC' if desc else col\n        return self\n    def limit(self, n):\n        self._limit = n\n        return self\n    def build(self):\n        sql = f\"SELECT {', '.join(self._cols)} FROM {self._table}\"\n        if self._wheres:\n            sql += ' WHERE ' + ' AND '.join(self._wheres)\n        if self._order:\n            sql += f' ORDER BY {self._order}'\n        if self._limit:\n            sql += f' LIMIT {self._limit}'\n        return sql"
+  },
+  {
+    "id": "code_032",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a file watcher that detects changes and triggers callbacks.",
+    "context": "Class: FileWatcher(directory). Methods: watch(pattern, callback), start(), stop(). Use polling (check mtime every N seconds).",
+    "expected_answer": "import os\nimport time\nimport threading\nimport fnmatch\n\nclass FileWatcher:\n    def __init__(self, directory, interval=1.0):\n        self._dir = directory\n        self._interval = interval\n        self._watches = []\n        self._running = False\n        self._mtimes = {}\n        self._thread = None\n    def watch(self, pattern, callback):\n        self._watches.append((pattern, callback))\n    def start(self):\n        self._running = True\n        self._thread = threading.Thread(target=self._poll, daemon=True)\n        self._thread.start()\n    def stop(self):\n        self._running = False\n        if self._thread: self._thread.join()\n    def _poll(self):\n        while self._running:\n            for root, _, files in os.walk(self._dir):\n                for f in files:\n                    path = os.path.join(root, f)\n                    mtime = os.path.getmtime(path)\n                    if path in self._mtimes and mtime > self._mtimes[path]:\n                        for pattern, cb in self._watches:\n                            if fnmatch.fnmatch(f, pattern):\n                                cb(path)\n                    self._mtimes[path] = mtime\n            time.sleep(self._interval)"
+  },
+  {
+    "id": "code_033",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a simple dependency injection container.",
+    "context": "Class: Container. Methods: register(name, factory_fn), resolve(name) -> instance. Support singleton and transient lifetimes.",
+    "expected_answer": "class Container:\n    def __init__(self):\n        self._factories = {}\n        self._singletons = {}\n    def register(self, name, factory, singleton=False):\n        self._factories[name] = (factory, singleton)\n    def resolve(self, name):\n        if name not in self._factories:\n            raise KeyError(f'Service {name} not registered')\n        factory, is_singleton = self._factories[name]\n        if is_singleton:\n            if name not in self._singletons:\n                self._singletons[name] = factory(self)\n            return self._singletons[name]\n        return factory(self)"
+  },
+  {
+    "id": "code_034",
+    "category": "code_generation",
+    "difficulty": "medium",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a streaming JSON array parser that yields objects without loading the full file.",
+    "context": "Function: def stream_json_array(file_path: str) -> Iterator[dict]. Handle large files efficiently.",
+    "expected_answer": "import json\nfrom typing import Iterator\n\ndef stream_json_array(file_path: str) -> Iterator[dict]:\n    with open(file_path) as f:\n        buf = ''\n        depth = 0\n        in_str = False\n        started = False\n        for char in iter(lambda: f.read(1), ''):\n            if not started:\n                if char == '[':\n                    started = True\n                continue\n            if char == '\"' and (not buf or buf[-1] != '\\\\'):\n                in_str = not in_str\n            if not in_str:\n                if char == '{':\n                    depth += 1\n                elif char == '}':\n                    depth -= 1\n                    if depth == 0:\n                        buf += char\n                        yield json.loads(buf.strip())\n                        buf = ''\n                        continue\n                elif char == ']' and depth == 0:\n                    break\n            if depth > 0:\n                buf += char"
+  },
+  {
+    "id": "code_035",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete async web scraper with rate limiting, retry logic, and result caching.",
+    "context": "Class: WebScraper(max_concurrent=5, cache_ttl=3600). Methods: scrape(url) -> dict, scrape_many(urls) -> list[dict].",
+    "expected_answer": "import asyncio\nimport aiohttp\nimport time\n\nclass WebScraper:\n    def __init__(self, max_concurrent=5, cache_ttl=3600):\n        self._sem = asyncio.Semaphore(max_concurrent)\n        self._cache = {}\n        self._ttl = cache_ttl\n    async def scrape(self, url):\n        if url in self._cache:\n            val, ts = self._cache[url]\n            if time.monotonic() - ts < self._ttl: return val\n        async with self._sem:\n            for attempt in range(3):\n                try:\n                    async with aiohttp.ClientSession() as s:\n                        async with s.get(url, timeout=aiohttp.ClientTimeout(total=30)) as r:\n                            result = {'url': url, 'status': r.status, 'content': (await r.text())[:5000]}\n                            self._cache[url] = (result, time.monotonic())\n                            return result\n                except Exception as e:\n                    if attempt == 2: return {'url': url, 'error': str(e)}\n                    await asyncio.sleep(2 ** attempt)\n    async def scrape_many(self, urls):\n        return await asyncio.gather(*[self.scrape(u) for u in urls])"
+  },
+  {
+    "id": "code_036",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write an event-sourced BankAccount with snapshotting.",
+    "context": "Methods: deposit(amount), withdraw(amount), get_balance(). Store events, rebuild state, snapshot every 10 events.",
+    "expected_answer": "from dataclasses import dataclass, field\nimport time\n\n@dataclass\nclass Event:\n    type: str\n    data: dict\n    timestamp: float = field(default_factory=time.time)\n\nclass BankAccount:\n    def __init__(self, id):\n        self.id = id\n        self._balance = 0.0\n        self._events = []\n        self._snapshot = None\n    def deposit(self, amount):\n        if amount <= 0: raise ValueError('Positive amount required')\n        self._apply(Event('deposit', {'amount': amount}))\n    def withdraw(self, amount):\n        if amount > self._balance: raise ValueError('Insufficient funds')\n        self._apply(Event('withdrawal', {'amount': amount}))\n    def get_balance(self): return self._balance\n    def _apply(self, event):\n        self._events.append(event)\n        self._process(event)\n        if len(self._events) % 10 == 0:\n            self._snapshot = (len(self._events), self._balance)\n    def _process(self, e):\n        if e.type == 'deposit': self._balance += e.data['amount']\n        elif e.type == 'withdrawal': self._balance -= e.data['amount']"
+  },
+  {
+    "id": "code_037",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a distributed lock using Redis with SET NX.",
+    "context": "Class: DistributedLock(redis, name, ttl=30). Methods: acquire(timeout=10), release(), extend(). Context manager support.",
+    "expected_answer": "import time\nimport uuid\n\nclass DistributedLock:\n    def __init__(self, redis, name, ttl=30):\n        self._r = redis\n        self._key = f'lock:{name}'\n        self._ttl = ttl\n        self._token = str(uuid.uuid4())\n    def acquire(self, timeout=10):\n        end = time.monotonic() + timeout\n        while time.monotonic() < end:\n            if self._r.set(self._key, self._token, nx=True, ex=self._ttl):\n                return True\n            time.sleep(0.1)\n        return False\n    def release(self):\n        lua = 'if redis.call(\"get\",KEYS[1])==ARGV[1] then return redis.call(\"del\",KEYS[1]) else return 0 end'\n        return bool(self._r.eval(lua, 1, self._key, self._token))\n    def extend(self, ttl=None):\n        lua = 'if redis.call(\"get\",KEYS[1])==ARGV[1] then return redis.call(\"expire\",KEYS[1],ARGV[2]) else return 0 end'\n        return bool(self._r.eval(lua, 1, self._key, self._token, ttl or self._ttl))\n    def __enter__(self):\n        if not self.acquire(): raise TimeoutError()\n        return self\n    def __exit__(self, *a): self.release()"
+  },
+  {
+    "id": "code_038",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a CQRS mediator with command/query handlers and validation.",
+    "context": "Classes: Command, Query, CommandHandler, QueryHandler, Mediator. Mediator routes to handlers, validates commands.",
+    "expected_answer": "from abc import ABC, abstractmethod\nfrom typing import Any\n\nclass Command(ABC): pass\nclass Query(ABC): pass\nclass CommandHandler(ABC):\n    @abstractmethod\n    def handle(self, cmd) -> Any: pass\nclass QueryHandler(ABC):\n    @abstractmethod\n    def handle(self, query) -> Any: pass\n\nclass ValidationError(Exception):\n    def __init__(self, errors): self.errors = errors\n\nclass Mediator:\n    def __init__(self):\n        self._cmd_handlers = {}\n        self._query_handlers = {}\n        self._validators = {}\n    def register_command(self, cmd_type, handler):\n        self._cmd_handlers[cmd_type] = handler\n    def register_query(self, query_type, handler):\n        self._query_handlers[query_type] = handler\n    def add_validator(self, type_, fn):\n        self._validators.setdefault(type_, []).append(fn)\n    def send(self, cmd):\n        errors = []\n        for v in self._validators.get(type(cmd), []):\n            r = v(cmd)\n            if r: errors.extend(r)\n        if errors: raise ValidationError(errors)\n        h = self._cmd_handlers.get(type(cmd))\n        if not h: raise ValueError(f'No handler for {type(cmd).__name__}')\n        return h.handle(cmd)\n    def query(self, q):\n        h = self._query_handlers.get(type(q))\n        if not h: raise ValueError(f'No handler for {type(q).__name__}')\n        return h.handle(q)"
+  },
+  {
+    "id": "code_039",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a plugin system with lifecycle hooks and dependency management.",
+    "context": "Class: PluginManager. Plugins have: name, version, dependencies, on_load(), on_unload(), on_event(). Enforce dependency order.",
+    "expected_answer": "from abc import ABC, abstractmethod\n\nclass Plugin(ABC):\n    @property\n    @abstractmethod\n    def name(self): pass\n    @property\n    def version(self): return '1.0.0'\n    @property\n    def dependencies(self): return []\n    def on_load(self, mgr): pass\n    def on_unload(self): pass\n    def on_event(self, event, data=None): pass\n\nclass PluginManager:\n    def __init__(self):\n        self._plugins = {}\n        self._order = []\n    def register(self, plugin):\n        for dep in plugin.dependencies:\n            if dep not in self._plugins:\n                raise RuntimeError(f'Missing dep: {dep}')\n        self._plugins[plugin.name] = plugin\n        self._order.append(plugin.name)\n        plugin.on_load(self)\n    def unregister(self, name):\n        deps = [p.name for p in self._plugins.values() if name in p.dependencies]\n        if deps: raise RuntimeError(f'{name} required by {deps}')\n        p = self._plugins.pop(name, None)\n        if p: p.on_unload(); self._order.remove(name)\n    def get(self, name): return self._plugins.get(name)\n    def emit(self, event, data=None):\n        for n in self._order: self._plugins[n].on_event(event, data)"
+  },
+  {
+    "id": "code_040",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write an async job scheduler with cron expression parsing.",
+    "context": "Class: Scheduler. Methods: schedule(cron_expr, job_fn, name), start(), stop(). Parse: minute hour day month weekday.",
+    "expected_answer": "import asyncio\nfrom datetime import datetime\n\nclass CronExpr:\n    def __init__(self, expr):\n        parts = expr.split()\n        self.minute = self._parse(parts[0], 0, 59)\n        self.hour = self._parse(parts[1], 0, 23)\n        self.day = self._parse(parts[2], 1, 31)\n        self.month = self._parse(parts[3], 1, 12)\n        self.weekday = self._parse(parts[4], 0, 6)\n    def _parse(self, f, lo, hi):\n        if f == '*': return set(range(lo, hi+1))\n        if '/' in f: return set(range(lo, hi+1, int(f.split('/')[1])))\n        return {int(x) for x in f.split(',')}\n    def matches(self, dt):\n        return dt.minute in self.minute and dt.hour in self.hour and dt.day in self.day and dt.month in self.month and dt.weekday() in self.weekday\n\nclass Scheduler:\n    def __init__(self):\n        self._jobs = {}\n        self._running = False\n    def schedule(self, cron, fn, name):\n        self._jobs[name] = {'cron': CronExpr(cron), 'fn': fn, 'last': None}\n    async def start(self):\n        self._running = True\n        while self._running:\n            now = datetime.now().replace(second=0, microsecond=0)\n            for name, job in self._jobs.items():\n                if job['cron'].matches(now) and job['last'] != now:\n                    job['last'] = now\n                    asyncio.create_task(self._run(job['fn']))\n            await asyncio.sleep(30)\n    async def stop(self): self._running = False\n    async def _run(self, fn):\n        try:\n            r = fn()\n            if asyncio.iscoroutine(r): await r\n        except Exception as e: print(f'Job error: {e}')"
+  },
+  {
+    "id": "code_041",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete database migration system.",
+    "context": "Class: Migrator(db_connection). Methods: add_migration(version, up_fn, down_fn), migrate(), rollback(steps=1), get_current_version(). Track applied migrations in a table.",
+    "expected_answer": "class Migrator:\n    def __init__(self, conn):\n        self._conn = conn\n        self._migrations = []\n        self._ensure_table()\n    def _ensure_table(self):\n        self._conn.execute('CREATE TABLE IF NOT EXISTS _migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')\n    def add_migration(self, version, up_fn, down_fn):\n        self._migrations.append({'version': version, 'up': up_fn, 'down': down_fn})\n    def get_current_version(self):\n        row = self._conn.execute('SELECT version FROM _migrations ORDER BY applied_at DESC LIMIT 1').fetchone()\n        return row[0] if row else None\n    def get_applied(self):\n        return {r[0] for r in self._conn.execute('SELECT version FROM _migrations').fetchall()}\n    def migrate(self):\n        applied = self.get_applied()\n        for m in self._migrations:\n            if m['version'] not in applied:\n                m['up'](self._conn)\n                self._conn.execute('INSERT INTO _migrations (version) VALUES (?)', (m['version'],))\n                self._conn.commit()\n    def rollback(self, steps=1):\n        applied = sorted(self.get_applied(), reverse=True)\n        for version in applied[:steps]:\n            m = next((m for m in self._migrations if m['version'] == version), None)\n            if m:\n                m['down'](self._conn)\n                self._conn.execute('DELETE FROM _migrations WHERE version = ?', (version,))\n                self._conn.commit()"
+  },
+  {
+    "id": "code_042",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete state machine with guards, actions, and history.",
+    "context": "Class: StateMachine(initial_state). Methods: add_transition(from, to, event, guard=None, action=None), send(event), current_state, history. Guards are predicates, actions are side effects.",
+    "expected_answer": "class StateMachine:\n    def __init__(self, initial):\n        self._state = initial\n        self._transitions = []\n        self._history = [initial]\n    @property\n    def current_state(self): return self._state\n    @property\n    def history(self): return list(self._history)\n    def add_transition(self, from_state, to_state, event, guard=None, action=None):\n        self._transitions.append({'from': from_state, 'to': to_state, 'event': event, 'guard': guard, 'action': action})\n    def send(self, event, context=None):\n        for t in self._transitions:\n            if t['from'] == self._state and t['event'] == event:\n                if t['guard'] and not t['guard'](context):\n                    continue\n                if t['action']:\n                    t['action'](context)\n                self._state = t['to']\n                self._history.append(self._state)\n                return True\n        return False\n    def can_send(self, event, context=None):\n        return any(t['from'] == self._state and t['event'] == event and (not t['guard'] or t['guard'](context)) for t in self._transitions)"
+  },
+  {
+    "id": "code_043",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete reactive data binding system (like Vue.js reactivity).",
+    "context": "Classes: Reactive(data), Computed(fn), Watcher(fn). When reactive data changes, computed values update and watchers fire.",
+    "expected_answer": "class Reactive:\n    def __init__(self, data: dict):\n        self._data = dict(data)\n        self._watchers = {}\n        self._computeds = []\n    def __getattr__(self, key):\n        if key.startswith('_'): return super().__getattribute__(key)\n        return self._data.get(key)\n    def __setattr__(self, key, value):\n        if key.startswith('_'): super().__setattr__(key, value); return\n        old = self._data.get(key)\n        self._data[key] = value\n        if old != value:\n            self._notify(key, old, value)\n    def _notify(self, key, old, new):\n        for cb in self._watchers.get(key, []):\n            cb(new, old)\n        for c in self._computeds:\n            c._recompute(self)\n    def watch(self, key, callback):\n        self._watchers.setdefault(key, []).append(callback)\n\nclass Computed:\n    def __init__(self, fn):\n        self._fn = fn\n        self._value = None\n    def _recompute(self, reactive):\n        self._value = self._fn(reactive)\n    @property\n    def value(self): return self._value"
+  },
+  {
+    "id": "code_044",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete API rate limiting middleware with sliding window.",
+    "context": "Class: SlidingWindowRateLimiter(redis, limit=100, window_seconds=60). Methods: is_allowed(client_id) -> bool, get_remaining(client_id) -> int. Use Redis sorted sets for sliding window.",
+    "expected_answer": "import time\n\nclass SlidingWindowRateLimiter:\n    def __init__(self, redis, limit=100, window_seconds=60):\n        self._redis = redis\n        self._limit = limit\n        self._window = window_seconds\n    def is_allowed(self, client_id: str) -> bool:\n        key = f'ratelimit:{client_id}'\n        now = time.time()\n        pipe = self._redis.pipeline()\n        pipe.zremrangebyscore(key, 0, now - self._window)\n        pipe.zadd(key, {str(now): now})\n        pipe.zcard(key)\n        pipe.expire(key, self._window)\n        results = pipe.execute()\n        count = results[2]\n        if count > self._limit:\n            self._redis.zrem(key, str(now))\n            return False\n        return True\n    def get_remaining(self, client_id: str) -> int:\n        key = f'ratelimit:{client_id}'\n        now = time.time()\n        self._redis.zremrangebyscore(key, 0, now - self._window)\n        count = self._redis.zcard(key)\n        return max(0, self._limit - count)"
+  },
+  {
+    "id": "code_045",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete GraphQL-like query resolver.",
+    "context": "Class: Schema. Methods: add_type(name, fields), add_resolver(type, field, resolver_fn), execute(query_str) -> dict. Parse simple queries like { user(id: 1) { name email posts { title } } }.",
+    "expected_answer": "import re\n\nclass Schema:\n    def __init__(self):\n        self._types = {}\n        self._resolvers = {}\n    def add_type(self, name, fields):\n        self._types[name] = fields\n    def add_resolver(self, type_name, field, fn):\n        self._resolvers.setdefault(type_name, {})[field] = fn\n    def execute(self, query, context=None):\n        parsed = self._parse(query)\n        return self._resolve(parsed, 'Query', context)\n    def _resolve(self, node, type_name, ctx, parent=None):\n        result = {}\n        for field_name, sub in node.items():\n            args = sub.get('_args', {})\n            resolver = self._resolvers.get(type_name, {}).get(field_name)\n            if resolver:\n                value = resolver(parent, args, ctx)\n            else:\n                value = parent.get(field_name) if parent else None\n            if isinstance(value, dict) and sub.get('_fields'):\n                result[field_name] = self._resolve(sub['_fields'], field_name, ctx, value)\n            elif isinstance(value, list) and sub.get('_fields'):\n                result[field_name] = [self._resolve(sub['_fields'], field_name, ctx, v) for v in value]\n            else:\n                result[field_name] = value\n        return result\n    def _parse(self, query):\n        # Simplified parser\n        return {'_raw': query}"
+  },
+  {
+    "id": "code_046",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete observable/reactive streams library.",
+    "context": "Classes: Observable, Observer, operators (map, filter, take, debounce). Observable.from_iterable(data).pipe(map(fn), filter(fn), take(n)).subscribe(observer).",
+    "expected_answer": "import time\nfrom typing import Callable, Any\n\nclass Observer:\n    def __init__(self, on_next=None, on_error=None, on_complete=None):\n        self._next = on_next or (lambda x: None)\n        self._error = on_error or (lambda e: None)\n        self._complete = on_complete or (lambda: None)\n    def next(self, value): self._next(value)\n    def error(self, err): self._error(err)\n    def complete(self): self._complete()\n\nclass Observable:\n    def __init__(self, subscribe_fn):\n        self._subscribe_fn = subscribe_fn\n    def subscribe(self, observer=None, on_next=None, on_error=None, on_complete=None):\n        if observer is None:\n            observer = Observer(on_next, on_error, on_complete)\n        self._subscribe_fn(observer)\n    def pipe(self, *operators):\n        result = self\n        for op in operators:\n            result = op(result)\n        return result\n    @staticmethod\n    def from_iterable(data):\n        def subscribe(observer):\n            try:\n                for item in data:\n                    observer.next(item)\n                observer.complete()\n            except Exception as e:\n                observer.error(e)\n        return Observable(subscribe)\n\ndef map_op(fn):\n    def operator(source):\n        def subscribe(observer):\n            source.subscribe(Observer(lambda x: observer.next(fn(x)), observer.error, observer.complete))\n        return Observable(subscribe)\n    return operator\n\ndef filter_op(fn):\n    def operator(source):\n        def subscribe(observer):\n            source.subscribe(Observer(lambda x: observer.next(x) if fn(x) else None, observer.error, observer.complete))\n        return Observable(subscribe)\n    return operator\n\ndef take(n):\n    def operator(source):\n        def subscribe(observer):\n            count = [0]\n            def on_next(x):\n                if count[0] < n:\n                    observer.next(x)\n                    count[0] += 1\n                    if count[0] >= n: observer.complete()\n            source.subscribe(Observer(on_next, observer.error, observer.complete))\n        return Observable(subscribe)\n    return operator"
+  },
+  {
+    "id": "code_047",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete saga/workflow orchestrator for distributed transactions.",
+    "context": "Class: Saga. Methods: step(name, execute_fn, compensate_fn), run(context) -> result. On failure, run compensations in reverse order. Support async steps.",
+    "expected_answer": "import asyncio\nfrom typing import Callable, Any\n\nclass SagaStep:\n    def __init__(self, name, execute, compensate):\n        self.name = name\n        self.execute = execute\n        self.compensate = compensate\n\nclass SagaResult:\n    def __init__(self, success, results=None, error=None, failed_step=None):\n        self.success = success\n        self.results = results or {}\n        self.error = error\n        self.failed_step = failed_step\n\nclass Saga:\n    def __init__(self):\n        self._steps = []\n    def step(self, name, execute_fn, compensate_fn):\n        self._steps.append(SagaStep(name, execute_fn, compensate_fn))\n        return self\n    async def run(self, context=None):\n        results = {}\n        completed = []\n        for step in self._steps:\n            try:\n                r = step.execute(context, results)\n                if asyncio.iscoroutine(r): r = await r\n                results[step.name] = r\n                completed.append(step)\n            except Exception as e:\n                for s in reversed(completed):\n                    try:\n                        c = s.compensate(context, results)\n                        if asyncio.iscoroutine(c): await c\n                    except Exception: pass\n                return SagaResult(False, results, e, step.name)\n        return SagaResult(True, results)"
+  },
+  {
+    "id": "code_048",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete feature flag system with percentage rollouts and user targeting.",
+    "context": "Class: FeatureFlags(storage). Methods: is_enabled(flag_name, user_context) -> bool, set_flag(name, config). Support: boolean, percentage rollout, user whitelist, attribute targeting.",
+    "expected_answer": "import hashlib\n\nclass FeatureFlags:\n    def __init__(self, storage=None):\n        self._flags = storage or {}\n    def set_flag(self, name, config):\n        self._flags[name] = config\n    def is_enabled(self, name, user_ctx=None) -> bool:\n        flag = self._flags.get(name)\n        if not flag: return False\n        if flag.get('enabled') is False: return False\n        if flag.get('enabled') is True and 'rules' not in flag: return True\n        user_ctx = user_ctx or {}\n        # Check whitelist\n        if user_ctx.get('id') in flag.get('whitelist', []): return True\n        # Check blacklist\n        if user_ctx.get('id') in flag.get('blacklist', []): return False\n        # Check attribute rules\n        for rule in flag.get('rules', []):\n            attr = user_ctx.get(rule.get('attribute'))\n            op = rule.get('operator', 'eq')\n            val = rule.get('value')\n            if op == 'eq' and attr == val: return True\n            if op == 'in' and attr in val: return True\n            if op == 'gt' and attr and attr > val: return True\n        # Percentage rollout\n        pct = flag.get('percentage', 100)\n        if pct < 100:\n            uid = str(user_ctx.get('id', ''))\n            h = int(hashlib.md5(f'{name}:{uid}'.encode()).hexdigest()[:8], 16)\n            return (h % 100) < pct\n        return flag.get('enabled', False)"
+  },
+  {
+    "id": "code_049",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete data pipeline with stages, error handling, and backpressure.",
+    "context": "Class: Pipeline. Methods: stage(name, fn, concurrency=1), run(input_data) -> results. Each stage processes items, passes to next. Support backpressure via bounded queues.",
+    "expected_answer": "import asyncio\nfrom typing import Callable, Any\n\nclass Stage:\n    def __init__(self, name, fn, concurrency=1, buffer_size=100):\n        self.name = name\n        self.fn = fn\n        self.concurrency = concurrency\n        self.queue = asyncio.Queue(maxsize=buffer_size)\n        self.output = asyncio.Queue(maxsize=buffer_size)\n\nclass Pipeline:\n    def __init__(self):\n        self._stages = []\n    def stage(self, name, fn, concurrency=1):\n        self._stages.append(Stage(name, fn, concurrency))\n        return self\n    async def run(self, input_data):\n        if not self._stages: return list(input_data)\n        results = []\n        errors = []\n        # Feed input\n        first = self._stages[0]\n        for item in input_data:\n            await first.queue.put(item)\n        await first.queue.put(None)  # sentinel\n        # Process stages\n        for i, stage in enumerate(self._stages):\n            workers = []\n            next_q = self._stages[i+1].queue if i+1 < len(self._stages) else None\n            for _ in range(stage.concurrency):\n                workers.append(asyncio.create_task(self._worker(stage, next_q, results, errors)))\n            await asyncio.gather(*workers)\n            if next_q:\n                await next_q.put(None)\n        return results\n    async def _worker(self, stage, next_q, results, errors):\n        while True:\n            item = await stage.queue.get()\n            if item is None:\n                await stage.queue.put(None)\n                break\n            try:\n                r = stage.fn(item)\n                if asyncio.iscoroutine(r): r = await r\n                if next_q: await next_q.put(r)\n                else: results.append(r)\n            except Exception as e:\n                errors.append((stage.name, item, e))"
+  },
+  {
+    "id": "code_050",
+    "category": "code_generation",
+    "difficulty": "complex",
+    "system_prompt": "You are an expert Python developer. Write clean, well-documented, production-ready code. Return only the code, no explanation.",
+    "user_prompt": "Write a complete type-safe dependency injection container with auto-wiring.",
+    "context": "Class: Container. Methods: register(interface, implementation, lifetime='transient'), resolve(interface). Auto-detect constructor dependencies via type hints. Support singleton/transient/scoped.",
+    "expected_answer": "import inspect\nfrom typing import get_type_hints, Any\n\nclass Container:\n    def __init__(self):\n        self._registry = {}\n        self._singletons = {}\n        self._scoped = {}\n    def register(self, interface, impl=None, lifetime='transient'):\n        impl = impl or interface\n        self._registry[interface] = {'impl': impl, 'lifetime': lifetime}\n    def resolve(self, interface):\n        entry = self._registry.get(interface)\n        if not entry: raise KeyError(f'{interface} not registered')\n        if entry['lifetime'] == 'singleton':\n            if interface not in self._singletons:\n                self._singletons[interface] = self._create(entry['impl'])\n            return self._singletons[interface]\n        if entry['lifetime'] == 'scoped':\n            if interface not in self._scoped:\n                self._scoped[interface] = self._create(entry['impl'])\n            return self._scoped[interface]\n        return self._create(entry['impl'])\n    def _create(self, impl):\n        hints = get_type_hints(impl.__init__) if hasattr(impl, '__init__') else {}\n        params = inspect.signature(impl).parameters\n        args = {}\n        for name, param in params.items():\n            if name == 'self': continue\n            hint = hints.get(name)\n            if hint and hint in self._registry:\n                args[name] = self.resolve(hint)\n        return impl(**args)\n    def create_scope(self):\n        scope = Container()\n        scope._registry = dict(self._registry)\n        scope._singletons = self._singletons\n        return scope"
+  }
+]
