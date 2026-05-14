@@ -414,11 +414,21 @@ class SmartRouterModel(Model):
         tool_specs: Optional[list[ToolSpec]],
         tool_choice: Optional[ToolChoice] = None,
     ) -> dict[str, Any] | None:
-        """Convert Strands tool specs to Bedrock ``toolConfig``."""
+        """Convert Strands tool specs to Bedrock ``toolConfig``.
+
+        Strips unsupported fields like ``outputSchema`` that MCP tools
+        may include but Bedrock's Converse API does not accept.
+        """
         if not tool_specs:
             return None
+        # Bedrock only accepts: name, description, inputSchema, strict
+        allowed_keys = {"name", "description", "inputSchema", "strict"}
+        cleaned_specs = []
+        for spec in tool_specs:
+            cleaned = {k: v for k, v in spec.items() if k in allowed_keys}
+            cleaned_specs.append(cleaned)
         config: dict[str, Any] = {
-            "tools": [{"toolSpec": spec} for spec in tool_specs],
+            "tools": [{"toolSpec": spec} for spec in cleaned_specs],
         }
         if tool_choice is not None:
             config["toolChoice"] = tool_choice

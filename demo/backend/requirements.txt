@@ -3,3 +3,9 @@ uvicorn>=0.32.0
 boto3>=1.35.0
 pydantic>=2.0
 python-multipart>=0.0.9
+
+# MCP protocol (client + server)
+mcp>=1.0.0
+
+# Strands (AgentCore Gateway MCPClient)
+strands-agents>=1.26.0
