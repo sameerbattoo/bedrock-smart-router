@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { USE_CASES } from './components/shared'
 import ComparePage from './components/ComparePage'
 import HistoryPage from './components/HistoryPage'
+import ThrottlePage from './components/ThrottlePage'
 
 export default function App() {
   const [activePage, setActivePage] = useState('compare')
@@ -89,7 +90,9 @@ export default function App() {
         {activePage === 'history' ? (
           <HistoryPage history={history} setHistory={setHistory} onNavigate={handleHistoryNavigate} />
         ) : activePage === 'compare' ? (
-          <ComparePage key={resetKey} history={history} setHistory={setHistory} restoreState={restoreState} />
+          <ComparePage key={resetKey} history={history} setHistory={setHistory} restoreState={restoreState} onRun={() => setNavOpen(false)} />
+        ) : activePage === 'throttling' ? (
+          <ThrottlePage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} />
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-600">

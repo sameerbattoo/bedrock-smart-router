@@ -116,6 +116,7 @@ class BedrockModel:
     max_output_tokens: int = 4096
     pricing: ModelPricing = field(default_factory=ModelPricing)
     cris_profiles: list[str] = field(default_factory=list)
+    regions: list[dict] = field(default_factory=list)
     supported_inference_tiers: list[str] = field(
         default_factory=lambda: ["standard"]
     )
@@ -126,7 +127,7 @@ class BedrockModel:
 
     @property
     def is_cris_available(self) -> bool:
-        return len(self.cris_profiles) > 0
+        return any("cris_profiles" in r for r in self.regions)
 
     @property
     def base_model_id(self) -> str:

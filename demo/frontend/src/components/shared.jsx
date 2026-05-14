@@ -7,7 +7,7 @@ export const STREAM_API = 'http://localhost:8000/api'
 
 export const USE_CASES = [
   { id: 'compare', label: 'Baseline vs Smart Router', icon: '⚡', description: 'Compare responses, cost, latency and accuracy side-by-side' },
-  { id: 'throttling', label: 'Throttle Handling', icon: '🛡️', description: 'Automatic fallback when models are throttled', coming: true },
+  { id: 'throttling', label: 'Throttle Handling', icon: '🛡️', description: 'Automatic fallback when models are throttled' },
   { id: 'strands', label: 'Strands Agents', icon: '🤖', description: 'Use Smart Router as a model provider in Strands', coming: true },
   { id: 'multi-tenant', label: 'Multi-Tenant Routing', icon: '🏢', description: 'Per-tenant tracking, budgets and model segregation', coming: true },
   { id: 'semantic-cache', label: 'Semantic Caching', icon: '💾', description: 'Cache similar prompts to reduce cost and latency', coming: true },
@@ -185,7 +185,7 @@ export function ExplainPopup({ explanation, onClose }) {
           </div>
         </div>
 
-        <div className="text-xs text-gray-300 bg-gray-800/40 rounded-lg p-3 border-l-2 border-orange-500">{explanation.reason}</div>
+        {explanation.reason && !explanation.hide_reason && <div className="text-xs text-gray-300 bg-gray-800/40 rounded-lg p-3 border-l-2 border-orange-500">{explanation.reason}</div>}
       </div>
     </>
   )

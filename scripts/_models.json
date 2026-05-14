@@ -3,6 +3,44 @@
     {
       "model_id": "nvidia.nemotron-nano-12b-v2",
       "family": "nvidia",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "NVIDIA Nemotron Nano 12B v2 VL BF16",
       "capabilities": {
@@ -22,9 +60,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "nvidia.nemotron-nano-12b-v2"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -34,6 +69,123 @@
     {
       "model_id": "anthropic.claude-haiku-4-5-20251001-v1:0",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "lite",
       "display_name": "Claude Haiku 4.5",
       "capabilities": {
@@ -53,10 +205,6 @@
         "cache_read_per_1k": 9e-05,
         "cache_write_per_1k": 0.001125
       },
-      "cris_profiles": [
-        "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-        "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -67,6 +215,123 @@
     {
       "model_id": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "lite",
       "display_name": "Claude Haiku 4.5 (Global)",
       "capabilities": {
@@ -86,9 +351,6 @@
         "cache_read_per_1k": 9e-05,
         "cache_write_per_1k": 0.001125
       },
-      "cris_profiles": [
-        "global.anthropic.claude-haiku-4-5-20251001-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -99,6 +361,40 @@
     {
       "model_id": "qwen.qwen3-235b-a22b-2507-v1:0",
       "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Qwen3 235B A22B 2507",
       "capabilities": {
@@ -118,9 +414,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "qwen.qwen3-235b-a22b-2507-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -130,6 +423,44 @@
     {
       "model_id": "moonshotai.kimi-k2.5",
       "family": "moonshot",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Kimi K2.5",
       "capabilities": {
@@ -149,9 +480,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "moonshotai.kimi-k2.5"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -161,6 +489,52 @@
     {
       "model_id": "openai.gpt-oss-120b-1:0",
       "family": "openai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "gpt-oss-120b",
       "capabilities": {
@@ -180,9 +554,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "openai.gpt-oss-120b-1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -192,6 +563,44 @@
     {
       "model_id": "qwen.qwen3-next-80b-a3b",
       "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Qwen3 Next 80B A3B",
       "capabilities": {
@@ -211,9 +620,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "qwen.qwen3-next-80b-a3b"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -223,6 +629,44 @@
     {
       "model_id": "deepseek.v3.2",
       "family": "deepseek",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "DeepSeek V3.2",
       "capabilities": {
@@ -242,9 +686,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "deepseek.v3.2"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -254,6 +695,44 @@
     {
       "model_id": "nvidia.nemotron-nano-3-30b",
       "family": "nvidia",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Nemotron Nano 3 30B",
       "capabilities": {
@@ -273,9 +752,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "nvidia.nemotron-nano-3-30b"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -285,6 +761,124 @@
     {
       "model_id": "anthropic.claude-sonnet-4-6",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ],
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Claude Sonnet 4.6",
       "capabilities": {
@@ -304,10 +898,6 @@
         "cache_read_per_1k": 0.00027,
         "cache_write_per_1k": 0.003375
       },
-      "cris_profiles": [
-        "us.anthropic.claude-sonnet-4-6",
-        "global.anthropic.claude-sonnet-4-6"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -318,6 +908,124 @@
     {
       "model_id": "global.anthropic.claude-sonnet-4-6",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ],
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Claude Sonnet 4.6 (Global)",
       "capabilities": {
@@ -337,9 +1045,6 @@
         "cache_read_per_1k": 0.00027,
         "cache_write_per_1k": 0.003375
       },
-      "cris_profiles": [
-        "global.anthropic.claude-sonnet-4-6"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -350,6 +1055,44 @@
     {
       "model_id": "minimax.minimax-m2",
       "family": "minimax",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "MiniMax M2",
       "capabilities": {
@@ -369,9 +1112,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "minimax.minimax-m2"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -381,6 +1121,52 @@
     {
       "model_id": "zai.glm-4.7-flash",
       "family": "zai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "GLM 4.7 Flash",
       "capabilities": {
@@ -400,9 +1186,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "zai.glm-4.7-flash"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -412,6 +1195,92 @@
     {
       "model_id": "amazon.nova-pro-v1:0",
       "family": "amazon",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "apac"
+          ],
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ],
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Nova Pro",
       "capabilities": {
@@ -431,9 +1300,6 @@
         "cache_read_per_1k": 0.0002,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.amazon.nova-pro-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -444,6 +1310,108 @@
     {
       "model_id": "amazon.nova-2-lite-v1:0",
       "family": "amazon",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "lite",
       "display_name": "Nova 2 Lite",
       "capabilities": {
@@ -463,10 +1431,6 @@
         "cache_read_per_1k": 0.000118125,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "global.amazon.nova-2-lite-v1:0",
-        "us.amazon.nova-2-lite-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -476,6 +1440,108 @@
     {
       "model_id": "global.amazon.nova-2-lite-v1:0",
       "family": "amazon",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "lite",
       "display_name": "Nova 2 Lite (Global)",
       "capabilities": {
@@ -495,9 +1561,6 @@
         "cache_read_per_1k": 0.000118125,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "global.amazon.nova-2-lite-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -507,6 +1570,52 @@
     {
       "model_id": "minimax.minimax-m2.5",
       "family": "minimax",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "MiniMax M2.5",
       "capabilities": {
@@ -526,9 +1635,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "minimax.minimax-m2.5"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -538,6 +1644,44 @@
     {
       "model_id": "google.gemma-3-12b-it",
       "family": "google",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "Gemma 3 12B IT",
       "capabilities": {
@@ -557,9 +1701,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "google.gemma-3-12b-it"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -569,6 +1710,36 @@
     {
       "model_id": "moonshot.kimi-k2-thinking",
       "family": "moonshot",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "reasoning",
       "display_name": "Kimi K2 Thinking",
       "capabilities": {
@@ -588,9 +1759,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "moonshot.kimi-k2-thinking"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -600,6 +1768,36 @@
     {
       "model_id": "mistral.mistral-large-3-675b-instruct",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Mistral Large 3",
       "capabilities": {
@@ -619,9 +1817,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.mistral-large-3-675b-instruct"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -631,6 +1826,52 @@
     {
       "model_id": "mistral.devstral-2-123b",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Devstral 2 123B",
       "capabilities": {
@@ -650,9 +1891,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.devstral-2-123b"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -662,6 +1900,52 @@
     {
       "model_id": "minimax.minimax-m2.1",
       "family": "minimax",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "MiniMax M2.1",
       "capabilities": {
@@ -681,9 +1965,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "minimax.minimax-m2.1"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -693,6 +1974,52 @@
     {
       "model_id": "nvidia.nemotron-super-3-120b",
       "family": "nvidia",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "NVIDIA Nemotron 3 Super 120B A12B",
       "capabilities": {
@@ -712,9 +2039,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "nvidia.nemotron-super-3-120b"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -724,6 +2048,52 @@
     {
       "model_id": "qwen.qwen3-32b-v1:0",
       "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "Qwen3 32B (dense)",
       "capabilities": {
@@ -743,9 +2113,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "qwen.qwen3-32b-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -755,6 +2122,44 @@
     {
       "model_id": "mistral.ministral-3-14b-instruct",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "Ministral 14B 3.0",
       "capabilities": {
@@ -774,9 +2179,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.ministral-3-14b-instruct"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -786,6 +2188,122 @@
     {
       "model_id": "anthropic.claude-opus-4-6-v1",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ],
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "heavy",
       "display_name": "Claude Opus 4.6",
       "capabilities": {
@@ -805,10 +2323,6 @@
         "cache_read_per_1k": 0.00045,
         "cache_write_per_1k": 0.005625
       },
-      "cris_profiles": [
-        "us.anthropic.claude-opus-4-6-v1",
-        "global.anthropic.claude-opus-4-6-v1"
-      ],
       "supported_inference_tiers": [],
       "guardrail_compatible": true,
       "quality_baseline": 46.5
@@ -816,6 +2330,122 @@
     {
       "model_id": "global.anthropic.claude-opus-4-6-v1",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ],
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "heavy",
       "display_name": "Claude Opus 4.6 (Global)",
       "capabilities": {
@@ -835,9 +2465,6 @@
         "cache_read_per_1k": 0.00045,
         "cache_write_per_1k": 0.005625
       },
-      "cris_profiles": [
-        "global.anthropic.claude-opus-4-6-v1"
-      ],
       "supported_inference_tiers": [],
       "guardrail_compatible": true,
       "quality_baseline": 46.5
@@ -845,6 +2472,44 @@
     {
       "model_id": "nvidia.nemotron-nano-9b-v2",
       "family": "nvidia",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "NVIDIA Nemotron Nano 9B v2",
       "capabilities": {
@@ -864,9 +2529,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "nvidia.nemotron-nano-9b-v2"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -876,6 +2538,44 @@
     {
       "model_id": "mistral.ministral-3-8b-instruct",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "Ministral 3 8B",
       "capabilities": {
@@ -895,9 +2595,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.ministral-3-8b-instruct"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -907,6 +2604,44 @@
     {
       "model_id": "zai.glm-5",
       "family": "zai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "GLM 5",
       "capabilities": {
@@ -926,9 +2661,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "zai.glm-5"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -938,6 +2670,52 @@
     {
       "model_id": "openai.gpt-oss-20b-1:0",
       "family": "openai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "gpt-oss-20b",
       "capabilities": {
@@ -957,9 +2735,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "openai.gpt-oss-20b-1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -969,6 +2744,44 @@
     {
       "model_id": "google.gemma-3-4b-it",
       "family": "google",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Gemma 3 4B IT",
       "capabilities": {
@@ -988,9 +2801,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "google.gemma-3-4b-it"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1000,6 +2810,123 @@
     {
       "model_id": "anthropic.claude-opus-4-7",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "reasoning",
       "display_name": "Claude Opus 4.7",
       "capabilities": {
@@ -1019,10 +2946,6 @@
         "cache_read_per_1k": 0.00045,
         "cache_write_per_1k": 0.005625
       },
-      "cris_profiles": [
-        "us.anthropic.claude-opus-4-7",
-        "global.anthropic.claude-opus-4-7"
-      ],
       "supported_inference_tiers": [],
       "guardrail_compatible": true,
       "quality_baseline": 51.8
@@ -1030,6 +2953,123 @@
     {
       "model_id": "global.anthropic.claude-opus-4-7",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "reasoning",
       "display_name": "Claude Opus 4.7 (Global)",
       "capabilities": {
@@ -1049,9 +3089,6 @@
         "cache_read_per_1k": 0.00045,
         "cache_write_per_1k": 0.005625
       },
-      "cris_profiles": [
-        "global.anthropic.claude-opus-4-7"
-      ],
       "supported_inference_tiers": [],
       "guardrail_compatible": true,
       "quality_baseline": 51.8
@@ -1059,6 +3096,44 @@
     {
       "model_id": "google.gemma-3-27b-it",
       "family": "google",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "Gemma 3 27B PT",
       "capabilities": {
@@ -1078,9 +3153,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "google.gemma-3-27b-it"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1090,6 +3162,123 @@
     {
       "model_id": "anthropic.claude-sonnet-4-5-20250929-v1:0",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Claude Sonnet 4.5",
       "capabilities": {
@@ -1109,10 +3298,6 @@
         "cache_read_per_1k": 0.00027,
         "cache_write_per_1k": 0.003375
       },
-      "cris_profiles": [
-        "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -1123,6 +3308,123 @@
     {
       "model_id": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Claude Sonnet 4.5 (Global)",
       "capabilities": {
@@ -1142,9 +3444,6 @@
         "cache_read_per_1k": 0.00027,
         "cache_write_per_1k": 0.003375
       },
-      "cris_profiles": [
-        "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -1155,6 +3454,44 @@
     {
       "model_id": "qwen.qwen3-vl-235b-a22b",
       "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Qwen3 VL 235B A22B",
       "capabilities": {
@@ -1174,9 +3511,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "qwen.qwen3-vl-235b-a22b"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1186,6 +3520,44 @@
     {
       "model_id": "zai.glm-4.7",
       "family": "zai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "GLM 4.7",
       "capabilities": {
@@ -1205,9 +3577,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "zai.glm-4.7"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1217,6 +3586,20 @@
     {
       "model_id": "writer.palmyra-vision-7b",
       "family": "writer",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Writer Palmyra Vision 7B",
       "capabilities": {
@@ -1236,9 +3619,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "writer.palmyra-vision-7b"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1248,6 +3628,26 @@
     {
       "model_id": "anthropic.claude-opus-4-1-20250805-v1:0",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "heavy",
       "display_name": "Claude Opus 4.1",
       "capabilities": {
@@ -1267,9 +3667,6 @@
         "cache_read_per_1k": 0.0015,
         "cache_write_per_1k": 0.01875
       },
-      "cris_profiles": [
-        "us.anthropic.claude-opus-4-1-20250805-v1:0"
-      ],
       "supported_inference_tiers": [],
       "guardrail_compatible": true,
       "quality_baseline": 36
@@ -1277,6 +3674,36 @@
     {
       "model_id": "qwen.qwen3-coder-480b-a35b-v1:0",
       "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Qwen3 Coder 480B A35B Instruct",
       "capabilities": {
@@ -1296,9 +3723,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "qwen.qwen3-coder-480b-a35b-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1308,6 +3732,44 @@
     {
       "model_id": "mistral.magistral-small-2509",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Magistral Small 2509",
       "capabilities": {
@@ -1327,9 +3789,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.magistral-small-2509"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1339,6 +3798,36 @@
     {
       "model_id": "deepseek.v3-v1:0",
       "family": "deepseek",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "DeepSeek-V3.1",
       "capabilities": {
@@ -1358,9 +3847,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "deepseek.v3-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1370,6 +3856,44 @@
     {
       "model_id": "mistral.ministral-3-3b-instruct",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Ministral 3B",
       "capabilities": {
@@ -1389,9 +3913,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.ministral-3-3b-instruct"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1401,6 +3922,120 @@
     {
       "model_id": "anthropic.claude-opus-4-5-20251101-v1:0",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "heavy",
       "display_name": "Claude Opus 4.5",
       "capabilities": {
@@ -1420,10 +4055,6 @@
         "cache_read_per_1k": 0.00045,
         "cache_write_per_1k": 0.005625
       },
-      "cris_profiles": [
-        "us.anthropic.claude-opus-4-5-20251101-v1:0",
-        "global.anthropic.claude-opus-4-5-20251101-v1:0"
-      ],
       "supported_inference_tiers": [],
       "guardrail_compatible": true,
       "quality_baseline": 43.1
@@ -1431,6 +4062,120 @@
     {
       "model_id": "global.anthropic.claude-opus-4-5-20251101-v1:0",
       "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
       "tier": "heavy",
       "display_name": "Claude Opus 4.5 (Global)",
       "capabilities": {
@@ -1450,9 +4195,6 @@
         "cache_read_per_1k": 0.00045,
         "cache_write_per_1k": 0.005625
       },
-      "cris_profiles": [
-        "global.anthropic.claude-opus-4-5-20251101-v1:0"
-      ],
       "supported_inference_tiers": [],
       "guardrail_compatible": true,
       "quality_baseline": 43.1
@@ -1460,6 +4202,52 @@
     {
       "model_id": "qwen.qwen3-coder-30b-a3b-v1:0",
       "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "lite",
       "display_name": "Qwen3-Coder-30B-A3B-Instruct",
       "capabilities": {
@@ -1479,9 +4267,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "qwen.qwen3-coder-30b-a3b-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1491,6 +4276,100 @@
     {
       "model_id": "amazon.nova-lite-v1:0",
       "family": "amazon",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "apac"
+          ],
+          "direct": true
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "apac"
+          ],
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "ca"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu"
+          ],
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ],
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "lite",
       "display_name": "Nova Lite",
       "capabilities": {
@@ -1510,9 +4389,6 @@
         "cache_read_per_1k": 1.5e-05,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.amazon.nova-lite-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1522,6 +4398,86 @@
     {
       "model_id": "amazon.nova-micro-v1:0",
       "family": "amazon",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "apac"
+          ],
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ],
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "micro",
       "display_name": "Nova Micro",
       "capabilities": {
@@ -1541,9 +4497,6 @@
         "cache_read_per_1k": 8.75e-06,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.amazon.nova-micro-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1553,6 +4506,26 @@
     {
       "model_id": "deepseek.r1-v1:0",
       "family": "deepseek",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "reasoning",
       "display_name": "DeepSeek-R1",
       "capabilities": {
@@ -1572,9 +4545,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.deepseek.r1-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1584,6 +4554,28 @@
     {
       "model_id": "meta.llama3-8b-instruct-v1:0",
       "family": "meta",
+      "regions": [
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Llama 3 8B Instruct",
       "capabilities": {
@@ -1603,9 +4595,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "meta.llama3-8b-instruct-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1615,6 +4604,28 @@
     {
       "model_id": "meta.llama3-70b-instruct-v1:0",
       "family": "meta",
+      "regions": [
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Llama 3 70B Instruct",
       "capabilities": {
@@ -1634,9 +4645,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "meta.llama3-70b-instruct-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1646,6 +4654,27 @@
     {
       "model_id": "meta.llama3-1-8b-instruct-v1:0",
       "family": "meta",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ],
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Llama 3.1 8B Instruct",
       "capabilities": {
@@ -1665,9 +4694,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.meta.llama3-1-8b-instruct-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1677,6 +4703,27 @@
     {
       "model_id": "meta.llama3-1-70b-instruct-v1:0",
       "family": "meta",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ],
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Llama 3.1 70B Instruct",
       "capabilities": {
@@ -1696,9 +4743,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.meta.llama3-1-70b-instruct-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard",
         "priority"
@@ -1709,6 +4753,27 @@
     {
       "model_id": "meta.llama3-3-70b-instruct-v1:0",
       "family": "meta",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ],
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Llama 3.3 70B Instruct",
       "capabilities": {
@@ -1728,9 +4793,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.meta.llama3-3-70b-instruct-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1740,6 +4802,32 @@
     {
       "model_id": "meta.llama4-scout-17b-instruct-v1:0",
       "family": "meta",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "lite",
       "display_name": "Llama 4 Scout 17B Instruct",
       "capabilities": {
@@ -1759,9 +4847,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.meta.llama4-scout-17b-instruct-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1771,6 +4856,32 @@
     {
       "model_id": "meta.llama4-maverick-17b-instruct-v1:0",
       "family": "meta",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Llama 4 Maverick 17B Instruct",
       "capabilities": {
@@ -1790,9 +4901,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.meta.llama4-maverick-17b-instruct-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1802,6 +4910,44 @@
     {
       "model_id": "mistral.mistral-7b-instruct-v0:2",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Mistral 7B Instruct",
       "capabilities": {
@@ -1821,9 +4967,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.mistral-7b-instruct-v0:2"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1833,6 +4976,44 @@
     {
       "model_id": "mistral.mixtral-8x7b-instruct-v0:1",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "micro",
       "display_name": "Mixtral 8x7B Instruct",
       "capabilities": {
@@ -1852,9 +5033,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.mixtral-8x7b-instruct-v0:1"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1864,6 +5042,44 @@
     {
       "model_id": "mistral.mistral-large-2402-v1:0",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "eu-west-3",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Mistral Large (24.02)",
       "capabilities": {
@@ -1883,9 +5099,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.mistral-large-2402-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1895,6 +5108,12 @@
     {
       "model_id": "mistral.mistral-large-2407-v1:0",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
       "tier": "mid",
       "display_name": "Mistral Large (24.07)",
       "capabilities": {
@@ -1914,9 +5133,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "mistral.mistral-large-2407-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1926,6 +5142,50 @@
     {
       "model_id": "mistral.pixtral-large-2502-v1:0",
       "family": "mistral",
+      "regions": [
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "mid",
       "display_name": "Pixtral Large (25.02)",
       "capabilities": {
@@ -1945,9 +5205,6 @@
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
-      "cris_profiles": [
-        "us.mistral.pixtral-large-2502-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1957,6 +5214,32 @@
     {
       "model_id": "writer.palmyra-x4-v1:0",
       "family": "writer",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "micro",
       "display_name": "Palmyra X4",
       "capabilities": {
@@ -1976,9 +5259,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "us.writer.palmyra-x4-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],
@@ -1988,6 +5268,32 @@
     {
       "model_id": "writer.palmyra-x5-v1:0",
       "family": "writer",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "us"
+          ]
+        }
+      ],
       "tier": "micro",
       "display_name": "Palmyra X5",
       "capabilities": {
@@ -2007,9 +5313,6 @@
         "cache_read_per_1k": 0,
         "cache_write_per_1k": 0
       },
-      "cris_profiles": [
-        "us.writer.palmyra-x5-v1:0"
-      ],
       "supported_inference_tiers": [
         "standard"
       ],

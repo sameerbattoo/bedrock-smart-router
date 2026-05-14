@@ -291,7 +291,7 @@ class BedrockRouter:
             if i > 0 and not self._circuit_breakers.is_available(model.model_id):
                 continue
 
-            model_cris = self._cris.select_profile(model) if i > 0 else resolved["cris_profile"]
+            model_cris = self._cris.select_profile(model, self._config.region) if i > 0 else resolved["cris_profile"]
             model_tier = self._tier_selector.select_tier(model, analysis) if i > 0 else resolved["inference_tier"]
             invoke_model_id = self._aip.get_model_id_for_tenant(
                 model_cris, routing.metadata or {},
@@ -526,7 +526,7 @@ class BedrockRouter:
             if i > 0 and not self._circuit_breakers.is_available(model.model_id):
                 continue
 
-            model_cris = self._cris.select_profile(model) if i > 0 else resolved["cris_profile"]
+            model_cris = self._cris.select_profile(model, self._config.region) if i > 0 else resolved["cris_profile"]
             model_tier = self._tier_selector.select_tier(model, analysis) if i > 0 else resolved["inference_tier"]
             invoke_model_id = self._aip.get_model_id_for_tenant(
                 model_cris, routing.metadata or {},
@@ -739,6 +739,11 @@ class BedrockRouter:
                 # filtering).  Only fall back if the model doesn't exist
                 # in the catalog at all.
                 primary = override
+                # Since preferred_model overrides the strategy's pick,
+                # add the strategy's selected_model to the front of the
+                # fallback chain so it's the first fallback option.
+                if result.selected_model.model_id != override.model_id:
+                    result.fallback_chain.insert(0, result.selected_model)
                 if override not in available:
                     logger.info(
                         "preferred_model '%s' was not in eligible candidates "
@@ -890,7 +895,7 @@ class BedrockRouter:
         return {
             "primary": primary,
             "fallback_chain": fallback_chain,
-            "cris_profile": self._cris.select_profile(primary),
+            "cris_profile": self._cris.select_profile(primary, self._config.region),
             "inference_tier": self._tier_selector.select_tier(primary, analysis, max_cost_per_request=routing.max_cost_per_request),
             "candidates_evaluated": len(available),
             "skipped": skipped,

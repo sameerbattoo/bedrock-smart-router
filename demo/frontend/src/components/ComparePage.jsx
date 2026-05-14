@@ -18,7 +18,7 @@ function StepSection({ number, title, visible, expanded, onToggle, children }) {
   )
 }
 
-export default function ComparePage({ history, setHistory, restoreState }) {
+export default function ComparePage({ history, setHistory, restoreState, onRun }) {
   const round = (n, d) => Math.round(n * 10**d) / 10**d
 
   const [templates, setTemplates] = useState([])
@@ -125,6 +125,7 @@ export default function ComparePage({ history, setHistory, restoreState }) {
 
   async function run() {
     if (!prompt.trim() || loading) return
+    if (onRun) onRun()
     setLoading(true)
     setBaselineText('')
     setRouterText('')
@@ -356,7 +357,7 @@ export default function ComparePage({ history, setHistory, restoreState }) {
           {hasResult ? (
             <div className="flex gap-3 min-h-[400px]">
               {/* Baseline */}
-              <div className="flex-1 border border-blue-900/30 rounded-lg overflow-hidden flex flex-col">
+              <div className="flex-1 border border-blue-900/30 rounded-lg overflow-hidden flex flex-col hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/20 hover:-translate-y-1.5 transition-all duration-200">
                 <div className="px-4 py-2 border-b border-blue-900/30 bg-blue-950/20">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-xs font-medium text-blue-400">Baseline</span>
@@ -380,12 +381,12 @@ export default function ComparePage({ history, setHistory, restoreState }) {
                 </div>
               </div>
               {/* Router */}
-              <div className="flex-1 border border-orange-900/30 rounded-lg overflow-hidden flex flex-col">
+              <div className="flex-1 border border-orange-900/30 rounded-lg overflow-hidden flex flex-col hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-900/20 hover:-translate-y-1.5 transition-all duration-200">
                 <div className="px-4 py-2 border-b border-orange-900/30 bg-orange-950/20">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-orange-400">Smart Router</span>
-                      <span className="text-[10px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded">{routerMetrics?.model_used}</span>
+                      <span className="text-[10px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded cursor-help" title={routerMetrics?.model_id_full || ''}>{routerMetrics?.model_used}</span>
                       {routerMetrics?.complexity_detected && <span className="text-[10px] bg-purple-900/40 text-purple-300 px-1.5 py-0.5 rounded">{routerMetrics.complexity_detected}</span>}
                     </div>
                     <div className="flex items-center gap-2">

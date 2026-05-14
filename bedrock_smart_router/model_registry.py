@@ -63,6 +63,7 @@ def _model_from_dict(d: dict[str, Any]) -> BedrockModel:
             cache_write_per_1k=pricing.get("cache_write_per_1k", 0.0),
         ),
         cris_profiles=d.get("cris_profiles", []),
+        regions=d.get("regions", []),
         supported_inference_tiers=d.get("supported_inference_tiers", ["standard"]),
         guardrail_compatible=d.get("guardrail_compatible", True),
         quality_baseline=d.get("quality_baseline", 0.0),

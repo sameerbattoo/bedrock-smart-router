@@ -42,3 +42,8 @@
 .animate-slideDown {
   animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Chart card hover effect */
+.chart-card {
+  @apply rounded-lg p-3 border border-transparent hover:border-gray-700 hover:bg-gray-800/20 hover:-translate-y-1 hover:shadow-lg hover:shadow-gray-900/30 transition-all duration-200;
+}

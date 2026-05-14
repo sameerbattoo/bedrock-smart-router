@@ -31,6 +31,7 @@ import json
 import logging
 import re
 import time
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -254,27 +255,105 @@ def discover_models(bedrock_client: Any, region: str) -> list[dict]:
 # ── Step 2: Discover CRIS inference profiles ────────────────────────
 
 def discover_profiles(bedrock_client: Any) -> dict[str, list[str]]:
-    """List inference profiles and map base model → profile IDs."""
-    logger.info("Step 2: Discovering inference profiles...")
-    profiles: dict[str, list[str]] = {}
+    """List inference profiles and map base model → profile IDs.
 
-    try:
-        paginator = bedrock_client.get_paginator("list_inference_profiles")
-        for page in paginator.paginate():
-            for profile in page.get("inferenceProfileSummaries", []):
-                profile_id = profile.get("inferenceProfileId", "")
-                # Map to base model
-                base = strip_geo_prefix(profile_id)
-                if base not in profiles:
-                    profiles[base] = []
-                profiles[base].append(profile_id)
-    except ClientError as e:
-        logger.warning(f"Failed to list inference profiles: {e}")
-    except Exception as e:
-        logger.warning(f"Inference profiles not available: {e}")
+    Scans multiple regions to discover all CRIS profiles (us, eu, apac, global, etc.)
+    and foundation models available per region.
 
-    logger.info(f"  Found profiles for {len(profiles)} base models")
-    return profiles
+    Returns: dict mapping base_model_id → list of regional availability entries:
+        { "anthropic.claude-sonnet-4-6": [
+            {"name": "us-east-1", "cris_profiles": ["global", "us"], "direct": true},
+            {"name": "ap-south-1", "cris_profiles": ["apac"], "direct": false},
+          ]
+        }
+    """
+    logger.info("Step 2: Discovering inference profiles & regional availability...")
+
+    SCAN_REGIONS = [
+        "us-east-1", "us-east-2", "us-west-1", "us-west-2",
+        "eu-west-1", "eu-west-2", "eu-west-3", "eu-central-1", "eu-north-1",
+        "ap-south-1", "ap-southeast-1", "ap-southeast-2",
+        "ap-northeast-1", "ap-northeast-2", "ap-northeast-3",
+        "ca-central-1", "sa-east-1",
+    ]
+
+    # model_id -> { region -> { cris_profiles: set, direct: bool } }
+    model_regions: dict[str, dict[str, dict]] = defaultdict(lambda: defaultdict(lambda: {"cris_profiles": set(), "direct": False}))
+    all_prefixes: set[str] = set()
+
+    def _scan_region(region: str) -> tuple[str, list, list, str | None]:
+        """Scan a single region for profiles and foundation models."""
+        try:
+            client = boto3.client("bedrock", region_name=region)
+            # Inference profiles
+            profiles = []
+            kwargs = {"maxResults": 100, "typeEquals": "SYSTEM_DEFINED"}
+            while True:
+                resp = client.list_inference_profiles(**kwargs)
+                for p in resp.get("inferenceProfileSummaries", []):
+                    pid = p.get("inferenceProfileId", "")
+                    prefix = pid.split(".")[0] if "." in pid else ""
+                    base = ".".join(pid.split(".")[1:]) if "." in pid else pid
+                    profiles.append({"prefix": prefix, "base_model": base})
+                nt = resp.get("nextToken")
+                if not nt:
+                    break
+                kwargs["nextToken"] = nt
+
+            # Foundation models (direct access)
+            fm_resp = client.list_foundation_models()
+            direct_models = []
+            for m in fm_resp.get("modelSummaries", []):
+                if "ON_DEMAND" in m.get("inferenceTypesSupported", []):
+                    direct_models.append(m.get("modelId", ""))
+
+            return region, profiles, direct_models, None
+        except Exception as e:
+            return region, [], [], str(e)
+
+    # Scan all regions in parallel
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {executor.submit(_scan_region, r): r for r in SCAN_REGIONS}
+        for future in as_completed(futures):
+            region, profiles, direct_models, err = future.result()
+            if err:
+                logger.debug(f"  {region}: error - {err[:60]}")
+                continue
+
+            # Process inference profiles
+            for p in profiles:
+                base_model = p["base_model"]
+                prefix = p["prefix"]
+                all_prefixes.add(prefix)
+                model_regions[base_model][region]["cris_profiles"].add(prefix)
+
+            # Process direct-access models
+            for model_id in direct_models:
+                model_regions[model_id][region]["direct"] = True
+
+            logger.debug(f"  {region}: {len(profiles)} profiles, {len(direct_models)} direct models")
+
+    # Convert to output format
+    result: dict[str, list[dict]] = {}
+    for model_id, regions_data in model_regions.items():
+        entries = []
+        for region in sorted(regions_data.keys()):
+            rdata = regions_data[region]
+            entry: dict[str, Any] = {"name": region}
+            if rdata["cris_profiles"]:
+                entry["cris_profiles"] = sorted(rdata["cris_profiles"])
+            if rdata["direct"]:
+                entry["direct"] = True
+            entries.append(entry)
+        result[model_id] = entries
+
+    logger.info(f"  Scanned {len(SCAN_REGIONS)} regions, found {len(result)} models")
+    logger.info(f"  CRIS prefixes: {sorted(all_prefixes)}")
+    models_with_cris = sum(1 for regions in result.values() if any("cris_profiles" in r for r in regions))
+    models_direct_only = len(result) - models_with_cris
+    logger.info(f"  Models with CRIS: {models_with_cris}, Direct-only: {models_direct_only}")
+
+    return result
 
 
 # ── Step 3: Fetch token limits from LiteLLM ─────────────────────────
@@ -859,11 +938,11 @@ def build_catalog(
         family = detect_family(model_id)
         display_name = model_info["model_name"]
 
-        # Get CRIS profiles
-        cris = profiles.get(base_id, [])
-        # If no profiles found, use the model_id itself
-        if not cris:
-            cris = [model_id]
+        # Get regional availability (new format: per-region with cris_profiles + direct)
+        region_entries = profiles.get(base_id, [])
+        # Also check if model_id itself has entries (for direct-only models)
+        if not region_entries:
+            region_entries = profiles.get(model_id, [])
 
         # Get probed capabilities (try with and without geo prefix)
         caps = (
@@ -984,6 +1063,7 @@ def build_catalog(
         entry = {
             "model_id": model_id,
             "family": family,
+            "regions": region_entries,
             "tier": tier,
             "display_name": display_name,
             "capabilities": {
@@ -998,7 +1078,6 @@ def build_catalog(
             "max_input_tokens": max_input,
             "max_output_tokens": max_output,
             "pricing": pricing,
-            "cris_profiles": cris,
             "supported_inference_tiers": supported_tiers,
             "guardrail_compatible": caps.get("guardrail_compatible", True),
             "quality_baseline": quality_baseline,
@@ -1006,14 +1085,14 @@ def build_catalog(
 
         catalog.append(entry)
 
-        # Also add global variant if CRIS profiles include it
-        global_profiles = [p for p in cris if p.startswith("global.")]
-        if global_profiles and not model_id.startswith("global."):
+        # Also add global variant if regions include global prefix
+        has_global = any("global" in r.get("cris_profiles", []) for r in region_entries)
+        if has_global and not model_id.startswith("global."):
             global_id = f"global.{base_id}"
             global_entry = dict(entry)
             global_entry["model_id"] = global_id
             global_entry["display_name"] = f"{display_name} (Global)"
-            global_entry["cris_profiles"] = global_profiles
+            global_entry["regions"] = region_entries
             catalog.append(global_entry)
 
     logger.info(f"  Built catalog with {len(catalog)} entries")
@@ -1041,7 +1120,7 @@ def main():
     # Step 1: Discover models
     models = discover_models(bedrock, args.region)
 
-    # Step 2: Discover CRIS profiles
+    # Step 2: Discover CRIS profiles (multi-region scan)
     profiles = discover_profiles(bedrock)
 
     # Step 3: Fetch token limits from LiteLLM
