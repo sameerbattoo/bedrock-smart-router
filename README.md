@@ -6,6 +6,30 @@ Unlike generic LLM gateways (LiteLLM, Portkey, OpenRouter) that treat Bedrock as
 
 Unlike Bedrock's native prompt router, which only routes within a single model family, the Smart Router routes across all families (Anthropic, Amazon Nova, Meta, Mistral) with custom strategies and historical quality data.
 
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Examples](#examples)
+- [Reliability: Circuit Breakers, Fallbacks, and Retries](#reliability-circuit-breakers-fallbacks-and-retries)
+- [Safe Model Rollouts: A/B Testing, Canary, and Shadow Mode](#safe-model-rollouts-ab-testing-canary-and-shadow-mode)
+- [Budget Enforcement](#budget-enforcement)
+- [Multimodal Routing: Images and Documents](#multimodal-routing-images-and-documents)
+- [Boto Client Configuration](#boto-client-configuration)
+- [Strands Agents SDK Integration](#strands-agents-sdk-integration)
+- [Caching: Exact-Match, Semantic, and Auto-Extracting](#caching-exact-match-semantic-and-auto-extracting)
+- [Architecture](#architecture)
+- [How Routing Strategies Work](#how-routing-strategies-work)
+- [Routing Decision Explainability](#routing-decision-explainability)
+- [Model Catalog](#model-catalog)
+- [Configuration Reference](#configuration-reference)
+- [Configuration in Production](#configuration-in-production)
+- [IAM Permissions](#iam-permissions)
+- [Project Structure](#project-structure)
+- [Building & Using in Your Project](#building--using-in-your-project)
+- [Development](#development)
+- [How It Compares](#how-it-compares)
+
 ## Features
 
 **100% Bedrock Converse API Coverage**
@@ -121,7 +145,7 @@ response = router.converse(
 )
 
 print(response["routing_decision"].selected_model)
-# e.g. "us.amazon.nova-lite-v1:0" for a simple question
+# e.g. "amazon.nova-lite-v1:0" for a simple question
 
 print(response["routing_decision"].actual_cost)
 # e.g. 0.000012
@@ -147,7 +171,7 @@ router = BedrockRouter.create({
     },
     "fallback": {"max_depth": 5},
     "circuit_breaker": {"failure_threshold": 10},
-    "excluded_models": ["us.meta.*"],
+    "excluded_models": ["meta.*"],
 })
 ```
 
@@ -227,7 +251,7 @@ except NoModelsMatchError as e:
     # No eligible models found for this request.
     #   Constraints: {complexity: simple, preferred_family: nonexistent, ...}
     #   Models checked:
-    #     - Nova Micro (us.amazon.nova-micro-v1:0): family amazon != nonexistent
+    #     - Nova Micro (amazon.nova-micro-v1:0): family amazon != nonexistent
     #     - Claude Haiku 4.5 (...): family anthropic != nonexistent
     #   Suggestions:
     #     - Remove preferred_family='nonexistent' to consider all families
@@ -252,26 +276,73 @@ response = await router.converse(
 
 ### Custom Strategy Plugin
 
+Implement your own routing logic by subclassing `RoutingStrategy`. You only need to define two things: your scoring **weights** and a **score_model()** method for your custom dimensions. The base class handles cost/quality/latency scoring, ranking, fallback chains, and explanation assembly.
+
 ```python
+from bedrock_smart_router import BedrockRouter
 from bedrock_smart_router.custom_strategy import register_strategy
-from bedrock_smart_router.strategy_engine import RoutingStrategy, StrategyResult
+from bedrock_smart_router.strategy_engine import RoutingStrategy, StrategyContext
+from bedrock_smart_router.models import BedrockModel, RequestAnalysis
 
-class PreferAnthropicForCode(RoutingStrategy):
-    name = "anthropic-code"
+# Compliance scores per model family (from your GRC system)
+COMPLIANCE_SCORES = {
+    "hipaa": {"anthropic": 0.95, "amazon": 0.98, "meta": 0.70, "mistral": 0.75},
+    "pci":   {"anthropic": 0.90, "amazon": 0.95, "meta": 0.60, "mistral": 0.65},
+    "general": {"anthropic": 1.0, "amazon": 1.0, "meta": 1.0, "mistral": 1.0},
+}
 
-    def select(self, candidates, analysis):
-        if analysis.is_code_task:
-            candidates = [c for c in candidates if c.family == "anthropic"] or candidates
-        best = max(candidates, key=lambda m: m.pricing.input_per_1k)  # highest quality
-        return StrategyResult(
-            selected_model=best,
-            scores={best.model_id: {"composite": 1.0}},
-            fallback_chain=candidates[:3],
-        )
+class ComplianceStrategy(RoutingStrategy):
+    name = "compliance"
 
-register_strategy("anthropic-code", PreferAnthropicForCode)
-router = BedrockRouter.create({"strategy": "anthropic-code"})
+    @property
+    def weights(self) -> dict[str, float]:
+        # Mix your custom dimension with built-in ones
+        return {"compliance": 0.50, "quality": 0.30, "cost": 0.20}
+
+    def score_model(self, model: BedrockModel, analysis: RequestAnalysis,
+                    context: StrategyContext) -> dict[str, float]:
+        # Score ONLY your custom dimensions (0.0 to 1.0)
+        # Built-in "quality", "cost", "latency" are computed automatically
+        tier = context.metadata.get("compliance_tier", "general")
+        score = COMPLIANCE_SCORES.get(tier, {}).get(model.family, 0.5)
+        return {"compliance": score}
+
+    def filter_candidates(self, candidates, analysis, context: StrategyContext):
+        # Optional: hard-gate filtering (approved models only)
+        approved = set(context.metadata.get("approved_models", []))
+        if not approved:
+            return candidates, {}
+        filtered = [m for m in candidates
+                    if m.model_id in approved or m.base_model_id in approved]
+        return filtered, {"rejected": len(candidates) - len(filtered),
+                          "reason": "not in approved list"}
+
+register_strategy("compliance", ComplianceStrategy)
+
+router = BedrockRouter.create({
+    "strategy": "compliance",
+    "metadata": {
+        "approved_models": [
+            "anthropic.claude-sonnet-4-20250514",
+            "anthropic.claude-haiku-4-20250514",
+            "amazon.nova-pro-v1:0",
+        ],
+        "compliance_tier": "hipaa",
+    },
+})
 ```
+
+**Interface contract:**
+
+| Method | Required | What it does |
+|---|---|---|
+| `weights` (property) | **Yes** | Declares scoring dimensions + their weights |
+| `score_model()` | **Yes** | Scores your custom dimensions per model (0–1) |
+| `filter_candidates()` | No | Hard-gate filtering before scoring |
+| `explain_metadata()` | No | Extra context for the decision JSON |
+| `select()` | No | Full pipeline override (when scoring per-model isn't enough) |
+
+The base class gives you for free: built-in `quality`, `cost`, `latency` scoring, composite calculation, ranking, fallback chain building, and explanation JSON assembly. If you subclass `RoutingStrategy` without implementing `weights` and `score_model()`, Python raises `TypeError` at instantiation — immediate, clear feedback.
 
 ### Inspecting Runtime State
 
@@ -285,7 +356,7 @@ print(router.observability.cost_tracker.stats)
 # {"total_cost": 0.23, "cost_saved_by_routing": 0.87, ...}
 
 # Historical metrics for a model
-m = router.metrics.get_metrics("us.anthropic.claude-sonnet-4-6")
+m = router.metrics.get_metrics("anthropic.claude-sonnet-4-6")
 print(f"P95 latency: {m.p95_latency_ms}ms, error rate: {m.error_rate}")
 
 # Last routing decision
@@ -396,7 +467,7 @@ The chain is built automatically: same-family downgrade first (Sonnet → Haiku)
 fallback:
   enabled: true
   max_depth: 5
-  default_safe_model: "us.amazon.nova-lite-v1:0"
+  default_safe_model: "amazon.nova-micro-v1:0"
 ```
 
 ### Retries
@@ -440,8 +511,8 @@ Request arrives
   │
   └─ Routing decision shows what happened:
        d.fallback_used = True
-       d.fallback_model = "us.anthropic.claude-haiku-4-5-..."
-       d.circuit_breaker_skipped = ["us.anthropic.claude-sonnet-4-6"]
+       d.fallback_model = "anthropic.claude-haiku-4-5-..."
+       d.circuit_breaker_skipped = ["anthropic.claude-sonnet-4-6"]
 ```
 
 The caller gets a response from the best available model, with full transparency about what happened behind the scenes.
@@ -467,10 +538,10 @@ ab_test:
   sticky: true                    # Same user_id → same variant
   variants:
     control:
-      model: "us.anthropic.claude-sonnet-4-6"
+      model: "anthropic.claude-sonnet-4-6"
       weight: 0.7                 # 70% of traffic
     challenger:
-      model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      model: "anthropic.claude-sonnet-4-5-20250929-v1:0"
       weight: 0.3                 # 30% of traffic
 ```
 
@@ -509,8 +580,8 @@ Request arrives ────┤
 ```yaml
 canary:
   enabled: true
-  baseline: "us.amazon.nova-pro-v1:0"
-  canary_model: "us.amazon.nova-2-lite-v1:0"
+  baseline: "amazon.nova-pro-v1:0"
+  canary_model: "amazon.nova-2-lite-v1:0"
   canary_percentage: 5              # Start with 5% of traffic
   auto_rollback:
     max_error_rate: 0.10            # Roll back if > 10% errors
@@ -545,14 +616,14 @@ Request arrives ──→ Primary: Claude Sonnet 4.6 ──→ Response to calle
 ```yaml
 shadow:
   enabled: true
-  shadow_model: "us.amazon.nova-pro-v1:0"
+  shadow_model: "amazon.nova-pro-v1:0"
   sample_rate: 0.1                  # Mirror 10% of traffic
 ```
 
 ```python
 # Check shadow results
 print(router.shadow.stats)
-# {"shadow_model": "us.amazon.nova-pro-v1:0", "total": 42, "success_rate": 0.98, "avg_latency_ms": 320}
+# {"shadow_model": "amazon.nova-pro-v1:0", "total": 42, "success_rate": 0.98, "avg_latency_ms": 320}
 
 # Access individual results for quality comparison
 for result in router.shadow.results[-5:]:
@@ -814,7 +885,7 @@ response = agent("Explain quantum computing")
 
 # Inspect the routing decision
 d = model.last_routing_decision
-print(f"Model: {d.selected_model}")      # e.g. "us.amazon.nova-lite-v1:0"
+print(f"Model: {d.selected_model}")      # e.g. "amazon.nova-lite-v1:0"
 print(f"Strategy: {d.strategy_used}")     # e.g. "balanced"
 print(f"Complexity: {d.complexity_detected}")  # e.g. "moderate"
 print(f"Cost: ${d.actual_cost:.6f}")
@@ -955,7 +1026,7 @@ Solves the manual extraction problem. Uses a cheap Bedrock model (Nova Micro, ~$
 cache = SemanticCache(config=SemanticCacheConfig(
     threshold=0.85,
     auto_extract=True,                            # Enable auto-extraction
-    extraction_model="us.amazon.nova-micro-v1:0", # Cheapest model
+    extraction_model="amazon.nova-micro-v1:0", # Cheapest model
 ))
 
 # No variables needed — extracted automatically
@@ -1071,7 +1142,7 @@ cost_score = 1.0 - (model_estimated_cost / max_cost_across_candidates)
 
 This is always real data — no heuristics. Global CRIS profiles score higher because they're ~10% cheaper.
 
-**Latency score** (0–1, higher = faster) — blends real data with heuristics:
+**Latency score** (0–1, higher = faster) — blends real metrics with tier heuristics:
 
 ```
 Day 1 (no data):   tier heuristic (MICRO=0.90, LITE=0.75, MID=0.50, HEAVY=0.25, REASONING=0.10)
@@ -1081,18 +1152,16 @@ Day 1 (no data):   tier heuristic (MICRO=0.90, LITE=0.75, MID=0.50, HEAVY=0.25, 
 After 5+ requests: real avg_latency_ms from metrics store, normalised against 5000ms max
 ```
 
-**Quality score** (0–1, higher = better) — blends real data with heuristics:
+**Quality score** (0–1, higher = better) — uses the model's `quality_baseline` from the catalog ([Artificial Analysis Intelligence Index](https://artificialanalysis.ai), normalized to 0–1):
 
 ```
-Day 1 (no data):   tier heuristic (MICRO=0.55, LITE=0.70, MID=0.82, HEAVY=0.90, REASONING=0.93)
+quality_score = model.quality_baseline / 60.0
 
-5–19 samples:      weighted blend of heuristic + historical avg_quality_score
-
-20+ samples:       pure historical avg_quality_score from metrics store
-                   (penalised by error_rate × 0.5)
+# If the model has high error rates, penalise:
+quality_score *= (1.0 - error_rate × 0.5)
 ```
 
-Quality scores only improve if your application records `quality_score` in the metrics store (e.g., from a judge model or user feedback). Without that, quality stays at the tier heuristic.
+The `quality_baseline` is a static benchmark score from public evaluations — it doesn't require historical usage data. Error rate penalties from the metrics store are the only dynamic component.
 
 ### Strategy Comparison
 
@@ -1108,20 +1177,131 @@ All four strategies compute all three scores for every model — the difference 
 ### How Strategies Improve Over Time
 
 ```
-Week 1:  All strategies use tier heuristics (sensible defaults)
-         Cost strategy uses real pricing (always accurate)
+Day 1:   Quality uses quality_baseline (static benchmark scores — always accurate)
+         Cost uses real pricing from catalog (always accurate)
+         Latency uses tier-based heuristics (sensible defaults)
 
 Week 2:  5+ requests per model → latency scores switch to real P50 data
          Latency-optimized and balanced strategies get smarter
-
-Week 4:  20+ requests with quality_score → quality scores switch to historical
-         Quality-optimized strategy fully data-driven
 
 Ongoing: Error rates penalise unreliable models automatically
          Circuit breakers remove failing models from candidates
 ```
 
-No cold-start problem — the heuristics are reasonable from day 1. The router gets better as it collects data, but it never makes a bad decision because of missing data.
+No cold-start problem — quality scores are based on public benchmarks (Artificial Analysis Intelligence Index), not historical data. The router gets better at latency estimation as it collects data, but quality and cost are accurate from day 1.
+
+### Tuning Balanced Strategy Weights
+
+The balanced strategy is the only strategy that accepts custom weights. The other strategies (cost-optimized, quality-optimized, latency-optimized) use a single dimension and ignore weights entirely.
+
+```python
+# Default balanced: cost=0.4, latency=0.3, quality=0.3
+router.converse(messages=msgs, routing=RoutingConfig(strategy="balanced"))
+
+# Prioritize quality (e.g., for customer-facing responses)
+router.converse(messages=msgs, routing=RoutingConfig(
+    strategy="balanced",
+    weights={"cost": 0.2, "latency": 0.2, "quality": 0.6}
+))
+
+# Prioritize cost (e.g., for batch processing)
+router.converse(messages=msgs, routing=RoutingConfig(
+    strategy="balanced",
+    weights={"cost": 0.7, "latency": 0.2, "quality": 0.1}
+))
+```
+
+**How weights affect model selection:**
+
+With default `{cost: 0.4, latency: 0.3, quality: 0.3}` — a cheap model with moderate quality wins:
+```
+Cheap model:   0.4×0.98 + 0.3×0.55 + 0.3×0.40 = 0.677 ← winner
+Quality model: 0.4×0.65 + 0.3×0.55 + 0.3×0.74 = 0.647
+```
+
+With `{cost: 0.2, latency: 0.2, quality: 0.6}` — the quality model wins:
+```
+Cheap model:   0.2×0.98 + 0.2×0.55 + 0.6×0.40 = 0.546
+Quality model: 0.2×0.65 + 0.2×0.55 + 0.6×0.74 = 0.684 ← winner
+```
+
+## Routing Decision Explainability
+
+Enable `explain=True` to get a detailed breakdown of why the router selected a specific model. Useful for debugging, auditing, and building trust in routing decisions.
+
+```python
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "Design a fraud detection system"}]}],
+    system=[{"text": "You are a principal engineer."}],
+    routing=RoutingConfig(strategy="balanced", explain=True),
+)
+
+explanation = response["routing_decision"].explanation
+```
+
+The explanation includes:
+
+```json
+{
+  "complexity": {
+    "score": 0.214,
+    "score_before_boost": 0.114,
+    "classification": "moderate",
+    "classification_thresholds": {
+      "simple": "< 0.125",
+      "moderate": "0.125 - 0.35",
+      "complex": "0.35 - 0.5",
+      "reasoning": ">= 0.5 OR reasoning_markers >= 4"
+    },
+    "tier_range": {"min": "lite", "max": "mid"},
+    "markers_hit": {
+      "reasoning": ["architect", "design a"],
+      "complex_questions": ["architect", "design a"],
+      "context_references": ["this document", "summarize the"]
+    },
+    "marker_counts": {
+      "reasoning": 2,
+      "code": 0,
+      "complex_questions": 2,
+      "context_references": 2,
+      "text_length_chars": 322,
+      "conversation_turns": 1,
+      "structural_signals": 1
+    },
+    "dimension_scores": {
+      "token_count": 0.55,
+      "reasoning_markers": 0.70,
+      "question_complexity": 0.80
+    },
+    "multimodal_payload": {
+      "bytes": 500009,
+      "complexity_boost": 0.10
+    }
+  },
+  "strategy": {
+    "name": "balanced",
+    "weights": {"cost": 0.4, "latency": 0.3, "quality": 0.3}
+  },
+  "top5_candidates": [
+    {"model": "Claude Sonnet 4.6", "model_id": "anthropic.claude-sonnet-4-6", "composite": 0.72, "cost": 0.65, "latency": 0.68, "quality": 0.74},
+    {"model": "MiniMax M2.5", "model_id": "minimax.minimax-m2.5", "composite": 0.70, "cost": 0.92, "latency": 0.55, "quality": 0.70},
+    {"model": "Nova Pro", "model_id": "amazon.nova-pro-v1:0", "composite": 0.58, "cost": 0.88, "latency": 0.71, "quality": 0.23}
+  ],
+  "candidates_evaluated": 28,
+  "reason": "Selected Claude Sonnet 4.6 (composite score: 0.720) for moderate complexity. Balanced across cost/latency/quality."
+}
+```
+
+**What each section tells you:**
+- **score / score_before_boost** — Final complexity score and the raw score before any multimodal payload boost was applied
+- **classification / tier_range** — Why the prompt was classified at this level and which model tiers were eligible
+- **markers_hit** — Which keywords triggered in each category (explains why the score is what it is)
+- **multimodal_payload** — If a document/image was attached: byte size and how much it boosted the complexity score (null when no attachment)
+- **top5_candidates** — Top 5 models ranked by composite score with full cost/latency/quality breakdown
+- **candidates_evaluated** — Total number of models that were eligible (filtered by tier range + capabilities)
+- **reason** — Human-readable one-liner explaining the choice
+
+The explanation adds ~1KB to the response and negligible latency. It's opt-in — only computed when `explain=True`.
 
 ### Request Complexity Classification
 
@@ -1145,44 +1325,111 @@ Before strategy scoring, the router classifies each request across 15 dimensions
 | Constraint density | 0.001 | "must be", "at least", "without using" |
 | Context ratio | 0.001 | "based on the following", "the above document" |
 
-The weighted composite maps to a complexity level, which sets the minimum model tier:
+The weighted composite maps to a complexity level, which sets the eligible model tier range:
 
-```
-score < 0.125                         → SIMPLE    → min tier: MICRO
-0.125 ≤ score < 0.200                 → MODERATE  → min tier: LITE
-0.200 ≤ score < 0.350                 → COMPLEX   → min tier: MID
-score ≥ 0.350 OR 2+ reasoning markers → REASONING → min tier: REASONING
-```
+| Score Range | Classification | Eligible Tiers | Use Case |
+|---|---|---|---|
+| < 0.125 | Simple | MICRO → LITE | Greetings, definitions, translations |
+| 0.125 – 0.350 | Moderate | LITE → MID | Code explanations, comparisons, SQL |
+| 0.350 – 0.500 | Complex | MID → HEAVY | System design, algorithms, architecture |
+| ≥ 0.500 OR 4+ reasoning markers | Reasoning | REASONING only | Math proofs, multi-step logic, formal analysis |
 
-Models below the minimum tier are excluded before strategy scoring begins. This ensures simple questions never go to expensive models, and complex questions never go to models that can't handle them.
+Models outside the eligible tier range are excluded before strategy scoring begins. This ensures simple questions never go to expensive models, and complex questions never go to models that can't handle them.
 
 ## Model Catalog
 
-The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing 25 Bedrock models — 18 regional and 7 global CRIS profiles — with capabilities, pricing, and inference tier support:
+The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing all active Bedrock text-generation models with capabilities, pricing, quality baselines, and inference tier support. The catalog is auto-generated by `scripts/refresh_catalog.py`.
 
-| Family | Models | Tiers |
+| Family | Tiers | Notes |
 |---|---|---|
-| Amazon Nova (4 regional + 1 global) | Micro 1.0, Lite 1.0, Nova 2 Lite, Pro 1.0 | micro, lite, mid |
-| Anthropic Claude (7 regional + 6 global) | Haiku 4.5, Sonnet 4.5, Sonnet 4.6, Opus 4.1, Opus 4.5, Opus 4.6, Opus 4.7 | lite, mid, heavy, reasoning |
-| Meta Llama (5) | 3.1 8B, 3.1 70B, 3.3 70B, 4 Scout 17B, 4 Maverick 17B | micro, lite, mid |
-| DeepSeek (1) | R1 | reasoning |
-| Mistral (1) | Pixtral Large | mid |
+| Anthropic Claude | lite, mid, heavy, reasoning | Haiku, Sonnet, Opus variants + global CRIS profiles |
+| Amazon Nova | micro, lite, mid | Micro, Lite, Nova 2 Lite, Pro |
+| Meta Llama | micro, lite, mid | Llama 3.x, 4 Scout, 4 Maverick |
+| DeepSeek | mid, reasoning | V3.1, V3.2, R1 |
+| Mistral | micro, lite, mid | Ministral, Mistral Large 3, Pixtral, Devstral |
+| MiniMax | mid | M2, M2.1, M2.5 |
+| Qwen | lite, mid | Qwen3 32B–480B, Coder, VL |
+| NVIDIA | micro, mid | Nemotron Nano, Super |
+| Others | various | GLM, Kimi, Gemma, gpt-oss, Writer |
 
-Pricing is validated against the live AWS Pricing API using `scripts/refresh_pricing.py`. Run it periodically to catch price changes and remove legacy models. See [Maintaining the Catalog](#maintaining-the-catalog-with-refresh_pricingpy) for the full workflow.
+### Refreshing the Catalog with `refresh_catalog.py`
+
+The catalog is a static file that ships with the SDK. As AWS launches new models, changes pricing, or retires old ones, the catalog needs updating. The `scripts/refresh_catalog.py` script fully automates this by combining multiple data sources:
+
+**Data sources and what they provide:**
+
+| Source | Data Retrieved | Method |
+|---|---|---|
+| AWS Bedrock `ListFoundationModels` | Model discovery, display names, vision/streaming capabilities | API call |
+| AWS Bedrock `ListInferenceProfiles` | CRIS profiles (us.*, eu.*, ap.*, global.*) | API call |
+| [LiteLLM](https://github.com/BerriAI/litellm) `model_prices_and_context_window.json` | Pricing (input/output/cache), max_input_tokens, max_output_tokens | GitHub download |
+| [Artificial Analysis](https://artificialanalysis.ai) Intelligence Index API | Quality baseline scores (0–60 scale) | API call (free key) |
+| Bedrock Converse API probing | tool_use, streaming_tool_use, extended_thinking, guardrails, inference tiers | Minimal API calls per model |
+
+**How tier classification works:**
+
+The tier (micro/lite/mid/heavy/reasoning) is derived automatically from multiple signals — no hardcoded model names:
+- **Reasoning**: quality_baseline ≥ 50 OR name contains "r1", "thinking", "reasoning"
+- **Heavy**: price ≥ $4/M input + supports prompt caching + extended thinking
+- **Micro**: name contains "micro"/"nano" OR (small model ≤8B + cheap + low quality)
+- **Lite**: name contains "lite"/"haiku"/"scout"/"mini" OR small model ≤14B + cheap
+- **Mid**: name contains "pro"/"large"/"sonnet"/"maverick" OR model ≥70B OR quality ≥ 15
+
+**Usage:**
 
 ```bash
-# Check everything: pricing, tiers, and legacy models
-python scripts/refresh_pricing.py --check-tiers --check-legacy
+# Quick refresh — skip probes, use cached AA data (~1s)
+python scripts/refresh_catalog.py --skip-probes --aa-cache scripts/_aa_models.json --write
 
-# Fix everything automatically
-python scripts/refresh_pricing.py --fix --check-tiers --check-legacy --regen-global
+# Full refresh with capability probing (~60s, 5 models probed in parallel)
+python scripts/refresh_catalog.py --aa-cache scripts/_aa_models.json --write
+
+# Full refresh with fresh AA quality scores from API
+python scripts/refresh_catalog.py --aa-key YOUR_AA_API_KEY --write
+
+# Overwrite the production catalog
+python scripts/refresh_catalog.py --aa-cache scripts/_aa_models.json --write \
+  --output bedrock_smart_router/data/models.json
 ```
+
+**Flags:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--region` | `us-west-2` | AWS region for Bedrock API calls |
+| `--write` | off | Write output to file (default: `scripts/_models.json`) |
+| `--aa-key` | none | Artificial Analysis API key (free at artificialanalysis.ai) |
+| `--aa-cache` | none | Path to cached AA JSON (use when rate-limited) |
+| `--skip-probes` | off | Skip capability probing (faster but uses defaults) |
+| `--output` | `scripts/_models.json` | Custom output path |
+
+**Generated files (in `scripts/`):**
+- `_models.json` — Generated catalog output
+- `_litellm_models.json` — Cached LiteLLM data (re-downloaded each run)
+- `_aa_models.json` — Cached Artificial Analysis data
+
+**IAM permissions required:**
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "bedrock:ListFoundationModels",
+    "bedrock:ListInferenceProfiles",
+    "bedrock-runtime:Converse",
+    "bedrock-runtime:ConverseStream"
+  ],
+  "Resource": "*"
+}
+```
+
+**Recommended schedule:** Run monthly or after any AWS model launch. The probing step makes minimal API calls (~6 per model, most fail at validation with $0 cost).
 
 ### Global CRIS Profiles
 
-Global cross-region inference profiles route requests to any commercial AWS Region worldwide for higher throughput and resilience. They are ~10% cheaper than regional (`us.*`) profiles on both input and output tokens ([source](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html)).
+Global cross-region inference profiles route requests to any commercial AWS Region worldwide for higher throughput and resilience. They are ~10% cheaper than regional profiles on both input and output tokens ([source](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html)).
 
-The catalog includes global profiles as separate model entries with their own discounted pricing. The router's cost-optimized strategy naturally prefers them when `allow_global` is enabled in the CRIS config. Example: `global.anthropic.claude-sonnet-4-6` is the same model as `us.anthropic.claude-sonnet-4-6` but at 90% of the price.
+The catalog includes global profiles as separate model entries. The router's cost-optimized strategy naturally prefers them when `allow_global` is enabled in the CRIS config. Example: `global.anthropic.claude-sonnet-4-6` is the same model as the regional variant but at 90% of the price.
 
 ### Inference Tier Pricing
 
@@ -1195,12 +1442,7 @@ Bedrock offers four on-demand service tiers. All prices in the catalog are **Sta
 | **Priority** | ~1.75× | Up to 25% better OTPS | Mission-critical, customer-facing, latency-sensitive |
 | **Reserved** | Fixed hourly | Guaranteed | Steady high-volume with 1–6 month commitment |
 
-The `InferenceTierSelector` picks the tier automatically based on request complexity and budget constraints:
-- Simple/moderate requests with tight budgets → Flex (if the model supports it)
-- Complex/reasoning requests → Priority (if the model supports it)
-- Everything else → Standard
-
-Not all models support all tiers. The catalog tracks which tiers each model supports in `supported_inference_tiers`. The actual cost is always captured from the Bedrock response in `RoutingDecision.actual_cost` — the multipliers are used only for pre-call cost estimation during strategy scoring.
+The `InferenceTierSelector` picks the tier automatically based on request complexity and budget constraints. Not all models support all tiers — the catalog tracks which tiers each model supports in `supported_inference_tiers`.
 
 ```python
 from bedrock_smart_router.models import TIER_PRICING_MULTIPLIER
@@ -1210,7 +1452,7 @@ print(TIER_PRICING_MULTIPLIER)
 # {"standard": 1.0, "priority": 1.75, "flex": 0.50}
 
 # Estimate cost for a specific tier
-model = router.registry.get("us.amazon.nova-pro-v1:0")
+model = router.registry.get("amazon.nova-pro-v1:0")
 cost_standard = model.pricing.estimate_cost(1000, 500)                    # $0.003
 cost_priority = model.pricing.estimate_cost(1000, 500, tier="priority")   # $0.00525
 cost_flex     = model.pricing.estimate_cost(1000, 500, tier="flex")       # $0.0015
@@ -1226,72 +1468,14 @@ Both Anthropic Claude and Amazon Nova models support prompt caching on Bedrock, 
 | Amazon Nova | ~25% of input price | Free ($0.00) | Automatic — Bedrock caches repeated prefixes |
 | Meta, Mistral, DeepSeek | N/A | N/A | Not supported |
 
-The router's prompt cache advisor estimates savings and can boost cache-capable models in the strategy scoring when the savings are significant (within 10% of the primary model's score).
+The router's prompt cache advisor estimates savings and can boost cache-capable models in the balanced/cost strategy scoring when the savings are significant.
 
 ### Updating the Catalog
 
-To update pricing or add models, edit the JSON file directly or use an overlay at runtime:
+To add custom models or override values at runtime without modifying the shipped catalog:
 
 ```python
 router.registry.load_overlay("my-custom-models.json")
-```
-
-### Maintaining the Catalog with `refresh_pricing.py`
-
-The model catalog (`bedrock_smart_router/data/models.json`) is a static file that ships with the SDK. AWS changes pricing, retires models, and launches new ones — so the catalog needs periodic maintenance. The `scripts/refresh_pricing.py` script automates this by querying live AWS APIs.
-
-**What it checks:**
-
-| Flag | AWS API Used | What It Does |
-|---|---|---|
-| *(default)* | Pricing API (`pricing:GetProducts`) | Compares catalog pricing against live on-demand Standard tier rates |
-| `--check-tiers` | Pricing API | Validates `supported_inference_tiers` (Standard/Priority/Flex) per model |
-| `--check-legacy` | Bedrock API (`bedrock:ListFoundationModels`) | Detects models marked LEGACY by the provider and flags them for removal |
-| `--discover` | Bedrock API (`bedrock:ListFoundationModels`) | Discovers new models not yet in the catalog and creates skeleton entries |
-| `--regen-global` | *(none — computed)* | Regenerates `global.*` CRIS entries at 90% of regional pricing |
-
-**Common workflows:**
-
-```bash
-# Dry run — see what's different, don't change anything
-python scripts/refresh_pricing.py
-
-# Check everything: pricing + tiers + legacy models + new models
-python scripts/refresh_pricing.py --check-tiers --check-legacy --discover
-
-# Fix everything automatically
-python scripts/refresh_pricing.py --fix --check-tiers --check-legacy --discover --regen-global
-
-# Discover new models only (dry run)
-python scripts/refresh_pricing.py --discover
-
-# Discover and add new models from a specific provider
-python scripts/refresh_pricing.py --discover --fix --provider anthropic --regen-global
-
-# Check a specific provider only
-python scripts/refresh_pricing.py --provider meta --check-legacy
-
-# Use a different region
-python scripts/refresh_pricing.py --region us-east-1 --check-legacy
-```
-
-**How `--discover` works:** The script queries `bedrock:ListFoundationModels` to find all active text-output models, compares them against the catalog, and creates skeleton entries for any missing models. It uses family-based heuristics to infer capabilities the API doesn't expose (tool use, document support, prompt caching, etc.) and marks new entries with `_needs_review: true`. After discovery, verify the capabilities and pricing manually, then remove the `_needs_review` flag.
-
-**Why `--check-legacy` matters:** The Pricing API has no concept of model lifecycle — a model can have valid pricing while being marked LEGACY by the provider (e.g. Meta) in the Bedrock runtime. Legacy models still appear as inference profiles in the console but Bedrock blocks invocations if you haven't used them in the last 30 days. The `--check-legacy` flag queries `bedrock:ListFoundationModels` to detect these and remove them from the catalog.
-
-**Recommended schedule:** Run `--fix --check-tiers --check-legacy --discover --regen-global` monthly, or after any AWS model launch or pricing announcement. The script requires `pricing:GetProducts` permission (Pricing API is only in us-east-1) and `bedrock:ListFoundationModels` permission for legacy detection and discovery.
-
-**IAM permissions required:**
-
-```json
-{
-  "Effect": "Allow",
-  "Action": [
-    "pricing:GetProducts",
-    "bedrock:ListFoundationModels"
-  ],
-  "Resource": "*"
-}
 ```
 
 ## Configuration Reference
@@ -1438,36 +1622,36 @@ bedrock_smart_router/
   config.py                    # Consolidated RouterConfig from dict/YAML
   router.py                    # BedrockRouter — main entry point (14-step request flow)
   async_router.py              # AsyncBedrockRouter for async/await
-  data/models.json             # JSON model catalog (25 models, pricing, capabilities)
-  # Phase 1: Core
+  data/models.json             # JSON model catalog (65 models, pricing, capabilities, quality baselines)
+  # Core routing
   model_registry.py            # JSON-driven model catalog with filtering and overlays
   request_analyzer.py          # 15-dimension zero-API-call complexity classifier
   strategy_engine.py           # Cost, latency, balanced strategies + plugin base
+  quality_strategy.py          # Quality-optimized strategy using quality_baseline scores
   context_validator.py         # Pre-call context window validation
-  fallback_handler.py          # Multi-level fallback chain
+  fallback_handler.py          # Multi-level fallback chain (ordered by quality_baseline)
   circuit_breaker.py           # CLOSED/OPEN/HALF_OPEN per model
   retry_handler.py             # Exponential backoff with error classification
-  # Phase 2: Intelligence
+  # Intelligence & metrics
   metrics_store.py             # In-memory sliding-window metrics store
   dynamodb_metrics_store.py    # DynamoDB-backed persistent metrics store
-  quality_strategy.py          # Historical quality routing with heuristic blending
   cache_layer.py               # LRU response cache with TTL
   budget_strategy.py           # Per-request and rolling budget enforcement
   tag_strategy.py              # Glob-pattern tag-based routing
   conditional_strategy.py      # Metadata-based conditional routing
   observability.py             # Structured logging, callbacks, CostTracker
-  pricing_refresh.py           # Dynamic pricing from AWS Pricing API
-  # Phase 3: Bedrock-Native
+  # Bedrock-native features
   cris_manager.py              # CRIS profile selection by geography
   inference_tier.py            # Standard/Priority/Flex auto-selection
   prompt_cache_advisor.py      # Prompt caching benefit estimation
   guardrails_integration.py    # Pre/post-route guardrail checks
   aip_manager.py               # Application Inference Profile management
   distilled_models.py          # Distilled model registration
-  # Phase 4: Advanced
+  pricing_refresh.py           # Dynamic pricing from AWS Pricing API (runtime)
+  # Advanced features
   ab_testing.py                # A/B testing with sticky sessions
   canary.py                    # Canary deployments with auto-rollback
-  shadow_mode.py               # Traffic mirroring to shadow model
+  shadow_mode.py               # Traffic mirroring to shadow model (with quality_baseline comparison)
   custom_strategy.py           # Strategy plugin registration
   strands_model.py             # Strands Agents SDK Model provider (SmartRouterModel)
   semantic_cache.py            # Embedding-based semantic cache (optional)
@@ -1476,11 +1660,16 @@ bedrock_smart_router/
   semantic_router.py           # Intent routing via embeddings (optional)
 
 scripts/
-  refresh_pricing.py           # Validate & refresh models.json from AWS Pricing API
+  refresh_catalog.py           # Auto-refresh models.json (Bedrock API + LiteLLM + AA + probing)
+  _aa_models.json              # Cached Artificial Analysis quality scores
+  _litellm_models.json         # Cached LiteLLM pricing + context windows
+  _models.json                 # Generated catalog output (review before promoting)
 
-tests/                         # 445 unit tests + 53 integration tests (gated)
+demo/                          # React + FastAPI comparison demo app
+benchmarks/                    # Heuristic classifier accuracy benchmarks + ONNX model
+tests/                         # 451 unit tests + integration tests (gated)
 docs/
-  iam-permissions.md           # IAM policy reference (Bedrock, DynamoDB, Pricing, Guardrails)
+  iam-permissions.md           # IAM policy reference (Bedrock, DynamoDB, Guardrails)
 ```
 
 ## Building & Using in Your Project
@@ -1568,7 +1757,7 @@ INTEGRATION_TEST=1 pytest tests/test_pricing_refresh_integration.py -v -s   # Pr
 INTEGRATION_TEST=1 VALKEY_URL=rediss://... pytest tests/test_valkey_cache_integration.py -v -s  # ElastiCache (VPC)
 
 # Validate model catalog pricing against live AWS Pricing API
-python scripts/refresh_pricing.py --check-tiers --check-legacy
+python scripts/refresh_catalog.py --aa-cache scripts/_aa_models.json --skip-probes
 ```
 
 ## How It Compares

@@ -6,7 +6,7 @@ from bedrock_smart_router.models import BedrockModel, ModelCapabilities, Tier
 
 def _model(profiles: list[str]) -> BedrockModel:
     return BedrockModel(
-        model_id="us.anthropic.claude-sonnet-4-6",
+        model_id="anthropic.claude-sonnet-4-6",
         family="anthropic", tier=Tier.MID, display_name="Sonnet",
         capabilities=ModelCapabilities(tool_use=True),
         max_input_tokens=200_000, max_output_tokens=16_384,

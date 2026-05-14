@@ -122,6 +122,7 @@ class BedrockModel:
     guardrail_compatible: bool = True
     distilled_from: str | None = None
     distilled_quality_delta: float = 0.0
+    quality_baseline: float = 0.0  # AA Intelligence Index score (0-60 scale)
 
     @property
     def is_cris_available(self) -> bool:
@@ -202,6 +203,8 @@ class RoutingDecision:
     performance_config: dict[str, Any] = field(default_factory=dict)  # Latency optimization mode
     guardrail_trace: dict[str, Any] = field(default_factory=dict)  # Full guardrail assessment
     metadata: dict[str, Any] = field(default_factory=dict)
+    routing_decision_ms: float | None = None  # Time spent on routing logic before API call
+    explanation: dict[str, Any] | None = None  # Detailed explanation (when explain=True)
 
     @property
     def total_input_tokens(self) -> int:

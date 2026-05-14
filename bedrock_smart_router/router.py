@@ -44,6 +44,7 @@ from bedrock_smart_router.metrics_store import (
 )
 from bedrock_smart_router.model_registry import (
     COMPLEXITY_MIN_TIER,
+    COMPLEXITY_MAX_TIER,
     ModelRegistry,
 )
 from bedrock_smart_router.models import (
@@ -277,6 +278,7 @@ class BedrockRouter:
         is_canary = resolved["is_canary"]
 
         # ── Step 5: Invoke with fallbacks ───────────────────────
+        t_routing_done = time.monotonic()  # Routing decision complete
         models_to_try = [primary] + fallback_chain
         last_error: Exception | None = None
         used_model: BedrockModel | None = None
@@ -413,6 +415,8 @@ class BedrockRouter:
                 **({"ab_variant": ab_variant} if ab_variant else {}),
                 **({"is_canary": is_canary} if is_canary else {}),
             },
+            routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
+            explanation=resolved.get("explanation"),
         )
         self._last_decision = decision
         response["routing_decision"] = decision
@@ -510,6 +514,7 @@ class BedrockRouter:
         )
 
         # Try invocation with fallbacks
+        t_routing_done = time.monotonic()  # Routing decision complete
         models_to_try = [resolved["primary"]] + resolved["fallback_chain"]
         last_error: Exception | None = None
         used_model: BedrockModel | None = None
@@ -639,6 +644,8 @@ class BedrockRouter:
             cache_details=cache_details,
             performance_config=stream_perf_config,
             guardrail_trace=stream_guardrail_trace,
+            routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
+            explanation=resolved.get("explanation"),
         )
         self._last_decision = decision
 
@@ -690,8 +697,10 @@ class BedrockRouter:
         Shared by ``converse()`` and ``converse_stream()``.
         """
         min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
+        max_tier = COMPLEXITY_MAX_TIER.get(analysis.complexity.value)
         candidates = self._registry.eligible_models(
             min_tier=min_tier,
+            max_tier=max_tier,
             requires_vision=analysis.requires_vision,
             requires_document_support=analysis.requires_document_support,
             requires_tool_use=analysis.requires_tool_use,
@@ -712,6 +721,9 @@ class BedrockRouter:
             skipped = []
 
         strategy = resolve_strategy(strategy_name, weights=weights, metrics_store=self._metrics_store)
+
+        # Pass config-level + per-request metadata to the strategy for custom dimensions
+        strategy._metadata = {**(self._config.metadata or {}), **(routing.metadata or {})}
 
         # A/B / canary / preferred_model overrides
         ab_variant = None
@@ -765,11 +777,14 @@ class BedrockRouter:
             result = strategy.select(available, analysis)
             primary = result.selected_model
 
-        # Prompt cache boost (skip if user explicitly set preferred_model)
+        # Prompt cache boost (skip for quality/latency strategies where
+        # overriding the strategy pick for cache savings is undesirable)
         cache_savings = 0.0
+        cache_eligible_strategies = ("balanced", "cost-optimized")
         if (
             self._config.prompt_cache_boost
             and not routing.preferred_model
+            and strategy_name in cache_eligible_strategies
             and (system or len(messages) > 2)
         ):
             benefit = self._cache_advisor.estimate(primary, messages, system)
@@ -789,6 +804,89 @@ class BedrockRouter:
         # Build fallback chain from the PRIMARY model (not the strategy pick)
         fallback_chain = self._fallback_handler.build_chain(primary, result.fallback_chain)
 
+        # Build explanation if requested
+        explanation = None
+        if routing.explain:
+            # Get top candidates by composite score
+            top_candidates = sorted(
+                result.scores.items(),
+                key=lambda x: x[1].get("composite", 0),
+                reverse=True,
+            )[:5]
+            candidate_list = []
+            for model_id, scores in top_candidates:
+                m = self._registry.get(model_id)
+                candidate_list.append({
+                    "model": m.display_name if m else model_id,
+                    "model_id": model_id,
+                    "composite": round(scores.get("composite", 0), 4),
+                    "cost": round(scores.get("cost", 0), 4),
+                    "latency": round(scores.get("latency", 0), 4),
+                    "quality": round(scores.get("quality", 0), 4),
+                })
+
+            # Get analysis explanation (matched markers, dimension scores)
+            analysis_explanation = self._analyzer.explain(messages, system)
+
+            # Calculate payload boost (same logic as in analyze())
+            payload_bytes = analysis_explanation.get("multimodal_payload_bytes", 0)
+            payload_boost = 0.0
+            if payload_bytes > 5_000_000:
+                payload_boost = 0.30
+            elif payload_bytes > 1_000_000:
+                payload_boost = 0.20
+            elif payload_bytes > 100_000:
+                payload_boost = 0.10
+            elif payload_bytes > 0:
+                payload_boost = 0.05
+
+            # Build reason text
+            reason_parts = [f"Selected {primary.display_name}"]
+            if candidate_list:
+                reason_parts.append(f"(composite score: {candidate_list[0]['composite']:.4f})")
+            reason_parts.append(f"for {analysis.complexity.value} complexity.")
+            if strategy_name == "quality-optimized":
+                reason_parts.append(f"Quality baseline: {primary.quality_baseline:.1f}/60.")
+            elif strategy_name == "cost-optimized":
+                est_cost = primary.pricing.estimate_cost(
+                    analysis.estimated_input_tokens, analysis.estimated_output_tokens
+                )
+                reason_parts.append(f"Estimated cost: ${est_cost:.6f}.")
+            elif strategy_name == "balanced":
+                reason_parts.append(f"Balanced across cost/latency/quality.")
+
+            explanation = {
+                "complexity": {
+                    "score": analysis.complexity_score,
+                    "score_before_boost": round(analysis.complexity_score - payload_boost, 4),
+                    "classification": analysis.complexity.value,
+                    "classification_thresholds": {
+                        "simple": f"< {self._analyzer.thresholds.simple_max}",
+                        "moderate": f"{self._analyzer.thresholds.simple_max} - {self._analyzer.thresholds.moderate_max}",
+                        "complex": f"{self._analyzer.thresholds.moderate_max} - {self._analyzer.thresholds.complex_max}",
+                        "reasoning": f">= {self._analyzer.thresholds.complex_max} OR reasoning_markers >= {self._analyzer.thresholds.reasoning_marker_count}",
+                    },
+                    "tier_range": {
+                        "min": min_tier.value if min_tier else "micro",
+                        "max": max_tier.value if max_tier else "reasoning",
+                    },
+                    "markers_hit": analysis_explanation.get("matched_markers", {}),
+                    "marker_counts": analysis_explanation.get("marker_counts", {}),
+                    "dimension_scores": analysis_explanation.get("dimension_scores", {}),
+                    "multimodal_payload": {
+                        "bytes": payload_bytes,
+                        "complexity_boost": payload_boost,
+                    } if payload_bytes > 0 else None,
+                },
+                "strategy": {
+                    "name": strategy_name,
+                    "weights": weights if strategy_name == "balanced" else None,
+                },
+                "top5_candidates": candidate_list,
+                "candidates_evaluated": len(available),
+                "reason": " ".join(reason_parts),
+            }
+
         return {
             "primary": primary,
             "fallback_chain": fallback_chain,
@@ -800,6 +898,7 @@ class BedrockRouter:
             "cache_savings": cache_savings,
             "ab_variant": ab_variant,
             "is_canary": is_canary,
+            "explanation": explanation,
         }
 
     def _record_async(

@@ -19,10 +19,10 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
-        assert result == "us.amazon.nova-micro-v1:0"
+        assert result == "amazon.nova-micro-v1:0"
         self.mock_client.create_inference_profile.assert_not_called()
 
     def test_no_tags_returns_raw_model_id(self):
@@ -31,9 +31,9 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0", {},
+            "amazon.nova-micro-v1:0", {},
         )
-        assert result == "us.amazon.nova-micro-v1:0"
+        assert result == "amazon.nova-micro-v1:0"
 
     def test_creates_profile_on_first_call(self):
         self.mock_client.create_inference_profile.return_value = {
@@ -52,14 +52,14 @@ class TestAIPManager:
             region="us-west-2",
         )
         result = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
         assert result == "arn:aws:bedrock:us-west-2:123:inference-profile/bsr-acme-nova"
 
         # Verify the call args — should use full ARN
         call_kwargs = self.mock_client.create_inference_profile.call_args[1]
-        expected_arn = "arn:aws:bedrock:us-west-2:123456789012:inference-profile/us.amazon.nova-micro-v1:0"
+        expected_arn = "arn:aws:bedrock:us-west-2:123456789012:inference-profile/amazon.nova-micro-v1:0"
         assert call_kwargs["modelSource"] == {"copyFrom": expected_arn}
         assert any(t["key"] == "tenant" and t["value"] == "acme" for t in call_kwargs["tags"])
 
@@ -72,8 +72,8 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         tags = {"tenant": "acme"}
-        r1 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", tags)
-        r2 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", tags)
+        r1 = mgr.get_model_id_for_tenant("amazon.nova-micro-v1:0", tags)
+        r2 = mgr.get_model_id_for_tenant("amazon.nova-micro-v1:0", tags)
 
         assert r1 == r2
         # Only one API call — second was served from cache
@@ -123,10 +123,10 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
-        assert result == "us.amazon.nova-micro-v1:0"
+        assert result == "amazon.nova-micro-v1:0"
         self.mock_client.create_inference_profile.assert_not_called()
 
     def test_api_failure_falls_back_to_raw(self):
@@ -136,11 +136,11 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
         # Should not crash — falls back to raw model ID
-        assert result == "us.amazon.nova-micro-v1:0"
+        assert result == "amazon.nova-micro-v1:0"
 
     def test_invalidate_cache(self):
         self.mock_client.create_inference_profile.return_value = {
@@ -165,7 +165,7 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "acme corp!@#"},
         )
         call_kwargs = self.mock_client.create_inference_profile.call_args[1]

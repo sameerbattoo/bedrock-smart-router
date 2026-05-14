@@ -32,7 +32,7 @@ class FallbackConfig:
 
     enabled: bool = True
     max_depth: int = 5
-    default_safe_model: str = "us.amazon.nova-lite-v1:0"
+    default_safe_model: str = "amazon.nova-micro-v1:0"
     context_window_fallback: bool = True
     content_policy_fallback: bool = True
 
@@ -82,17 +82,25 @@ class FallbackHandler:
         # Level 2 — same-family downgrade
         same_family = self.registry.list_models(family=primary.family)
         primary_idx = _TIER_ORDER.index(primary.tier)
+        # Sort by quality_baseline (highest first) within each tier
         for t in reversed(_TIER_ORDER[:primary_idx]):
-            for m in same_family:
-                if m.tier == t:
-                    _add(m)
-                    break
+            tier_models = sorted(
+                [m for m in same_family if m.tier == t],
+                key=lambda m: m.quality_baseline,
+                reverse=True,
+            )
+            for m in tier_models:
+                _add(m)
 
         # Level 3 — cross-family equivalent tier
         for t in [primary.tier] + list(reversed(_TIER_ORDER[:primary_idx])):
-            for m in self.registry.list_models(tier=t):
-                if m.family != primary.family:
-                    _add(m)
+            cross_family = sorted(
+                [m for m in self.registry.list_models(tier=t) if m.family != primary.family],
+                key=lambda m: m.quality_baseline,
+                reverse=True,
+            )
+            for m in cross_family:
+                _add(m)
 
         # Level 4 — default safe model
         safe = self.registry.get(self.config.default_safe_model)

@@ -92,7 +92,7 @@ class TestRouterNoModelsGraceful:
             },
             rejections=[
                 ModelRejection(
-                    "us.amazon.nova-micro-v1:0",
+                    "amazon.nova-micro-v1:0",
                     "Nova Micro",
                     ["est. cost $0.000005 > max $0.0000001"],
                 ),

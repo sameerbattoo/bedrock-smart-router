@@ -85,6 +85,13 @@ class BudgetConstrainedStrategy(RoutingStrategy):
 
     name = "budget-constrained"
 
+    @property
+    def weights(self) -> dict[str, float]:
+        return self.inner.weights
+
+    def score_model(self, model, analysis, context):
+        return {}  # Delegates to inner strategy via select() override
+
     def __init__(
         self,
         inner: RoutingStrategy | None = None,
@@ -119,18 +126,25 @@ class BudgetConstrainedStrategy(RoutingStrategy):
                         f"No model under ${rule.max_cost_per_request:.4f} "
                         f"for ~{analysis.estimated_input_tokens} input tokens"
                     )
-                # Downgrade: pick cheapest available
+                # Downgrade: pick highest quality_baseline among cheapest
                 affordable = sorted(
                     candidates,
-                    key=lambda m: m.pricing.estimate_cost(
-                        analysis.estimated_input_tokens,
-                        analysis.estimated_output_tokens,
+                    key=lambda m: (
+                        m.pricing.estimate_cost(
+                            analysis.estimated_input_tokens,
+                            analysis.estimated_output_tokens,
+                        ),
+                        -m.quality_baseline,  # Tiebreaker: prefer higher quality
                     ),
                 )[:3]
                 logger.warning(
                     "Budget exceeded, downgrading to cheapest %d models",
                     len(affordable),
                 )
+            else:
+                # Within budget: sort by quality_baseline (best quality first)
+                # so the inner strategy has the best options at the top
+                affordable.sort(key=lambda m: m.quality_baseline, reverse=True)
             candidates = affordable
 
         return self.inner.select(candidates, analysis)

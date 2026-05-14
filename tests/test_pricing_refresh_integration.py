@@ -81,7 +81,7 @@ class TestPricingRefreshIntegration:
         pr, registry = refresher
 
         # Record original pricing for a known model
-        micro = registry.get("us.amazon.nova-micro-v1:0")
+        micro = registry.get("amazon.nova-micro-v1:0")
         original_input = micro.pricing.input_per_1k if micro else 0
 
         count = pr.refresh_from_pricing_api()
@@ -89,5 +89,5 @@ class TestPricingRefreshIntegration:
 
         # Check if pricing changed (it may not if API format doesn't match)
         if micro and count > 0:
-            updated = registry.get("us.amazon.nova-micro-v1:0")
+            updated = registry.get("amazon.nova-micro-v1:0")
             print(f"  Nova Micro input: {original_input} -> {updated.pricing.input_per_1k}")

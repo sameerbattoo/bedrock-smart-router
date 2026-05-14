@@ -24,13 +24,13 @@ class TestRefreshFromBedrock:
         mock_client.list_foundation_models.return_value = {
             "modelSummaries": [
                 {
-                    "modelId": "us.amazon.nova-micro-v1:0",
+                    "modelId": "amazon.nova-micro-v1:0",
                     "inputModalities": ["TEXT"],
                     "outputModalities": ["TEXT"],
                     "responseStreamingSupported": True,
                 },
                 {
-                    "modelId": "us.amazon.nova-pro-v1:0",
+                    "modelId": "amazon.nova-pro-v1:0",
                     "inputModalities": ["TEXT", "IMAGE"],
                     "outputModalities": ["TEXT"],
                     "responseStreamingSupported": True,
@@ -124,32 +124,32 @@ class TestRefreshFromPricingAPI:
         self.session.client.return_value = mock_client
 
     def test_updates_input_pricing(self):
-        original = self.registry.get("us.amazon.nova-micro-v1:0")
+        original = self.registry.get("amazon.nova-micro-v1:0")
         original_input = original.pricing.input_per_1k
 
         self._mock_paginator([
-            _pricing_item("us.amazon.nova-micro-v1:0", "0.00005", "0.0002"),
+            _pricing_item("amazon.nova-micro-v1:0", "0.00005", "0.0002"),
         ])
 
         count = self.refresher.refresh_from_pricing_api()
         assert count >= 1
 
-        updated = self.registry.get("us.amazon.nova-micro-v1:0")
+        updated = self.registry.get("amazon.nova-micro-v1:0")
         assert updated.pricing.input_per_1k == 0.00005
         assert updated.pricing.output_per_1k == 0.0002
 
     def test_preserves_cache_pricing(self):
         """Cache read/write pricing should not be overwritten."""
-        model = self.registry.get("us.anthropic.claude-sonnet-4-6")
+        model = self.registry.get("anthropic.claude-sonnet-4-6")
         original_cache_read = model.pricing.cache_read_per_1k
 
         self._mock_paginator([
-            _pricing_item("us.anthropic.claude-sonnet-4-6", "0.004", "0.02"),
+            _pricing_item("anthropic.claude-sonnet-4-6", "0.004", "0.02"),
         ])
 
         self.refresher.refresh_from_pricing_api()
 
-        updated = self.registry.get("us.anthropic.claude-sonnet-4-6")
+        updated = self.registry.get("anthropic.claude-sonnet-4-6")
         assert updated.pricing.input_per_1k == 0.004
         assert updated.pricing.cache_read_per_1k == original_cache_read
 
@@ -173,7 +173,7 @@ class TestRefreshFromPricingAPI:
         """Items without proper structure should be skipped."""
         self._mock_paginator([
             {"product": {"attributes": {}}},  # No modelId
-            _pricing_item("us.amazon.nova-micro-v1:0", "0.00005", "0.0002"),
+            _pricing_item("amazon.nova-micro-v1:0", "0.00005", "0.0002"),
         ])
 
         count = self.refresher.refresh_from_pricing_api()
@@ -186,7 +186,7 @@ class TestRefreshFromPricingAPI:
         # Return items as dicts, not JSON strings
         mock_paginator.paginate.return_value = [
             {"PriceList": [
-                _pricing_item("us.amazon.nova-micro-v1:0", "0.00005", "0.0002"),
+                _pricing_item("amazon.nova-micro-v1:0", "0.00005", "0.0002"),
             ]}
         ]
         mock_client.get_paginator.return_value = mock_paginator
@@ -197,14 +197,14 @@ class TestRefreshFromPricingAPI:
 
     def test_multiple_models_updated(self):
         self._mock_paginator([
-            _pricing_item("us.amazon.nova-micro-v1:0", "0.00005", "0.0002"),
-            _pricing_item("us.amazon.nova-pro-v1:0", "0.001", "0.004"),
+            _pricing_item("amazon.nova-micro-v1:0", "0.00005", "0.0002"),
+            _pricing_item("amazon.nova-pro-v1:0", "0.001", "0.004"),
         ])
 
         count = self.refresher.refresh_from_pricing_api()
         assert count >= 2
 
-        micro = self.registry.get("us.amazon.nova-micro-v1:0")
-        pro = self.registry.get("us.amazon.nova-pro-v1:0")
+        micro = self.registry.get("amazon.nova-micro-v1:0")
+        pro = self.registry.get("amazon.nova-pro-v1:0")
         assert micro.pricing.input_per_1k == 0.00005
         assert pro.pricing.input_per_1k == 0.001

@@ -29,7 +29,7 @@ REGION = "us-west-2"
 
 
 def _decision(
-    model: str = "us.amazon.nova-micro-v1:0",
+    model: str = "amazon.nova-micro-v1:0",
     cost: float = 0.001,
     latency: float = 120.0,
     fallback: bool = False,
@@ -76,7 +76,7 @@ class TestCloudWatchIntegration:
         for i in range(5):
             publisher.record(
                 _decision(
-                    model="us.amazon.nova-micro-v1:0",
+                    model="amazon.nova-micro-v1:0",
                     cost=0.001 * (i + 1),
                     latency=100.0 + i * 20,
                 ),
@@ -108,7 +108,7 @@ class TestCloudWatchIntegration:
                             "Namespace": namespace,
                             "MetricName": "RoutingDecisions",
                             "Dimensions": [
-                                {"Name": "Model", "Value": "us.amazon.nova-micro-v1:0"},
+                                {"Name": "Model", "Value": "amazon.nova-micro-v1:0"},
                                 {"Name": "Strategy", "Value": "balanced"},
                                 {"Name": "Complexity", "Value": "simple"},
                             ],
@@ -125,7 +125,7 @@ class TestCloudWatchIntegration:
                             "Namespace": namespace,
                             "MetricName": "Latency",
                             "Dimensions": [
-                                {"Name": "Model", "Value": "us.amazon.nova-micro-v1:0"},
+                                {"Name": "Model", "Value": "amazon.nova-micro-v1:0"},
                                 {"Name": "Strategy", "Value": "balanced"},
                                 {"Name": "Complexity", "Value": "simple"},
                             ],

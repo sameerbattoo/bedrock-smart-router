@@ -24,7 +24,7 @@ def _run(coro):
 
 def _make_routing_decision(**overrides: Any) -> RoutingDecision:
     defaults = dict(
-        selected_model="us.anthropic.claude-sonnet-4-20250514-v1:0",
+        selected_model="anthropic.claude-sonnet-4-20250514-v1:0",
         strategy_used="balanced",
         complexity_detected="moderate",
         complexity_score=0.5,
@@ -180,7 +180,7 @@ class TestStreaming:
         )
 
         assert model.last_routing_decision is not None
-        assert model.last_routing_decision.selected_model == "us.anthropic.claude-sonnet-4-20250514-v1:0"
+        assert model.last_routing_decision.selected_model == "anthropic.claude-sonnet-4-20250514-v1:0"
         assert model.last_routing_decision.strategy_used == "balanced"
 
     def test_stream_passes_system_prompt(self, model, mock_router):
@@ -363,7 +363,7 @@ class TestRoutingConfig:
         from bedrock_smart_router.strands_model import SmartRouterModel
         model = SmartRouterModel(
             router=mock_router,
-            preferred_model="us.anthropic.claude-sonnet-4-20250514-v1:0",
+            preferred_model="anthropic.claude-sonnet-4-20250514-v1:0",
         )
         messages = [{"role": "user", "content": [{"text": "Hi"}]}]
 
@@ -373,7 +373,7 @@ class TestRoutingConfig:
 
         call_kwargs = mock_router.converse_stream.call_args
         routing: RoutingConfig = call_kwargs.kwargs["routing"]
-        assert routing.preferred_model == "us.anthropic.claude-sonnet-4-20250514-v1:0"
+        assert routing.preferred_model == "anthropic.claude-sonnet-4-20250514-v1:0"
 
     def test_metadata_and_tags_forwarded(self, mock_router):
         from bedrock_smart_router.strands_model import SmartRouterModel

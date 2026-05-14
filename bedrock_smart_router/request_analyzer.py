@@ -202,9 +202,9 @@ class ComplexityThresholds:
     """Score boundaries for complexity classification."""
 
     simple_max: float = 0.125
-    moderate_max: float = 0.200
-    complex_max: float = 0.350
-    reasoning_marker_count: int = 2  # Auto-promote to reasoning if >= N markers
+    moderate_max: float = 0.350
+    complex_max: float = 0.500
+    reasoning_marker_count: int = 4  # Auto-promote to reasoning if >= N markers
 
 
 # ── Token estimation ────────────────────────────────────────────────
@@ -531,3 +531,66 @@ class RequestAnalyzer:
                     if isinstance(data, (bytes, bytearray)):
                         total += len(data)
         return total
+
+    def explain(
+        self,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """Return detailed explanation of the complexity analysis.
+
+        Includes which markers matched, dimension scores, and classification reasoning.
+        Only called when RoutingConfig(explain=True).
+        """
+        user_text = _extract_text(messages)
+        system_text = _extract_text(system) if system else ""
+        full_text = f"{system_text}\n{user_text}".strip()
+        text_lower = full_text.lower()
+
+        # Collect matched markers per category
+        matched_markers: dict[str, list[str]] = {
+            "reasoning": [kw for kw in REASONING_MARKERS if kw in text_lower],
+            "code": [kw for kw in CODE_MARKERS if kw in text_lower],
+            "code_languages": [kw for kw in CODE_LANG_KEYWORDS if kw in text_lower],
+            "simple": [kw for kw in SIMPLE_INDICATORS if kw in text_lower],
+            "multi_step": [kw for kw in MULTI_STEP_PATTERNS if kw in text_lower],
+            "tool_use": [kw for kw in TOOL_USE_SIGNALS if kw in text_lower],
+            "aws": [kw for kw in AWS_SIGNALS if kw in text_lower],
+            "math": [kw for kw in MATH_SIGNALS if kw in text_lower],
+            "creative": [kw for kw in CREATIVE_SIGNALS if kw in text_lower],
+            "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if kw in text_lower],
+            "output_format": [kw for kw in OUTPUT_FORMAT_SIGNALS if kw in text_lower],
+            "constraints": [kw for kw in CONSTRAINT_SIGNALS if kw in text_lower],
+            "context_references": [kw for kw in CONTEXT_REFERENCE_SIGNALS if kw in text_lower],
+            "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if kw in text_lower],
+        }
+
+        marker_counts = {k: len(v) for k, v in matched_markers.items()}
+        # Add computed signals (no keyword sets)
+        marker_counts["text_length_chars"] = len(full_text)
+        marker_counts["conversation_turns"] = len(messages)
+        marker_counts["structural_signals"] = (
+            (1 if _TABLE_PATTERN.search(full_text) else 0) +
+            (1 if _CSV_DATA.search(full_text) else 0) +
+            (1 if _CODE_BLOCK.search(full_text) else 0) +
+            len(_PARAGRAPH_BREAK.findall(full_text))
+        )
+
+        # Get dimension scores
+        scores = self._score_dimensions(text_lower, messages, None)
+        dimension_names = [
+            "token_count", "code_presence", "reasoning_markers", "technical_depth",
+            "simple_indicators", "structural_complexity", "tool_use", "domain_specificity",
+            "conversation_depth", "multi_step", "question_complexity", "creative_open",
+            "output_format", "constraint_density", "context_ratio",
+        ]
+        dimension_scores = {name: round(score, 4) for name, score in zip(dimension_names, scores)}
+
+        return {
+            "matched_markers": matched_markers,
+            "marker_counts": marker_counts,
+            "dimension_scores": dimension_scores,
+            "text_length": len(full_text),
+            "estimated_tokens": _estimate_tokens(full_text),
+            "multimodal_payload_bytes": self._multimodal_payload_bytes(messages),
+        }

@@ -71,7 +71,7 @@ class TestAIPIntegration:
         mgr, created_arns, session = aip_manager
 
         arn = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "acme-corp", "team": "engineering"},
         )
 
@@ -93,7 +93,7 @@ class TestAIPIntegration:
         mgr, created_arns, session = aip_manager
 
         arn = mgr.get_model_id_for_tenant(
-            "us.anthropic.claude-sonnet-4-6",
+            "anthropic.claude-sonnet-4-6",
             {"tenant": "globex", "team": "research"},
         )
 
@@ -106,10 +106,10 @@ class TestAIPIntegration:
         mgr, created_arns, _ = aip_manager
         tags = {"tenant": "acme", "team": "data"}
 
-        arn1 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", tags)
+        arn1 = mgr.get_model_id_for_tenant("amazon.nova-micro-v1:0", tags)
         created_arns.append(arn1)
 
-        arn2 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", tags)
+        arn2 = mgr.get_model_id_for_tenant("amazon.nova-micro-v1:0", tags)
 
         assert arn1 == arn2
         assert len(mgr.cached_profiles) == 1
@@ -120,7 +120,7 @@ class TestAIPIntegration:
         mgr, created_arns, session = aip_manager
 
         arn = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "test-invoke", "team": "qa"},
         )
         created_arns.append(arn)
@@ -142,11 +142,11 @@ class TestAIPIntegration:
         mgr, created_arns, _ = aip_manager
 
         arn1 = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "tenant-a"},
         )
         arn2 = mgr.get_model_id_for_tenant(
-            "us.amazon.nova-micro-v1:0",
+            "amazon.nova-micro-v1:0",
             {"tenant": "tenant-b"},
         )
 

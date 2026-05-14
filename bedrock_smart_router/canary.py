@@ -24,7 +24,7 @@ class CanaryThresholds:
     min_requests: int = 100
     max_error_rate: float = 0.05
     max_latency_p95_ms: float = 5000.0
-    min_quality_score: float = 0.0  # 0 = don't check quality
+    min_quality_baseline: float = 0.0  # Minimum AA Intelligence Index score (0 = don't check)
 
 
 @dataclass

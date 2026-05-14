@@ -28,6 +28,13 @@ class TagRoutingStrategy(RoutingStrategy):
 
     name = "tag-based"
 
+    @property
+    def weights(self) -> dict[str, float]:
+        return self.inner.weights
+
+    def score_model(self, model, analysis, context):
+        return {}  # Delegates to inner strategy via select() override
+
     def __init__(
         self,
         tag_rules: dict[str, list[str]],

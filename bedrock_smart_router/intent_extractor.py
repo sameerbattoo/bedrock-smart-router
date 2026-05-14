@@ -38,7 +38,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EXTRACTION_MODEL = "us.amazon.nova-micro-v1:0"
+DEFAULT_EXTRACTION_MODEL = "amazon.nova-micro-v1:0"
 
 # Retry defaults for extraction calls (lighter than the main router retries)
 _MAX_RETRIES = 2

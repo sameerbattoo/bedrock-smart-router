@@ -111,14 +111,14 @@ class TestCloudWatchMetricsPublisher:
         assert savings[0]["Value"] == 0.04
 
     def test_dimensions_present(self):
-        self.publisher.record(_decision(model="us.anthropic.claude-sonnet-4-6"))
+        self.publisher.record(_decision(model="anthropic.claude-sonnet-4-6"))
         self.publisher.flush()
         data = self.mock_client.put_metric_data.call_args[1]["MetricData"]
         dims = data[0]["Dimensions"]
         dim_names = {d["Name"] for d in dims}
         assert dim_names == {"Model", "Strategy", "Complexity"}
         model_dim = next(d for d in dims if d["Name"] == "Model")
-        assert model_dim["Value"] == "us.anthropic.claude-sonnet-4-6"
+        assert model_dim["Value"] == "anthropic.claude-sonnet-4-6"
 
     def test_api_failure_doesnt_crash(self):
         self.mock_client.put_metric_data.side_effect = Exception("Access denied")

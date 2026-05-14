@@ -77,7 +77,7 @@ class TestDynamoDBIntegration:
 
     def test_write_and_read_single_model(self, live_store):
         """Write 5 records, read them back, verify aggregation."""
-        model = "us.anthropic.claude-sonnet-4-6"
+        model = "anthropic.claude-sonnet-4-6"
         for i in range(5):
             live_store.record(RequestRecord(
                 model_id=model,
@@ -103,9 +103,9 @@ class TestDynamoDBIntegration:
     def test_write_and_read_multiple_models(self, live_store):
         """Write records for 3 models, verify get_all_metrics."""
         models = [
-            "us.amazon.nova-micro-v1:0",
-            "us.anthropic.claude-sonnet-4-6",
-            "us.amazon.nova-pro-v1:0",
+            "amazon.nova-micro-v1:0",
+            "anthropic.claude-sonnet-4-6",
+            "amazon.nova-pro-v1:0",
         ]
         for model in models:
             for _ in range(3):
@@ -126,7 +126,7 @@ class TestDynamoDBIntegration:
 
     def test_error_and_throttle_tracking(self, live_store):
         """Verify error and throttle flags persist correctly."""
-        model = "us.amazon.nova-lite-v1:0"
+        model = "amazon.nova-lite-v1:0"
         # 7 success, 2 errors, 1 throttle
         for i in range(10):
             live_store.record(RequestRecord(
@@ -145,7 +145,7 @@ class TestDynamoDBIntegration:
 
     def test_quality_score_none_handling(self, live_store):
         """Records without quality_score should not break aggregation."""
-        model = "us.meta.llama3-3-70b-instruct-v1:0"
+        model = "meta.llama3-3-70b-instruct-v1:0"
         live_store.record(RequestRecord(
             model_id=model,
             timestamp=time.monotonic(),

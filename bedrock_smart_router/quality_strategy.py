@@ -41,6 +41,13 @@ class QualityOptimizedStrategy(RoutingStrategy):
 
     name = "quality-optimized"
 
+    @property
+    def weights(self) -> dict[str, float]:
+        return {"quality": 1.0}
+
+    def score_model(self, model, analysis, context):
+        return {}  # No custom dimensions — uses select() override
+
     def __init__(self, metrics_store: MetricsStore | None = None) -> None:
         self._metrics = metrics_store
 

@@ -37,6 +37,8 @@ class ShadowResult:
     success: bool
     error: str | None = None
     timestamp: float = 0.0
+    shadow_quality_baseline: float = 0.0
+    primary_quality_baseline: float = 0.0
 
 
 class ShadowManager:
@@ -46,9 +48,11 @@ class ShadowManager:
         self,
         config: ShadowConfig | None = None,
         invoke_fn: Callable[..., dict[str, Any]] | None = None,
+        registry: Any | None = None,
     ) -> None:
         self.config = config or ShadowConfig()
         self._invoke_fn = invoke_fn
+        self._registry = registry
         self._results: list[ShadowResult] = []
         self._lock = threading.Lock()
         self._executor = ThreadPoolExecutor(
@@ -86,6 +90,16 @@ class ShadowManager:
 
         def _run() -> None:
             t0 = time.monotonic()
+            # Get quality baselines from registry
+            shadow_qb = 0.0
+            primary_qb = 0.0
+            if self._registry:
+                shadow_m = self._registry.get(self.config.shadow_model)
+                primary_m = self._registry.get(primary_model)
+                if shadow_m:
+                    shadow_qb = shadow_m.quality_baseline
+                if primary_m:
+                    primary_qb = primary_m.quality_baseline
             try:
                 self._invoke_fn(
                     modelId=self.config.shadow_model,
@@ -101,6 +115,8 @@ class ShadowManager:
                     latency_ms=elapsed,
                     success=True,
                     timestamp=time.time(),
+                    shadow_quality_baseline=shadow_qb,
+                    primary_quality_baseline=primary_qb,
                 )
             except Exception as exc:
                 elapsed = (time.monotonic() - t0) * 1000
@@ -111,6 +127,8 @@ class ShadowManager:
                     success=False,
                     error=str(exc),
                     timestamp=time.time(),
+                    shadow_quality_baseline=shadow_qb,
+                    primary_quality_baseline=primary_qb,
                 )
                 logger.debug("Shadow request failed: %s", exc)
 
@@ -140,10 +158,16 @@ class ShadowManager:
             return {"active": self.is_active, "total": 0}
         successes = sum(1 for r in results if r.success)
         latencies = [r.latency_ms for r in results if r.success]
+        # Quality baseline comparison
+        shadow_qb = results[0].shadow_quality_baseline if results else 0
+        primary_qb = results[0].primary_quality_baseline if results else 0
         return {
             "active": self.is_active,
             "shadow_model": self.config.shadow_model,
             "total": len(results),
             "success_rate": round(successes / len(results), 4),
             "avg_latency_ms": round(sum(latencies) / len(latencies), 1) if latencies else 0,
+            "shadow_quality_baseline": shadow_qb,
+            "primary_quality_baseline": primary_qb,
+            "quality_delta": round(shadow_qb - primary_qb, 1),
         }

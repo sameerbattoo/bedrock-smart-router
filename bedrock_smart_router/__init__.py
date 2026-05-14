@@ -6,6 +6,12 @@ from bedrock_smart_router.models import BedrockModel, ModelCapabilities, ModelPr
 from bedrock_smart_router.model_registry import base_model_id
 from bedrock_smart_router.observability import RoutingEvent
 from bedrock_smart_router.exceptions import NoModelsMatchError
+from bedrock_smart_router.strategy_engine import (
+    RoutingStrategy,
+    StrategyResult,
+    StrategyExplanation,
+    StrategyContext,
+)
 
 # Strands integration (optional — only available when strands-agents is installed)
 try:
@@ -26,6 +32,10 @@ __all__ = [
     "TIER_PRICING_MULTIPLIER",
     "RoutingEvent",
     "NoModelsMatchError",
+    "RoutingStrategy",
+    "StrategyResult",
+    "StrategyExplanation",
+    "StrategyContext",
     *((["SmartRouterModel"] if _HAS_STRANDS else [])),
 ]
 

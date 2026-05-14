@@ -125,13 +125,13 @@ class TestOTelEnabled:
     def test_labels_include_model_strategy_complexity(self):
         otel = self._make_otel()
         otel.record_request(
-            model="us.anthropic.claude-sonnet-4-6",
+            model="anthropic.claude-sonnet-4-6",
             strategy="quality-optimized",
             complexity="reasoning",
             latency_ms=2000, cost=0.05,
         )
         expected_labels = {
-            "model": "us.anthropic.claude-sonnet-4-6",
+            "model": "anthropic.claude-sonnet-4-6",
             "strategy": "quality-optimized",
             "complexity": "reasoning",
         }
@@ -186,7 +186,7 @@ class TestOTelWithRealImports:
         otel = OTelIntegration(enabled=True, service_name="test-router")
         # Should not raise
         otel.record_request(
-            model="us.anthropic.claude-sonnet-4-6",
+            model="anthropic.claude-sonnet-4-6",
             strategy="balanced",
             complexity="complex",
             latency_ms=1500,

@@ -65,6 +65,7 @@ def _model_from_dict(d: dict[str, Any]) -> BedrockModel:
         cris_profiles=d.get("cris_profiles", []),
         supported_inference_tiers=d.get("supported_inference_tiers", ["standard"]),
         guardrail_compatible=d.get("guardrail_compatible", True),
+        quality_baseline=d.get("quality_baseline", 0.0),
     )
 
 
@@ -99,20 +100,18 @@ def load_catalog(path: Path | str | None = None) -> list[BedrockModel]:
     return models
 
 
-# ── Tier-based quality heuristics (used when no historical data) ────
-TIER_QUALITY_HEURISTIC: dict[Tier, float] = {
-    Tier.MICRO: 0.55,
-    Tier.LITE: 0.70,
-    Tier.MID: 0.82,
-    Tier.HEAVY: 0.90,
-    Tier.REASONING: 0.93,
-}
-
 # ── Minimum tier required per complexity level ──────────────────────
 COMPLEXITY_MIN_TIER: dict[str, Tier] = {
     "simple": Tier.MICRO,
     "moderate": Tier.LITE,
     "complex": Tier.MID,
+    "reasoning": Tier.REASONING,
+}
+
+COMPLEXITY_MAX_TIER: dict[str, Tier] = {
+    "simple": Tier.LITE,
+    "moderate": Tier.MID,
+    "complex": Tier.HEAVY,
     "reasoning": Tier.REASONING,
 }
 
@@ -190,6 +189,7 @@ class ModelRegistry:
         self,
         *,
         min_tier: Tier | str | None = None,
+        max_tier: Tier | str | None = None,
         requires_vision: bool = False,
         requires_document_support: bool = False,
         requires_tool_use: bool = False,
@@ -211,11 +211,18 @@ class ModelRegistry:
 
         if isinstance(min_tier, str):
             min_tier = Tier(min_tier)
+        if isinstance(max_tier, str):
+            max_tier = Tier(max_tier)
 
         tier_order = list(Tier)
         raw: list[BedrockModel] = []
         for m in self._models.values():
             if min_tier and tier_order.index(m.tier) < tier_order.index(min_tier):
+                continue
+            if max_tier and tier_order.index(m.tier) > tier_order.index(max_tier):
+                continue
+            # Exclude models with unknown pricing ($0 input AND $0 output)
+            if m.pricing.input_per_1k <= 0 and m.pricing.output_per_1k <= 0:
                 continue
             if requires_vision and not m.capabilities.vision:
                 continue

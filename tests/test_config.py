@@ -34,7 +34,7 @@ class TestRouterConfig:
             "fallback": {"enabled": True, "max_depth": 3},
             "circuit_breaker": {"failure_threshold": 10, "cooldown_seconds": 60},
             "retry": {"max_retries": 5},
-            "excluded_models": ["us.meta.*"],
+            "excluded_models": ["meta.*"],
         })
         assert cfg.strategy == "cost-optimized"
         assert cfg.weights["cost"] == 0.8
@@ -47,7 +47,7 @@ class TestRouterConfig:
         assert cfg.fallback.max_depth == 3
         assert cfg.circuit_breaker.failure_threshold == 10
         assert cfg.retry.max_retries == 5
-        assert "us.meta.*" in cfg.excluded_models
+        assert "meta.*" in cfg.excluded_models
 
     def test_from_dict_ignores_unknown_keys(self):
         cfg = RouterConfig.from_dict({

@@ -23,6 +23,13 @@ class AlwaysFirstStrategy(RoutingStrategy):
 
     name = "always-first"
 
+    @property
+    def weights(self):
+        return {"quality": 1.0}
+
+    def score_model(self, model, analysis, context):
+        return {}
+
     def select(self, candidates, analysis):
         best = candidates[0]
         return StrategyResult(

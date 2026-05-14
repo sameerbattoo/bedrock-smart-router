@@ -60,6 +60,7 @@ class RoutingConfig:
     tags: list[str] | None = None
     metadata: dict[str, Any] | None = None
     fallback_enabled: bool | None = None
+    explain: bool = False  # Include detailed explanation in RoutingDecision
 
 
 # ── Named presets ───────────────────────────────────────────────────
@@ -182,6 +183,7 @@ class RouterConfig:
     excluded_models: list[str] = field(default_factory=list)
     catalog_path: str | None = None
     boto_config: dict[str, Any] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RouterConfig:
@@ -199,7 +201,7 @@ class RouterConfig:
                 "fallback": {"max_depth": 5},
                 "circuit_breaker": {"failure_threshold": 10},
                 "retry": {"max_retries": 5},
-                "excluded_models": ["us.meta.*"],
+                "excluded_models": ["meta.*"],
             })
         """
         return cls(
@@ -228,6 +230,7 @@ class RouterConfig:
             excluded_models=data.get("excluded_models", []),
             catalog_path=data.get("catalog_path"),
             boto_config=data.get("boto_config"),
+            metadata=data.get("metadata", {}),
         )
 
 

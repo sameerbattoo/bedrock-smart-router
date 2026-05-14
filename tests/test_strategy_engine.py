@@ -16,7 +16,7 @@ from bedrock_smart_router.strategy_engine import (
 )
 
 
-def _make_model(model_id: str, tier: Tier, input_price: float) -> BedrockModel:
+def _make_model(model_id: str, tier: Tier, input_price: float, quality_baseline: float = 0.0) -> BedrockModel:
     return BedrockModel(
         model_id=model_id,
         family="test",
@@ -26,13 +26,14 @@ def _make_model(model_id: str, tier: Tier, input_price: float) -> BedrockModel:
         max_input_tokens=128_000,
         max_output_tokens=4_096,
         pricing=ModelPricing(input_per_1k=input_price, output_per_1k=input_price * 4),
+        quality_baseline=quality_baseline,
     )
 
 
 CANDIDATES = [
-    _make_model("cheap-micro", Tier.MICRO, 0.00004),
-    _make_model("mid-model", Tier.MID, 0.003),
-    _make_model("expensive-heavy", Tier.HEAVY, 0.015),
+    _make_model("cheap-micro", Tier.MICRO, 0.00004, quality_baseline=10.0),
+    _make_model("mid-model", Tier.MID, 0.003, quality_baseline=44.0),
+    _make_model("expensive-heavy", Tier.HEAVY, 0.015, quality_baseline=50.0),
 ]
 
 SIMPLE_ANALYSIS = RequestAnalysis(
@@ -87,7 +88,7 @@ class TestBalanced:
     def test_quality_heavy_weights(self):
         strategy = BalancedStrategy(cost_weight=0.0, latency_weight=0.0, quality_weight=1.0)
         result = strategy.select(CANDIDATES, COMPLEX_ANALYSIS)
-        # Quality heuristic: heavy > mid > micro
+        # Quality baseline: heavy(50) > mid(44) > micro(10)
         assert result.selected_model.model_id == "expensive-heavy"
 
     def test_cost_heavy_weights(self):

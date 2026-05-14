@@ -42,24 +42,24 @@ def mock_router():
         routes=[
             SemanticRoute(
                 name="code",
-                model="us.anthropic.claude-sonnet-4-6",
+                model="anthropic.claude-sonnet-4-6",
                 examples=["Write a Python function", "Debug this code", "Fix this bug"],
                 threshold=0.70,
             ),
             SemanticRoute(
                 name="creative",
-                model="us.anthropic.claude-opus-4-7",
+                model="anthropic.claude-opus-4-7",
                 examples=["Write a story about", "Compose a poem", "Imagine a world"],
                 threshold=0.70,
             ),
             SemanticRoute(
                 name="data",
-                model="us.amazon.nova-pro-v1:0",
+                model="amazon.nova-pro-v1:0",
                 examples=["Analyze this data", "Create a SQL query", "Calculate the average"],
                 threshold=0.70,
             ),
         ],
-        default_model="us.amazon.nova-lite-v1:0",
+        default_model="amazon.nova-lite-v1:0",
     )
     # Replace the embedding function with our mock
     router._get_embedding = _mock_embedding
@@ -72,19 +72,19 @@ class TestSemanticRouter:
         match = mock_router.route("Help me debug this Python function")
         assert match is not None
         assert match.route_name == "code"
-        assert match.model == "us.anthropic.claude-sonnet-4-6"
+        assert match.model == "anthropic.claude-sonnet-4-6"
 
     def test_routes_creative_query(self, mock_router):
         match = mock_router.route("Write a story about a dragon")
         assert match is not None
         assert match.route_name == "creative"
-        assert match.model == "us.anthropic.claude-opus-4-7"
+        assert match.model == "anthropic.claude-opus-4-7"
 
     def test_routes_data_query(self, mock_router):
         match = mock_router.route("Analyze this data and find trends")
         assert match is not None
         assert match.route_name == "data"
-        assert match.model == "us.amazon.nova-pro-v1:0"
+        assert match.model == "amazon.nova-pro-v1:0"
 
     def test_no_match_returns_none(self, mock_router):
         match = mock_router.route("What's the weather today?")
@@ -92,7 +92,7 @@ class TestSemanticRouter:
         # (general topic, not code/creative/data)
         # May or may not match depending on threshold — test the default_model path
         if match is None:
-            assert mock_router.default_model == "us.amazon.nova-lite-v1:0"
+            assert mock_router.default_model == "amazon.nova-lite-v1:0"
 
     def test_match_has_score(self, mock_router):
         match = mock_router.route("Write a Python algorithm")
@@ -154,7 +154,7 @@ class TestSemanticRouter:
         assert match is None  # Weather doesn't match code at 0.99
 
     def test_default_model_attribute(self, mock_router):
-        assert mock_router.default_model == "us.amazon.nova-lite-v1:0"
+        assert mock_router.default_model == "amazon.nova-lite-v1:0"
 
 
 class TestSemanticRouteMatch:

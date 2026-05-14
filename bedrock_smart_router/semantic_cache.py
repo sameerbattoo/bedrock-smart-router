@@ -99,7 +99,7 @@ class SemanticCacheConfig:
     opensearch_index_name: str = "bsr-semantic-cache"
     # Auto-extraction (optional)
     auto_extract: bool = False
-    extraction_model: str = "us.amazon.nova-micro-v1:0"
+    extraction_model: str = "amazon.nova-micro-v1:0"
 
 
 class SemanticCache:

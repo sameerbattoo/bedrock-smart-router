@@ -11,7 +11,7 @@ class TestModelRegistry:
 
     def test_get_known_model(self):
         reg = ModelRegistry()
-        m = reg.get("us.amazon.nova-micro-v1:0")
+        m = reg.get("amazon.nova-micro-v1:0")
         assert m is not None
         assert m.tier == Tier.MICRO
         assert m.family == "amazon"
@@ -65,7 +65,7 @@ class TestModelRegistry:
     def test_streaming_tool_use_loaded_from_catalog(self):
         """streaming_tool_use capability should be loaded from models.json."""
         reg = ModelRegistry()
-        scout = reg.get("us.meta.llama4-scout-17b-instruct-v1:0")
+        scout = reg.get("meta.llama4-scout-17b-instruct-v1:0")
         assert scout is not None
         assert scout.capabilities.tool_use is True
         assert scout.capabilities.streaming_tool_use is False
@@ -73,13 +73,13 @@ class TestModelRegistry:
     def test_streaming_tool_use_defaults_true(self):
         """Models without explicit streaming_tool_use should default to True."""
         reg = ModelRegistry()
-        nova = reg.get("us.amazon.nova-2-lite-v1:0")
+        nova = reg.get("amazon.nova-2-lite-v1:0")
         assert nova is not None
         assert nova.capabilities.streaming_tool_use is True
 
     def test_eligible_models_exclude_pattern(self):
         reg = ModelRegistry()
-        no_meta = reg.eligible_models(exclude_patterns=["us.meta.*"])
+        no_meta = reg.eligible_models(exclude_patterns=["meta.*"])
         assert all("meta" not in m.model_id for m in no_meta)
 
     def test_register_custom_model(self):
@@ -102,7 +102,7 @@ class TestJsonCatalog:
     def test_loads_from_bundled_json(self):
         """Default registry loads from data/models.json."""
         reg = ModelRegistry()
-        assert len(reg) == 25  # regional + global CRIS profiles (legacy models excluded)
+        assert len(reg) == 65  # regional + global CRIS profiles (legacy models excluded)
 
     def test_loads_from_custom_path(self, tmp_path):
         """Registry can load from a user-provided JSON file."""
@@ -128,7 +128,7 @@ class TestJsonCatalog:
         import json
         overlay = {
             "models": [{
-                "model_id": "us.amazon.nova-micro-v1:0",
+                "model_id": "amazon.nova-micro-v1:0",
                 "family": "amazon",
                 "tier": "micro",
                 "display_name": "Nova Micro PATCHED",
@@ -144,7 +144,7 @@ class TestJsonCatalog:
         # Count unchanged (override, not add)
         assert len(reg) == original_count
         # But the display name is patched
-        m = reg.get("us.amazon.nova-micro-v1:0")
+        m = reg.get("amazon.nova-micro-v1:0")
         assert m.display_name == "Nova Micro PATCHED"
         assert m.max_input_tokens == 256000
 

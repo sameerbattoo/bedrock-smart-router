@@ -73,6 +73,13 @@ class ConditionalStrategy(RoutingStrategy):
 
     name = "conditional"
 
+    @property
+    def weights(self) -> dict[str, float]:
+        return {"quality": 0.3, "cost": 0.4, "latency": 0.3}
+
+    def score_model(self, model, analysis, context):
+        return {}  # Delegates to matched strategy via select() override
+
     def __init__(self, config: ConditionalRoutingConfig) -> None:
         self.config = config
 

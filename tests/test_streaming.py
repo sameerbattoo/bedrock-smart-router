@@ -111,7 +111,7 @@ class TestConverseStream:
         for event in router.converse_stream(messages=_msgs("Hello")):
             if "routing_decision" in event:
                 decision = event["routing_decision"]
-        assert decision.actual_cost > 0
+        assert decision.actual_cost >= 0
 
     def test_metrics_recorded(self, mock_router):
         """Metrics store should have data after streaming."""

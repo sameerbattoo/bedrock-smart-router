@@ -42,7 +42,7 @@ def mock_client():
 @pytest.fixture
 def extractor(mock_client):
     ext = IntentExtractor(
-        config=IntentExtractorConfig(model_id="us.amazon.nova-micro-v1:0"),
+        config=IntentExtractorConfig(model_id="amazon.nova-micro-v1:0"),
     )
     ext._client = mock_client
     return ext
