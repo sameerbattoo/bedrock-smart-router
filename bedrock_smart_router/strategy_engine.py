@@ -103,6 +103,24 @@ class StrategyContext:
 
 # ── Shared scoring helpers ──────────────────────────────────────────
 
+# Minimum score floor for cost and latency dimensions.
+#
+# WHY: With min-max normalization, the most expensive (or slowest) model
+# in a small candidate pool always scores 0.0.  In the balanced strategy
+# (0.4×cost + 0.3×latency + 0.3×quality), multiplying by 0 on 70% of
+# the weight means quality becomes irrelevant — a high-quality expensive
+# model can NEVER win, even when it's only marginally more expensive.
+#
+# Example: REASONING tier with 2 models (Kimi $0.60 vs Opus $4.50).
+# Without floor: Opus cost=0.0, latency=0.0 → composite dominated by
+# quality alone at 30% weight → always loses.
+# With floor: Opus cost=0.133, latency=0.10 → quality (0.86) can
+# compensate, giving a fair composite comparison.
+#
+# The 0.10 value ensures even the worst model on a dimension still
+# contributes 10% credit, preventing the "multiply by zero" collapse.
+_SCORE_FLOOR = 0.10
+
 def _latency_score(
     model: BedrockModel,
     metrics: Any | None,
@@ -111,13 +129,18 @@ def _latency_score(
     """Compute a latency score (0–1, higher = faster).
 
     Uses real P50 latency from the metrics store when available (5+
-    samples), otherwise falls back to the tier heuristic.
+    samples) with ratio-based normalization against the fastest observed
+    model. Otherwise falls back to the tier heuristic.
+    Floor of _SCORE_FLOOR ensures no model ever scores zero.
     """
     heuristic = 1.0 - _TIER_LATENCY_INDEX.get(model.tier, 0.5)
 
     if metrics is not None and metrics.sample_count >= _MIN_LATENCY_SAMPLES:
-        # Real data: normalise against a rough max
-        real = max(0.0, 1.0 - metrics.avg_latency_ms / _MAX_LATENCY_MS)
+        # Real data available — store raw latency for ratio normalization
+        # (actual ratio computation happens in select() with all candidates)
+        # For now return the raw-normalized value; the select() methods
+        # that have access to all candidates will override if needed.
+        real = max(_SCORE_FLOOR, 1.0 - metrics.avg_latency_ms / _MAX_LATENCY_MS)
         return real
 
     score = heuristic
@@ -127,7 +150,40 @@ def _latency_score(
     # Bonus for prompt caching support (faster TTFT on multi-turn)
     if model.capabilities.prompt_caching and analysis.is_multi_turn:
         score = min(1.0, score + 0.05)
-    return score
+    return max(_SCORE_FLOOR, score)
+
+
+def _latency_score_ratio(
+    model: BedrockModel,
+    metrics: Any | None,
+    analysis: RequestAnalysis,
+    fastest_latency_ms: float | None,
+) -> float:
+    """Compute latency score using ratio normalization against fastest candidate.
+
+    WHY RATIO: When real metrics are available, models in the same tier
+    can have vastly different latencies (e.g. Opus 4.7 at 4.5s vs Kimi K2
+    at 22s).  The old fixed-max normalization (1 - latency/5000ms) would
+    give both a score near 0 since both exceed 5000ms.  Ratio-based
+    scoring (fastest/model) gives proper differentiation:
+    - Opus: 4500/4500 = 1.0 (fastest)
+    - Kimi: 4500/22000 = 0.20 (5x slower → 5x lower score)
+
+    Falls back to tier heuristic when no real data exists for any
+    candidate in the pool.
+    """
+    if metrics is not None and metrics.sample_count >= _MIN_LATENCY_SAMPLES:
+        if fastest_latency_ms and fastest_latency_ms > 0:
+            return max(_SCORE_FLOOR, fastest_latency_ms / metrics.avg_latency_ms)
+        return max(_SCORE_FLOOR, 1.0 - metrics.avg_latency_ms / _MAX_LATENCY_MS)
+
+    # No real data — use tier heuristic
+    score = 1.0 - _TIER_LATENCY_INDEX.get(model.tier, 0.5)
+    if model.is_cris_available:
+        score = min(1.0, score + 0.05)
+    if model.capabilities.prompt_caching and analysis.is_multi_turn:
+        score = min(1.0, score + 0.05)
+    return max(_SCORE_FLOOR, score)
 
 
 def _quality_score(
@@ -154,22 +210,33 @@ def _quality_score(
 def _cost_score(
     model: BedrockModel,
     analysis: RequestAnalysis,
-    max_cost: float,
+    min_cost: float,
 ) -> float:
-    """Compute a cost score (0–1, higher = cheaper)."""
+    """Compute a cost score (0–1, higher = cheaper).
+
+    Uses ratio-based normalization: ``min_cost / model_cost``.
+    The cheapest model scores 1.0; more expensive models score
+    proportionally lower but never below the floor (0.10).
+
+    This avoids the "multiply by zero" problem of min-max normalization
+    where the most expensive model always scores 0 regardless of how
+    close it is to the cheapest.
+    """
     cost_raw = model.pricing.estimate_cost(
         analysis.estimated_input_tokens,
         analysis.estimated_output_tokens,
     )
-    return 1.0 - min(1.0, cost_raw / max_cost)
+    if cost_raw <= 0:
+        return 1.0
+    return max(_SCORE_FLOOR, min_cost / cost_raw)
 
 
-def _max_cost_for_candidates(
+def _min_cost_for_candidates(
     candidates: list[BedrockModel],
     analysis: RequestAnalysis,
 ) -> float:
-    """Compute the max estimated cost across all candidates (for normalisation)."""
-    return max(
+    """Compute the minimum estimated cost across all candidates (for ratio normalization)."""
+    return min(
         (
             c.pricing.estimate_cost(
                 analysis.estimated_input_tokens,
@@ -325,14 +392,14 @@ class RoutingStrategy(ABC):
             eligible = candidates  # Safety fallback
 
         # Step 2: Score all dimensions for each model
-        max_cost = _max_cost_for_candidates(eligible, analysis)
+        min_cost = _min_cost_for_candidates(eligible, analysis)
         scores: dict[str, dict[str, float]] = {}
 
         for model in eligible:
             # Built-in dimensions (computed by base class)
             model_scores: dict[str, float] = {
                 "quality": _quality_score(model, None),
-                "cost": _cost_score(model, analysis, max_cost),
+                "cost": _cost_score(model, analysis, min_cost),
                 "latency": _latency_score(model, None, analysis),
             }
             # Custom dimensions (computed by implementor)
@@ -447,13 +514,20 @@ class CostOptimizedStrategy(RoutingStrategy):
         if self._metrics is not None:
             all_metrics = self._metrics.get_all_metrics(window_seconds=3600)
 
-        max_cost = _max_cost_for_candidates(candidates, analysis)
+        min_cost = _min_cost_for_candidates(candidates, analysis)
+        fastest_latency_ms = None
+        for m in candidates:
+            mm = all_metrics.get(m.model_id)
+            if mm and mm.sample_count >= _MIN_LATENCY_SAMPLES:
+                if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
+                    fastest_latency_ms = mm.avg_latency_ms
+
         scores: dict[str, dict[str, float]] = {}
 
         for m in candidates:
             mm = all_metrics.get(m.model_id)
-            cs = _cost_score(m, analysis, max_cost)
-            ls = _latency_score(m, mm, analysis)
+            cs = _cost_score(m, analysis, min_cost)
+            ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
             qs = _quality_score(m, mm)
 
             scores[m.model_id] = {
@@ -501,13 +575,20 @@ class LatencyOptimizedStrategy(RoutingStrategy):
         if self._metrics is not None:
             all_metrics = self._metrics.get_all_metrics(window_seconds=3600)
 
-        max_cost = _max_cost_for_candidates(candidates, analysis)
+        min_cost = _min_cost_for_candidates(candidates, analysis)
+        fastest_latency_ms = None
+        for m in candidates:
+            mm = all_metrics.get(m.model_id)
+            if mm and mm.sample_count >= _MIN_LATENCY_SAMPLES:
+                if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
+                    fastest_latency_ms = mm.avg_latency_ms
+
         scores: dict[str, dict[str, float]] = {}
 
         for m in candidates:
             mm = all_metrics.get(m.model_id)
-            cs = _cost_score(m, analysis, max_cost)
-            ls = _latency_score(m, mm, analysis)
+            cs = _cost_score(m, analysis, min_cost)
+            ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
             qs = _quality_score(m, mm)
 
             scores[m.model_id] = {
@@ -568,13 +649,22 @@ class BalancedStrategy(RoutingStrategy):
         if self._metrics is not None:
             all_metrics = self._metrics.get_all_metrics(window_seconds=3600)
 
-        max_cost = _max_cost_for_candidates(candidates, analysis)
+        min_cost = _min_cost_for_candidates(candidates, analysis)
+
+        # Find fastest latency among candidates with real data (for ratio scoring)
+        fastest_latency_ms = None
+        for m in candidates:
+            mm = all_metrics.get(m.model_id)
+            if mm and mm.sample_count >= _MIN_LATENCY_SAMPLES:
+                if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
+                    fastest_latency_ms = mm.avg_latency_ms
+
         scores: dict[str, dict[str, float]] = {}
 
         for m in candidates:
             mm = all_metrics.get(m.model_id)
-            cs = _cost_score(m, analysis, max_cost)
-            ls = _latency_score(m, mm, analysis)
+            cs = _cost_score(m, analysis, min_cost)
+            ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
             qs = _quality_score(m, mm)
 
             if m.capabilities.prompt_caching and analysis.is_multi_turn:

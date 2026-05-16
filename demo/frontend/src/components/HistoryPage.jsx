@@ -90,9 +90,10 @@ export default function HistoryPage({ history, setHistory, onNavigate }) {
             {filtered.map(h => {
               const uc = USE_CASES.find(u => u.id === h.use_case)
               return (
-                <div key={h.id} onClick={() => onNavigate(h)}
-                  className="bg-gray-900/50 border border-gray-800/50 rounded-lg px-4 py-3 cursor-pointer hover:border-orange-500/40 hover:bg-gray-900/70 transition-all group">
+                <div key={h.id} onClick={() => h.use_case !== 'strands' && onNavigate(h)}
+                  className={`bg-gray-900/50 border border-gray-800/50 rounded-lg px-4 py-3 transition-all group ${h.use_case !== 'strands' ? 'cursor-pointer hover:border-orange-500/40 hover:bg-gray-900/70' : ''}`}>
                   <div className="flex items-center gap-3">
+                    <span className="text-sm">{h.has_error ? '❌' : '✅'}</span>
                     <span className="text-sm">{uc?.icon || '⚡'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-300 truncate">{h.prompt}</div>
@@ -112,7 +113,12 @@ export default function HistoryPage({ history, setHistory, onNavigate }) {
                       <div className="text-center"><div className="text-gray-600">Savings</div><div className={`font-mono font-medium ${h.savings_pct > 0 ? 'text-green-400' : 'text-red-400'}`}>{h.savings_pct > 0 ? '↓' : '↑'}{Math.abs(h.savings_pct)}%</div></div>
                       {h.router_score && <div className="text-center"><div className="text-gray-600">Score</div><div className="text-orange-300 font-mono">{h.router_score}/10</div></div>}
                     </div>
-                    <svg className="w-4 h-4 text-gray-700 group-hover:text-orange-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
+                    <button onClick={e => { e.stopPropagation(); setHistory(prev => prev.filter(x => x.id !== h.id)) }}
+                      className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 p-1 rounded hover:bg-red-900/20 transition-all"
+                      title="Delete">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                    <svg className={`w-4 h-4 text-gray-700 group-hover:text-orange-400 transition-colors ${h.use_case === 'strands' ? 'invisible' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
                   </div>
                 </div>
               )

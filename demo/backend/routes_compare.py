@@ -21,6 +21,53 @@ from bedrock_smart_router import RoutingConfig
 router = APIRouter()
 
 
+# ══════════════════════════════════════════════════════════════════════
+# Module-level execution functions (run in ThreadPoolExecutor)
+# ══════════════════════════════════════════════════════════════════════
+
+def _run_compare_baseline(
+    client,
+    messages: list[dict],
+    system_prompt: str,
+    model_id: str,
+    on_chunk,
+) -> dict:
+    """Baseline: direct boto3 converse_stream call. Returns result dict."""
+    return stream_converse(
+        client=client,
+        messages=messages,
+        system_prompt=system_prompt,
+        model_id=model_id,
+        on_chunk=on_chunk,
+    )
+
+
+def _run_compare_router(
+    client,
+    messages: list[dict],
+    system_prompt: str,
+    strategy: str,
+    preferred_model: str,
+    on_chunk,
+) -> dict:
+    """Smart Router: same API, just swap the client. Returns result dict."""
+    return stream_converse(
+        client=client,
+        messages=messages,
+        system_prompt=system_prompt,
+        routing=RoutingConfig(
+            strategy=strategy,
+            preferred_model=preferred_model if preferred_model else None,
+            explain=True,
+        ),
+        on_chunk=on_chunk,
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════
+# API Endpoint
+# ══════════════════════════════════════════════════════════════════════
+
 @router.post("/compare-stream")
 async def compare_stream(
     prompt: str = Form(...),
@@ -63,12 +110,13 @@ async def compare_stream(
         content_blocks = build_content_blocks(prompt, file_bytes, file_type)
         messages = [{"role": "user", "content": content_blocks}]
 
-        def run_baseline():
-            """Baseline: direct boto3 call."""
-            bl_config = BASELINE_MODELS.get(baseline_model, BASELINE_MODELS["sonnet"])
-            bl_model_id = bl_config["model_id"]
+        # Resolve params
+        bl_config = BASELINE_MODELS.get(baseline_model, BASELINE_MODELS["sonnet"])
+        bl_model_id = bl_config["model_id"]
+        strategy = router_strategy if router_strategy in ROUTER_STRATEGIES else "balanced"
 
-            result = stream_converse(
+        def _baseline_task():
+            result = _run_compare_baseline(
                 client=bedrock_client,
                 messages=messages,
                 system_prompt=system_prompt,
@@ -78,27 +126,21 @@ async def compare_stream(
             result["has_multimodal"] = file_bytes is not None
             baseline_q.put(("done", result))
 
-        def run_router():
-            """Smart Router: same API, just swap the client."""
-            strategy = router_strategy if router_strategy in ROUTER_STRATEGIES else "balanced"
-
-            result = stream_converse(
+        def _router_task():
+            result = _run_compare_router(
                 client=smart_router,
                 messages=messages,
                 system_prompt=system_prompt,
-                routing=RoutingConfig(
-                    strategy=strategy,
-                    preferred_model=preferred_model if preferred_model else None,
-                    explain=True,
-                ),
+                strategy=strategy,
+                preferred_model=preferred_model,
                 on_chunk=lambda text: router_q.put(("chunk", text)),
             )
             result["has_multimodal"] = file_bytes is not None
             router_q.put(("done", result))
 
         # Run both in parallel
-        loop.run_in_executor(executor, run_baseline)
-        loop.run_in_executor(executor, run_router)
+        loop.run_in_executor(executor, _baseline_task)
+        loop.run_in_executor(executor, _router_task)
 
         baseline_done = False
         router_done = False

@@ -20,8 +20,8 @@ from bedrock_smart_router.strategy_engine import (
     RoutingStrategy,
     StrategyResult,
     _cost_score,
-    _latency_score,
-    _max_cost_for_candidates,
+    _latency_score_ratio,
+    _min_cost_for_candidates,
     _quality_score,
 )
 
@@ -60,13 +60,20 @@ class QualityOptimizedStrategy(RoutingStrategy):
         if self._metrics is not None:
             all_metrics = self._metrics.get_all_metrics(window_seconds=86400)  # 24h
 
-        max_cost = _max_cost_for_candidates(candidates, analysis)
+        min_cost = _min_cost_for_candidates(candidates, analysis)
+        fastest_latency_ms = None
+        for m in candidates:
+            mm = all_metrics.get(m.model_id)
+            if mm and mm.sample_count >= 5:
+                if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
+                    fastest_latency_ms = mm.avg_latency_ms
+
         scores: dict[str, dict[str, float]] = {}
 
         for m in candidates:
             mm = all_metrics.get(m.model_id)
-            cs = _cost_score(m, analysis, max_cost)
-            ls = _latency_score(m, mm, analysis)
+            cs = _cost_score(m, analysis, min_cost)
+            ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
             qs = _quality_score(m, mm)
 
             scores[m.model_id] = {

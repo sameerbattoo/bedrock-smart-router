@@ -2,6 +2,39 @@
 
 Classifies incoming requests across 15 scoring dimensions to determine
 the appropriate model tier, entirely locally with sub-millisecond overhead.
+
+Scoring Strategy
+----------------
+Complexity is determined by two signals combined via ``max()``:
+
+1. **User Message Score** — The last user message is scored across 15
+   keyword/pattern dimensions (token count, code presence, reasoning
+   markers, technical depth, etc.).  Only the last user message is used,
+   NOT the full conversation history or system prompt.  This prevents
+   multi-turn conversations and verbose system prompts from inflating
+   the complexity of simple follow-up messages like "Hi" or "Thanks".
+
+2. **System Prompt Floor** — The system prompt establishes a baseline
+   task complexity.  A complex system prompt (e.g. "You are a senior
+   architect, analyze trade-offs, design well-architected solutions")
+   means even short user messages require a capable model because the
+   system prompt defines what the model must do.  The floor is computed
+   as ``system_prompt_keyword_score × SYSTEM_FLOOR_FACTOR (0.30)``.
+
+The final score is ``max(user_message_score, system_prompt_floor)``.
+
+This design ensures:
+- "Hi" with a complex system prompt → MODERATE (floor applies)
+- "Hi" with no system prompt → SIMPLE (no floor)
+- "Design a DR architecture" → COMPLEX (user message score dominates)
+- Short follow-ups in multi-turn don't inherit prior turn complexity
+
+Capability Detection (separate from complexity)
+-----------------------------------------------
+Full context (all messages + system + tool_config) is still used for:
+- Token estimation (for cost prediction)
+- Capability requirements (vision, documents, tool use, long context)
+- Conversation metadata (turn count, multi-turn flag)
 """
 
 from __future__ import annotations
@@ -235,6 +268,27 @@ def _extract_text(messages: list[dict[str, Any]]) -> str:
     return "\n".join(parts)
 
 
+def _extract_last_user_text(messages: list[dict[str, Any]]) -> str:
+    """Extract text from only the last user message.
+
+    In multi-turn conversations, complexity should be determined by
+    the user's current request, not the accumulated conversation history
+    or system prompt keywords.
+    """
+    for msg in reversed(messages):
+        if msg.get("role") == "user":
+            content = msg.get("content", [])
+            parts: list[str] = []
+            if isinstance(content, str):
+                return content
+            elif isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and "text" in block:
+                        parts.append(block["text"])
+            return "\n".join(parts)
+    return ""
+
+
 def _count_matches(text_lower: str, keywords: set[str]) -> int:
     """Count how many keywords appear in the lowered text."""
     return sum(1 for kw in keywords if kw in text_lower)
@@ -262,14 +316,26 @@ class RequestAnalyzer:
         system: list[dict[str, Any]] | None = None,
         tool_config: dict[str, Any] | None = None,
     ) -> RequestAnalysis:
-        """Analyze a request and return a ``RequestAnalysis``."""
-        user_text = _extract_text(messages)
+        """Analyze a request and return a ``RequestAnalysis``.
+
+        Complexity scoring is based on the **last user message** only,
+        so that multi-turn conversations and verbose system prompts
+        don't inflate the complexity of simple follow-up messages.
+        Full context (all messages + system) is still used for
+        capability detection and token estimation.
+        """
+        # For complexity scoring — only the last user message determines
+        # how "hard" the current request is.
+        last_user_text = _extract_last_user_text(messages)
+        scoring_text_lower = last_user_text.lower()
+
+        # For capability detection and token estimation — full context
+        full_user_text = _extract_text(messages)
         system_text = _extract_text(system) if system else ""
-        full_text = f"{system_text}\n{user_text}".strip()
-        text_lower = full_text.lower()
+        full_text = f"{system_text}\n{full_user_text}".strip()
 
         # ── Per-dimension scores (0.0 – 1.0) ───────────────────
-        scores = self._score_dimensions(text_lower, messages, tool_config)
+        scores = self._score_dimensions(scoring_text_lower, messages, tool_config)
 
         # ── Weighted composite ──────────────────────────────────
         w = self.weights
@@ -299,8 +365,20 @@ class RequestAnalyzer:
 
         composite = max(0.0, min(1.0, composite))
 
+        # ── System prompt complexity floor ──────────────────────
+        # The system prompt establishes a baseline task complexity.
+        # A complex system prompt (e.g. "you are a senior architect,
+        # analyze trade-offs") means even short user messages like
+        # "analyse for X" require a capable model.
+        # We derive a floor from the system prompt's keyword density
+        # and ensure the composite never drops below it.
+        if system_text:
+            system_floor = self._compute_system_floor(system_text.lower())
+            composite = max(composite, system_floor)
+
         # ── Classify complexity ─────────────────────────────────
-        reasoning_count = _count_matches(text_lower, REASONING_MARKERS)
+        # Use last user message for reasoning marker count too
+        reasoning_count = _count_matches(scoring_text_lower, REASONING_MARKERS)
         complexity = self._classify(composite, reasoning_count)
 
         # ── Detect capabilities needed ──────────────────────────
@@ -358,11 +436,15 @@ class RequestAnalyzer:
 
         Dimensions are calibrated to produce well-separated distributions
         across simple/medium/complex prompts.
+
+        Note: ``text_lower`` is the lowercased **last user message** only,
+        ensuring complexity scoring reflects the current request rather
+        than accumulated conversation history.
         """
         text_len = len(text_lower)
 
-        # Also get the original (non-lowered) text for structural patterns
-        text_original = _extract_text(messages)
+        # Use last user message for structural pattern detection too
+        text_original = _extract_last_user_text(messages)
 
         # 1. Text length — log-scaled, strongest separation signal
         if text_len <= 20:
@@ -421,8 +503,9 @@ class RequestAnalyzer:
         # 7. Tool use signals
         tool_hits = _count_matches(text_lower, TOOL_USE_SIGNALS)
         tool_score = min(1.0, tool_hits * 0.4)
-        if tool_config:
-            tool_score = max(tool_score, 0.6)
+        # Note: tool_config presence is used for capability detection
+        # (requires_tool_use) but does NOT inflate complexity score.
+        # An agent with tools attached can still receive simple messages.
 
         # 8. Domain specificity (AWS + math + data analysis)
         aws_hits = _count_matches(text_lower, AWS_SIGNALS)
@@ -487,6 +570,49 @@ class RequestAnalyzer:
             return Complexity.MODERATE
         return Complexity.SIMPLE
 
+    # ── System prompt floor scaling factor ──────────────────────
+    # What fraction of the system prompt's raw complexity score
+    # becomes the minimum floor for any user message.
+    SYSTEM_FLOOR_FACTOR = 0.30
+
+    def _compute_system_floor(self, system_text_lower: str) -> float:
+        """Derive a complexity floor from the system prompt.
+
+        Scores the system prompt across keyword dimensions (reasoning,
+        code, AWS, math, creative, constraints) and returns a fraction
+        of that score as the minimum complexity for any user message.
+
+        A simple system prompt ("You are a helpful assistant") → floor ~0.0
+        A complex system prompt ("You are a senior architect, analyze
+        trade-offs, design well-architected solutions") → floor ~0.10-0.15
+        """
+        # Count keyword hits in system prompt
+        reasoning_hits = _count_matches(system_text_lower, REASONING_MARKERS)
+        code_hits = _count_matches(system_text_lower, CODE_MARKERS)
+        code_lang_hits = _count_matches(system_text_lower, CODE_LANG_KEYWORDS)
+        aws_hits = _count_matches(system_text_lower, AWS_SIGNALS)
+        math_hits = _count_matches(system_text_lower, MATH_SIGNALS)
+        creative_hits = _count_matches(system_text_lower, CREATIVE_SIGNALS)
+        constraint_hits = _count_matches(system_text_lower, CONSTRAINT_SIGNALS)
+        complex_q_hits = _count_matches(system_text_lower, COMPLEX_QUESTION_PATTERNS)
+        data_hits = _count_matches(system_text_lower, DATA_ANALYSIS_SIGNALS)
+
+        # Compute a raw system complexity score (0-1)
+        # Weight the most indicative dimensions
+        raw = min(1.0, (
+            reasoning_hits * 0.12
+            + (code_hits + code_lang_hits) * 0.08
+            + aws_hits * 0.06
+            + math_hits * 0.10
+            + creative_hits * 0.08
+            + constraint_hits * 0.05
+            + complex_q_hits * 0.10
+            + data_hits * 0.08
+        ))
+
+        # Return a fraction as the floor
+        return raw * self.SYSTEM_FLOOR_FACTOR
+
     @staticmethod
     def _has_images(messages: list[dict[str, Any]]) -> bool:
         for msg in messages:
@@ -541,43 +667,51 @@ class RequestAnalyzer:
 
         Includes which markers matched, dimension scores, and classification reasoning.
         Only called when RoutingConfig(explain=True).
-        """
-        user_text = _extract_text(messages)
-        system_text = _extract_text(system) if system else ""
-        full_text = f"{system_text}\n{user_text}".strip()
-        text_lower = full_text.lower()
 
-        # Collect matched markers per category
+        Scoring is based on the last user message only (consistent with
+        ``analyze()``), but the explanation shows what was matched.
+        """
+        # Score based on last user message (same as analyze())
+        last_user_text = _extract_last_user_text(messages)
+        scoring_text_lower = last_user_text.lower()
+
+        # Full text still used for token estimation reporting
+        full_user_text = _extract_text(messages)
+        system_text = _extract_text(system) if system else ""
+        full_text = f"{system_text}\n{full_user_text}".strip()
+
+        # Collect matched markers from last user message
         matched_markers: dict[str, list[str]] = {
-            "reasoning": [kw for kw in REASONING_MARKERS if kw in text_lower],
-            "code": [kw for kw in CODE_MARKERS if kw in text_lower],
-            "code_languages": [kw for kw in CODE_LANG_KEYWORDS if kw in text_lower],
-            "simple": [kw for kw in SIMPLE_INDICATORS if kw in text_lower],
-            "multi_step": [kw for kw in MULTI_STEP_PATTERNS if kw in text_lower],
-            "tool_use": [kw for kw in TOOL_USE_SIGNALS if kw in text_lower],
-            "aws": [kw for kw in AWS_SIGNALS if kw in text_lower],
-            "math": [kw for kw in MATH_SIGNALS if kw in text_lower],
-            "creative": [kw for kw in CREATIVE_SIGNALS if kw in text_lower],
-            "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if kw in text_lower],
-            "output_format": [kw for kw in OUTPUT_FORMAT_SIGNALS if kw in text_lower],
-            "constraints": [kw for kw in CONSTRAINT_SIGNALS if kw in text_lower],
-            "context_references": [kw for kw in CONTEXT_REFERENCE_SIGNALS if kw in text_lower],
-            "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if kw in text_lower],
+            "reasoning": [kw for kw in REASONING_MARKERS if kw in scoring_text_lower],
+            "code": [kw for kw in CODE_MARKERS if kw in scoring_text_lower],
+            "code_languages": [kw for kw in CODE_LANG_KEYWORDS if kw in scoring_text_lower],
+            "simple": [kw for kw in SIMPLE_INDICATORS if kw in scoring_text_lower],
+            "multi_step": [kw for kw in MULTI_STEP_PATTERNS if kw in scoring_text_lower],
+            "tool_use": [kw for kw in TOOL_USE_SIGNALS if kw in scoring_text_lower],
+            "aws": [kw for kw in AWS_SIGNALS if kw in scoring_text_lower],
+            "math": [kw for kw in MATH_SIGNALS if kw in scoring_text_lower],
+            "creative": [kw for kw in CREATIVE_SIGNALS if kw in scoring_text_lower],
+            "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if kw in scoring_text_lower],
+            "output_format": [kw for kw in OUTPUT_FORMAT_SIGNALS if kw in scoring_text_lower],
+            "constraints": [kw for kw in CONSTRAINT_SIGNALS if kw in scoring_text_lower],
+            "context_references": [kw for kw in CONTEXT_REFERENCE_SIGNALS if kw in scoring_text_lower],
+            "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if kw in scoring_text_lower],
         }
 
         marker_counts = {k: len(v) for k, v in matched_markers.items()}
-        # Add computed signals (no keyword sets)
-        marker_counts["text_length_chars"] = len(full_text)
+        # Add computed signals
+        marker_counts["last_user_message_chars"] = len(last_user_text)
+        marker_counts["full_context_chars"] = len(full_text)
         marker_counts["conversation_turns"] = len(messages)
         marker_counts["structural_signals"] = (
-            (1 if _TABLE_PATTERN.search(full_text) else 0) +
-            (1 if _CSV_DATA.search(full_text) else 0) +
-            (1 if _CODE_BLOCK.search(full_text) else 0) +
-            len(_PARAGRAPH_BREAK.findall(full_text))
+            (1 if _TABLE_PATTERN.search(last_user_text) else 0) +
+            (1 if _CSV_DATA.search(last_user_text) else 0) +
+            (1 if _CODE_BLOCK.search(last_user_text) else 0) +
+            len(_PARAGRAPH_BREAK.findall(last_user_text))
         )
 
-        # Get dimension scores
-        scores = self._score_dimensions(text_lower, messages, None)
+        # Get dimension scores (uses scoring_text_lower = last user message)
+        scores = self._score_dimensions(scoring_text_lower, messages, None)
         dimension_names = [
             "token_count", "code_presence", "reasoning_markers", "technical_depth",
             "simple_indicators", "structural_complexity", "tool_use", "domain_specificity",
@@ -586,11 +720,50 @@ class RequestAnalyzer:
         ]
         dimension_scores = {name: round(score, 4) for name, score in zip(dimension_names, scores)}
 
+        # Compute user message composite score
+        w = self.weights
+        weight_list = [
+            w.token_count, w.code_presence, w.reasoning_markers,
+            w.technical_depth, w.simple_indicators, w.multi_step,
+            w.tool_use, w.document_analysis, w.conversation_depth,
+            w.aws_specificity, w.math_logical, w.creative_open,
+            w.output_format, w.constraint_density, w.context_ratio,
+        ]
+        user_message_score = round(sum(s * wt for s, wt in zip(scores, weight_list)), 4)
+
+        # System prompt floor analysis
+        system_floor = 0.0
+        system_floor_markers: dict[str, list[str]] = {}
+        floor_applied = False
+        if system_text:
+            system_text_lower = system_text.lower()
+            system_floor = round(self._compute_system_floor(system_text_lower), 4)
+            floor_applied = system_floor > user_message_score
+            # Show which system prompt keywords contributed
+            system_floor_markers = {
+                "reasoning": [kw for kw in REASONING_MARKERS if kw in system_text_lower],
+                "code": [kw for kw in CODE_MARKERS if kw in system_text_lower],
+                "aws": [kw for kw in AWS_SIGNALS if kw in system_text_lower],
+                "math": [kw for kw in MATH_SIGNALS if kw in system_text_lower],
+                "creative": [kw for kw in CREATIVE_SIGNALS if kw in system_text_lower],
+                "constraints": [kw for kw in CONSTRAINT_SIGNALS if kw in system_text_lower],
+                "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if kw in system_text_lower],
+                "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if kw in system_text_lower],
+            }
+            # Remove empty categories
+            system_floor_markers = {k: v for k, v in system_floor_markers.items() if v}
+
         return {
             "matched_markers": matched_markers,
             "marker_counts": marker_counts,
             "dimension_scores": dimension_scores,
-            "text_length": len(full_text),
+            "user_message_score": user_message_score,
+            "system_prompt_floor": system_floor,
+            "floor_applied": floor_applied,
+            "final_score": round(max(user_message_score, system_floor), 4),
+            "system_floor_markers": system_floor_markers,
+            "text_length": len(last_user_text),
+            "full_context_length": len(full_text),
             "estimated_tokens": _estimate_tokens(full_text),
             "multimodal_payload_bytes": self._multimodal_payload_bytes(messages),
         }

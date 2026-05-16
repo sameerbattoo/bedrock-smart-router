@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Md, ExplainPopup, STREAM_API, API } from './shared'
+import { Md, ExplainPopup, ResponseWithThinking, STREAM_API, API } from './shared'
 
 // ─── Collapsible Step Section ──────────────────────────────────────
 function StepSection({ number, title, visible, expanded, onToggle, children }) {
@@ -78,6 +78,7 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
   const [baselineFailed, setBaselineFailed] = useState(false)
   const [routerResult, setRouterResult] = useState(null)
   const [explainPopup, setExplainPopup] = useState(null)
+  const [patchingOverlay, setPatchingOverlay] = useState(false)
 
   useEffect(() => {
     fetch(`${API}/templates`).then(r => r.json()).then(setTemplates).catch(() => {})
@@ -148,6 +149,12 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
   async function runThrottleDemo() {
     if (!prompt.trim() || !throttleModel || loading) return
     if (onRun) onRun()
+
+    // Show patching overlay for 3 seconds
+    setPatchingOverlay(true)
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    setPatchingOverlay(false)
+
     setLoading(true)
     resetResults()
     setStep4Visible(true)
@@ -188,7 +195,6 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
               setBaselineFailed(true)
               setBaselineTimeline(prev => [...prev, { status: 'failed', model: parsed.model, attempt: 1, maxRetries: 1, delay: 0, error: parsed.error, request_id: parsed.request_id }])
             } else if (eventType === 'router_attempt') {
-              const status = parsed.status === 'fallback_failed' ? 'failed' : 'failed'
               setRouterTimeline(prev => [...prev, { status: 'failed', model: parsed.model, attempt: parsed.attempt, maxRetries: 4, delay: parsed.backoff_ms || 0, error: parsed.error }])
             } else if (eventType === 'router_fallback') {
               if (parsed.success) {
@@ -215,6 +221,7 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
                 router_latency: parsed.latency_ms, router_cost: parsed.cost,
                 baseline_cost: 0, savings_pct: 0, baseline_latency: 0,
                 router_metrics: parsed, baseline_metrics: null,
+                has_error: true, // Baseline intentionally throttled
                 // Full state for history restore
                 baseline_timeline: [...baselineTimeline],
                 baseline_failed: true,
@@ -238,6 +245,24 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-3">
       {explainPopup && <ExplainPopup explanation={explainPopup} onClose={() => setExplainPopup(null)} />}
+
+      {/* Patching overlay */}
+      {patchingOverlay && (
+        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center">
+          <div className="text-center animate-pulse">
+            <div className="text-6xl mb-4">🔧</div>
+            <div className="text-xl font-bold text-orange-400 mb-2">Patching boto3 client...</div>
+            <div className="text-sm text-gray-400 max-w-md">
+              Injecting ThrottlingException for <span className="text-red-400 font-mono">{throttleModel}</span> on both the baseline boto3 client and the Smart Router's internal client.
+            </div>
+            <div className="mt-4 flex justify-center gap-1">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ Step 1: Choose Prompt Template ═══ */}
       <StepSection number={1} title="Choose Prompt Template" visible={true} expanded={step1Expanded} onToggle={() => setStep1Expanded(!step1Expanded)}>
@@ -297,7 +322,7 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
       <StepSection number={3} title="Select Model to Throttle" visible={step3Visible} expanded={step3Expanded} onToggle={() => setStep3Expanded(!step3Expanded)}>
         <div className="mb-3">
           <div className="text-[10px] text-gray-500 uppercase font-bold mb-1.5">Model to Simulate Throttling</div>
-          <p className="text-[11px] text-gray-500 mb-3">This model will be artificially throttled. The baseline will fail, while the Smart Router will retry and fall back to the next best model.</p>
+          <p className="text-[11px] text-gray-500 mb-3">We patch the boto3 client to throw ThrottlingException (HTTP 429) for this model. Both the baseline and Smart Router use the same patched client. The baseline fails immediately with no retry or fallback. The Smart Router retries then falls back to the next best model.</p>
           <select value={throttleModel} onChange={e => setThrottleModel(e.target.value)}
             className="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-orange-600">
             <option value="">Select a model...</option>
@@ -384,7 +409,7 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
                 <div className="border-t border-green-900/30 pt-3">
                   <div className="text-[10px] text-green-400/60 uppercase font-bold mb-2">Response from fallback model</div>
                   <div className="text-sm text-gray-300">
-                    <Md variant="router">{routerText}</Md>
+                    <ResponseWithThinking text={routerText} variant="router" streaming={loading} />
                   </div>
                 </div>
               )}

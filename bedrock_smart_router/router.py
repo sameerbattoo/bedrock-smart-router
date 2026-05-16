@@ -375,7 +375,11 @@ class BedrockRouter:
         cache_details = usage.get("cacheDetails", [])
         perf_config = response.get("performanceConfig", {})
         guardrail_trace = response.get("trace", {}).get("guardrail", {})
-        actual_cost = used_model.pricing.estimate_cost(input_tokens, output_tokens)
+        actual_cost = used_model.pricing.estimate_cost(
+            input_tokens, output_tokens,
+            cache_read_tokens=prompt_cache_read,
+            cache_write_tokens=prompt_cache_write,
+        )
 
         decision = RoutingDecision(
             selected_model=used_model.model_id,
@@ -614,7 +618,11 @@ class BedrockRouter:
         total_tokens = usage.get("totalTokens", input_tokens + output_tokens)
         cache_details = usage.get("cacheDetails", [])
         bedrock_latency = stream_metrics.get("latencyMs")
-        actual_cost = used_model.pricing.estimate_cost(input_tokens, output_tokens)
+        actual_cost = used_model.pricing.estimate_cost(
+            input_tokens, output_tokens,
+            cache_read_tokens=prompt_cache_read,
+            cache_write_tokens=prompt_cache_write,
+        )
 
         decision = RoutingDecision(
             selected_model=used_model.model_id,
@@ -878,6 +886,10 @@ class BedrockRouter:
                     "markers_hit": analysis_explanation.get("matched_markers", {}),
                     "marker_counts": analysis_explanation.get("marker_counts", {}),
                     "dimension_scores": analysis_explanation.get("dimension_scores", {}),
+                    "user_message_score": analysis_explanation.get("user_message_score"),
+                    "system_prompt_floor": analysis_explanation.get("system_prompt_floor"),
+                    "floor_applied": analysis_explanation.get("floor_applied", False),
+                    "system_floor_markers": analysis_explanation.get("system_floor_markers", {}),
                     "multimodal_payload": {
                         "bytes": payload_bytes,
                         "complexity_boost": payload_boost,

@@ -87,20 +87,36 @@ class ModelPricing:
         input_tokens: int,
         output_tokens: int,
         tier: str = "standard",
+        cache_read_tokens: int = 0,
+        cache_write_tokens: int = 0,
     ) -> float:
         """Estimate the cost for a request in dollars.
 
+        Formula::
+
+            cost = (inputTokens / 1000 × inputRate)
+                 + (cacheReadTokens / 1000 × cacheReadRate)
+                 + (cacheWriteTokens / 1000 × cacheWriteRate)
+                 + (outputTokens / 1000 × outputRate)
+
+        All four token types are independent line items.
+        Tier multiplier applies to the total.
+
         Args:
-            input_tokens: Number of input tokens.
-            output_tokens: Number of output tokens.
-            tier: Inference tier — ``"standard"`` (default),
-                ``"priority"`` (~1.75×), or ``"flex"`` (~0.50×).
+            input_tokens: Input tokens (from Bedrock ``usage.inputTokens``).
+            output_tokens: Output tokens generated.
+            tier: Inference tier — ``"standard"``, ``"priority"``, or ``"flex"``.
+            cache_read_tokens: Tokens read from prompt cache.
+            cache_write_tokens: Tokens written to prompt cache.
         """
         multiplier = TIER_PRICING_MULTIPLIER.get(tier, 1.0)
-        return (
+        cost = (
             (input_tokens / 1000) * self.input_per_1k
+            + (cache_read_tokens / 1000) * self.cache_read_per_1k
+            + (cache_write_tokens / 1000) * self.cache_write_per_1k
             + (output_tokens / 1000) * self.output_per_1k
-        ) * multiplier
+        )
+        return cost * multiplier
 
 
 @dataclass
@@ -214,15 +230,15 @@ class RoutingDecision:
 
     @property
     def prompt_cache_hit_rate(self) -> float:
-        """Bedrock prompt cache hit ratio (0.0–1.0).
+        """Bedrock prompt cache hit rate as a percentage (0.0–100.0).
 
-        Formula: cache_read_tokens / (input_tokens + cache_read + cache_write)
+        Formula: cacheReadTokens / (inputTokens + cacheReadTokens + cacheWriteTokens) × 100
         Returns 0.0 if no prompt caching occurred.
         """
-        total = self.total_input_tokens
+        total = (self.input_tokens or 0) + self.prompt_cache_read_tokens + self.prompt_cache_write_tokens
         if total == 0 or self.prompt_cache_read_tokens == 0:
             return 0.0
-        return self.prompt_cache_read_tokens / total
+        return (self.prompt_cache_read_tokens / total) * 100
 
     @property
     def network_overhead_ms(self) -> float | None:

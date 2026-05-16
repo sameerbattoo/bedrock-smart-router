@@ -311,6 +311,11 @@ class SmartRouterModel(Model):
         try:
             bedrock_messages = list(messages)
 
+            # Sanitize messages: strip unsupported fields from toolResult
+            # blocks that MCP tools may include (e.g. structuredContent)
+            # but Bedrock's Converse API does not accept.
+            bedrock_messages = self._sanitize_messages(bedrock_messages)
+
             # Build system blocks: prefer system_prompt_content, fall back to system_prompt string.
             if system_prompt_content:
                 system = list(system_prompt_content)
@@ -410,6 +415,68 @@ class SmartRouterModel(Model):
     # ── Format helpers ──────────────────────────────────────────
 
     @staticmethod
+    def _sanitize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Sanitize toolResult blocks for Bedrock Converse API compatibility.
+
+        MCP tools (especially aws-documentation-mcp-server) may include
+        ``structuredContent`` in their tool results.  Bedrock's Converse
+        API only accepts: ``toolUseId``, ``content``, ``status``.
+
+        If ``structuredContent`` is present but ``content`` is missing or
+        empty, we convert the structured content into a text content block
+        so the LLM still has access to the tool's data.  This preserves
+        the information while maintaining API compatibility.
+        """
+        import json as _json
+
+        _ALLOWED_TOOL_RESULT_KEYS = {"toolUseId", "content", "status"}
+        sanitized = []
+        for msg in messages:
+            content = msg.get("content")
+            if not isinstance(content, list):
+                sanitized.append(msg)
+                continue
+            new_content = []
+            modified = False
+            for block in content:
+                if isinstance(block, dict) and "toolResult" in block:
+                    tr = block["toolResult"]
+                    extra_keys = set(tr.keys()) - _ALLOWED_TOOL_RESULT_KEYS
+                    if extra_keys:
+                        # If structuredContent exists but content is missing/empty,
+                        # convert it to a text content block to preserve the data.
+                        has_content = tr.get("content") and len(tr["content"]) > 0
+                        if not has_content and "structuredContent" in tr:
+                            sc = tr["structuredContent"]
+                            # Serialize structured content as text
+                            if isinstance(sc, str):
+                                text_data = sc
+                            else:
+                                text_data = _json.dumps(sc, ensure_ascii=False, default=str)
+                            clean_tr = {
+                                k: v for k, v in tr.items()
+                                if k in _ALLOWED_TOOL_RESULT_KEYS
+                            }
+                            clean_tr["content"] = [{"text": text_data}]
+                        else:
+                            # content exists, just strip the extra keys
+                            clean_tr = {
+                                k: v for k, v in tr.items()
+                                if k in _ALLOWED_TOOL_RESULT_KEYS
+                            }
+                        new_content.append({"toolResult": clean_tr})
+                        modified = True
+                    else:
+                        new_content.append(block)
+                else:
+                    new_content.append(block)
+            if modified:
+                sanitized.append({**msg, "content": new_content})
+            else:
+                sanitized.append(msg)
+        return sanitized
+
+    @staticmethod
     def _build_tool_config(
         tool_specs: Optional[list[ToolSpec]],
         tool_choice: Optional[ToolChoice] = None,
@@ -458,6 +525,7 @@ class SmartRouterModel(Model):
             exclude_models=self.config.get("exclude_models"),
             tags=self.config.get("tags"),
             metadata=self.config.get("metadata"),
+            explain=self.config.get("explain", False),
         )
 
     @staticmethod

@@ -53,7 +53,7 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - Multimodal-aware routing — automatically detects image and document content blocks, filters to capable models, and boosts complexity based on payload size
 
 **Bedrock-Native Awareness**
-- Cross-Region Inference (CRIS) profile selection — regional (`us.*`) and global (`global.*`, ~10% cheaper) profiles as separate catalog entries
+- Cross-Region Inference (CRIS) profile selection — per-region awareness with global (`global.*`, ~10% cheaper), regional (`us.*`, `eu.*`), and direct invocation modes
 - Inference tier auto-selection (Standard / Priority / Flex) with tier-aware cost estimation
 - Prompt cache benefit estimation — boosts cache-capable models (Claude and Nova) when savings are significant
 - Bedrock Guardrails integration — pre-route and post-route checks via ApplyGuardrail API
@@ -62,7 +62,7 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 
 **Reliability**
 - Circuit breakers (CLOSED/OPEN/HALF_OPEN) per model with separate throttle cooldowns
-- Multi-level fallback chain: same-family downgrade, cross-family equivalent, CRIS retry, safe default
+- Multi-level fallback chain: same-family downgrade, cross-family equivalent, direct invocation retry, safe default
 - Configurable retry with exponential backoff for transient errors
 - Content policy and context window fallbacks
 - Graceful no-models-match errors with per-model rejection reasons and actionable suggestions
@@ -1134,23 +1134,26 @@ Every strategy scores each eligible model on three dimensions — cost, latency,
 
 ### Scoring Dimensions
 
-**Cost score** (0–1, higher = cheaper) — computed from actual pricing in `models.json`:
+**Cost score** (0.10–1.0, higher = cheaper) — ratio-based normalization against the cheapest candidate:
 
 ```
-cost_score = 1.0 - (model_estimated_cost / max_cost_across_candidates)
+cost_score = max(0.10, cheapest_cost / model_cost)
 ```
 
-This is always real data — no heuristics. Global CRIS profiles score higher because they're ~10% cheaper.
+The cheapest model in the eligible pool scores 1.0. More expensive models score proportionally lower but never below 0.10 (the floor). This prevents the "multiply by zero" problem where the most expensive model's quality becomes irrelevant in the composite. Global CRIS profiles score higher because they're ~10% cheaper.
 
-**Latency score** (0–1, higher = faster) — blends real metrics with tier heuristics:
+**Latency score** (0.10–1.0, higher = faster) — blends real metrics with tier heuristics:
 
 ```
 Day 1 (no data):   tier heuristic (MICRO=0.90, LITE=0.75, MID=0.50, HEAVY=0.25, REASONING=0.10)
                     + 0.05 bonus for CRIS availability
                     + 0.05 bonus for prompt caching on multi-turn
 
-After 5+ requests: real avg_latency_ms from metrics store, normalised against 5000ms max
+After 5+ requests: max(0.10, fastest_latency_in_pool / model_latency)
+                   Ratio-based: fastest model = 1.0, 5x slower = 0.20
 ```
+
+When real latency data exists for candidates, ratio normalization gives proper differentiation even among slow models (e.g. Opus 4.7 at 4.5s vs Kimi K2 at 22s → scores 1.0 vs 0.20). The 0.10 floor ensures even the slowest model contributes to the composite score.
 
 **Quality score** (0–1, higher = better) — uses the model's `quality_baseline` from the catalog ([Artificial Analysis Intelligence Index](https://artificialanalysis.ai), normalized to 0–1):
 
@@ -1244,8 +1247,8 @@ The explanation includes:
 ```json
 {
   "complexity": {
-    "score": 0.214,
-    "score_before_boost": 0.114,
+    "score": 0.162,
+    "score_before_boost": 0.162,
     "classification": "moderate",
     "classification_thresholds": {
       "simple": "< 0.125",
@@ -1256,27 +1259,31 @@ The explanation includes:
     "tier_range": {"min": "lite", "max": "mid"},
     "markers_hit": {
       "reasoning": ["architect", "design a"],
-      "complex_questions": ["architect", "design a"],
-      "context_references": ["this document", "summarize the"]
+      "complex_questions": ["architect", "design a"]
     },
     "marker_counts": {
       "reasoning": 2,
       "code": 0,
       "complex_questions": 2,
-      "context_references": 2,
-      "text_length_chars": 322,
-      "conversation_turns": 1,
-      "structural_signals": 1
+      "last_user_message_chars": 28,
+      "full_context_chars": 850,
+      "conversation_turns": 3,
+      "structural_signals": 0
     },
     "dimension_scores": {
-      "token_count": 0.55,
+      "token_count": 0.03,
       "reasoning_markers": 0.70,
-      "question_complexity": 0.80
+      "question_complexity": 0.40
     },
-    "multimodal_payload": {
-      "bytes": 500009,
-      "complexity_boost": 0.10
-    }
+    "user_message_score": 0.0239,
+    "system_prompt_floor": 0.162,
+    "floor_applied": true,
+    "system_floor_markers": {
+      "reasoning": ["architect", "design a", "optimize", "trade-off"],
+      "aws": ["aws", "s3", "ec2", "lambda", "bedrock"],
+      "complex_questions": ["design a", "optimize"]
+    },
+    "multimodal_payload": null
   },
   "strategy": {
     "name": "balanced",
@@ -1293,9 +1300,14 @@ The explanation includes:
 ```
 
 **What each section tells you:**
-- **score / score_before_boost** — Final complexity score and the raw score before any multimodal payload boost was applied
+- **score** — Final complexity score: `max(user_message_score, system_prompt_floor)` + any multimodal boost
+- **user_message_score** — Raw composite from 15 dimensions scored against the last user message only
+- **system_prompt_floor** — Minimum complexity derived from system prompt keywords (30% of system prompt's raw keyword score)
+- **floor_applied** — `true` when the system prompt floor determined the final score (user message was simpler than what the system prompt demands)
+- **system_floor_markers** — Keywords in the system prompt that contributed to the floor (explains why the floor is what it is)
+- **markers_hit** — Keywords from the user message that triggered scoring dimensions
+- **dimension_scores** — Per-dimension scores (0–1) for the 15 scoring dimensions
 - **classification / tier_range** — Why the prompt was classified at this level and which model tiers were eligible
-- **markers_hit** — Which keywords triggered in each category (explains why the score is what it is)
 - **multimodal_payload** — If a document/image was attached: byte size and how much it boosted the complexity score (null when no attachment)
 - **top5_candidates** — Top 5 models ranked by composite score with full cost/latency/quality breakdown
 - **candidates_evaluated** — Total number of models that were eligible (filtered by tier range + capabilities)
@@ -1305,7 +1317,11 @@ The explanation adds ~1KB to the response and negligible latency. It's opt-in �
 
 ### Request Complexity Classification
 
-Before strategy scoring, the router classifies each request across 15 dimensions to determine the minimum model tier:
+Before strategy scoring, the router classifies each request to determine the minimum model tier. The classification uses a two-signal approach:
+
+#### Signal 1: User Message Score (15 dimensions)
+
+Only the **last user message** is scored — not the full conversation history or system prompt. This prevents multi-turn conversations from inflating simple follow-up messages.
 
 | Dimension | Weight | What it detects |
 |---|---|---|
@@ -1315,7 +1331,7 @@ Before strategy scoring, the router classifies each request across 15 dimensions
 | Technical depth | 0.049 | Keyword density per 200 chars |
 | Simple indicators | 0.007 | "hello", "what is", "translate" (inverted — presence lowers score) |
 | Structural complexity | 0.001 | Tables, CSV data, code blocks, multi-paragraph |
-| Tool use signals | 0.042 | "function call", "json schema", tool_config present |
+| Tool use signals | 0.042 | "function call", "json schema" (keyword-based, not tool_config presence) |
 | Domain specificity | 0.127 | AWS services, math, data analysis keywords |
 | Conversation depth | 0.010 | Multi-turn message count |
 | Multi-step patterns | 0.026 | "first", "then", "step 1" |
@@ -1325,7 +1341,21 @@ Before strategy scoring, the router classifies each request across 15 dimensions
 | Constraint density | 0.001 | "must be", "at least", "without using" |
 | Context ratio | 0.001 | "based on the following", "the above document" |
 
-The weighted composite maps to a complexity level, which sets the eligible model tier range:
+#### Signal 2: System Prompt Floor
+
+The system prompt establishes a **minimum complexity floor**. A complex system prompt (e.g. "You are a senior architect, analyze trade-offs, design well-architected solutions") means even short user messages like "analyse for X" require a capable model — because the system prompt defines what "analyse" means.
+
+The floor is computed by scoring the system prompt's keywords across reasoning, code, AWS, math, creative, constraint, and complex question categories, then taking 30% of that raw score. This ensures:
+- Simple system prompt ("You are a helpful assistant") → floor ≈ 0.0 (no effect)
+- Complex system prompt (architect + AWS + trade-offs) → floor ≈ 0.15 (MODERATE minimum)
+
+#### Final Score
+
+```
+final_score = max(user_message_score, system_prompt_floor) + multimodal_boost
+```
+
+The final score maps to a complexity level:
 
 | Score Range | Classification | Eligible Tiers | Use Case |
 |---|---|---|---|
@@ -1360,11 +1390,15 @@ The catalog is a static file that ships with the SDK. As AWS launches new models
 
 | Source | Data Retrieved | Method |
 |---|---|---|
-| AWS Bedrock `ListFoundationModels` | Model discovery, display names, vision/streaming capabilities | API call |
-| AWS Bedrock `ListInferenceProfiles` | CRIS profiles (us.*, eu.*, ap.*, global.*) | API call |
+| AWS Bedrock `ListFoundationModels` (17 regions) | Model discovery, display names, vision/streaming capabilities | API calls across regions |
+| AWS Bedrock `ListInferenceProfiles` (17 regions) | CRIS profiles (us.*, eu.*, ap.*, global.*) per region | API calls across regions |
 | [LiteLLM](https://github.com/BerriAI/litellm) `model_prices_and_context_window.json` | Pricing (input/output/cache), max_input_tokens, max_output_tokens | GitHub download |
 | [Artificial Analysis](https://artificialanalysis.ai) Intelligence Index API | Quality baseline scores (0–60 scale) | API call (free key) |
 | Bedrock Converse API probing | tool_use, streaming_tool_use, extended_thinking, guardrails, inference tiers | Minimal API calls per model |
+
+**Regional discovery:**
+
+The script probes 17 AWS regions to build the `regions` array for each model. For each region where a model is found, it determines whether the model is available via CRIS profiles (with which prefixes) or direct invocation only. This replaces the old flat `cris_profiles` field with per-region granularity.
 
 **How tier classification works:**
 
@@ -1429,7 +1463,41 @@ python scripts/refresh_catalog.py --aa-cache scripts/_aa_models.json --write \
 
 Global cross-region inference profiles route requests to any commercial AWS Region worldwide for higher throughput and resilience. They are ~10% cheaper than regional profiles on both input and output tokens ([source](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html)).
 
-The catalog includes global profiles as separate model entries. The router's cost-optimized strategy naturally prefers them when `allow_global` is enabled in the CRIS config. Example: `global.anthropic.claude-sonnet-4-6` is the same model as the regional variant but at 90% of the price.
+#### Regional Model Structure
+
+Each model in the catalog has a `regions` array describing where it's available and how to invoke it:
+
+```json
+{
+  "model_id": "anthropic.claude-sonnet-4-6",
+  "regions": [
+    {"name": "us-west-2", "cris_profiles": ["global", "us"]},
+    {"name": "eu-west-1", "cris_profiles": ["global", "eu"]},
+    {"name": "ap-northeast-1", "cris_profiles": ["global", "jp"]}
+  ]
+}
+```
+
+```json
+{
+  "model_id": "nvidia.nemotron-nano-12b-v2",
+  "regions": [
+    {"name": "us-west-2", "direct": true},
+    {"name": "eu-west-1", "direct": true}
+  ]
+}
+```
+
+**Two invocation modes per region:**
+- **`cris_profiles`** — Model is available via CRIS inference profiles. The array lists available prefixes (e.g. `["global", "us"]`). The router prepends the prefix to the model ID: `global.anthropic.claude-sonnet-4-6` or `us.anthropic.claude-sonnet-4-6`.
+- **`direct`** — Model is invoked directly by its base model ID (no prefix). Typically newer or third-party models that don't yet have CRIS profiles.
+
+**Profile selection priority:**
+1. `global.*` — cheapest (~10% discount), highest availability (routes to any region)
+2. Regional prefix (`us.*`, `eu.*`, `jp.*`) — stays within a geography (useful for data residency)
+3. `direct` — no prefix, model invoked as-is
+
+The `CrisManager.select_profile(model, region)` method handles this automatically. When `allow_global: false` is set in config, global profiles are skipped and the router uses regional prefixes or direct invocation.
 
 ### Inference Tier Pricing
 

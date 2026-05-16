@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from shared import (
     REGION, BASELINE_MODEL, BASELINE_MODELS, ROUTER_STRATEGIES,
-    TEMPLATES, router, get_temp_file, display_model_name,
+    TEMPLATES, router, get_temp_file, display_model_name, JUDGE_MODEL,
 )
 from routes_compare import router as compare_router
 from routes_throttle import router as throttle_router
@@ -81,6 +81,7 @@ def get_options():
         "preferred_models": preferred,
         "region_models": region_models,
         "region": REGION,
+        "judge_model": display_model_name(JUDGE_MODEL),
     }
 
 

@@ -51,9 +51,15 @@ _TEMP_DIR = Path(tempfile.gettempdir()) / "bsr_demo_uploads"
 _TEMP_DIR.mkdir(exist_ok=True)
 _TEMP_FILES: dict[str, dict] = {}
 _TEMP_TTL = 1800
+_TEMP_MAX_FILES = 100  # Maximum number of temp files to prevent unbounded growth
 
 
 def store_temp_file(file_bytes: bytes, file_type: str, file_name: str) -> str:
+    # Evict oldest files if at capacity
+    if len(_TEMP_FILES) >= _TEMP_MAX_FILES:
+        oldest = sorted(_TEMP_FILES.items(), key=lambda x: x[1]["expires"])[:10]
+        for fid, _ in oldest:
+            _cleanup_temp_file(fid)
     file_id = str(uuid.uuid4())
     path = _TEMP_DIR / file_id
     path.write_bytes(file_bytes)
@@ -114,6 +120,23 @@ def display_model_name(model_id: str) -> str:
     return model_id
 
 
+def compute_cost(model_id: str, input_tokens: int, output_tokens: int,
+                 cache_read_tokens: int = 0, cache_write_tokens: int = 0) -> float:
+    """Compute cost for a model using the registry's pricing.
+
+    Single source of truth for cost calculation across all use-cases.
+    Uses the core library's estimate_cost with all 4 token types.
+    """
+    model = router.registry.get(model_id)
+    if not model:
+        return 0.0
+    return model.pricing.estimate_cost(
+        input_tokens, output_tokens,
+        cache_read_tokens=cache_read_tokens,
+        cache_write_tokens=cache_write_tokens,
+    )
+
+
 def build_content_blocks(prompt: str, file_bytes: bytes | None = None, file_type: str | None = None) -> list[dict]:
     blocks = []
     if file_bytes and file_type:
@@ -128,8 +151,13 @@ def build_content_blocks(prompt: str, file_bytes: bytes | None = None, file_type
 
 def judge_response(prompt: str, response_text: str, file_bytes: bytes | None = None, file_type: str | None = None) -> dict:
     """Score a response using LLM-as-judge."""
+    from datetime import datetime
+    today = datetime.now().strftime("%B %d, %Y")
+
     judge_prompt = f"""Score the following AI response on a scale of 1-10.
 Consider: accuracy, completeness, relevance, clarity, and helpfulness.
+
+Today's date is {today}. Use this to evaluate whether any dates mentioned in the response are reasonable.
 
 User prompt: {prompt}
 
@@ -177,7 +205,10 @@ def seed_metrics():
         ("meta.llama4-maverick-17b-instruct-v1:0", 1000, 0.02, 20),
         ("anthropic.claude-opus-4-5-20251101-v1:0", 12000, 0.01, 15),
         ("anthropic.claude-opus-4-6-v1", 10000, 0.01, 15),
-        ("anthropic.claude-opus-4-7", 15000, 0.01, 10),
+        ("anthropic.claude-opus-4-7", 4500, 0.01, 10),
+        # Reasoning models — Kimi and DeepSeek are ~5x slower than Opus 4.7
+        ("moonshot.kimi-k2-thinking", 22000, 0.02, 10),
+        ("deepseek.r1-v1:0", 25000, 0.03, 10),
     ]
 
     random.seed(42)
@@ -261,11 +292,44 @@ def stream_converse(
     output_text = ""
     ttft_ms = None
     input_tokens = output_tokens = 0
+    cache_read_tokens = cache_write_tokens = 0
     stop_reason = ""
     decision = None
 
-    for event in client.converse_stream(**kwargs):
-        if "contentBlockDelta" in event:
+    # Call converse_stream — handle both boto3 (returns dict with "stream" key)
+    # and SmartRouter (returns generator directly)
+    response = client.converse_stream(**kwargs)
+
+    # boto3 returns {"stream": EventStream, ...}
+    # SmartRouter yields events directly (it's a generator)
+    if isinstance(response, dict) and "stream" in response:
+        stream = response["stream"]
+    else:
+        stream = response
+
+    for event in stream:
+        # boto3 returns {"stream": EventStream} — unwrap if needed
+        if "stream" in event and hasattr(event["stream"], "__iter__"):
+            # This is the boto3 response wrapper — iterate the stream
+            for stream_event in event["stream"]:
+                if "contentBlockDelta" in stream_event:
+                    delta = stream_event["contentBlockDelta"].get("delta", {})
+                    if "text" in delta:
+                        if ttft_ms is None:
+                            ttft_ms = (time.perf_counter() - t_start) * 1000
+                        output_text += delta["text"]
+                        if on_chunk:
+                            on_chunk(delta["text"])
+                elif "metadata" in stream_event:
+                    usage = stream_event["metadata"].get("usage", {})
+                    input_tokens = usage.get("inputTokens", 0)
+                    output_tokens = usage.get("outputTokens", 0)
+                    cache_read_tokens = usage.get("cacheReadInputTokens", 0)
+                    cache_write_tokens = usage.get("cacheWriteInputTokens", 0)
+                elif "messageStop" in stream_event:
+                    stop_reason = stream_event["messageStop"].get("stopReason", "")
+            break  # Only one "stream" key in the response
+        elif "contentBlockDelta" in event:
             delta = event["contentBlockDelta"].get("delta", {})
             if "text" in delta:
                 if ttft_ms is None:
@@ -277,6 +341,8 @@ def stream_converse(
             usage = event["metadata"].get("usage", {})
             input_tokens = usage.get("inputTokens", 0)
             output_tokens = usage.get("outputTokens", 0)
+            cache_read_tokens = usage.get("cacheReadInputTokens", 0)
+            cache_write_tokens = usage.get("cacheWriteInputTokens", 0)
         elif "messageStop" in event:
             stop_reason = event["messageStop"].get("stopReason", "")
         elif "routing_decision" in event:
@@ -294,6 +360,8 @@ def stream_converse(
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "total_tokens": input_tokens + output_tokens,
+        "cache_read_tokens": cache_read_tokens,
+        "cache_write_tokens": cache_write_tokens,
         "stop_reason": stop_reason,
     }
 
@@ -314,11 +382,13 @@ def stream_converse(
             "routing_overhead_ms": decision.routing_decision_ms,
             "has_multimodal": False,
             "explanation": decision.explanation,
+            "cache_read_tokens": decision.prompt_cache_read_tokens,
+            "cache_write_tokens": decision.prompt_cache_write_tokens,
         })
     else:
         # Boto3 direct response — compute cost from registry
-        model = router.registry.get(model_id) if model_id else None
-        cost = model.pricing.estimate_cost(input_tokens, output_tokens) if model else 0
+        cost = compute_cost(model_id or "", input_tokens, output_tokens,
+                            cache_read_tokens, cache_write_tokens)
         result.update({
             "model_used": display_model_name(model_id or ""),
             "cost": round(cost, 6),
@@ -368,10 +438,12 @@ def call_converse(
         if "text" in block:
             output_text += block["text"]
 
-    # Extract usage
+    # Extract usage (includes cache tokens)
     usage = response.get("usage", {})
     input_tokens = usage.get("inputTokens", 0)
     output_tokens = usage.get("outputTokens", 0)
+    cache_read_tokens = usage.get("cacheReadInputTokens", 0)
+    cache_write_tokens = usage.get("cacheWriteInputTokens", 0)
     stop_reason = response.get("stopReason", "")
 
     # Build result
@@ -381,6 +453,8 @@ def call_converse(
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "total_tokens": input_tokens + output_tokens,
+        "cache_read_tokens": cache_read_tokens,
+        "cache_write_tokens": cache_write_tokens,
         "stop_reason": stop_reason,
     }
 
@@ -399,10 +473,12 @@ def call_converse(
             "candidates_evaluated": decision.candidates_evaluated,
             "routing_overhead_ms": decision.routing_decision_ms,
             "explanation": decision.explanation,
+            "cache_read_tokens": decision.prompt_cache_read_tokens,
+            "cache_write_tokens": decision.prompt_cache_write_tokens,
         })
     else:
-        model = router.registry.get(model_id) if model_id else None
-        cost = model.pricing.estimate_cost(input_tokens, output_tokens) if model else 0
+        cost = compute_cost(model_id or "", input_tokens, output_tokens,
+                            cache_read_tokens, cache_write_tokens)
         result.update({
             "model_used": display_model_name(model_id or ""),
             "cost": round(cost, 6),

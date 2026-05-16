@@ -3,7 +3,7 @@ import remarkGfm from 'remark-gfm'
 
 // ─── Constants ─────────────────────────────────────────────────────
 export const API = '/api'
-export const STREAM_API = 'http://localhost:8000/api'
+export const STREAM_API = '/api'
 
 export const USE_CASES = [
   { id: 'compare', label: 'Baseline vs Smart Router', icon: '⚡', description: 'Compare responses, cost, latency and accuracy side-by-side' },
@@ -47,6 +47,55 @@ export function Md({ children, variant = 'baseline' }) {
       th: ({children}) => <th className={`border ${tdBorder} px-3 py-1.5 ${thBg} font-medium text-left`}>{children}</th>,
       td: ({children}) => <td className={`border ${tdBorder} px-3 py-1.5`}>{children}</td>,
     }}>{children}</Markdown>
+  )
+}
+
+// ─── Thinking Block Detection & Display ────────────────────────────
+
+/**
+ * Parse <think>...</think> or <thinking>...</thinking> tags from response text.
+ * Returns { thinking: string|null, content: string }
+ */
+export function parseThinking(text) {
+  if (!text) return { thinking: null, content: text || '' }
+  const match = text.match(/<think(?:ing)?>([\s\S]*?)<\/think(?:ing)?>/)
+  if (!match) return { thinking: null, content: text }
+  const thinking = match[1].trim()
+  const content = text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>\s*/, '').trim()
+  return { thinking, content }
+}
+
+/**
+ * Collapsible thinking section.
+ * - `open`: whether the details element is open (controlled externally)
+ * - When `streaming` is true, it stays open; when streaming ends, parent collapses it.
+ */
+export function ThinkingBlock({ thinking, open = false }) {
+  if (!thinking) return null
+  return (
+    <details open={open} className="mb-2 border border-purple-900/30 rounded-lg overflow-hidden">
+      <summary className="text-[10px] text-purple-400 bg-purple-950/20 px-2 py-1 cursor-pointer hover:bg-purple-950/30 select-none">
+        🧠 Thinking...
+      </summary>
+      <div className="px-3 py-2 text-[11px] text-gray-500 italic leading-relaxed whitespace-pre-wrap">
+        {thinking}
+      </div>
+    </details>
+  )
+}
+
+/**
+ * Render response text with thinking block support.
+ * - `streaming`: if true, thinking block stays open
+ * - `variant`: 'baseline' or 'router' for Md styling
+ */
+export function ResponseWithThinking({ text, variant = 'baseline', streaming = false }) {
+  const { thinking, content } = parseThinking(text)
+  return (
+    <div>
+      <ThinkingBlock thinking={thinking} open={streaming} />
+      <Md variant={variant}>{content}</Md>
+    </div>
   )
 }
 
@@ -135,8 +184,31 @@ export function ExplainPopup({ explanation, onClose }) {
                 ))}
               </div>
             </div>
+            {/* Score Breakdown: user message vs system prompt floor */}
+            {cx.user_message_score != null && (
+              <div className="mb-3">
+                <div className="text-[9px] text-gray-500 mb-1">Score Breakdown:</div>
+                <div className="flex items-center gap-4 text-[10px]">
+                  <span className="text-gray-400">User Message Score: <span className="font-mono text-white">{cx.user_message_score?.toFixed(4)}</span></span>
+                  <span className="text-gray-400">System Prompt Floor: <span className="font-mono text-white">{cx.system_prompt_floor?.toFixed(4)}</span></span>
+                  <span className="text-gray-400">&rarr; Final: max(user_msg, floor) = <span className="font-mono font-bold text-white">{cx.score?.toFixed(4)}</span></span>
+                  {cx.floor_applied && <span className="text-[9px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded font-medium">⬆ Floor applied</span>}
+                </div>
+              </div>
+            )}
+            {/* System Floor Markers */}
+            {cx.system_floor_markers && Object.keys(cx.system_floor_markers).length > 0 && (
+              <div className="mb-3">
+                <div className="text-[9px] text-gray-500 mb-1">System Prompt Floor Markers:</div>
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(cx.system_floor_markers).flatMap(([cat, markers]) => markers.map((m, i) => (
+                    <span key={`sys-${cat}-${i}`} className="text-[9px] bg-teal-900/40 text-teal-300 px-1.5 py-0.5 rounded border border-teal-700/30"><span className="text-teal-400/70">System:</span> <span className="text-teal-500/70">{cat}:</span> {m}</span>
+                  )))}
+                </div>
+              </div>
+            )}
             <div>
-              <div className="text-[9px] text-gray-500 mb-1">Markers Detected:</div>
+              <div className="text-[9px] text-gray-500 mb-1">User Prompt Markers (Last Message):</div>
               <div className="flex flex-wrap gap-1">
                 {Object.entries(cx.markers_hit||{}).filter(([,v])=>v&&v.length>0).flatMap(([cat,markers])=>markers.map((m,i)=>(<span key={`${cat}-${i}`} className="text-[9px] bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded"><span className="text-orange-400/70">{cat}:</span> {m}</span>)))}
                 {Object.values(cx.markers_hit||{}).every(v=>!v||v.length===0)&&<span className="text-[10px] text-gray-600 italic">No keyword markers detected</span>}
@@ -170,8 +242,8 @@ export function ExplainPopup({ explanation, onClose }) {
             <table className="w-full text-[10px]"><thead><tr className="text-gray-500 border-b border-gray-700">
               <th className="text-left py-1.5">Model</th>
               {strat.weights&&<th className="text-right py-1.5 group relative cursor-help">Composite <span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-52 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">Weighted sum: cost×w + latency×w + quality×w</span></th>}
-              <th className={`text-right py-1.5 group relative cursor-help ${!strat.weights && strat.name==='cost-optimized'?'text-orange-400 font-bold':''}`}>Cost ⓘ<span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-56 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">1 - (estimated_cost / max_cost). Higher = cheaper.</span></th>
-              <th className={`text-right py-1.5 group relative cursor-help ${!strat.weights && strat.name==='latency-optimized'?'text-orange-400 font-bold':''}`}>Latency ⓘ<span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-56 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">From historical P50 latency (or tier heuristic). Higher = faster.</span></th>
+              <th className={`text-right py-1.5 group relative cursor-help ${!strat.weights && strat.name==='cost-optimized'?'text-orange-400 font-bold':''}`}>Cost ⓘ<span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-56 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">min_cost / model_cost (ratio). Cheapest = 1.0, floor = 0.10.</span></th>
+              <th className={`text-right py-1.5 group relative cursor-help ${!strat.weights && strat.name==='latency-optimized'?'text-orange-400 font-bold':''}`}>Latency ⓘ<span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-56 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">fastest_latency / model_latency (ratio). Fastest = 1.0, floor = 0.10.</span></th>
               <th className={`text-right py-1.5 group relative cursor-help ${!strat.weights && strat.name==='quality-optimized'?'text-orange-400 font-bold':''}`}>Quality ⓘ<span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-56 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">quality_baseline / 60 (AA Intelligence Index). Higher = smarter.</span></th>
             </tr></thead><tbody>
               {candidates.map((c,i)=>(<tr key={i} className={`${i===0?'text-orange-300 font-medium bg-orange-900/10':'text-gray-400'} border-b border-gray-800/50`}>

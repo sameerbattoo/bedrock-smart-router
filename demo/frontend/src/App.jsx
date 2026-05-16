@@ -18,6 +18,49 @@ export default function App() {
     try { localStorage.setItem('bsr_demo_history', JSON.stringify(history)) } catch {}
   }, [history])
 
+  // Pre-warm Strands agents on app load (background, non-blocking)
+  // Fires after initial page data (templates/options) has loaded
+  const [strandsSessionIds, setStrandsSessionIds] = useState({ baseline: '', router: '' })
+  const [strandsConversation, setStrandsConversation] = useState([])
+  const [appReady, setAppReady] = useState(false)
+
+  useEffect(() => {
+    if (!appReady) return
+    const form = new FormData()
+    form.append('message', 'Hi! Please introduce yourself briefly.')
+    form.append('baseline_session_id', '')
+    form.append('router_session_id', '')
+    form.append('baseline_model', 'sonnet')
+    form.append('router_strategy', 'balanced')
+    form.append('skip_judge', 'true')
+    fetch('/api/strands-chat', { method: 'POST', body: form })
+    .then(r => r.body.getReader())
+    .then(reader => {
+      const decoder = new TextDecoder()
+      let buffer = '', eventType = null
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) return
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+          for (const line of lines) {
+            if (line.startsWith('event: ')) eventType = line.slice(7).trim()
+            else if (line.startsWith('data: ') && eventType) {
+              const parsed = JSON.parse(line.slice(6))
+              if (eventType === 'session_init') {
+                setStrandsSessionIds({ baseline: parsed.baseline_session_id, router: parsed.router_session_id })
+              }
+              eventType = null
+            }
+          }
+          read()
+        }).catch(() => {})
+      }
+      read()
+    }).catch(() => {})
+  }, [appReady])
+
   const totalRuns = history.length
 
   function handleHistoryNavigate(h) {
@@ -38,8 +81,7 @@ export default function App() {
           <span className="text-[10px] text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">Demo</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-gray-500">
-          <span className="text-xs text-gray-400">Judge: Opus 4.7</span>
-          <span>{totalRuns} runs</span>
+          <span className="text-sm text-purple-400 flex items-center gap-1.5"><svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z"/></svg> Judge: Opus 4.7</span>
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
         </div>
       </header>
@@ -91,11 +133,11 @@ export default function App() {
         {activePage === 'history' ? (
           <HistoryPage history={history} setHistory={setHistory} onNavigate={handleHistoryNavigate} />
         ) : activePage === 'compare' ? (
-          <ComparePage key={resetKey} history={history} setHistory={setHistory} restoreState={restoreState} onRun={() => setNavOpen(false)} />
+          <ComparePage key={resetKey} history={history} setHistory={setHistory} restoreState={restoreState} onRun={() => setNavOpen(false)} onReady={() => setAppReady(true)} />
         ) : activePage === 'throttling' ? (
           <ThrottlePage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} />
         ) : activePage === 'strands' ? (
-          <StrandsPage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} />
+          <StrandsPage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} prewarmedSessionIds={strandsSessionIds} conversation={strandsConversation} setConversation={setStrandsConversation} />
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-600">

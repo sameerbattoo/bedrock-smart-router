@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Md, MetricWithDelta, ExplainPopup, AccuracyPopup, STREAM_API, API } from './shared'
+import { Md, MetricWithDelta, ExplainPopup, AccuracyPopup, ResponseWithThinking, STREAM_API, API } from './shared'
 import AnalyticsPanel from './AnalyticsPanel'
 
 // ─── Collapsible Step Section ──────────────────────────────────────
@@ -18,7 +18,7 @@ function StepSection({ number, title, visible, expanded, onToggle, children }) {
   )
 }
 
-export default function ComparePage({ history, setHistory, restoreState, onRun }) {
+export default function ComparePage({ history, setHistory, restoreState, onRun, onReady }) {
   const round = (n, d) => Math.round(n * 10**d) / 10**d
 
   const [templates, setTemplates] = useState([])
@@ -56,7 +56,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun }
 
   useEffect(() => {
     fetch(`${API}/templates`).then(r => r.json()).then(setTemplates).catch(() => {})
-    fetch(`${API}/options`).then(r => r.json()).then(setOptions).catch(() => {})
+    fetch(`${API}/options`).then(r => r.json()).then(d => { setOptions(d); if (onReady) onReady() }).catch(() => { if (onReady) onReady() })
   }, [])
 
   // Restore state from history navigation
@@ -167,6 +167,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun }
           baseline_tokens: (bl.input_tokens||0)+(bl.output_tokens||0),
           router_tokens: (rt.input_tokens||0)+(rt.output_tokens||0),
           savings_pct: savingsPct, router_model: rt.model_used, complexity: rt.complexity_detected,
+          has_error: false,
         }])
       }
 
@@ -330,6 +331,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun }
                 <div className="relative">
                   <input value={preferredSearch} onChange={e => { setPreferredSearch(e.target.value); setShowPreferredDropdown(true) }}
                     onFocus={() => setShowPreferredDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowPreferredDropdown(false), 200)}
                     placeholder={options.preferred_models?.find(m => m.id === preferredModel)?.label || 'Sonnet 4.6'}
                     className="w-36 bg-gray-900/80 border border-gray-700 rounded-md px-2 py-1 text-[11px] text-gray-300 placeholder-gray-500 focus:outline-none focus:border-green-600" />
                   {showPreferredDropdown && (
@@ -377,7 +379,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun }
                   ) : <div className="text-[10px] text-gray-600 animate-pulse">Waiting...</div>}
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 bg-[#080d18]">
-                  {baselineText ? <Md variant="baseline">{baselineText}</Md> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
+                  {baselineText ? <ResponseWithThinking text={baselineText} variant="baseline" streaming={loading && !baselineMetrics} /> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
                 </div>
               </div>
               {/* Router */}
@@ -408,7 +410,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun }
                   ) : <div className="text-[10px] text-gray-600 animate-pulse">Waiting...</div>}
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 bg-[#0d1210]">
-                  {routerText ? <Md variant="router">{routerText}</Md> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
+                  {routerText ? <ResponseWithThinking text={routerText} variant="router" streaming={loading && !routerMetrics} /> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
                 </div>
               </div>
             </div>

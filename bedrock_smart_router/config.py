@@ -117,6 +117,8 @@ def resolve_preset(config: RoutingConfig) -> RoutingConfig:
         tags=config.tags,
         metadata=config.metadata,
         fallback_enabled=config.fallback_enabled,
+        preferred_model=config.preferred_model,
+        explain=config.explain,
     )
     return merged
 

@@ -29,6 +29,8 @@ from bedrock_smart_router import RoutingConfig
 
 router = APIRouter()
 
+# Global lock to prevent concurrent throttle demos from corrupting each other's patches
+_throttle_lock = threading.Lock()
 
 def _make_throttle_error():
     """Create a realistic ThrottlingException with proper request ID."""
@@ -55,6 +57,84 @@ def _strip_geo_prefix(model_id: str) -> str:
             return model_id[len(prefix):]
     return model_id
 
+
+# ══════════════════════════════════════════════════════════════════════
+# Module-level execution functions (run in ThreadPoolExecutor)
+# ══════════════════════════════════════════════════════════════════════
+
+def _run_throttle_baseline(
+    client,
+    messages: list[dict],
+    system_prompt: str,
+    model_id: str,
+    result_queue: queue.Queue,
+) -> None:
+    """Baseline makes ONE direct call — fails immediately on throttle.
+
+    Puts ("success", result) or ("failed", error_info) into result_queue.
+    """
+    try:
+        result = call_converse(
+            client=client,
+            messages=messages,
+            system_prompt=system_prompt,
+            model_id=model_id,
+        )
+        result_queue.put(("success", result))
+    except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code", "")
+        error_msg = e.response.get("Error", {}).get("Message", "")
+        request_id = e.response.get("ResponseMetadata", {}).get("RequestId", "")
+        result_queue.put(("failed", {
+            "error": f"{error_code}: {error_msg}",
+            "model": display_model_name(model_id),
+            "model_id": model_id,
+            "request_id": request_id,
+        }))
+
+
+def _run_throttle_router(
+    client,
+    messages: list[dict],
+    system_prompt: str,
+    throttle_model: str,
+    attempt_log: list[dict],
+    result_queue: queue.Queue,
+) -> None:
+    """Router with preferred_model — retries 3x then falls back.
+
+    Puts ("done", result) or ("error", error_str) into result_queue.
+    """
+    try:
+        result = call_converse(
+            client=client,
+            messages=messages,
+            system_prompt=system_prompt,
+            routing=RoutingConfig(
+                strategy="balanced",
+                preferred_model=throttle_model,
+                explain=True,
+            ),
+        )
+        # Enrich with attempt timeline from the patch
+        throttled = [a for a in attempt_log if a["status"] == "throttled"]
+        fallback = next((a for a in attempt_log if a["status"] == "fallback"), None)
+        result["throttled_attempts"] = len(throttled)
+        result["fallback_from"] = display_model_name(throttle_model)
+        if fallback:
+            result["fallback_to"] = fallback["model"]
+            result["fallback_model_id"] = fallback["model_id"]
+        result_queue.put(("done", result))
+    except Exception as e:
+        # Include attempt log in error for debugging
+        throttled = [a for a in attempt_log if a["status"] == "throttled"]
+        fallback = next((a for a in attempt_log if a["status"] == "fallback"), None)
+        result_queue.put(("error", f"{type(e).__name__}: {str(e)[:200]}. Throttled {len(throttled)} times. Fallback: {fallback['model'] if fallback else 'none'}"))
+
+
+# ══════════════════════════════════════════════════════════════════════
+# API Endpoint
+# ══════════════════════════════════════════════════════════════════════
 
 @router.post("/throttle-demo")
 async def throttle_demo(
@@ -150,6 +230,8 @@ async def throttle_demo(
         router_q: queue.Queue = queue.Queue()
 
         # Install the patches on BOTH the shared client AND the router's internal client
+        # Protected by _throttle_lock to prevent concurrent demos from corrupting patches
+        _throttle_lock.acquire()
         bedrock_client.converse = throttled_converse
         bedrock_client.converse_stream = throttled_converse_stream
         smart_router._bedrock.converse = throttled_converse
@@ -172,60 +254,17 @@ async def throttle_demo(
                         bl_model_id = f"{r['cris_profiles'][0]}.{throttle_base}"
                         break
 
-            # ── Baseline: single direct call — no retry, no fallback ──
-            def run_baseline():
-                """Baseline makes ONE direct call — fails immediately on throttle."""
-                try:
-                    result = call_converse(
-                        client=bedrock_client,
-                        messages=messages,
-                        system_prompt=system_prompt,
-                        model_id=bl_model_id,
-                    )
-                    baseline_q.put(("success", result))
-                except ClientError as e:
-                    error_code = e.response.get("Error", {}).get("Code", "")
-                    error_msg = e.response.get("Error", {}).get("Message", "")
-                    request_id = e.response.get("ResponseMetadata", {}).get("RequestId", "")
-                    baseline_q.put(("failed", {
-                        "error": f"{error_code}: {error_msg}",
-                        "model": display_model_name(bl_model_id),
-                        "model_id": bl_model_id,
-                        "request_id": request_id,
-                    }))
-
-            # ── Smart Router: uses converse with retry + fallback ──
-            def run_router():
-                """Router with preferred_model — retries 3x then falls back."""
-                try:
-                    result = call_converse(
-                        client=smart_router,
-                        messages=messages,
-                        system_prompt=system_prompt,
-                        routing=RoutingConfig(
-                            strategy="balanced",
-                            preferred_model=throttle_model,
-                            explain=True,
-                        ),
-                    )
-                    # Enrich with attempt timeline from the patch
-                    throttled = [a for a in attempt_log if a["status"] == "throttled"]
-                    fallback = next((a for a in attempt_log if a["status"] == "fallback"), None)
-                    result["throttled_attempts"] = len(throttled)
-                    result["fallback_from"] = display_model_name(throttle_model)
-                    if fallback:
-                        result["fallback_to"] = fallback["model"]
-                        result["fallback_model_id"] = fallback["model_id"]
-                    router_q.put(("done", result))
-                except Exception as e:
-                    # Include attempt log in error for debugging
-                    throttled = [a for a in attempt_log if a["status"] == "throttled"]
-                    fallback = next((a for a in attempt_log if a["status"] == "fallback"), None)
-                    router_q.put(("error", f"{type(e).__name__}: {str(e)[:200]}. Throttled {len(throttled)} times. Fallback: {fallback['model'] if fallback else 'none'}"))
-
-            # Run both in parallel
-            loop.run_in_executor(executor, run_baseline)
-            loop.run_in_executor(executor, run_router)
+            # Run both in parallel via module-level functions
+            loop.run_in_executor(
+                executor,
+                _run_throttle_baseline,
+                bedrock_client, messages, system_prompt, bl_model_id, baseline_q,
+            )
+            loop.run_in_executor(
+                executor,
+                _run_throttle_router,
+                smart_router, messages, system_prompt, throttle_model, attempt_log, router_q,
+            )
 
             # Stream events
             baseline_done = False
@@ -279,5 +318,6 @@ async def throttle_demo(
             bedrock_client.converse_stream = original_converse_stream
             smart_router._bedrock.converse = original_router_converse
             smart_router._bedrock.converse_stream = original_router_converse_stream
+            _throttle_lock.release()
 
     return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"})

@@ -334,9 +334,9 @@ class TestResponseFieldCapture:
         response = router.converse(messages=_msgs("Hello"))
         d = response["routing_decision"]
         # total = 100 input + 80 read + 20 write = 200
-        # hit rate = 80 / 200 = 0.4
+        # hit rate = 80 / 200 × 100 = 40.0%
         assert d.total_input_tokens == 200
-        assert d.prompt_cache_hit_rate == pytest.approx(0.4)
+        assert d.prompt_cache_hit_rate == pytest.approx(40.0)
 
     def test_service_tier_captured(self, mock_router):
         router, client = mock_router
