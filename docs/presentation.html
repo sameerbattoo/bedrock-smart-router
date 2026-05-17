@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bedrock Smart Router — Overview</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0e17; color: #e0e0e0; overflow: hidden; }
+.slide { width: 100vw; height: 100vh; display: none; flex-direction: column; justify-content: center; padding: 60px 80px 80px; position: relative; }
+.slide.active { display: flex; }
+.slide::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 30% 20%, rgba(249,115,22,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.03) 0%, transparent 50%); pointer-events: none; }
+h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1.5rem; line-height: 1.1; }
+h1 .gradient { background: linear-gradient(135deg, #f97316, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; color: #f97316; }
+.subtitle { font-size: 1.2rem; color: #9ca3af; margin-bottom: 2.5rem; max-width: 900px; line-height: 1.6; }
+.grid { display: grid; gap: 24px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.card { background: rgba(17,24,39,0.8); border: 1px solid rgba(75,85,99,0.3); border-radius: 16px; padding: 28px; transition: all 0.2s; }
+.card:hover { border-color: rgba(249,115,22,0.4); transform: translateY(-2px); }
+.card .icon { font-size: 2rem; margin-bottom: 12px; }
+.card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #f3f4f6; }
+.card p { font-size: 0.85rem; color: #9ca3af; line-height: 1.5; }
+.card.highlight { border-color: rgba(249,115,22,0.5); background: rgba(249,115,22,0.05); }
+.badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-right: 6px; margin-bottom: 6px; }
+.badge-red { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.badge-yellow { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.3); }
+.badge-green { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.badge-orange { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+.pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.comparison { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 1rem; }
+.comparison th { text-align: left; padding: 10px 14px; color: #9ca3af; border-bottom: 1px solid #1f2937; font-weight: 600; }
+.comparison td { padding: 10px 14px; border-bottom: 1px solid #111827; }
+.comparison .yes { color: #4ade80; font-weight: 600; }
+.comparison .no { color: #6b7280; }
+.comparison .best { color: #f97316; font-weight: 700; }
+.nav { position: fixed; bottom: 20px; right: 40px; display: flex; gap: 12px; z-index: 200; }
+.nav button { background: rgba(249,115,22,0.2); border: 1px solid rgba(249,115,22,0.4); color: #fb923c; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; backdrop-filter: blur(8px); }
+.nav button:hover { background: rgba(249,115,22,0.4); }
+.nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+.slide-num { position: fixed; bottom: 35px; left: 40px; font-size: 0.8rem; color: #4b5563; z-index: 100; }
+.flow { display: flex; align-items: center; gap: 16px; margin-top: 2rem; }
+.flow-step { background: rgba(17,24,39,0.8); border: 1px solid #1f2937; border-radius: 12px; padding: 16px 20px; text-align: center; flex: 1; }
+.flow-step .num { font-size: 1.5rem; font-weight: 800; color: #f97316; }
+.flow-step .label { font-size: 0.75rem; color: #9ca3af; margin-top: 4px; }
+.flow-arrow { color: #4b5563; font-size: 1.5rem; }
+.logo { position: fixed; top: 20px; right: 40px; display: flex; align-items: center; gap: 8px; z-index: 100; }
+.logo .mark { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #f97316, #ea580c); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+.logo .text { font-size: 0.7rem; font-weight: 700; color: #4b5563; }
+</style>
+</head>
+<body>
+
+<div class="logo"><div class="mark">⚡</div><div class="text">Bedrock Smart Router</div></div>
+<div class="slide-num" id="slideNum">1 / 4</div>
+
+<!-- SLIDE 1: Problem Statement -->
+<div class="slide active" id="slide1">
+<h1>The <span class="gradient">Model Selection</span> Problem</h1>
+<p class="subtitle">Amazon Bedrock offers 65+ models across 8 families. Picking the right one for each request is a manual, static decision that leaves money and performance on the table.</p>
+<div class="grid grid-3">
+  <div class="card">
+    <div class="icon">💸</div>
+    <h3>Overspending</h3>
+    <p>Using Opus for "What is S3?" costs 50× more than needed. No automatic downgrade for simple tasks.</p>
+  </div>
+  <div class="card">
+    <div class="icon">🐌</div>
+    <h3>Unnecessary Latency</h3>
+    <p>Large models add seconds of latency for tasks a smaller model handles in milliseconds.</p>
+  </div>
+  <div class="card">
+    <div class="icon">💀</div>
+    <h3>No Resilience</h3>
+    <p>Hardcoded model IDs mean throttling = downtime. No retry, no fallback, no circuit breakers.</p>
+  </div>
+  <div class="card">
+    <div class="icon">🔒</div>
+    <h3>Single Family Lock-in</h3>
+    <p>Bedrock's native router only routes within one family. Can't leverage Nova for cost + Claude for quality.</p>
+  </div>
+  <div class="card">
+    <div class="icon">👥</div>
+    <h3>No Multi-Tenant Control</h3>
+    <p>Free and enterprise users hit the same model. No per-tenant budgets, no cost attribution.</p>
+  </div>
+  <div class="card">
+    <div class="icon">📊</div>
+    <h3>Blind Decisions</h3>
+    <p>No visibility into why a model was chosen. No quality tracking. No A/B testing for new models.</p>
+  </div>
+</div>
+</div>
+
+<!-- SLIDE 2: Available Solutions -->
+<div class="slide" id="slide2">
+<h1>Existing Solutions <span class="gradient">Fall Short</span></h1>
+<p class="subtitle">Generic LLM gateways and Bedrock's native router each solve part of the problem — but none address Bedrock-specific needs holistically.</p>
+<table class="comparison">
+<thead><tr><th>Capability</th><th>LiteLLM</th><th>OpenRouter</th><th>Portkey</th><th>Bedrock Native</th></tr></thead>
+<tbody>
+<tr><td>Purpose-built for Bedrock APIs</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td></tr>
+<tr><td>Cross-family routing</td><td class="no">Generic</td><td class="no">Generic</td><td class="no">Generic</td><td class="no">Single family only</td></tr>
+<tr><td>CRIS profile awareness</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">Manual</td></tr>
+<tr><td>Prompt cache optimization</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+<tr><td>Circuit breaker + fallback</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
+<tr><td>Multi-tenant cost tracking (AIP)</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">Manual</td></tr>
+<tr><td>Quality-aware routing</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+<tr><td>Budget enforcement</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+<tr><td>Strands Agents integration</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+<tr><td>Zero external dependencies</td><td class="no">Redis required</td><td class="no">SaaS</td><td class="no">SaaS</td><td class="yes">Yes</td></tr>
+</tbody>
+</table>
+<div class="pill-row" style="margin-top:2rem;">
+  <span class="badge badge-red">No Bedrock-native awareness</span>
+  <span class="badge badge-red">No cross-family intelligence</span>
+  <span class="badge badge-yellow">SaaS dependency or self-hosted proxy</span>
+  <span class="badge badge-yellow">No complexity-based routing</span>
+</div>
+</div>
+
+<!-- SLIDE 3: What is Smart Router -->
+<div class="slide" id="slide3">
+<h1><span class="gradient">Bedrock Smart Router</span></h1>
+<p class="subtitle">A lightweight Python SDK that sits between your app and Bedrock. Drop-in replacement for <code>converse()</code> &amp; <code>converse_stream()</code> with support for Strands Agents SDK.</p>
+<div class="grid grid-2" style="gap:16px;">
+  <div class="card highlight" style="padding:20px; display:flex; gap:14px; align-items:flex-start;">
+    <div class="icon" style="margin:0; font-size:1.5rem;">🧠</div>
+    <div>
+      <h3 style="margin-bottom:4px;">Intelligent Complexity Detection</h3>
+      <p>15-dimension classifier analyzes each request in &lt;1ms. Routes simple tasks to cheap models, complex to powerful ones.</p>
+      <div class="pill-row" style="margin-top:8px;">
+        <span class="badge badge-green">Simple → Micro/Lite</span>
+        <span class="badge badge-blue">Complex → Mid/Heavy</span>
+        <span class="badge badge-orange">Reasoning → Frontier</span>
+      </div>
+    </div>
+  </div>
+  <div class="card highlight" style="padding:20px; display:flex; gap:14px; align-items:flex-start;">
+    <div class="icon" style="margin:0; font-size:1.5rem;">⚡</div>
+    <div>
+      <h3 style="margin-bottom:4px;">4 Routing Strategies</h3>
+      <p>Cost-optimized, latency-optimized, quality-optimized, or balanced. One-word presets for common profiles.</p>
+      <div class="pill-row" style="margin-top:8px;">
+        <span class="badge badge-green">economy</span>
+        <span class="badge badge-blue">speed</span>
+        <span class="badge badge-orange">balanced</span>
+        <span class="badge badge-yellow">quality</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="padding:20px; display:flex; gap:14px; align-items:flex-start;">
+    <div class="icon" style="margin:0; font-size:1.5rem;">🛡️</div>
+    <div>
+      <h3 style="margin-bottom:4px;">Built-in Resilience</h3>
+      <p>Circuit breakers, automatic retry with backoff, multi-model fallback chains. Throttling → graceful degradation.</p>
+    </div>
+  </div>
+  <div class="card" style="padding:20px; display:flex; gap:14px; align-items:flex-start;">
+    <div class="icon" style="margin:0; font-size:1.5rem;">☁️</div>
+    <div>
+      <h3 style="margin-bottom:4px;">Bedrock-Native</h3>
+      <p>CRIS profiles, latency optimization, prompt caching, guardrails, Application Inference Profiles — all automatic.</p>
+    </div>
+  </div>
+</div>
+<div class="flow" style="margin-top:1.5rem;">
+  <div class="flow-step"><div class="num">1</div><div class="label">Analyze</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="num">2</div><div class="label">Score</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="num">3</div><div class="label">Invoke</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="num">4</div><div class="label">Fallback</div></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step"><div class="num">5</div><div class="label">Record</div></div>
+</div>
+</div>
+
+<!-- SLIDE 4: How It Addresses the Problem -->
+<div class="slide" id="slide4">
+<h1>Problem <span class="gradient">→ Solved</span></h1>
+<p class="subtitle">The Smart Router analyzes each request's complexity in real-time and routes it to the optimal model — balancing cost, latency, and quality automatically with built-in resilience.</p>
+<div class="grid grid-3" style="margin-top:1.5rem; gap:20px;">
+  <div class="card" style="padding:22px; display:flex; gap:14px; align-items:flex-start;">
+    <div style="font-size:1.3rem;"></div>
+    <div>
+      <h3 style="margin-bottom:4px; font-size:0.9rem;">40-90% Cost Reduction</h3>
+      <p>Simple requests auto-route to Nova Micro ($0.04/M) instead of Opus ($15/M). Same quality, massive savings.</p>
+    </div>
+  </div>
+  <div class="card" style="padding:22px; display:flex; gap:14px; align-items:flex-start;">
+    <div style="font-size:1.3rem;">⚡</div>
+    <div>
+      <h3 style="margin-bottom:4px; font-size:0.9rem;">3-10× Faster for Simple Tasks</h3>
+      <p>Micro models respond in 200ms vs 2000ms. Latency strategy picks the fastest model that meets quality needs.</p>
+    </div>
+  </div>
+  <div class="card" style="padding:22px; display:flex; gap:14px; align-items:flex-start;">
+    <div style="font-size:1.3rem;">🛡️</div>
+    <div>
+      <h3 style="margin-bottom:4px; font-size:0.9rem;">Zero Downtime on Throttling</h3>
+      <p>Circuit breakers detect failures. Automatic fallback to next-best model. Users never see a 429.</p>
+    </div>
+  </div>
+  <div class="card" style="padding:22px; display:flex; gap:14px; align-items:flex-start;">
+    <div style="font-size:1.3rem;">🌐</div>
+    <div>
+      <h3 style="margin-bottom:4px; font-size:0.9rem;">Cross-Family Intelligence</h3>
+      <p>Routes across Anthropic, Nova, Meta, Mistral, MiniMax, OpenAI — picks the best regardless of family.</p>
+    </div>
+  </div>
+  <div class="card" style="padding:22px; display:flex; gap:14px; align-items:flex-start;">
+    <div style="font-size:1.3rem;">🏢</div>
+    <div>
+      <h3 style="margin-bottom:4px; font-size:0.9rem;">Per-Tenant Control</h3>
+      <p>Enterprise gets Opus. Free tier gets Micro. Per-tenant budgets, AIPs for CloudWatch + Cost Explorer.</p>
+    </div>
+  </div>
+  <div class="card" style="padding:22px; display:flex; gap:14px; align-items:flex-start;">
+    <div style="font-size:1.3rem;">🔍</div>
+    <div>
+      <h3 style="margin-bottom:4px; font-size:0.9rem;">Full Observability</h3>
+      <p>Explain every routing decision. A/B test new models safely. Track quality over time. CloudWatch + OTel.</p>
+    </div>
+  </div>
+</div>
+<div style="margin-top:1.5rem; text-align:center;">
+  <span class="badge badge-orange" style="font-size:0.8rem; padding:5px 14px;">Drop-in replacement — change 1 line of code</span>
+  <span class="badge badge-green" style="font-size:0.8rem; padding:5px 14px;">Zero external dependencies (boto3 only)</span>
+  <span class="badge badge-blue" style="font-size:0.8rem; padding:5px 14px;">Works with Strands Agents SDK</span>
+</div>
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button id="prev" onclick="navigate(-1)">← Prev</button>
+  <button id="next" onclick="navigate(1)">Next →</button>
+</div>
+
+<script>
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+function navigate(dir) {
+  slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(slides.length - 1, current + dir));
+  slides[current].classList.add('active');
+  document.getElementById('slideNum').textContent = `${current + 1} / ${slides.length}`;
+  document.getElementById('prev').disabled = current === 0;
+  document.getElementById('next').disabled = current === slides.length - 1;
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') navigate(1);
+  if (e.key === 'ArrowLeft') navigate(-1);
+});
+navigate(0);
+</script>
+</body>
+</html>
