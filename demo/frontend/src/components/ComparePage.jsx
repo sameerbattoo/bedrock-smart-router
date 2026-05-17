@@ -32,6 +32,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
   const [preferredSearch, setPreferredSearch] = useState('')
   const [showPreferredDropdown, setShowPreferredDropdown] = useState(false)
   const [difficulty, setDifficulty] = useState('simple')
+  const [isManual, setIsManual] = useState(false)
   const [loading, setLoading] = useState(false)
   const [baselineText, setBaselineText] = useState('')
   const [routerText, setRouterText] = useState('')
@@ -97,6 +98,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
   function selectTemplate(t) {
     setPrompt(t.prompt)
     setSystemPrompt(t.system_prompt || '')
+    setIsManual(false)
     setStep2Visible(true)
     setStep2Expanded(true)
     setStep1Expanded(false)
@@ -112,6 +114,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
   function handleManualEntry() {
     setPrompt('')
     setSystemPrompt('')
+    setIsManual(true)
     setStep2Visible(true)
     setStep2Expanded(true)
     setStep1Expanded(false)
@@ -230,7 +233,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
               { id: 'reasoning', icon: '🧠', label: 'Reasoning' },
               { id: 'manual', icon: '✏️', label: 'Manual Entry' },
             ].map(d => (
-              <button key={d.id} onClick={() => { if (d.id === 'manual') { handleManualEntry() } else { setDifficulty(d.id) } }}
+              <button key={d.id} onClick={() => { if (d.id === 'manual') { handleManualEntry() } else { setDifficulty(d.id); setBaselineModel(d.id === 'reasoning' ? 'opus' : 'sonnet') } }}
                 className={`text-[11px] px-3 py-1.5 rounded-lg font-medium transition-all ${
                   d.id === 'manual'
                     ? 'text-green-400 border border-green-700/50 hover:bg-green-900/20'
@@ -258,44 +261,56 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
         <StepSection number={2} title="System & User Prompt" visible={step2Visible} expanded={step2Expanded} onToggle={() => setStep2Expanded(!step2Expanded)}>
           {/* System Prompt */}
           <div className="mb-3">
-            <div className="text-[10px] text-gray-500 uppercase font-bold mb-1.5 flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              System Prompt
-            </div>
-            <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
-              placeholder="You are a helpful assistant..."
-              rows={2} className="w-full bg-gray-900/40 border border-gray-800/50 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-orange-600/40 resize-none" />
+            <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">System Prompt</div>
+            {isManual ? (
+              <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
+                placeholder="You are a helpful assistant..."
+                rows={2} className="w-full bg-gray-900/40 border border-gray-800/50 rounded-lg px-3 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-orange-600/40 resize-none font-mono" />
+            ) : (
+              <div className="text-xs text-gray-400 bg-gray-900/60 rounded-lg px-3 py-2 border border-gray-800/50 font-mono">{systemPrompt || '(none)'}</div>
+            )}
           </div>
           {/* User Prompt */}
           <div className="mb-3">
-            <div className="text-[10px] text-gray-500 uppercase font-bold mb-1.5 flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-              User Prompt
-            </div>
-            <div className="relative">
-              <textarea value={prompt} onChange={e => setPrompt(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); run() }}}
-                placeholder="Ask anything..." rows={3}
-                className="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 resize-none" />
-              <div className="absolute right-3 bottom-2.5 flex items-center gap-2">
-                {file && <span className="text-[9px] text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">📎{file.name}<button onClick={()=>{setFile(null);setHistoryFileId('');setHistoryFileName('')}} className="text-red-400 ml-1">&times;</button></span>}
-                {!file && historyFileId && (
-                  historyFileExpired
-                    ? <span className="text-[9px] text-red-300 bg-red-900/40 border border-red-700/50 px-1.5 py-0.5 rounded">📎{historyFileName} <span className="text-red-400">(expired — re-upload)</span><button onClick={()=>{setHistoryFileId('');setHistoryFileName('');setHistoryFileExpired(false)}} className="text-red-400 ml-1">&times;</button></span>
-                    : <span className="text-[9px] text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">📎{historyFileName || '(from history)'}<button onClick={()=>{setHistoryFileId('');setHistoryFileName('')}} className="text-red-400 ml-1">&times;</button></span>
-                )}
-                <button onClick={() => fileRef.current?.click()} className="text-gray-600 hover:text-gray-400 p-1" title="Attach file">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                </button>
-                <button onClick={run} disabled={loading || !prompt.trim()}
-                  className="bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-xs font-medium rounded-lg px-4 py-1.5 flex items-center gap-1.5 transition-all shadow-lg shadow-orange-900/20">
-                  {loading ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : null}
-                  {loading ? 'Running...' : 'Run'}
-                </button>
+            <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">User Prompt</div>
+            {isManual ? (
+              <div className="relative">
+                <textarea value={prompt} onChange={e => setPrompt(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); run() }}}
+                  placeholder="Ask anything..." rows={3}
+                  className="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 resize-none" />
+                <div className="absolute right-3 bottom-2.5 flex items-center gap-2">
+                  {file && <span className="text-[9px] text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">📎{file.name}<button onClick={()=>{setFile(null);setHistoryFileId('');setHistoryFileName('')}} className="text-red-400 ml-1">&times;</button></span>}
+                  {!file && historyFileId && (
+                    historyFileExpired
+                      ? <span className="text-[9px] text-red-300 bg-red-900/40 border border-red-700/50 px-1.5 py-0.5 rounded">📎{historyFileName} <span className="text-red-400">(expired)</span><button onClick={()=>{setHistoryFileId('');setHistoryFileName('');setHistoryFileExpired(false)}} className="text-red-400 ml-1">&times;</button></span>
+                      : <span className="text-[9px] text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">📎{historyFileName || '(from history)'}<button onClick={()=>{setHistoryFileId('');setHistoryFileName('')}} className="text-red-400 ml-1">&times;</button></span>
+                  )}
+                  <button onClick={() => fileRef.current?.click()} className="text-gray-600 hover:text-gray-400 p-1" title="Attach file">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                  </button>
+                  <button onClick={run} disabled={loading || !prompt.trim()}
+                    className="bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-xs font-medium rounded-lg px-4 py-1.5 flex items-center gap-1.5 transition-all shadow-lg shadow-orange-900/20">
+                    {loading ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : null}
+                    {loading ? 'Running...' : 'Run'}
+                  </button>
+                </div>
+                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" onChange={e => { setFile(e.target.files?.[0]); setHistoryFileId('') }} className="hidden" />
               </div>
-              <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" onChange={e => { setFile(e.target.files?.[0]); setHistoryFileId('') }} className="hidden" />
-            </div>
+            ) : (
+              <div className="text-xs text-gray-300 bg-gray-900/60 rounded-lg px-3 py-2 border border-gray-800/50">{prompt}</div>
+            )}
           </div>
+          {/* Run button for template mode */}
+          {!isManual && (
+            <div className="flex justify-end">
+              <button onClick={run} disabled={loading || !prompt.trim()}
+                className="bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-xs font-bold rounded-lg px-5 py-2 flex items-center gap-2 transition-all shadow-lg shadow-orange-900/20">
+                {loading ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : <span>⚡</span>}
+                {loading ? 'Running...' : 'Run'}
+              </button>
+            </div>
+          )}
         </StepSection>
 
         {/* ═══ Step 3: Response ═══ */}
@@ -362,7 +377,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
               <div className="flex-1 border border-blue-900/30 rounded-lg overflow-hidden flex flex-col hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/20 hover:-translate-y-1.5 transition-all duration-200">
                 <div className="px-4 py-2 border-b border-blue-900/30 bg-blue-950/20">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs font-medium text-blue-400">Baseline</span>
+                    <span className="text-xs font-medium text-blue-400">🧊 Baseline</span>
                     <span className="text-[10px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded">{baselineMetrics?.model_used}</span>
                   </div>
                   {baselineMetrics ? (
@@ -387,13 +402,13 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
                 <div className="px-4 py-2 border-b border-orange-900/30 bg-orange-950/20">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-400">Smart Router</span>
+                      <span className="text-xs font-medium text-orange-400">⚡ Smart Router</span>
                       <span className="text-[10px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded cursor-help" title={routerMetrics?.model_id_full || ''}>{routerMetrics?.model_used}</span>
                       {routerMetrics?.complexity_detected && <span className="text-[10px] bg-purple-900/40 text-purple-300 px-1.5 py-0.5 rounded">{routerMetrics.complexity_detected}</span>}
                     </div>
                     <div className="flex items-center gap-2">
                       {routerMetrics?.routing_overhead_ms != null && <span className="text-[10px] text-gray-500">Routing Overhead: {routerMetrics.routing_overhead_ms}ms</span>}
-                      {routerMetrics?.explanation && <button onClick={() => setExplainPopup(routerMetrics.explanation)} className="text-[10px] text-orange-400 hover:text-orange-300 bg-orange-900/20 hover:bg-orange-900/40 px-1.5 py-0.5 rounded transition-all">ⓘ Explain</button>}
+                      {routerMetrics?.explanation && <button onClick={() => setExplainPopup({...routerMetrics.explanation, _fallback_used: routerMetrics.fallback_used, _actual_model: routerMetrics.model_used})} className="text-[10px] text-orange-400 hover:text-orange-300 bg-orange-900/20 hover:bg-orange-900/40 px-1.5 py-0.5 rounded transition-all">ⓘ Explain</button>}
                     </div>
                   </div>
                   {routerMetrics ? (

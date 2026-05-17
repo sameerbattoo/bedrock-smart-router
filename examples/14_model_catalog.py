@@ -49,7 +49,7 @@ overlay = {
         "max_output_tokens": 5000,
         "pricing": {"input_per_1k": 0.001, "output_per_1k": 0.004},
         "capabilities": {"tool_use": True, "vision": True, "streaming": True},
-        "supported_inference_tiers": ["standard"],
+        "supported_latency_modes": ["standard"],
     }]
 }
 

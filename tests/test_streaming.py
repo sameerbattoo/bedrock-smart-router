@@ -162,7 +162,7 @@ class TestConverseStream:
             if "routing_decision" in event:
                 decision = event["routing_decision"]
         assert decision.cris_profile is not None
-        assert decision.inference_tier in ("standard", "priority", "flex")
+        assert decision.inference_tier in ("standard", "optimized")
 
     def test_streaming_tool_use_excludes_incompatible_models(self, mock_router):
         """converse_stream with tools should not select models with streaming_tool_use=False."""

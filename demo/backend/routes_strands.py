@@ -41,6 +41,8 @@ router = APIRouter()
 MAX_CONVERSATION_TURNS = 5
 DIAGRAM_DIR = Path("/tmp/generated-diagrams")
 DIAGRAM_DIR.mkdir(exist_ok=True)
+# Lock for diagram file renaming (prevents race between baseline and router)
+_diagram_rename_lock = threading.Lock()
 _IMG_PATH_RE = re.compile(r'!\[([^\]]*)\]\(([^)]+\.png)\)')
 
 # Strategy name → preset name mapping
@@ -162,8 +164,15 @@ def _rewrite_diagram_paths(text: str) -> str:
     return _PLAIN_PATH_RE.sub(_replace_plain_path_match, result)
 
 
-def _rename_new_diagrams(pre_files: set[str], prefix: str) -> dict[str, str]:
-    """Rename newly created diagram files with a prefix. Returns {old: new} map."""
+def _rename_new_diagrams(pre_files: set[str], prefix: str, after_time: float = 0) -> dict[str, str]:
+    """Rename newly created diagram files with a prefix. Returns {old: new} map.
+    
+    Args:
+        pre_files: Set of filenames that existed before the agent ran.
+        prefix: Prefix to add (e.g., "bl_" or "rt_").
+        after_time: Only rename files created after this timestamp (time.time()).
+                    Prevents one agent from claiming another agent's files.
+    """
     if not DIAGRAM_DIR.exists():
         return {}
     post_files = set(f.name for f in DIAGRAM_DIR.glob("*.png"))
@@ -172,8 +181,13 @@ def _rename_new_diagrams(pre_files: set[str], prefix: str) -> dict[str, str]:
         if new_file.startswith("bl_") or new_file.startswith("rt_"):
             continue
         src = DIAGRAM_DIR / new_file
+        if not src.exists():
+            continue
+        # Only claim files created after our agent started
+        if after_time > 0 and src.stat().st_mtime < after_time:
+            continue
         dst = DIAGRAM_DIR / f"{prefix}{new_file}"
-        if src.exists() and not dst.exists():
+        if not dst.exists():
             src.rename(dst)
             rename_map[new_file] = f"{prefix}{new_file}"
     return rename_map
@@ -276,13 +290,15 @@ def _run_baseline_agent(session_id: str, baseline_model: str, message: str,
 
         agent.callback_handler = _callback
         pre_diagrams = _snapshot_diagrams()
+        t_agent_start = time.time()
         response = agent(message)
         agent.callback_handler = None
         wall_clock_ms = (time.perf_counter() - t_start) * 1000
 
-        # Rename diagrams with baseline prefix
+        # Rename diagrams with baseline prefix (only files created during this agent's run)
         response_text = str(response) if response else ""
-        rename_map = _rename_new_diagrams(pre_diagrams, "bl_")
+        with _diagram_rename_lock:
+            rename_map = _rename_new_diagrams(pre_diagrams, "bl_", after_time=t_agent_start)
         for old_name, new_name in rename_map.items():
             response_text = response_text.replace(old_name, new_name)
         response_text = _rewrite_diagram_paths(response_text)
@@ -356,13 +372,15 @@ def _run_router_agent(session_id: str, router_strategy: str, preferred_model: st
 
         agent.callback_handler = _callback
         pre_diagrams = _snapshot_diagrams()
+        t_agent_start = time.time()
         response = agent(message)
         agent.callback_handler = None
         wall_clock_ms = (time.perf_counter() - t_start) * 1000
 
-        # Rename diagrams with router prefix
+        # Rename diagrams with router prefix (only files created during this agent's run)
         response_text = str(response) if response else ""
-        rename_map = _rename_new_diagrams(pre_diagrams, "rt_")
+        with _diagram_rename_lock:
+            rename_map = _rename_new_diagrams(pre_diagrams, "rt_", after_time=t_agent_start)
         for old_name, new_name in rename_map.items():
             response_text = response_text.replace(old_name, new_name)
         response_text = _rewrite_diagram_paths(response_text)
@@ -385,6 +403,13 @@ def _run_router_agent(session_id: str, router_strategy: str, preferred_model: st
             "ttft_ms": round(ttft_ms[0], 1) if ttft_ms[0] else round(strands_latency_ms or wall_clock_ms, 1),
         }
         if decision:
+            if decision.fallback_used:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Fallback triggered: primary was %s, fell back to %s",
+                    decision.explanation.get("reason", "unknown") if decision.explanation else "unknown",
+                    decision.selected_model,
+                )
             result.update({
                 "model_used": display_model_name(decision.selected_model),
                 "model_id_full": decision.cris_profile or decision.selected_model,

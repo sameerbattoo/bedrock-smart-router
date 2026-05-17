@@ -172,15 +172,16 @@ export default function StrandsPage({ history, setHistory, onRun, restoreState, 
     if (conversation.length > 0) {
       // Per-turn metrics are already stored individually in history.
     }
-    // Clear conversation but keep session IDs (MCP clients stay alive on backend)
+    // Clear conversation and baseline session (allows model switching)
+    // Keep router session alive (MCP tools stay warm)
     setConversation([])
-    // Call backend to clear conversation history
     if (baselineSessionId || routerSessionId) {
       const form = new FormData()
       form.append('baseline_session_id', baselineSessionId)
       form.append('router_session_id', routerSessionId)
       fetch(`${API}/strands-reset`, { method: 'POST', body: form }).catch(() => {})
     }
+    setBaselineSessionId('')  // Allows baseline model switching
   }
 
   async function sendMessage() {
@@ -457,7 +458,7 @@ export default function StrandsPage({ history, setHistory, onRun, restoreState, 
                       </div>
                       <div className="flex items-center gap-2">
                         {turn.router?.routing_overhead_ms != null && <span className="text-[9px] text-gray-500">Overhead: {turn.router.routing_overhead_ms}ms</span>}
-                        {turn.router?.explanation && <button onClick={() => setExplainPopup(turn.router.explanation)} className="text-[10px] text-orange-400 hover:text-orange-300 bg-orange-900/20 hover:bg-orange-900/40 px-1.5 py-0.5 rounded transition-all">ⓘ Explain</button>}
+                        {turn.router?.explanation && <button onClick={() => setExplainPopup({...turn.router.explanation, _fallback_used: turn.router.fallback_used, _actual_model: turn.router.model_used})} className="text-[10px] text-orange-400 hover:text-orange-300 bg-orange-900/20 hover:bg-orange-900/40 px-1.5 py-0.5 rounded transition-all">ⓘ Explain</button>}
                       </div>
                     </div>
                     {turn.router && !turn.router.error && !turn.isWelcome && !turn.router._streaming && (

@@ -82,8 +82,18 @@ class AIPManager:
 
         If AIPs are disabled or no tenant tags are provided, returns
         the original model_id unchanged.
+        
+        AIPs can only be created for models with system-defined inference
+        profiles (CRIS profiles like us.*, global.*, eu.*). Direct-access
+        models (no geography prefix) don't support AIPs.
         """
         if not self.config.enabled or not tenant_tags:
+            return model_id
+
+        # AIPs require a system-defined inference profile as source.
+        # Only models invoked via CRIS profiles (us.*, global.*, eu.*, etc.) support this.
+        _CRIS_PREFIXES = ("us.", "global.", "eu.", "ap.", "apac.", "au.", "ca.", "jp.")
+        if not any(model_id.startswith(p) for p in _CRIS_PREFIXES):
             return model_id
 
         # Build a cache key from the tenant tags
@@ -114,18 +124,35 @@ class AIPManager:
         model_id: str,
         tenant_tags: dict[str, str],
     ) -> AIPEntry:
-        """Create an Application Inference Profile via the Bedrock API."""
+        """Create an Application Inference Profile via the Bedrock API.
+        
+        First checks if a profile with the same name already exists
+        to avoid creating duplicates across backend restarts.
+        """
         client = self._get_client()
 
-        # Build a descriptive name
+        # Build a descriptive name (include full model path to avoid conflicts)
         tag_suffix = "-".join(
             f"{v}" for k, v in sorted(tenant_tags.items())
         )[:50]
-        profile_name = f"{self.config.profile_name_prefix}-{tag_suffix}-{model_id.split('.')[-1]}"
+        # Use full model_id in name (replace dots with hyphens) to differentiate CRIS profiles
+        model_slug = model_id.replace(".", "-").replace(":", "-")[:40]
+        profile_name = f"{self.config.profile_name_prefix}-{tag_suffix}-{model_slug}"
         # Sanitise: AIP names allow alphanumeric, hyphens, underscores
         profile_name = "".join(
             c if c.isalnum() or c in "-_" else "-" for c in profile_name
         )[:64]
+
+        # Check if profile already exists (avoid duplicates across restarts)
+        existing_arn = self._find_existing_profile(profile_name)
+        if existing_arn:
+            logger.info("Reusing existing AIP %s -> %s", profile_name, existing_arn)
+            return AIPEntry(
+                profile_arn=existing_arn,
+                profile_name=profile_name,
+                model_id=model_id,
+                tags=tenant_tags,
+            )
 
         # Build tags list
         tags = [{"key": k, "value": v} for k, v in tenant_tags.items()]
@@ -148,6 +175,27 @@ class AIPManager:
             model_id=model_id,
             tags=tenant_tags,
         )
+
+    def _find_existing_profile(self, profile_name: str) -> str | None:
+        """Check if an AIP with this name already exists and is usable. Returns ARN or None."""
+        try:
+            client = self._get_client()
+            kwargs: dict[str, Any] = {"maxResults": 100, "typeEquals": "APPLICATION"}
+            while True:
+                resp = client.list_inference_profiles(**kwargs)
+                for p in resp.get("inferenceProfileSummaries", []):
+                    if p.get("inferenceProfileName") == profile_name:
+                        status = p.get("status", "")
+                        if status == "ACTIVE":
+                            return p.get("inferenceProfileArn", "")
+                        # Skip non-active profiles
+                nt = resp.get("nextToken")
+                if not nt:
+                    break
+                kwargs["nextToken"] = nt
+        except Exception as exc:
+            logger.debug("Could not list profiles to check for existing: %s", exc)
+        return None
 
     def _to_model_arn(self, model_id: str) -> str:
         """Convert a short model ID to a full Bedrock inference profile ARN.

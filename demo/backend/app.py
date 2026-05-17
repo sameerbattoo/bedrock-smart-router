@@ -17,6 +17,7 @@ from shared import (
 from routes_compare import router as compare_router
 from routes_throttle import router as throttle_router
 from routes_strands import router as strands_router
+from routes_multi_tenant import router as multi_tenant_router
 
 app = FastAPI(title="Bedrock Smart Router Demo")
 app.add_middleware(
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(compare_router, prefix="/api")
 app.include_router(throttle_router, prefix="/api")
 app.include_router(strands_router, prefix="/api")
+app.include_router(multi_tenant_router, prefix="/api")
 
 
 # ── Common Endpoints ────────────────────────────────────────────────

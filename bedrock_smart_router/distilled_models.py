@@ -99,7 +99,7 @@ class DistilledModelManager:
             pricing=derived_pricing,
             cris_profiles=[],  # Custom models don't have CRIS
             regions=[],  # Custom models don't have regional availability
-            supported_inference_tiers=["standard"],
+            supported_latency_modes=["standard"],
             guardrail_compatible=teacher.guardrail_compatible,
             distilled_from=teacher_model_id,
             distilled_quality_delta=quality_delta,

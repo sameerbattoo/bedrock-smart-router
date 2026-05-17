@@ -141,7 +141,30 @@ class BedrockRouter:
         )
 
         # Phase 3: Bedrock-native
-        self._cris = CRISManager(config.cris)
+        # Derive CRIS restrictions from excluded_models patterns
+        cris_config = config.cris
+        if config.excluded_models:
+            import fnmatch
+            allow_global = cris_config.allow_global
+            blocked_prefixes: list[str] = []
+            if any(fnmatch.fnmatch("global.test", pat) for pat in config.excluded_models):
+                allow_global = False
+                blocked_prefixes.append("global")
+            if any(fnmatch.fnmatch("us.test", pat) for pat in config.excluded_models):
+                blocked_prefixes.append("us")
+            if any(fnmatch.fnmatch("eu.test", pat) for pat in config.excluded_models):
+                blocked_prefixes.append("eu")
+            if any(fnmatch.fnmatch("ap.test", pat) for pat in config.excluded_models):
+                blocked_prefixes.append("ap")
+            if blocked_prefixes or not allow_global:
+                from bedrock_smart_router.cris_manager import CRISConfig
+                cris_config = CRISConfig(
+                    enabled=cris_config.enabled,
+                    preferred_geography=cris_config.preferred_geography,
+                    allow_global=allow_global,
+                    blocked_prefixes=blocked_prefixes,
+                )
+        self._cris = CRISManager(cris_config)
         self._tier_selector = InferenceTierSelector(config.inference_tier)
         self._cache_advisor = PromptCacheAdvisor()
         self._guardrails = GuardrailsManager(
@@ -328,9 +351,9 @@ class BedrockRouter:
                     model.model_id, is_throttle=is_throttle,
                 )
                 logger.warning(
-                    "Model %s failed (%s), trying fallback %d/%d",
+                    "Model %s failed (%s), trying fallback %d/%d. Error: %s",
                     model.model_id, RetryHandler.get_error_code(exc),
-                    i + 1, len(models_to_try),
+                    i + 1, len(models_to_try), str(exc)[:500],
                 )
 
         if response is None or used_model is None:
@@ -548,7 +571,7 @@ class BedrockRouter:
                 if inference_config:
                     call_kwargs["inferenceConfig"] = inference_config
                 if model_tier and model_tier != "standard":
-                    call_kwargs["serviceTier"] = {"type": model_tier}
+                    call_kwargs["performanceConfig"] = {"latency": "optimized"}
                 if routing.metadata:
                     stream_req_meta = {
                         k: str(v) for k, v in routing.metadata.items()
@@ -557,6 +580,12 @@ class BedrockRouter:
                     if stream_req_meta:
                         call_kwargs["requestMetadata"] = stream_req_meta
                 call_kwargs.update(kwargs)
+
+                logger.debug(
+                    "Stream call: model=%s, keys=%s, msg_count=%d, has_tools=%s, has_system=%s, extra_kwargs=%s",
+                    invoke_model_id, list(call_kwargs.keys()), len(messages),
+                    bool(tool_config), bool(system), list(kwargs.keys()),
+                )
 
                 stream_resp = self._bedrock.converse_stream(**call_kwargs)
                 stream = stream_resp.get("stream")
@@ -572,9 +601,9 @@ class BedrockRouter:
                     model.model_id, is_throttle=is_throttle,
                 )
                 logger.warning(
-                    "Stream: model %s failed (%s), trying fallback %d/%d",
-                    model.model_id, RetryHandler.get_error_code(exc),
-                    i + 1, len(models_to_try),
+                    "Stream: model %s (invoke_id=%s) failed (%s), trying fallback %d/%d. Error: %s. Extra kwargs keys: %s",
+                    model.model_id, invoke_model_id, RetryHandler.get_error_code(exc),
+                    i + 1, len(models_to_try), str(exc)[:500], list(kwargs.keys()),
                 )
 
         if stream is None or used_model is None:
@@ -898,6 +927,7 @@ class BedrockRouter:
                 "strategy": {
                     "name": strategy_name,
                     "weights": weights if strategy_name == "balanced" else None,
+                    "preferred_model": routing.preferred_model or None,
                 },
                 "top5_candidates": candidate_list,
                 "candidates_evaluated": len(available),
@@ -1001,7 +1031,7 @@ class BedrockRouter:
         if inference_config:
             call_kwargs["inferenceConfig"] = inference_config
         if service_tier:
-            call_kwargs["serviceTier"] = {"type": service_tier}
+            call_kwargs["performanceConfig"] = {"latency": "optimized"}
         if request_metadata:
             call_kwargs["requestMetadata"] = request_metadata
         call_kwargs.update(kwargs)

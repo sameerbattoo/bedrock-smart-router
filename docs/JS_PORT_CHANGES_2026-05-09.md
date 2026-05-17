@@ -168,13 +168,13 @@ After expanding REASONING_MARKERS (fix #2), common words like "showing", "for ea
 - `bedrock_smart_router/data/models.json`
 
 ### What Was Wrong
-All Opus models (4.1, 4.5, 4.6, 4.7) had `supported_inference_tiers: ["standard", "priority"]` in the catalog. However, the Bedrock API rejects ANY `serviceTier` parameter for all Opus models:
-- `serviceTier: "priority"` → "The provided service tier is not supported for this model"
+All Opus models (4.1, 4.5, 4.6, 4.7) had `supported_latency_modes: ["standard", "optimized"]` in the catalog. However, the Bedrock API rejects ANY `serviceTier` parameter for all Opus models:
+- `serviceTier: "optimized"` → "The provided service tier is not supported for this model"
 - `serviceTier: "standard"` → "service tier provided is invalid"
 - No serviceTier → Works fine
 
 ### Fix
-Set `supported_inference_tiers: []` for all Opus model entries (7 total: us. and global. prefixes for 4.1, 4.5, 4.6, 4.7).
+Set `supported_latency_modes: []` for all Opus model entries (7 total: us. and global. prefixes for 4.1, 4.5, 4.6, 4.7).
 
 ### Models Fixed
 ```
@@ -236,7 +236,7 @@ The benchmark suite is Python-only tooling for validating the router. The JS por
 1. Ensure the same `_extract_text` fix is applied (system prompt format handling)
 2. Include the expanded keyword sets (REASONING_MARKERS, DATA_ANALYSIS_SIGNALS)
 3. Use `reasoning_marker_count: 4`
-4. Clear `supported_inference_tiers` for all Opus models in the JS model catalog
+4. Clear `supported_latency_modes` for all Opus models in the JS model catalog
 
 ---
 

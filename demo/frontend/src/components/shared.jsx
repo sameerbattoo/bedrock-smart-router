@@ -9,7 +9,7 @@ export const USE_CASES = [
   { id: 'compare', label: 'Baseline vs Smart Router', icon: '⚡', description: 'Compare responses, cost, latency and accuracy side-by-side' },
   { id: 'throttling', label: 'Throttle Handling', icon: '🛡️', description: 'Automatic fallback when models are throttled' },
   { id: 'strands', label: 'Strands Agents', icon: '🤖', description: 'Use Smart Router as a model provider in Strands' },
-  { id: 'multi-tenant', label: 'Multi-Tenant Routing', icon: '🏢', description: 'Per-tenant tracking, budgets and model segregation', coming: true },
+  { id: 'multi-tenant', label: 'Multi-Tenant Routing', icon: '🏢', description: 'Per-tenant tracking, budgets and model segregation' },
   { id: 'semantic-cache', label: 'Semantic Caching', icon: '💾', description: 'Cache similar prompts to reduce cost and latency', coming: true },
 ]
 
@@ -142,6 +142,8 @@ export function ExplainPopup({ explanation, onClose }) {
   const payload = cx.multimodal_payload
   const dimScores = cx.dimension_scores || {}
   const tiers = ['micro','lite','mid','heavy','reasoning']
+  const fallbackUsed = explanation._fallback_used
+  const actualModel = explanation._actual_model
 
   return (
     <>
@@ -151,6 +153,17 @@ export function ExplainPopup({ explanation, onClose }) {
           <h3 className="text-sm font-bold text-orange-400">Routing Decision Explained</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-lg">&times;</button>
         </div>
+
+        {/* Fallback notice */}
+        {fallbackUsed && (
+          <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700/40 rounded-lg flex items-center gap-2">
+            <span className="text-yellow-400 text-sm">⚡</span>
+            <div>
+              <div className="text-xs text-yellow-300 font-medium">Fallback triggered</div>
+              <div className="text-[10px] text-yellow-400/80">The top-ranked model was throttled or unavailable. The router fell back to <span className="font-medium text-yellow-300">{actualModel}</span>.</div>
+            </div>
+          </div>
+        )}
 
         {/* Step 1 */}
         <div className="mb-5">
@@ -237,8 +250,17 @@ export function ExplainPopup({ explanation, onClose }) {
         <div className="mb-5">
           <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">Step 3: Strategy Scoring ({strat.name})</div>
           <div className="bg-gray-800/60 rounded-lg p-4">
+            {strat.preferred_model && (
+              <div className="mb-3 p-2.5 bg-blue-900/20 border border-blue-700/40 rounded-lg">
+                <div className="text-[10px] text-blue-300 font-medium mb-1">🎯 Preferred Model Override</div>
+                <div className="text-[9px] text-blue-400/80">
+                  <span className="font-mono font-medium text-blue-300">{strat.preferred_model}</span> is used directly — strategy scoring below determines the <span className="font-medium text-blue-300">fallback chain</span> (used if preferred model is throttled/unavailable).
+                </div>
+              </div>
+            )}
             {strat.weights&&<div className="flex gap-4 mb-3 text-[10px]"><span className="text-gray-400">Weights:</span><span className="text-blue-400 font-mono">cost={strat.weights.cost}</span><span className="text-green-400 font-mono">latency={strat.weights.latency}</span><span className="text-purple-400 font-mono">quality={strat.weights.quality}</span></div>}
-            {!strat.weights&&<div className="text-[10px] text-gray-400 mb-3">Single-dimension strategy: composite = <span className="font-mono text-white">{strat.name?.replace('-optimized','')}_score</span> only</div>}
+            {!strat.weights&&!strat.preferred_model&&<div className="text-[10px] text-gray-400 mb-3">Single-dimension strategy: composite = <span className="font-mono text-white">{strat.name?.replace('-optimized','')}_score</span> only</div>}
+            {!strat.weights&&strat.preferred_model&&<div className="text-[10px] text-gray-400 mb-3">Fallback ranking by: <span className="font-mono text-white">{strat.name?.replace('-optimized','')}_score</span></div>}
             <table className="w-full text-[10px]"><thead><tr className="text-gray-500 border-b border-gray-700">
               <th className="text-left py-1.5">Model</th>
               {strat.weights&&<th className="text-right py-1.5 group relative cursor-help">Composite <span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-52 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">Weighted sum: cost×w + latency×w + quality×w</span></th>}
@@ -246,8 +268,8 @@ export function ExplainPopup({ explanation, onClose }) {
               <th className={`text-right py-1.5 group relative cursor-help ${!strat.weights && strat.name==='latency-optimized'?'text-orange-400 font-bold':''}`}>Latency ⓘ<span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-56 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">fastest_latency / model_latency (ratio). Fastest = 1.0, floor = 0.10.</span></th>
               <th className={`text-right py-1.5 group relative cursor-help ${!strat.weights && strat.name==='quality-optimized'?'text-orange-400 font-bold':''}`}>Quality ⓘ<span className="invisible group-hover:visible absolute bottom-full right-0 mb-1 w-56 p-1.5 bg-gray-800 border border-gray-600 rounded text-[9px] text-gray-300 font-normal z-[200] shadow-lg">quality_baseline / 60 (AA Intelligence Index). Higher = smarter.</span></th>
             </tr></thead><tbody>
-              {candidates.map((c,i)=>(<tr key={i} className={`${i===0?'text-orange-300 font-medium bg-orange-900/10':'text-gray-400'} border-b border-gray-800/50`}>
-                <td className="py-1.5">{i===0?'★ ':''}{c.model}</td>
+              {candidates.map((c,i)=>(<tr key={i} className={`${i===0?'text-orange-300 font-medium bg-orange-900/10': actualModel && c.model === actualModel ? 'text-green-300 font-medium bg-green-900/10' : 'text-gray-400'} border-b border-gray-800/50`}>
+                <td className="py-1.5">{i===0 ? (fallbackUsed ? '⚠ ' : '★ ') : (actualModel && c.model === actualModel ? '✓ ' : '')}{c.model}{actualModel && c.model === actualModel && fallbackUsed ? ' (served)' : ''}</td>
                 {strat.weights&&<td className="text-right py-1.5 font-mono">{c.composite?.toFixed(4)}</td>}
                 <td className={`text-right py-1.5 font-mono ${!strat.weights && strat.name==='cost-optimized'?'text-orange-300 bg-orange-900/10':''}`}>{c.cost?.toFixed(4)}</td>
                 <td className={`text-right py-1.5 font-mono ${!strat.weights && strat.name==='latency-optimized'?'text-orange-300 bg-orange-900/10':''}`}>{c.latency?.toFixed(4)}</td>

@@ -63,8 +63,7 @@ class ModelCapabilities:
 # Source: AWS Bedrock pricing page + Bedrock service tiers documentation.
 TIER_PRICING_MULTIPLIER: dict[str, float] = {
     "standard": 1.0,
-    "priority": 1.75,
-    "flex": 0.50,
+    "optimized": 1.75,
 }
 
 
@@ -105,7 +104,7 @@ class ModelPricing:
         Args:
             input_tokens: Input tokens (from Bedrock ``usage.inputTokens``).
             output_tokens: Output tokens generated.
-            tier: Inference tier — ``"standard"``, ``"priority"``, or ``"flex"``.
+            tier: Inference tier — ``"standard"``, ``"optimized"``, or ``"standard"``.
             cache_read_tokens: Tokens read from prompt cache.
             cache_write_tokens: Tokens written to prompt cache.
         """
@@ -133,7 +132,7 @@ class BedrockModel:
     pricing: ModelPricing = field(default_factory=ModelPricing)
     cris_profiles: list[str] = field(default_factory=list)
     regions: list[dict] = field(default_factory=list)
-    supported_inference_tiers: list[str] = field(
+    supported_latency_modes: list[str] = field(
         default_factory=lambda: ["standard"]
     )
     guardrail_compatible: bool = True

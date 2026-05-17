@@ -864,8 +864,8 @@ from bedrock_smart_router import TIER_PRICING_MULTIPLIER
 # Estimate cost across tiers
 model = router.registry.get("us.amazon.nova-pro-v1:0")
 cost_std = model.pricing.estimate_cost(1000, 500)                    # Standard
-cost_pri = model.pricing.estimate_cost(1000, 500, tier="priority")   # 1.75× more
-cost_flx = model.pricing.estimate_cost(1000, 500, tier="flex")       # 0.50× less
+cost_pri = model.pricing.estimate_cost(1000, 500, tier="optimized")   # 1.75× more
+cost_flx = model.pricing.estimate_cost(1000, 500, tier="standard")       # 0.50× less
 ```
 
 **Auto tier selection** — the router picks the tier based on complexity and budget:

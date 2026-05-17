@@ -4,6 +4,7 @@ import ComparePage from './components/ComparePage'
 import HistoryPage from './components/HistoryPage'
 import ThrottlePage from './components/ThrottlePage'
 import StrandsPage from './components/StrandsPage'
+import MultiTenantPage from './components/MultiTenantPage'
 
 export default function App() {
   const [activePage, setActivePage] = useState('compare')
@@ -131,15 +132,27 @@ export default function App() {
 
         {/* Page Content */}
         {activePage === 'history' ? (
-          <HistoryPage history={history} setHistory={setHistory} onNavigate={handleHistoryNavigate} />
+          <div key={activePage} className="flex-1 animate-page-in overflow-hidden flex flex-col">
+            <HistoryPage history={history} setHistory={setHistory} onNavigate={handleHistoryNavigate} />
+          </div>
         ) : activePage === 'compare' ? (
-          <ComparePage key={resetKey} history={history} setHistory={setHistory} restoreState={restoreState} onRun={() => setNavOpen(false)} onReady={() => setAppReady(true)} />
+          <div key={`${activePage}-${resetKey}`} className="flex-1 animate-page-in overflow-hidden flex">
+            <ComparePage key={resetKey} history={history} setHistory={setHistory} restoreState={restoreState} onRun={() => setNavOpen(false)} onReady={() => setAppReady(true)} />
+          </div>
         ) : activePage === 'throttling' ? (
-          <ThrottlePage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} />
+          <div key={activePage} className="flex-1 animate-page-in overflow-hidden flex">
+            <ThrottlePage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} />
+          </div>
         ) : activePage === 'strands' ? (
-          <StrandsPage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} prewarmedSessionIds={strandsSessionIds} conversation={strandsConversation} setConversation={setStrandsConversation} />
+          <div key={activePage} className="flex-1 animate-page-in overflow-hidden flex">
+            <StrandsPage history={history} setHistory={setHistory} onRun={() => setNavOpen(false)} restoreState={restoreState} prewarmedSessionIds={strandsSessionIds} conversation={strandsConversation} setConversation={setStrandsConversation} />
+          </div>
+        ) : activePage === 'multi-tenant' ? (
+          <div key={activePage} className="flex-1 animate-page-in overflow-hidden flex">
+            <MultiTenantPage onRun={() => setNavOpen(false)} />
+          </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div key={activePage} className="flex-1 flex items-center justify-center animate-page-in">
             <div className="text-center text-gray-600">
               <div className="text-4xl mb-3">{USE_CASES.find(u => u.id === activePage)?.icon || '🚧'}</div>
               <div className="text-lg font-medium text-gray-400 mb-1">{USE_CASES.find(u => u.id === activePage)?.label}</div>

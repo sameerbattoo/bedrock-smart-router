@@ -2,7 +2,7 @@
 
 Intelligent model routing for Amazon Bedrock. A lightweight Python SDK that sits between your application and Bedrock, automatically selecting the optimal model for each request based on cost, latency, quality, and task complexity.
 
-Unlike generic LLM gateways (LiteLLM, Portkey, OpenRouter) that treat Bedrock as just another provider, the Bedrock Smart Router is purpose-built for Bedrock and understands CRIS profiles, inference tiers, prompt caching, guardrails, application inference profiles, and model distillation.
+Unlike generic LLM gateways (LiteLLM, Portkey, OpenRouter) that treat Bedrock as just another provider, the Bedrock Smart Router is purpose-built for Bedrock and understands CRIS profiles, latency optimization, prompt caching, guardrails, application inference profiles, and model distillation.
 
 Unlike Bedrock's native prompt router, which only routes within a single model family, the Smart Router routes across all families (Anthropic, Amazon Nova, Meta, Mistral) with custom strategies and historical quality data.
 
@@ -54,7 +54,7 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 
 **Bedrock-Native Awareness**
 - Cross-Region Inference (CRIS) profile selection — per-region awareness with global (`global.*`, ~10% cheaper), regional (`us.*`, `eu.*`), and direct invocation modes
-- Inference tier auto-selection (Standard / Priority / Flex) with tier-aware cost estimation
+- Inference tier auto-selection (Standard / Optimized) with tier-aware cost estimation
 - Prompt cache benefit estimation — boosts cache-capable models (Claude and Nova) when savings are significant
 - Bedrock Guardrails integration — pre-route and post-route checks via ApplyGuardrail API
 - Application Inference Profile management for multi-tenant cost tracking
@@ -165,7 +165,7 @@ router = BedrockRouter.create({
         "ttl_hours": 168,
     },
     "cris": {"preferred_geography": "us"},
-    "inference_tier": {"allow_priority": True, "flex_for_batch": True},
+    "inference_tier": {"allow_optimized": True, "optimized_for_complex": True},
     "guardrails": {
         "pre_route": {"guardrail_id": "gr-abc123", "action_on_block": "reject"},
     },
@@ -379,7 +379,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`04_fallbacks_and_reliability.py`](examples/04_fallbacks_and_reliability.py) | Fallback chains, circuit breakers, retries |
 | [`05_caching.py`](examples/05_caching.py) | In-memory cache, TTL, invalidation |
 | [`06_observability.py`](examples/06_observability.py) | Callbacks, cost tracking, CloudWatch metrics |
-| [`07_bedrock_native.py`](examples/07_bedrock_native.py) | CRIS profiles, inference tiers, guardrails |
+| [`07_bedrock_native.py`](examples/07_bedrock_native.py) | CRIS profiles, latency optimization, guardrails |
 | [`08_multi_tenant.py`](examples/08_multi_tenant.py) | Application Inference Profiles, per-tenant cost tracking |
 | [`09_ab_testing_canary_shadow.py`](examples/09_ab_testing_canary_shadow.py) | A/B testing, canary rollouts, shadow mode |
 | [`10_custom_strategy.py`](examples/10_custom_strategy.py) | Custom strategy plugins (code-aware, EU-only, time-of-day) |
@@ -396,7 +396,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`21_semantic_cache_deep_dive.py`](examples/21_semantic_cache_deep_dive.py) | Vector stores (memory/FAISS/Redis), threshold tuning |
 | [`22_semantic_router.py`](examples/22_semantic_router.py) | Intent routing: route queries to specialized models by meaning |
 | [`23_tag_and_conditional_routing.py`](examples/23_tag_and_conditional_routing.py) | Tag-based routing (free/paid tiers, teams) and metadata-driven conditions |
-| [`24_budget_and_tier_pricing.py`](examples/24_budget_and_tier_pricing.py) | Per-request cost ceilings, rolling budgets, inference tier pricing (Flex/Standard/Priority) |
+| [`24_budget_and_tier_pricing.py`](examples/24_budget_and_tier_pricing.py) | Per-request cost ceilings, rolling budgets, latency mode pricing (Standard/Optimized) |
 | [`25_strands_integration.py`](examples/25_strands_integration.py) | Strands Agents SDK integration — use the smart router as a Strands Model provider |
 | [`26_strands_first_agent.py`](examples/26_strands_first_agent.py) | Official Strands Agents SDK "First Agent" sample adapted to use smart routing |
 | [`27_auto_semantic_cache.py`](examples/27_auto_semantic_cache.py) | Auto-extracting semantic cache: automatic intent + variable extraction, multi-turn resolution |
@@ -845,7 +845,7 @@ SmartRouterModel (implements strands.models.Model)
 BedrockRouter
   │ Analyzes complexity (15-dimension classifier)
   │ Selects optimal model via strategy engine
-  │ Applies CRIS profile, inference tier, guardrails
+  │ Applies CRIS profile, latency mode, guardrails
   │ Invokes Bedrock converse_stream with fallback chain
   ▼
 Bedrock converse_stream
@@ -1116,7 +1116,7 @@ Request arrives
   +-- Step 6:  Run strategy (cost/latency/quality/balanced)
   |     +-- 6b: Prompt cache boost (swap to cache-capable model if within 10% score)
   |     +-- 6c: Select CRIS profile (us/eu/global geography preference)
-  |     +-- 6d: Select inference tier (Standard/Priority/Flex)
+  |     +-- 6d: Select latency mode (Standard/Optimized)
   +-- Step 7:  Check response cache (hit -> return immediately)
   +-- Step 8:  Build fallback chain
   +-- Step 9:  Invoke Bedrock (with AIP tenant resolution per model)
@@ -1368,7 +1368,7 @@ Models outside the eligible tier range are excluded before strategy scoring begi
 
 ## Model Catalog
 
-The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing all active Bedrock text-generation models with capabilities, pricing, quality baselines, and inference tier support. The catalog is auto-generated by `scripts/refresh_catalog.py`.
+The router ships with a JSON catalog (`bedrock_smart_router/data/models.json`) containing all active Bedrock text-generation models with capabilities, pricing, quality baselines, and latency mode support. The catalog is auto-generated by `scripts/refresh_catalog.py`.
 
 | Family | Tiers | Notes |
 |---|---|---|
@@ -1394,7 +1394,7 @@ The catalog is a static file that ships with the SDK. As AWS launches new models
 | AWS Bedrock `ListInferenceProfiles` (17 regions) | CRIS profiles (us.*, eu.*, ap.*, global.*) per region | API calls across regions |
 | [LiteLLM](https://github.com/BerriAI/litellm) `model_prices_and_context_window.json` | Pricing (input/output/cache), max_input_tokens, max_output_tokens | GitHub download |
 | [Artificial Analysis](https://artificialanalysis.ai) Intelligence Index API | Quality baseline scores (0–60 scale) | API call (free key) |
-| Bedrock Converse API probing | tool_use, streaming_tool_use, extended_thinking, guardrails, inference tiers | Minimal API calls per model |
+| Bedrock Converse API probing | tool_use, streaming_tool_use, extended_thinking, guardrails, latency optimization | Minimal API calls per model |
 
 **Regional discovery:**
 
@@ -1499,7 +1499,7 @@ Each model in the catalog has a `regions` array describing where it's available 
 
 The `CrisManager.select_profile(model, region)` method handles this automatically. When `allow_global: false` is set in config, global profiles are skipped and the router uses regional prefixes or direct invocation.
 
-### Inference Tier Pricing
+### Latency Mode Pricing
 
 Bedrock offers four on-demand service tiers. All prices in the catalog are **Standard tier** rates. The router applies tier multipliers at cost estimation time via `ModelPricing.estimate_cost(tier=...)`:
 
@@ -1510,20 +1510,20 @@ Bedrock offers four on-demand service tiers. All prices in the catalog are **Sta
 | **Priority** | ~1.75× | Up to 25% better OTPS | Mission-critical, customer-facing, latency-sensitive |
 | **Reserved** | Fixed hourly | Guaranteed | Steady high-volume with 1–6 month commitment |
 
-The `InferenceTierSelector` picks the tier automatically based on request complexity and budget constraints. Not all models support all tiers — the catalog tracks which tiers each model supports in `supported_inference_tiers`.
+The `LatencyModeSelector` picks the tier automatically based on request complexity and budget constraints. Not all models support all tiers — the catalog tracks which tiers each model supports in `supported_latency_modes`.
 
 ```python
 from bedrock_smart_router.models import TIER_PRICING_MULTIPLIER
 
 # Check the multipliers
 print(TIER_PRICING_MULTIPLIER)
-# {"standard": 1.0, "priority": 1.75, "flex": 0.50}
+# {"standard": 1.0, "optimized": 1.75, "standard": 0.50}
 
 # Estimate cost for a specific tier
 model = router.registry.get("amazon.nova-pro-v1:0")
 cost_standard = model.pricing.estimate_cost(1000, 500)                    # $0.003
-cost_priority = model.pricing.estimate_cost(1000, 500, tier="priority")   # $0.00525
-cost_flex     = model.pricing.estimate_cost(1000, 500, tier="flex")       # $0.0015
+cost_priority = model.pricing.estimate_cost(1000, 500, tier="optimized")   # $0.00525
+cost_flex     = model.pricing.estimate_cost(1000, 500, tier="standard")       # $0.0015
 ```
 
 ### Prompt Caching
@@ -1559,7 +1559,7 @@ All configuration is driven through a single `RouterConfig` object, constructabl
 | `metrics` | `backend` (`memory`/`dynamodb`), `table_name`, `ttl_hours` | memory |
 | `observability` | `log_decisions` | true |
 | `cris` | `enabled`, `preferred_geography`, `allow_global` | enabled, no pref |
-| `inference_tier` | `allow_priority`, `allow_flex`, `flex_for_batch` | all enabled |
+| `inference_tier` | `allow_optimized`, `optimized_for_complex` | all enabled |
 | `guardrails` | `pre_route`, `post_route` with `guardrail_id` and `action_on_block` | disabled |
 | `aip` | `enabled`, `auto_create`, `tag_keys` | disabled |
 | `fallback` | `enabled`, `max_depth`, `default_safe_model` | enabled, depth 5 |
@@ -1710,7 +1710,7 @@ bedrock_smart_router/
   observability.py             # Structured logging, callbacks, CostTracker
   # Bedrock-native features
   cris_manager.py              # CRIS profile selection by geography
-  inference_tier.py            # Standard/Priority/Flex auto-selection
+  inference_tier.py            # Standard/Optimized auto-selection
   prompt_cache_advisor.py      # Prompt caching benefit estimation
   guardrails_integration.py    # Pre/post-route guardrail checks
   aip_manager.py               # Application Inference Profile management
@@ -1836,7 +1836,7 @@ python scripts/refresh_catalog.py --aa-cache scripts/_aa_models.json --skip-prob
 | Cross-family routing | Generic | Generic | Generic | No (single family) | **Yes** |
 | CRIS awareness | No | No | No | Yes | **Yes** |
 | Global CRIS profiles | No | No | No | Manual | **Auto (separate entries, ~10% cheaper)** |
-| Inference tier routing | No | No | No | Manual | **Auto (Flex/Standard/Priority)** |
+| Inference tier routing | No | No | No | Manual | **Auto (Standard/Optimized)** |
 | Tier-aware cost estimation | No | No | No | No | **Yes (0.5×/1.0×/1.75× multipliers)** |
 | Prompt cache-aware | No | No | No | No | **Yes (Claude + Nova)** |
 | Circuit breaker | No | No | Yes | No | **Yes** |

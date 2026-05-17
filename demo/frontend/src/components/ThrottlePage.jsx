@@ -301,21 +301,19 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
       {/* ═══ Step 2: System & User Prompt ═══ */}
       <StepSection number={2} title="System & User Prompt" visible={step2Visible} expanded={step2Expanded} onToggle={() => setStep2Expanded(!step2Expanded)}>
         <div className="mb-3">
-          <div className="text-[10px] text-gray-500 uppercase font-bold mb-1.5">System Prompt</div>
-          <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
-            placeholder="You are a helpful assistant..."
-            rows={2} className="w-full bg-gray-900/40 border border-gray-800/50 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-orange-600/40 resize-none" />
+          <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">System Prompt</div>
+          <div className="text-xs text-gray-400 bg-gray-900/60 rounded-lg px-3 py-2 border border-gray-800/50 font-mono">{systemPrompt || '(none)'}</div>
         </div>
         <div className="mb-3">
-          <div className="text-[10px] text-gray-500 uppercase font-bold mb-1.5">User Prompt</div>
-          <textarea value={prompt} onChange={e => setPrompt(e.target.value)}
-            placeholder="Ask anything..." rows={3}
-            className="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-orange-500/50 resize-none" />
+          <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">User Prompt</div>
+          <div className="text-xs text-gray-300 bg-gray-900/60 rounded-lg px-3 py-2 border border-gray-800/50">{prompt}</div>
         </div>
-        <button onClick={handlePromptReady} disabled={!prompt.trim()}
-          className="bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-xs font-medium rounded-lg px-4 py-1.5 transition-all">
-          Next →
-        </button>
+        <div className="flex justify-end">
+          <button onClick={handlePromptReady} disabled={!prompt.trim()}
+            className="bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-xs font-bold rounded-lg px-5 py-2 flex items-center gap-2 transition-all shadow-lg shadow-orange-900/20">
+            <span>⚡</span> Next →
+          </button>
+        </div>
       </StepSection>
 
       {/* ═══ Step 3: Select Model to Throttle ═══ */}
@@ -345,7 +343,7 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
           <div className="flex-1 border border-red-900/30 rounded-lg overflow-hidden flex flex-col hover:border-red-500/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
             <div className="px-4 py-2.5 border-b border-red-900/30 bg-red-950/20">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-red-400">Baseline (Direct Call)</span>
+                <span className="text-xs font-medium text-red-400">🧊 Baseline (Direct Call)</span>
                 <span className="text-[10px] bg-red-900/40 text-red-300 px-1.5 py-0.5 rounded">{throttleModel ? (options.preferred_models?.find(m => m.id === throttleModel)?.label || throttleModel) : '—'}</span>
               </div>
             </div>
@@ -375,7 +373,7 @@ export default function ThrottlePage({ history, setHistory, onRun, restoreState 
             <div className="px-4 py-2.5 border-b border-green-900/30 bg-green-950/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-green-400">Smart Router (Retry + Fallback)</span>
+                  <span className="text-xs font-medium text-green-400">⚡ Smart Router (Retry + Fallback)</span>
                   {routerResult?.complexity_detected && <span className="text-[10px] bg-purple-900/40 text-purple-300 px-1.5 py-0.5 rounded">{routerResult.complexity_detected}</span>}
                   {routerResult?.strategy_used && <span className="text-[10px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded">preferred: {options.region_models?.find(m => m.id === throttleModel)?.label || throttleModel}</span>}
                 </div>

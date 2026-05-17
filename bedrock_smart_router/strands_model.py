@@ -364,6 +364,9 @@ class SmartRouterModel(Model):
             if k not in _STRANDS_ONLY_KWARGS
         }
 
+        if clean_kwargs:
+            logger.warning("SmartRouterModel: forwarding extra kwargs to router: %s", list(clean_kwargs.keys()))
+
         for event in self._router.converse_stream(
             messages=messages,
             system=system,

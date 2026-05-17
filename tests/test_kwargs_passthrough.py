@@ -290,7 +290,7 @@ class TestResponseFieldCapture:
             },
             "stopReason": "end_turn",
             "metrics": {"latencyMs": 450},
-            "serviceTier": {"type": "priority"},
+            "serviceTier": {"type": "optimized"},
             "performanceConfig": {"latency": "optimized"},
             "trace": {
                 "guardrail": {
@@ -343,4 +343,4 @@ class TestResponseFieldCapture:
         client.converse.return_value = self._make_rich_response()
         response = router.converse(messages=_msgs("Hello"))
         d = response["routing_decision"]
-        assert d.actual_service_tier == "priority"
+        assert d.actual_service_tier == "optimized"

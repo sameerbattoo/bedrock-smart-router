@@ -448,7 +448,7 @@ class BedrockModel:
     supports_prompt_caching: bool
     supports_extended_thinking: bool
     cris_profiles: list[str]         # Available cross-region inference profiles
-    supported_inference_tiers: list[str]  # ["standard", "priority", "flex"]
+    supported_latency_modes: list[str]  # ["standard", "optimized", "standard"]
     guardrail_compatible: bool
     distilled_from: str | None       # Parent model if this is a distilled variant
     distilled_quality_delta: float   # Quality loss vs parent (e.g., -0.02 for 2% loss)

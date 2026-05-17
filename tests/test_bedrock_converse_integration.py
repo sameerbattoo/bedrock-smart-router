@@ -78,7 +78,7 @@ class TestNovaConverse:
         assert len(d.fallback_chain) > 0
         assert d.input_tokens > 0
         assert d.output_tokens > 0
-        assert d.inference_tier in ("standard", "priority", "flex")
+        assert d.inference_tier in ("standard", "optimized")
         assert d.cris_profile is not None
         print(f"\n  Tier: {d.inference_tier}, CRIS: {d.cris_profile}, Candidates: {d.candidates_evaluated}")
 

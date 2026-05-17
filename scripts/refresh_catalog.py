@@ -543,8 +543,15 @@ def _probe_extended_thinking(client: Any, model_id: str) -> bool:
         return False
 
 
-def _probe_priority_tier(client: Any, model_id: str) -> bool:
-    """Test if model supports priority inference tier."""
+def _probe_priority_tier(client: Any, model_id: str) -> list[str]:
+    """Probe if a model supports performanceConfig (optimized latency).
+    
+    Bedrock uses performanceConfig={"latency": "optimized"} for latency optimization.
+    Models that don't support it return ValidationException.
+    Returns ["standard", "optimized"] if supported, ["standard"] otherwise.
+    Models that reject the parameter entirely (like Anthropic) get [].
+    """
+    # First test if the model accepts performanceConfig at all
     try:
         client.converse(
             modelId=model_id,
@@ -552,20 +559,20 @@ def _probe_priority_tier(client: Any, model_id: str) -> bool:
             inferenceConfig={"maxTokens": 10},
             performanceConfig={"latency": "optimized"},
         )
-        return True
+        return ["standard", "optimized"]
     except ClientError as e:
         msg = str(e).lower()
         if "throttl" in msg:
-            return True
-        if any(phrase in msg for phrase in [
-            "not supported", "performance", "latency", "does not support",
-        ]):
-            return False
+            return ["standard", "optimized"]  # Throttled = accepted the request
+        # "not supported" for this model in this region = model doesn't support it
+        if "not supported" in msg or "does not support" in msg:
+            return ["standard"]
+        # Generic validation error = parameter not recognized at all
         if "validation" in msg:
-            return False
-        return False
+            return []
+        return ["standard"]
     except Exception:
-        return False
+        return ["standard"]
 
 
 def _probe_guardrail_compatible(client: Any, model_id: str) -> bool:
@@ -618,7 +625,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
             "streaming_tool_use": None,
             "extended_thinking": None,
             "prompt_caching": None,
-            "supported_tiers": ["standard"],
+            "supported_tiers": [],
             "guardrail_compatible": True,  # Safe default
         }
 
@@ -631,7 +638,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
             "streaming_tool_use": False,
             "extended_thinking": False,
             "prompt_caching": None,
-            "supported_tiers": ["standard"],
+            "supported_tiers": [],
             "guardrail_compatible": False,
         }
 
@@ -649,9 +656,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
     extended_thinking = _probe_extended_thinking(bedrock_runtime, model_id)
     time.sleep(0.3)
 
-    supported_tiers = ["standard"]
-    if _probe_priority_tier(bedrock_runtime, model_id):
-        supported_tiers.append("priority")
+    supported_tiers = _probe_priority_tier(bedrock_runtime, model_id)
     time.sleep(0.3)
 
     guardrail_compatible = _probe_guardrail_compatible(bedrock_runtime, model_id)
@@ -993,9 +998,9 @@ def build_catalog(
             else:
                 prompt_caching = False
 
-        supported_tiers = caps.get("supported_tiers", ["standard"])
-        if supported_tiers == ["standard"] and existing:
-            supported_tiers = existing.get("supported_inference_tiers", ["standard"])
+        supported_tiers = caps.get("supported_tiers", [])
+        if not supported_tiers and existing:
+            supported_tiers = existing.get("supported_latency_modes", [])
 
         # Token limits and pricing from LiteLLM (most reliable source)
         # Try multiple key formats: model_id, us.model_id, bedrock/model_id
@@ -1078,7 +1083,7 @@ def build_catalog(
             "max_input_tokens": max_input,
             "max_output_tokens": max_output,
             "pricing": pricing,
-            "supported_inference_tiers": supported_tiers,
+            "supported_latency_modes": supported_tiers,
             "guardrail_compatible": caps.get("guardrail_compatible", True),
             "quality_baseline": quality_baseline,
         }

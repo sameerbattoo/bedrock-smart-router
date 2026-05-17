@@ -56,8 +56,8 @@ if model:
     output_tokens = 500
 
     cost_standard = model.pricing.estimate_cost(input_tokens, output_tokens)
-    cost_priority = model.pricing.estimate_cost(input_tokens, output_tokens, tier="priority")
-    cost_flex = model.pricing.estimate_cost(input_tokens, output_tokens, tier="flex")
+    cost_priority = model.pricing.estimate_cost(input_tokens, output_tokens, tier="optimized")
+    cost_flex = model.pricing.estimate_cost(input_tokens, output_tokens, tier="standard")
 
     print(f"\nNova Pro cost for {input_tokens} in / {output_tokens} out:")
     print(f"  Standard: ${cost_standard:.6f}")
