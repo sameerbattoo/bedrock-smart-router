@@ -9,3 +9,12 @@ mcp>=1.0.0
 
 # Strands (AgentCore Gateway MCPClient)
 strands-agents>=1.26.0
+strands-agents-tools>=0.1.0
+
+# Semantic cache (FAISS + embeddings)
+faiss-cpu>=1.7.0
+numpy>=1.24.0
+
+# Chart generation (python_repl tool)
+matplotlib>=3.7.0
+pandas>=2.0.0

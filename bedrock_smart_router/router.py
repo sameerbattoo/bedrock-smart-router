@@ -328,10 +328,18 @@ class BedrockRouter:
                         k: str(v) for k, v in routing.metadata.items()
                         if isinstance(k, str) and len(str(v)) <= 256
                     }
+                # Strip reasoningContent blocks if target model doesn't support reasoning
+                call_messages = self._strip_reasoning_content(messages) if model.tier.value != "reasoning" else messages
+                # Strip cachePoint blocks if target model doesn't support prompt caching
+                if not getattr(model.capabilities, "prompt_caching", False):
+                    call_messages = self._strip_cache_points_from_messages(call_messages)
+                    call_system = self._strip_cache_points(system) if system else system
+                else:
+                    call_system = system
                 response = self._invoke_bedrock(
                     model_id=invoke_model_id,
-                    messages=messages,
-                    system=system,
+                    messages=call_messages,
+                    system=call_system,
                     tool_config=tool_config,
                     inference_config=inference_config,
                     service_tier=model_tier if model_tier != "standard" else None,
@@ -564,8 +572,17 @@ class BedrockRouter:
                     "modelId": invoke_model_id,
                     "messages": messages,
                 }
+                # Strip reasoningContent blocks if target model doesn't support reasoning
+                if model.tier.value != "reasoning":
+                    call_kwargs["messages"] = self._strip_reasoning_content(messages)
+                # Strip cachePoint blocks if target model doesn't support prompt caching
+                if not getattr(model.capabilities, "prompt_caching", False):
+                    call_kwargs["messages"] = self._strip_cache_points_from_messages(call_kwargs["messages"])
                 if system:
-                    call_kwargs["system"] = system
+                    if not getattr(model.capabilities, "prompt_caching", False):
+                        call_kwargs["system"] = self._strip_cache_points(system)
+                    else:
+                        call_kwargs["system"] = system
                 if tool_config:
                     call_kwargs["toolConfig"] = tool_config
                 if inference_config:
@@ -1048,6 +1065,69 @@ class BedrockRouter:
             if isinstance(block, dict) and "text" in block:
                 parts.append(block["text"])
         return "\n".join(parts)
+
+    @staticmethod
+    def _strip_reasoning_content(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Strip reasoningContent blocks from messages.
+
+        When the router switches from a reasoning-tier model to a non-reasoning
+        model between agent loop iterations, the conversation history may contain
+        reasoningContent blocks that the target model cannot process.
+        This method removes them while preserving all other content.
+        """
+        cleaned = []
+        for msg in messages:
+            content = msg.get("content")
+            if not isinstance(content, list):
+                cleaned.append(msg)
+                continue
+            new_content = [
+                block for block in content
+                if not (isinstance(block, dict) and "reasoningContent" in block)
+            ]
+            if len(new_content) != len(content):
+                # Content was modified — ensure non-empty
+                if not new_content:
+                    new_content = [{"text": " "}]
+                cleaned.append({**msg, "content": new_content})
+            else:
+                cleaned.append(msg)
+        return cleaned
+
+    @staticmethod
+    def _strip_cache_points(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Strip cachePoint blocks from system prompt or message content.
+
+        When the router selects a model that doesn't support prompt caching,
+        cachePoint blocks cause AccessDeniedException.
+        This method removes them while preserving all other content.
+        """
+        cleaned = [
+            block for block in blocks
+            if not (isinstance(block, dict) and "cachePoint" in block)
+        ]
+        return cleaned if cleaned else blocks  # Fall back to original if all were cache points
+
+    @staticmethod
+    def _strip_cache_points_from_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Strip cachePoint blocks from message content lists."""
+        cleaned = []
+        for msg in messages:
+            content = msg.get("content")
+            if not isinstance(content, list):
+                cleaned.append(msg)
+                continue
+            new_content = [
+                block for block in content
+                if not (isinstance(block, dict) and "cachePoint" in block)
+            ]
+            if len(new_content) != len(content):
+                if not new_content:
+                    new_content = [{"text": " "}]
+                cleaned.append({**msg, "content": new_content})
+            else:
+                cleaned.append(msg)
+        return cleaned
 
     def _raise_no_models_error(
         self,

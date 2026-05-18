@@ -7,6 +7,17 @@ Modular structure:
 """
 from __future__ import annotations
 
+import os
+# Must be set before any strands_tools imports
+os.environ["BYPASS_TOOL_CONSENT"] = "true"
+# Force matplotlib to use non-interactive backend (no GUI popups)
+os.environ["MPLBACKEND"] = "Agg"
+
+# Enable DEBUG logging for semantic cache to see scores
+import logging
+logging.getLogger("bedrock_smart_router.semantic_cache").setLevel(logging.DEBUG)
+logging.getLogger("bedrock_smart_router.intent_extractor").setLevel(logging.DEBUG)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,6 +29,7 @@ from routes_compare import router as compare_router
 from routes_throttle import router as throttle_router
 from routes_strands import router as strands_router
 from routes_multi_tenant import router as multi_tenant_router
+from routes_text2sql import router as text2sql_router
 
 app = FastAPI(title="Bedrock Smart Router Demo")
 app.add_middleware(
@@ -32,6 +44,15 @@ app.include_router(compare_router, prefix="/api")
 app.include_router(throttle_router, prefix="/api")
 app.include_router(strands_router, prefix="/api")
 app.include_router(multi_tenant_router, prefix="/api")
+app.include_router(text2sql_router, prefix="/api")
+
+# Initialize Text2SQL database on startup
+import threading
+
+def _init_text2sql_db():
+    from text2sql.db import init_database
+    init_database()
+threading.Thread(target=_init_text2sql_db, daemon=True).start()
 
 
 # ── Common Endpoints ────────────────────────────────────────────────

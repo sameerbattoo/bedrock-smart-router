@@ -385,13 +385,17 @@ class SemanticCache:
 
     @staticmethod
     def _hash_variables(variables: dict[str, str]) -> str:
-        """Deterministic hash of variable key-value pairs."""
+        """Deterministic hash of variable values only.
+        
+        We hash only the sorted VALUES (not keys) because the LLM
+        intent extractor is non-deterministic in naming variable
+        placeholders (e.g., 'quarter_1' vs 'time_period_1').
+        The actual values ('Q1', '2025') are what matter for cache matching.
+        """
         if not variables:
             return ""
-        sorted_pairs = "|".join(
-            f"{k}={v}" for k, v in sorted(variables.items())
-        )
-        return hashlib.sha256(sorted_pairs.encode()).hexdigest()[:12]
+        sorted_values = "|".join(sorted(str(v) for v in variables.values()))
+        return hashlib.sha256(sorted_values.encode()).hexdigest()[:12]
 
     def invalidate(self) -> int:
         """Clear all cached entries."""

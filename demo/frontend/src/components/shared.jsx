@@ -1,5 +1,6 @@
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 
 // ─── Constants ─────────────────────────────────────────────────────
 export const API = '/api'
@@ -10,7 +11,7 @@ export const USE_CASES = [
   { id: 'throttling', label: 'Throttle Handling', icon: '🛡️', description: 'Automatic fallback when models are throttled' },
   { id: 'strands', label: 'Strands Agents', icon: '🤖', description: 'Use Smart Router as a model provider in Strands' },
   { id: 'multi-tenant', label: 'Multi-Tenant Routing', icon: '🏢', description: 'Per-tenant tracking, budgets and model segregation' },
-  { id: 'semantic-cache', label: 'Semantic Caching', icon: '💾', description: 'Cache similar prompts to reduce cost and latency', coming: true },
+  { id: 'semantic-cache', label: 'Semantic Caching', icon: '💾', description: 'Text2SQL with semantic cache, FAISS vectors, and chart generation' },
 ]
 
 export const TIME_FILTERS = [
@@ -30,7 +31,7 @@ export function Md({ children, variant = 'baseline' }) {
   const thBg = variant === 'router' ? 'bg-orange-950/50 text-orange-200' : 'bg-blue-950/50 text-blue-200'
   const tdBorder = variant === 'router' ? 'border-orange-900/30' : 'border-blue-900/30'
   return (
-    <Markdown remarkPlugins={[remarkGfm]} components={{
+    <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={{
       code({ inline, children, ...props }) {
         return inline
           ? <code className={`${inlineBg} px-1.5 py-0.5 rounded text-xs`} {...props}>{children}</code>
