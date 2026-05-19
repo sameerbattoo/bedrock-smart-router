@@ -66,6 +66,29 @@ def main():
             "simple",
         ),
 
+        # ── Demo templates: Simple ──
+        (
+            "Demo: What is Amazon S3 in one sentence?",
+            [msg("user", "What is Amazon S3 in one sentence?")],
+            [{"text": "Respond in markdown format."}],
+            None,
+            "simple",
+        ),
+        (
+            "Demo: Define serverless computing",
+            [msg("user", "Define serverless computing.")],
+            [{"text": "Respond in markdown format."}],
+            None,
+            "simple",
+        ),
+        (
+            "Demo: Three types of cloud computing",
+            [msg("user", "What are the three main types of cloud computing services?")],
+            [{"text": "Respond in markdown format."}],
+            None,
+            "simple",
+        ),
+
         # ── MODERATE: summarization, explanations, moderate code ──
         (
             "Moderate: explain with system prompt",
@@ -103,6 +126,29 @@ def main():
             "Moderate: comparison task",
             [msg("user", "Compare REST vs GraphQL APIs. When would you choose one over the other?")],
             [{"text": "You are a senior backend engineer. Keep under 500 words."}],
+            None,
+            "moderate",
+        ),
+
+        # ── Demo templates: Medium ──
+        (
+            "Demo: Python decorators with retry",
+            [msg("user", "Explain how Python decorators work. Include a practical example of a retry decorator with exponential backoff.")],
+            [{"text": "You are a senior Python developer. Use markdown with code blocks. Keep under 500 words."}],
+            None,
+            "moderate",
+        ),
+        (
+            "Demo: SQL query with CTEs",
+            [msg("user", "Write a SQL query to find the top 5 customers by total revenue in the last 90 days, including their most purchased product category. Use CTEs for clarity.")],
+            [{"text": "You are a data engineer. Use markdown code blocks. Keep under 500 words."}],
+            None,
+            "moderate",
+        ),
+        (
+            "Demo: Dockerfile multi-stage",
+            [msg("user", "Write a Dockerfile for a Python FastAPI application with multi-stage build, non-root user, and health check endpoint.")],
+            [{"text": "You are a DevOps engineer. Use markdown with code blocks. Keep under 500 words."}],
             None,
             "moderate",
         ),
@@ -147,10 +193,26 @@ def main():
             ]},
             "complex",
         ),
+
+        # ── Demo templates: Complex ──
         (
-            "Complex: security audit",
-            [msg("user", "Perform a comprehensive security audit of this IAM policy and suggest improvements for least-privilege access. Consider cross-account access patterns, service control policies, and permission boundaries.\n\n{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": \"*\", \"Resource\": \"*\"}]}")],
-            [{"text": "You are a cloud security architect specializing in AWS IAM."}],
+            "Demo: Fraud detection system design",
+            [msg("user", "Design a real-time fraud detection system that processes 1 million transactions per second with sub-100ms latency. Include the data pipeline architecture, ML model serving strategy, feature store design, and alerting system.")],
+            [{"text": "You are a principal engineer. Use markdown with headings and bullet points. Keep under 800 words."}],
+            None,
+            "complex",
+        ),
+        (
+            "Demo: B-tree implementation",
+            [msg("user", "Implement a B-tree in Python with insert, search, and range query operations. The tree should support configurable order (minimum degree). Include proper node splitting and rebalancing. Add type hints and docstrings.")],
+            [{"text": "You are a computer science professor. Use markdown code blocks. Keep under 150 lines."}],
+            None,
+            "complex",
+        ),
+        (
+            "Demo: Zero-trust security architecture",
+            [msg("user", "Design a zero-trust security architecture for a multi-account AWS organization. Cover identity federation, network segmentation, data encryption, secrets management, and incident response automation.")],
+            [{"text": "You are a cloud security architect. Use markdown with headings and lists. Keep under 800 words."}],
             None,
             "complex",
         ),
@@ -177,21 +239,33 @@ def main():
             None,
             "reasoning",
         ),
+
+        # ── Demo templates: Reasoning ──
         (
-            "Reasoning: multi-turn building to proof",
-            [
-                msg("user", "I'm studying computational complexity"),
-                msg("assistant", "Great topic! What aspect are you working on?"),
-                msg("user", "I need to understand the Cook-Levin theorem. Prove step by step that SAT is NP-complete by showing that any problem in NP can be reduced to SAT in polynomial time. Show the construction of the Boolean formula from the Turing machine computation."),
-            ],
-            [{"text": "You are a theoretical computer science professor. Be rigorous and formal."}],
+            "Demo: Sum of squares proof + cubes",
+            [msg("user", "Prove that for every positive integer n, the sum 1² + 2² + 3² + ... + n² equals n(n+1)(2n+1)/6. Then derive the closed-form formula for the sum of cubes 1³ + 2³ + ... + n³ and prove it by induction step by step.")],
+            [{"text": "You are a mathematics professor. Think through each step systematically. Prove your answer rigorously using formal logic. Show all intermediate steps. Keep under 1000 words."}],
             None,
             "reasoning",
         ),
         (
-            "Reasoning: logic puzzle with systematic deduction",
-            [msg("user", "Think step by step: Five houses in a row, each a different color. Each owner has different nationality, drink, smoke, pet. Given these 15 clues, determine who owns the fish. Show your complete deductive reasoning at each step, explaining why you can eliminate each possibility.")],
+            "Demo: LIS algorithm design",
+            [msg("user", "Design an algorithm to find the longest increasing subsequence in an array of n integers. Compare and contrast the brute force O(2^n), dynamic programming O(n²), and patience sorting O(n log n) approaches. For each, prove the time complexity, explain why it works, and analyze the space trade-offs.")],
+            [{"text": "You are an algorithms researcher. Analyze each approach systematically, evaluate trade-offs, and reason through the complexity analysis step by step. Prove correctness. Keep under 1000 words."}],
             None,
+            "reasoning",
+        ),
+        (
+            "Demo: CAP theorem flash sales",
+            [msg("user", "A global e-commerce platform needs to handle flash sales with 10x traffic spikes while maintaining strong consistency for inventory counts. Analyze step by step: Why can't you have both strong consistency and high availability during a network partition? Evaluate three approaches (pessimistic locking, optimistic concurrency with CRDTs, saga pattern) and prove which guarantees each provides.")],
+            [{"text": "You are a distributed systems architect. Reason through each design decision systematically, analyze the pros and cons of each approach, and explain why certain trade-offs are unavoidable. Think step by step. Keep under 1000 words."}],
+            None,
+            "reasoning",
+        ),
+        (
+            "Demo: Einstein's logic puzzle",
+            [msg("user", "Five houses in a row are painted different colors. Each owner has a different nationality, drinks a different beverage, smokes a different brand, and keeps a different pet. Given: The Brit lives in the red house. The Swede keeps dogs. The Dane drinks tea. The green house is left of the white house. The green house owner drinks coffee. The Pall Mall smoker keeps birds. The yellow house owner smokes Dunhill. The middle house owner drinks milk. The Norwegian lives in the first house. The Blend smoker lives next to the cat owner. The horse owner lives next to the Dunhill smoker. The Blue Master smoker drinks beer. The German smokes Prince. The Norwegian lives next to the blue house. The Blend smoker has a neighbor who drinks water. Who keeps the fish? Show your complete reasoning.")],
+            [{"text": "You are a logic and reasoning expert. Work through this problem step by step, showing your deductive reasoning at each stage. Explain why you can eliminate each possibility. Keep under 1000 words."}],
             None,
             "reasoning",
         ),

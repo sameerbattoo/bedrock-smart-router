@@ -95,16 +95,9 @@ if devquasar_path.exists():
     print(f"3. DevQuasar router: {len(dq_data)} samples")
 
 # ═══════════════════════════════════════════════════════════════
-# 4. Deita complexity dataset (52K, mapped scores)
+# 4. Deita complexity dataset — SKIPPED (z-scores don't align with our taxonomy)
 # ═══════════════════════════════════════════════════════════════
-deita_path = INDUSTRY_DIR / "deita_complexity.json"
-if deita_path.exists():
-    with open(deita_path) as f:
-        deita_data = json.load(f)
-    for d in deita_data:
-        texts.append(d["text"])
-        labels.append(d["label"])
-    print(f"4. Deita complexity: {len(deita_data)} samples")
+print("4. Deita complexity: skipped (label mismatch with our taxonomy)")
 
 # ═══════════════════════════════════════════════════════════════
 # 5. ShareGPT sample (5K, numeric z-scores → mapped)
@@ -160,10 +153,35 @@ for name in ["cross_difficulty_bbh", "cross_difficulty_gsm8k", "cross_difficulty
 print(f"5b. Cross-difficulty (BBH/GSM8K/MATH/IFEval): {cross_diff_count} samples")
 
 # ═══════════════════════════════════════════════════════════════
-# 5c. WildChat — NOT used for training (no labels)
-# Only used as a source of system prompts for augmentation (section 7)
+# 5c. Claude Opus reasoning dataset (3K, with system+user prompts)
 # ═══════════════════════════════════════════════════════════════
-print("5c. WildChat: skipped (no complexity labels — used for augmentation only)")
+claude_path = INDUSTRY_DIR / "claude_reasoning.json"
+if claude_path.exists():
+    with open(claude_path) as f:
+        claude_data = json.load(f)
+    claude_count = 0
+    for d in claude_data:
+        msgs = d.get("messages", [])
+        # Only use math category as reasoning (coding is moderate/complex, not reasoning)
+        if d.get("category") != "math":
+            continue
+        sys_prompt = ""
+        user_prompt = ""
+        for m in msgs:
+            if m.get("role") == "system":
+                sys_prompt = m.get("content", "")
+            elif m.get("role") == "user":
+                user_prompt = m.get("content", "")
+                break
+        if not user_prompt:
+            continue
+        full_text = f"{sys_prompt}\n\n{user_prompt}" if sys_prompt else user_prompt
+        texts.append(full_text)
+        labels.append("reasoning")
+        texts.append(user_prompt)
+        labels.append("reasoning")
+        claude_count += 1
+    print(f"5c. Claude reasoning (math only, system+user): {claude_count} samples")
 
 # ═══════════════════════════════════════════════════════════════
 # 6. Synthetic reasoning examples
