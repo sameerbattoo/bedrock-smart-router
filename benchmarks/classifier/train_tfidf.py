@@ -1,14 +1,21 @@
 """Train a TF-IDF + LogisticRegression classifier for prompt complexity.
 
-Produces a lightweight model (~1-3MB) that classifies prompts into:
-simple, moderate (medium), complex, reasoning
+Incorporates:
+- Original training_data.json (3.5K samples)
+- Generated data with system+user prompts (295 samples)
+- DevQuasar LLM router dataset (15K samples)
+- Deita complexity dataset (52K samples)
+- ShareGPT sample with numeric difficulty (5K samples)
+- Synthetic system prompt augmentation
+- Synthetic reasoning examples
 
 Usage: python benchmarks/classifier/train_tfidf.py
-Output: benchmarks/classifier/tfidf_model/
+Output: benchmarks/classifier/tfidf_model/ + bedrock_smart_router/data/ml_classifier.json
 """
 import json
 import os
 import pickle
+import random
 from pathlib import Path
 
 import numpy as np
@@ -18,32 +25,40 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import classification_report
 from sklearn.pipeline import Pipeline
 
-# Load training data
+random.seed(42)
+
+# Paths
 DATA_PATH = Path(__file__).parent / "training_data.json"
 GENERATED_DIR = Path(__file__).parent.parent / "data" / "generated"
+INDUSTRY_DIR = Path(__file__).parent.parent / "data" / "industry_standard"
 OUTPUT_DIR = Path(__file__).parent / "tfidf_model"
+PACKAGE_DATA = Path(__file__).parent.parent.parent / "bedrock_smart_router" / "data" / "ml_classifier.json"
 OUTPUT_DIR.mkdir(exist_ok=True)
+
+texts: list[str] = []
+labels: list[str] = []
+
+# ═══════════════════════════════════════════════════════════════
+# 1. Original training data (3.5K)
+# ═══════════════════════════════════════════════════════════════
+LABEL_MAP = {"simple": "simple", "medium": "moderate", "complex": "complex"}
 
 with open(DATA_PATH) as f:
     data = json.load(f)
+for d in data:
+    texts.append(d["text"])
+    labels.append(LABEL_MAP.get(d["label"], d["label"]))
+print(f"1. Original training data: {len(data)} samples")
 
-print(f"Loaded {len(data)} samples from training_data.json")
-
-# Map labels: medium → moderate (to match router's terminology)
-LABEL_MAP = {"simple": "simple", "medium": "moderate", "complex": "complex"}
-
-texts = [d["text"] for d in data]
-labels = [LABEL_MAP.get(d["label"], d["label"]) for d in data]
-
-# Load generated samples (from benchmarks/data/generated/)
-# These have system_prompt + user_prompt — combine them as the model will see them
+# ═══════════════════════════════════════════════════════════════
+# 2. Generated data with system+user prompts
+# ═══════════════════════════════════════════════════════════════
 DIFFICULTY_MAP = {"simple": "simple", "medium": "moderate", "complex": "complex", "hard": "complex"}
 gen_count = 0
 for gen_file in sorted(GENERATED_DIR.glob("*.json")):
     with open(gen_file) as f:
         gen_data = json.load(f)
     for item in gen_data:
-        # Combine system_prompt + user_prompt as the full context (matching classify_request)
         text_parts = []
         if item.get("system_prompt"):
             text_parts.append(item["system_prompt"])
@@ -60,17 +75,99 @@ for gen_file in sorted(GENERATED_DIR.glob("*.json")):
         label = DIFFICULTY_MAP.get(difficulty, "moderate")
         texts.append(full_text)
         labels.append(label)
-        gen_count += 1
-
-        # Also add user_prompt alone (for classify() without system context)
+        # Also add user_prompt alone
         if item.get("user_prompt") and item.get("system_prompt"):
             texts.append(item["user_prompt"])
             labels.append(label)
-            gen_count += 1
+        gen_count += 1
+print(f"2. Generated data: {gen_count} samples")
 
-print(f"Loaded {gen_count} samples from generated data")
+# ═══════════════════════════════════════════════════════════════
+# 3. DevQuasar LLM Router dataset (15K, binary)
+# ═══════════════════════════════════════════════════════════════
+devquasar_path = INDUSTRY_DIR / "devquasar_router.json"
+if devquasar_path.exists():
+    with open(devquasar_path) as f:
+        dq_data = json.load(f)
+    for d in dq_data:
+        texts.append(d["text"])
+        labels.append(d["label"])  # already 'simple' or 'complex'
+    print(f"3. DevQuasar router: {len(dq_data)} samples")
 
-# Add synthetic reasoning examples (the dataset doesn't have them)
+# ═══════════════════════════════════════════════════════════════
+# 4. Deita complexity dataset (52K, mapped scores)
+# ═══════════════════════════════════════════════════════════════
+deita_path = INDUSTRY_DIR / "deita_complexity.json"
+if deita_path.exists():
+    with open(deita_path) as f:
+        deita_data = json.load(f)
+    for d in deita_data:
+        texts.append(d["text"])
+        labels.append(d["label"])
+    print(f"4. Deita complexity: {len(deita_data)} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5. ShareGPT sample (5K, numeric z-scores → mapped)
+# ═══════════════════════════════════════════════════════════════
+sharegpt_path = INDUSTRY_DIR / "sharegpt_sample.json"
+if sharegpt_path.exists():
+    with open(sharegpt_path) as f:
+        sg_data = json.load(f)
+    sg_count = 0
+    for d in sg_data:
+        try:
+            score = float(d["label"])
+        except (ValueError, TypeError):
+            continue
+        if score < -0.5:
+            label = "simple"
+        elif score < 0.5:
+            label = "moderate"
+        elif score < 1.5:
+            label = "complex"
+        else:
+            label = "reasoning"
+        texts.append(d["text"])
+        labels.append(label)
+        sg_count += 1
+    print(f"5. ShareGPT sample: {sg_count} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5b. Cross-difficulty datasets (BBH, GSM8K, MATH, IFEval)
+# ═══════════════════════════════════════════════════════════════
+cross_diff_count = 0
+for name in ["cross_difficulty_bbh", "cross_difficulty_gsm8k", "cross_difficulty_math", "cross_difficulty_ifeval"]:
+    path = INDUSTRY_DIR / f"{name}.json"
+    if not path.exists():
+        continue
+    with open(path) as f:
+        cd_data = json.load(f)
+    for d in cd_data:
+        try:
+            score = float(d["label"])
+        except (ValueError, TypeError):
+            continue
+        # Reasoning benchmarks: easy = moderate overall, hard = reasoning
+        if score < -0.5:
+            label = "moderate"
+        elif score < 1.0:
+            label = "complex"
+        else:
+            label = "reasoning"
+        texts.append(d["text"])
+        labels.append(label)
+        cross_diff_count += 1
+print(f"5b. Cross-difficulty (BBH/GSM8K/MATH/IFEval): {cross_diff_count} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5c. WildChat — NOT used for training (no labels)
+# Only used as a source of system prompts for augmentation (section 7)
+# ═══════════════════════════════════════════════════════════════
+print("5c. WildChat: skipped (no complexity labels — used for augmentation only)")
+
+# ═══════════════════════════════════════════════════════════════
+# 6. Synthetic reasoning examples
+# ═══════════════════════════════════════════════════════════════
 reasoning_prompts = [
     "Prove by induction that the sum of first n squares equals n(n+1)(2n+1)/6",
     "Prove that there are infinitely many prime numbers using Euclid's proof",
@@ -82,44 +179,80 @@ reasoning_prompts = [
     "Prove the fundamental theorem of calculus using the epsilon-delta definition",
     "Show that the halting problem is undecidable using diagonalization",
     "Prove that every finite group of order p^2 is abelian",
+    "Think step by step: A farmer has 17 sheep. All but 9 die. How many are left?",
+    "Let's think through this carefully. If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets?",
+    "Reason through this problem: Three people check into a hotel room that costs $30...",
+    "Think carefully about this logic puzzle: You have 12 balls, one is heavier or lighter...",
+    "Prove by contradiction that sqrt(2) is irrational.",
+    "Reason about the Monty Hall problem using Bayes' theorem with full derivation.",
+    "Analyze step by step: Given a directed graph with negative edge weights, prove Bellman-Ford correctness.",
+    "Prove the FLP impossibility result step by step using the bivalency argument.",
     "Derive the Euler-Lagrange equation from the calculus of variations",
-    "Prove the central limit theorem for i.i.d. random variables",
-    "Show that NP-complete problems are closed under polynomial-time reductions",
     "Prove Gödel's first incompleteness theorem for Peano arithmetic",
-    "Derive the wave equation from Maxwell's equations in free space",
-    "Prove that the set of real numbers is uncountable using Cantor's diagonal argument",
-    "Show step by step why the integral of e^(-x^2) from -inf to inf equals sqrt(pi)",
-    "Prove that every vector space has a basis using Zorn's lemma",
-    "Derive the Navier-Stokes equations from conservation of momentum",
-    "Prove the Banach fixed-point theorem and discuss its applications",
-    "Think step by step: A farmer has 17 sheep. All but 9 die. How many are left? Explain your reasoning carefully.",
-    "Let's think through this carefully. If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets? Show all reasoning.",
-    "Reason through this problem: Three people check into a hotel room that costs $30. They each pay $10. The manager realizes the room is only $25 and gives $5 to the bellboy to return. The bellboy keeps $2 and gives $1 back to each person. Now each person paid $9 (total $27) plus the bellboy has $2 = $29. Where is the missing dollar? Explain step by step.",
-    "Think carefully about this logic puzzle: You have 12 balls, one is heavier or lighter. Using a balance scale exactly 3 times, identify the odd ball and whether it's heavier or lighter. Show your complete reasoning.",
-    "Analyze step by step: In a game, you can either take $1 million guaranteed, or flip a coin for $5 million. Using expected utility theory with a concave utility function, derive the conditions under which a rational agent would choose the guaranteed amount.",
-    "Prove by contradiction that sqrt(2) is irrational. Then extend the proof to show sqrt(p) is irrational for any prime p.",
-    "Reason through the Monty Hall problem: You pick door 1, Monty opens door 3 (showing a goat). Should you switch? Prove your answer using Bayes' theorem with full derivation.",
-    "Think step by step about this optimization: A company needs to minimize shipping costs across 5 warehouses and 8 stores. Formulate as a linear program, write the dual, and prove strong duality holds.",
-    "Carefully analyze: Given a directed graph with negative edge weights (but no negative cycles), prove that the Bellman-Ford algorithm correctly finds shortest paths. Show the loop invariant.",
-    "Reason about this distributed systems problem: Prove that in an asynchronous system with crash failures, consensus is impossible (FLP impossibility). Walk through the bivalency argument step by step.",
-] * 3  # Repeat to get ~90 samples
-
+] * 5  # 100 samples
 texts.extend(reasoning_prompts)
 labels.extend(["reasoning"] * len(reasoning_prompts))
+print(f"6. Synthetic reasoning: {len(reasoning_prompts)} samples")
 
-print(f"Total samples after adding reasoning: {len(texts)}")
+# ═══════════════════════════════════════════════════════════════
+# 7. System prompt augmentation (add system prompts to ~10% of samples)
+# ═══════════════════════════════════════════════════════════════
+SYSTEM_PROMPTS = [
+    "You are a helpful assistant.",
+    "You are a senior Python developer. Write clean, production-ready code.",
+    "You are an AWS solutions architect. Design for scale and reliability.",
+    "You are a data scientist. Analyze data and provide insights.",
+    "You are a security expert. Identify vulnerabilities and suggest fixes.",
+    "You are a DevOps engineer. Focus on automation and infrastructure.",
+    "You are a mathematics professor. Show all steps rigorously.",
+    "You are a distributed systems engineer. Design for fault tolerance.",
+    "You are a technical writer. Be clear and concise.",
+    "You are an ML engineer. Focus on model performance and efficiency.",
+    "You are a database administrator. Optimize queries and schema design.",
+    "You are a frontend developer. Write accessible, performant UI code.",
+    "You are a cloud architect specializing in serverless applications.",
+    "You are a principal engineer reviewing system designs.",
+    "You are an algorithms researcher. Prove correctness formally.",
+]
+
+TOOL_CONTEXTS = [
+    "[Tools available: query_database, generate_chart]",
+    "[Tools available: search_docs, file_write, calculator]",
+    "[Tools available: python_repl, file_read, file_write]",
+    "[Tools available: web_search, http_request]",
+    "[Tools available: use_aws, shell, file_write]",
+]
+
+# Augment ~10% of existing samples with system prompts
+n_augment = len(texts) // 10
+indices = random.sample(range(len(texts)), min(n_augment, len(texts)))
+aug_count = 0
+for idx in indices:
+    sys_prompt = random.choice(SYSTEM_PROMPTS)
+    tool_ctx = random.choice(TOOL_CONTEXTS) if random.random() < 0.3 else ""
+    augmented = f"{sys_prompt}\n\n{tool_ctx}\n\n{texts[idx]}" if tool_ctx else f"{sys_prompt}\n\n{texts[idx]}"
+    texts.append(augmented)
+    labels.append(labels[idx])
+    aug_count += 1
+print(f"7. System prompt augmentation: {aug_count} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# Summary & Train
+# ═══════════════════════════════════════════════════════════════
 from collections import Counter
+print(f"\nTotal samples: {len(texts)}")
 print(f"Label distribution: {dict(Counter(labels))}")
 
 # Split
 X_train, X_test, y_train, y_test = train_test_split(
-    texts, labels, test_size=0.2, random_state=42, stratify=labels
+    texts, labels, test_size=0.15, random_state=42, stratify=labels
 )
+print(f"Train: {len(X_train)}, Test: {len(X_test)}")
 
 # Build pipeline
 pipeline = Pipeline([
     ("tfidf", TfidfVectorizer(
-        max_features=15000,
+        max_features=20000,
         ngram_range=(1, 3),
         min_df=2,
         max_df=0.95,
@@ -140,28 +273,23 @@ print("\nCross-validation (5-fold)...")
 cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring="accuracy")
 print(f"CV Accuracy: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
 
-# Train on full training set
+# Train
 pipeline.fit(X_train, y_train)
 
-# Evaluate on test set
+# Evaluate
 y_pred = pipeline.predict(X_test)
 print(f"\nTest set results:")
 print(classification_report(y_test, y_pred))
 
-# Save model
+# Save pickle
 model_path = OUTPUT_DIR / "classifier.pkl"
 with open(model_path, "wb") as f:
     pickle.dump(pipeline, f)
+print(f"✅ Pickle: {model_path} ({model_path.stat().st_size / 1024:.1f} KB)")
 
-model_size = model_path.stat().st_size
-print(f"\n✅ Model saved to: {model_path}")
-print(f"   Size: {model_size / 1024:.1f} KB ({model_size / 1024 / 1024:.2f} MB)")
-
-# Also save as JSON-friendly format for portability
-# Export the vocabulary and weights
+# Save JSON for pure-numpy inference
 tfidf = pipeline.named_steps["tfidf"]
 clf = pipeline.named_steps["clf"]
-
 model_data = {
     "vocabulary": {k: int(v) for k, v in tfidf.vocabulary_.items()},
     "idf": tfidf.idf_.tolist(),
@@ -169,7 +297,7 @@ model_data = {
     "intercept": clf.intercept_.tolist(),
     "classes": clf.classes_.tolist(),
     "tfidf_params": {
-        "max_features": 15000,
+        "max_features": 20000,
         "ngram_range": [1, 3],
         "sublinear_tf": True,
     },
@@ -178,20 +306,25 @@ model_data = {
 json_path = OUTPUT_DIR / "classifier_data.json"
 with open(json_path, "w") as f:
     json.dump(model_data, f)
+print(f"✅ JSON: {json_path} ({json_path.stat().st_size / 1024:.1f} KB)")
 
-json_size = json_path.stat().st_size
-print(f"   JSON export: {json_size / 1024:.1f} KB ({json_size / 1024 / 1024:.2f} MB)")
+# Copy to package data
+import shutil
+shutil.copy(json_path, PACKAGE_DATA)
+print(f"✅ Copied to: {PACKAGE_DATA}")
 
 # Quick test
 test_prompts = [
-    "What is AWS S3?",
-    "Write a Python decorator with retry logic and exponential backoff",
-    "Design a distributed system for real-time fraud detection at 1M TPS",
-    "Prove by induction that the sum of first n cubes equals (n(n+1)/2)^2",
+    ("What is AWS S3?", "simple"),
+    ("Write a Python decorator with retry logic", "moderate"),
+    ("Design a distributed fraud detection system at 1M TPS", "complex"),
+    ("Prove by induction that sum of cubes equals (n(n+1)/2)^2", "reasoning"),
+    ("You are a senior architect.\n\nDesign a microservices platform with service mesh", "complex"),
 ]
 print("\n--- Quick predictions ---")
-for prompt in test_prompts:
+for prompt, expected in test_prompts:
     pred = pipeline.predict([prompt])[0]
     probs = pipeline.predict_proba([prompt])[0]
     confidence = max(probs)
-    print(f"  [{pred:>9}] ({confidence:.2f}) {prompt[:70]}")
+    match = "✓" if pred == expected else "✗"
+    print(f"  {match} [{pred:>9}] ({confidence:.2f}) expected={expected} | {prompt[:60]}")
