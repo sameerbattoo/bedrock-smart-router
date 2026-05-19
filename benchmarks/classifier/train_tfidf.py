@@ -36,22 +36,23 @@ texts = [d["text"] for d in data]
 labels = [LABEL_MAP.get(d["label"], d["label"]) for d in data]
 
 # Load generated samples (from benchmarks/data/generated/)
+# These have system_prompt + user_prompt — combine them as the model will see them
 DIFFICULTY_MAP = {"simple": "simple", "medium": "moderate", "complex": "complex", "hard": "complex"}
 gen_count = 0
 for gen_file in sorted(GENERATED_DIR.glob("*.json")):
     with open(gen_file) as f:
         gen_data = json.load(f)
     for item in gen_data:
-        # Combine system_prompt + user_prompt as the full text
+        # Combine system_prompt + user_prompt as the full context (matching classify_request)
         text_parts = []
         if item.get("system_prompt"):
             text_parts.append(item["system_prompt"])
+        if item.get("context"):
+            text_parts.append(item["context"])
         if item.get("user_prompt"):
             text_parts.append(item["user_prompt"])
         elif item.get("text"):
             text_parts.append(item["text"])
-        if item.get("context"):
-            text_parts.append(item["context"])
         full_text = "\n\n".join(text_parts)
         if not full_text.strip():
             continue
@@ -60,6 +61,12 @@ for gen_file in sorted(GENERATED_DIR.glob("*.json")):
         texts.append(full_text)
         labels.append(label)
         gen_count += 1
+
+        # Also add user_prompt alone (for classify() without system context)
+        if item.get("user_prompt") and item.get("system_prompt"):
+            texts.append(item["user_prompt"])
+            labels.append(label)
+            gen_count += 1
 
 print(f"Loaded {gen_count} samples from generated data")
 
