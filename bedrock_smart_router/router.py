@@ -917,7 +917,7 @@ class BedrockRouter:
             explanation = {
                 "complexity": self._build_complexity_explanation(
                     analysis, analysis_explanation, payload_bytes, payload_boost,
-                    min_tier, max_tier, messages, system, tool_config,
+                    min_tier, max_tier, messages, system, None,
                 ),
                 "strategy": {
                     "name": strategy_name,
