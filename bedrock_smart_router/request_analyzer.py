@@ -39,12 +39,15 @@ Full context (all messages + system + tool_config) is still used for:
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
 from bedrock_smart_router.models import Complexity, RequestAnalysis
+
+logger = logging.getLogger(__name__)
 
 # ── Keyword / pattern sets ──────────────────────────────────────────
 
@@ -306,9 +309,23 @@ class RequestAnalyzer:
         self,
         weights: AnalyzerWeights | None = None,
         thresholds: ComplexityThresholds | None = None,
+        classifier: str = "heuristic",
     ) -> None:
         self.weights = weights or AnalyzerWeights()
         self.thresholds = thresholds or ComplexityThresholds()
+
+        # ML classifier: only enabled when explicitly requested via classifier="ml"
+        self._ml_classifier = None
+        if classifier == "ml":
+            try:
+                from bedrock_smart_router.ml_classifier import MLComplexityClassifier
+                self._ml_classifier = MLComplexityClassifier()
+                logger.info("ML classifier enabled for complexity detection")
+            except ImportError:
+                raise ImportError(
+                    "ML classifier requested but numpy is not installed. "
+                    "Install with: pip install bedrock-smart-router[ml]"
+                )
 
     def analyze(
         self,
@@ -379,7 +396,27 @@ class RequestAnalyzer:
         # ── Classify complexity ─────────────────────────────────
         # Use last user message for reasoning marker count too
         reasoning_count = _count_matches(scoring_text_lower, REASONING_MARKERS)
-        complexity = self._classify(composite, reasoning_count)
+
+        # If ML classifier is available, use it for complexity detection
+        if self._ml_classifier is not None:
+            try:
+                ml_label, ml_conf = self._ml_classifier.classify_request(
+                    messages, system=system, tool_config=tool_config,
+                )
+                label_map = {
+                    "simple": Complexity.SIMPLE,
+                    "moderate": Complexity.MODERATE,
+                    "complex": Complexity.COMPLEX,
+                    "reasoning": Complexity.REASONING,
+                }
+                complexity = label_map.get(ml_label, Complexity.MODERATE)
+                # Use ML confidence as the composite score (scaled to 0-1)
+                composite = ml_conf
+            except Exception:
+                # Fall back to heuristic on any ML error
+                complexity = self._classify(composite, reasoning_count)
+        else:
+            complexity = self._classify(composite, reasoning_count)
 
         # ── Detect capabilities needed ──────────────────────────
         has_images = self._has_images(messages)

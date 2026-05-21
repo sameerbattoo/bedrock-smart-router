@@ -96,7 +96,7 @@ class BedrockRouter:
 
         # Phase 1: core
         self._registry = ModelRegistry(catalog_path=config.catalog_path)
-        self._analyzer = RequestAnalyzer()
+        self._analyzer = RequestAnalyzer(classifier=config.classifier)
         self._context_validator = ContextValidator()
         self._circuit_breakers = CircuitBreakerRegistry(config.circuit_breaker)
         self._fallback_handler = FallbackHandler(self._registry, config.fallback)

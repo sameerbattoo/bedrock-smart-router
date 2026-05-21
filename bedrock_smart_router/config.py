@@ -183,6 +183,9 @@ class RouterConfig:
     shadow: ShadowConfig = field(default_factory=ShadowConfig)
 
     excluded_models: list[str] = field(default_factory=list)
+
+    # Classifier: "heuristic" (default, zero deps) or "ml" (requires numpy)
+    classifier: str = "heuristic"
     catalog_path: str | None = None
     boto_config: dict[str, Any] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
