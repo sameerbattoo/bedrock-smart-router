@@ -45,11 +45,20 @@ for prompt, expected in test_prompts:
         routing=RoutingConfig(explain=True),
     )
     d = response["routing_decision"]
+    # Extract response text
+    resp_text = ""
+    for block in response.get("output", {}).get("message", {}).get("content", []):
+        if "text" in block:
+            resp_text = block["text"]
+
     print(f"\n  Prompt: {prompt[:60]}...")
     print(f"  Expected: {expected}")
     print(f"  Detected: {d.complexity_detected} (score: {d.complexity_score:.3f})")
     print(f"  Model:    {d.selected_model}")
+    print(f"  TTFT:     {d.ttft_ms or 0:.0f}ms")
+    print(f"  Latency:  {d.latency_ms:.0f}ms")
     print(f"  Cost:     ${d.actual_cost:.6f}")
+    print(f"  Response: {resp_text[:500]}{'...' if len(resp_text) > 120 else ''}")
 
     # ML explain shows probabilities
     if d.explanation and d.explanation.get("complexity", {}).get("classifier") == "ml":
