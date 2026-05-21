@@ -184,6 +184,12 @@ if claude_path.exists():
     print(f"5c. Claude reasoning (math only, system+user): {claude_count} samples")
 
 # ═══════════════════════════════════════════════════════════════
+# 5d-5f: Additional datasets — DISABLED (diluted accuracy from 80% to 67%)
+# The Alpaca, EricLu, and Claude full datasets have label definitions
+# that conflict with our taxonomy. Keeping the cleaner 35K dataset.
+# ═══════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════
 # 6. Synthetic reasoning examples
 # ═══════════════════════════════════════════════════════════════
 reasoning_prompts = [
