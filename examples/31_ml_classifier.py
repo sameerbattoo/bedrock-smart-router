@@ -57,6 +57,7 @@ for prompt, expected in test_prompts:
     print(f"  Model:    {d.selected_model}")
     print(f"  TTFT:     {d.ttft_ms or 0:.0f}ms")
     print(f"  Latency:  {d.latency_ms:.0f}ms")
+    print(f"  Routing:  {d.routing_decision_ms:.2f}ms")
     print(f"  Cost:     ${d.actual_cost:.6f}")
     print(f"  Response: {resp_text[:500]}{'...' if len(resp_text) > 120 else ''}")
 
