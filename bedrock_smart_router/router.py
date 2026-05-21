@@ -915,32 +915,10 @@ class BedrockRouter:
                 reason_parts.append(f"Balanced across cost/latency/quality.")
 
             explanation = {
-                "complexity": {
-                    "score": analysis.complexity_score,
-                    "score_before_boost": round(analysis.complexity_score - payload_boost, 4),
-                    "classification": analysis.complexity.value,
-                    "classification_thresholds": {
-                        "simple": f"< {self._analyzer.thresholds.simple_max}",
-                        "moderate": f"{self._analyzer.thresholds.simple_max} - {self._analyzer.thresholds.moderate_max}",
-                        "complex": f"{self._analyzer.thresholds.moderate_max} - {self._analyzer.thresholds.complex_max}",
-                        "reasoning": f">= {self._analyzer.thresholds.complex_max} OR reasoning_markers >= {self._analyzer.thresholds.reasoning_marker_count}",
-                    },
-                    "tier_range": {
-                        "min": min_tier.value if min_tier else "micro",
-                        "max": max_tier.value if max_tier else "reasoning",
-                    },
-                    "markers_hit": analysis_explanation.get("matched_markers", {}),
-                    "marker_counts": analysis_explanation.get("marker_counts", {}),
-                    "dimension_scores": analysis_explanation.get("dimension_scores", {}),
-                    "user_message_score": analysis_explanation.get("user_message_score"),
-                    "system_prompt_floor": analysis_explanation.get("system_prompt_floor"),
-                    "floor_applied": analysis_explanation.get("floor_applied", False),
-                    "system_floor_markers": analysis_explanation.get("system_floor_markers", {}),
-                    "multimodal_payload": {
-                        "bytes": payload_bytes,
-                        "complexity_boost": payload_boost,
-                    } if payload_bytes > 0 else None,
-                },
+                "complexity": self._build_complexity_explanation(
+                    analysis, analysis_explanation, payload_bytes, payload_boost,
+                    min_tier, max_tier, messages, system, tool_config,
+                ),
                 "strategy": {
                     "name": strategy_name,
                     "weights": weights if strategy_name == "balanced" else None,
@@ -1093,6 +1071,69 @@ class BedrockRouter:
             else:
                 cleaned.append(msg)
         return cleaned
+
+    def _build_complexity_explanation(
+        self,
+        analysis: Any,
+        analysis_explanation: dict[str, Any],
+        payload_bytes: int,
+        payload_boost: float,
+        min_tier: Any,
+        max_tier: Any,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None,
+        tool_config: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        """Build the complexity section of the explain dict.
+
+        Returns ML-style explain when ML classifier is active,
+        otherwise returns the full heuristic explain with dimension scores.
+        """
+        if self._analyzer._ml_classifier is not None:
+            # ML classifier explain: probabilities + confidence
+            probs = self._analyzer._ml_classifier.predict_proba_all(
+                self._analyzer._ml_classifier._assemble_context(messages, system, tool_config)
+            )
+            return {
+                "classifier": "ml",
+                "score": analysis.complexity_score,
+                "classification": analysis.complexity.value,
+                "probabilities": probs,
+                "tier_range": {
+                    "min": min_tier.value if min_tier else "micro",
+                    "max": max_tier.value if max_tier else "reasoning",
+                },
+                "model_version": "tfidf_v1_35k",
+            }
+        else:
+            # Heuristic explain: full dimension scores + markers
+            return {
+                "classifier": "heuristic",
+                "score": analysis.complexity_score,
+                "score_before_boost": round(analysis.complexity_score - payload_boost, 4),
+                "classification": analysis.complexity.value,
+                "classification_thresholds": {
+                    "simple": f"< {self._analyzer.thresholds.simple_max}",
+                    "moderate": f"{self._analyzer.thresholds.simple_max} - {self._analyzer.thresholds.moderate_max}",
+                    "complex": f"{self._analyzer.thresholds.moderate_max} - {self._analyzer.thresholds.complex_max}",
+                    "reasoning": f">= {self._analyzer.thresholds.complex_max} OR reasoning_markers >= {self._analyzer.thresholds.reasoning_marker_count}",
+                },
+                "tier_range": {
+                    "min": min_tier.value if min_tier else "micro",
+                    "max": max_tier.value if max_tier else "reasoning",
+                },
+                "markers_hit": analysis_explanation.get("matched_markers", {}),
+                "marker_counts": analysis_explanation.get("marker_counts", {}),
+                "dimension_scores": analysis_explanation.get("dimension_scores", {}),
+                "user_message_score": analysis_explanation.get("user_message_score"),
+                "system_prompt_floor": analysis_explanation.get("system_prompt_floor"),
+                "floor_applied": analysis_explanation.get("floor_applied", False),
+                "system_floor_markers": analysis_explanation.get("system_floor_markers", {}),
+                "multimodal_payload": {
+                    "bytes": payload_bytes,
+                    "complexity_boost": payload_boost,
+                } if payload_bytes > 0 else None,
+            }
 
     @staticmethod
     def _strip_cache_points(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -251,25 +251,31 @@ class MLComplexityClassifier:
         system: list[dict] | None = None,
         tool_config: dict | None = None,
     ) -> tuple[str, float]:
-        """Classify a full Bedrock Converse request (system + messages + tools).
+        """Classify a full Bedrock Converse request (system + messages + tools)."""
+        full_text = self._assemble_context(messages, system, tool_config)
+        return self.classify(full_text)
 
-        Assembles the full context from system prompt, conversation history,
-        and tool specifications — matching what the heuristic RequestAnalyzer
-        considers.
+    def _assemble_context(
+        self,
+        messages: list[dict],
+        system: list[dict] | None = None,
+        tool_config: dict | None = None,
+    ) -> str:
+        """Assemble full context text from system + messages + tools.
 
         Parameters
         ----------
         messages : list[dict]
             Bedrock Converse messages (role + content blocks).
         system : list[dict], optional
-            System prompt blocks (e.g., [{"text": "You are..."}]).
+            System prompt blocks.
         tool_config : dict, optional
-            Tool configuration (e.g., {"tools": [{"toolSpec": {...}}]}).
+            Tool configuration.
 
         Returns
         -------
-        tuple[str, float]
-            A tuple of (label, confidence).
+        str
+            Combined context string for classification.
         """
         context_parts: list[str] = []
 
@@ -279,7 +285,7 @@ class MLComplexityClassifier:
                 if isinstance(block, dict) and "text" in block:
                     context_parts.append(block["text"])
 
-        # 2. Tool specs (presence and names signal complexity)
+        # 2. Tool specs
         if tool_config:
             tools = tool_config.get("tools", [])
             if tools:
@@ -293,15 +299,12 @@ class MLComplexityClassifier:
                 if tool_names:
                     context_parts.append(f"[Tools available: {', '.join(tool_names)}]")
 
-        # 3. Conversation messages (focus on last user message + recent context)
+        # 3. Conversation messages
         for msg in messages:
-            role = msg.get("role", "")
             content = msg.get("content", [])
             if isinstance(content, list):
                 for block in content:
                     if isinstance(block, dict) and "text" in block:
                         context_parts.append(block["text"])
 
-        # Combine and classify
-        full_text = "\n\n".join(context_parts)
-        return self.classify(full_text)
+        return "\n\n".join(context_parts)
