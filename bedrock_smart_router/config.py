@@ -233,6 +233,7 @@ class RouterConfig:
             canary=_build_canary(data.get("canary", {})),
             shadow=_build_sub(ShadowConfig, data.get("shadow", {})),
             excluded_models=data.get("excluded_models", []),
+            classifier=data.get("classifier", "heuristic"),
             catalog_path=data.get("catalog_path"),
             boto_config=data.get("boto_config"),
             metadata=data.get("metadata", {}),

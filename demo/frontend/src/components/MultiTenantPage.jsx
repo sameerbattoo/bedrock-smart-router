@@ -356,8 +356,26 @@ export default function MultiTenantPage({ onRun }) {
                         <div className="flex items-center gap-0.5">{metricIcon(tenant.id, bestTtft, worstTtft)}<span className="text-[8px] text-gray-500">TTFT </span><span className="text-[10px] font-mono text-gray-300">{r.ttft_ms}ms</span></div>
                         <div className="flex items-center gap-0.5">{metricIcon(tenant.id, bestLatency, worstLatency)}<span className="text-[8px] text-gray-500">Latency </span><span className="text-[10px] font-mono text-gray-300">{r.latency_ms}ms</span></div>
                         <div><span className="text-[8px] text-gray-500">Tokens </span><span className="text-[10px] font-mono text-gray-300">{r.input_tokens}↓{r.output_tokens}↑</span></div>
-                        <div className="flex items-center gap-0.5">{metricIcon(tenant.id, bestCost, worstCost)}<span className="text-[8px] text-gray-500">Cost </span><span className="text-[10px] font-mono text-gray-300">${r.cost}</span></div>
-                        <div className="flex items-center gap-0.5 cursor-pointer" onClick={e => score && setAccuracyPopup({side: tenant.name, score: score.score, reasoning: score.reasoning, position: {x: e.clientX, y: e.clientY}})}>{metricIcon(tenant.id, bestScore, worstScore)}<span className="text-[8px] text-gray-500">Accuracy </span><span className={`text-[10px] font-mono font-bold underline decoration-dotted ${score ? (score.score >= 8 ? 'text-green-400' : score.score >= 6 ? 'text-yellow-400' : 'text-red-400') : 'text-gray-600'}`}>{score ? `${score.score}/10` : '...'}</span></div>
+                        <div className="flex items-center gap-0.5">{metricIcon(tenant.id, bestCost, worstCost)}<span className="text-[8px] text-gray-500">Cost </span><span className="text-[10px] font-mono text-gray-300">${r.cost}</span>{(() => {
+                          const otherTenant = tenants.find(t => t.id !== tenant.id)
+                          const otherCost = results[otherTenant?.id]?.cost
+                          if (otherCost && otherCost > 0 && r.cost !== otherCost) {
+                            const pct = Math.round(((r.cost - otherCost) / otherCost) * 100)
+                            const cheaper = r.cost < otherCost
+                            return <span className={`text-[9px] font-medium ml-1 ${cheaper ? 'text-green-400' : 'text-red-400'}`}>{cheaper ? '↓' : '↑'}{Math.abs(pct)}%</span>
+                          }
+                          return null
+                        })()}</div>
+                        <div className="flex items-center gap-0.5 cursor-pointer" onClick={e => score && setAccuracyPopup({side: tenant.name, score: score.score, reasoning: score.reasoning, position: {x: e.clientX, y: e.clientY}})}>{metricIcon(tenant.id, bestScore, worstScore)}<span className="text-[8px] text-gray-500">Accuracy </span><span className={`text-[10px] font-mono font-bold underline decoration-dotted ${score ? (score.score >= 8 ? 'text-green-400' : score.score >= 6 ? 'text-yellow-400' : 'text-red-400') : 'text-gray-600'}`}>{score ? `${score.score}/10` : '...'}</span>{(() => {
+                          const otherTenant = tenants.find(t => t.id !== tenant.id)
+                          const otherScore = scores?.[otherTenant?.id]?.score
+                          if (score && otherScore && score.score !== otherScore) {
+                            const better = score.score > otherScore
+                            const delta = Math.abs(score.score - otherScore)
+                            return <span className={`text-[9px] font-medium ml-1 ${better ? 'text-green-400' : 'text-red-400'}`}>{better ? '↑' : '↓'}{delta}pt</span>
+                          }
+                          return null
+                        })()}</div>
                       </div>
                     )}
                     {r && r.error && <div className="text-[10px] text-red-400 mt-1">❌ {r.error}</div>}
