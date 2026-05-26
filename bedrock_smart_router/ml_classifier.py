@@ -286,7 +286,10 @@ class MLComplexityClassifier:
         if last_user_text:
             user_label, user_conf = self.classify(last_user_text)
         else:
-            user_label, user_conf = "moderate", 0.5
+            # No text in user messages (e.g., only toolResult blocks)
+            # Fall back to classifying the full context
+            full_text = self._assemble_context(messages, system, tool_config)
+            return self.classify(full_text)
 
         # 2. If there's a system prompt or tools, compute a floor
         if system or tool_config:
@@ -309,14 +312,19 @@ class MLComplexityClassifier:
 
     @staticmethod
     def _extract_last_user_text(messages: list[dict]) -> str:
-        """Extract text from the last user message."""
+        """Extract text from the last user message that has actual text content.
+        
+        Skips user messages that only contain toolResult blocks (from Strands
+        agent loop tool calls) — these are not real user questions.
+        """
         for msg in reversed(messages):
             if msg.get("role") == "user":
                 content = msg.get("content", [])
                 if isinstance(content, list):
                     parts = [b["text"] for b in content if isinstance(b, dict) and "text" in b]
-                    return " ".join(parts)
-                elif isinstance(content, str):
+                    if parts:  # Only return if there's actual text (not just toolResult)
+                        return " ".join(parts)
+                elif isinstance(content, str) and content.strip():
                     return content
         return ""
 
