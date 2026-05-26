@@ -60,9 +60,24 @@ class MLComplexityClassifier:
     model_path : str or Path, optional
         Path to the classifier_data.json model file.
         Defaults to the bundled model in the package data directory.
+    floor_confidence_threshold : float, optional
+        Minimum confidence the system prompt floor must have to be applied.
+        Default 0.7 — prevents low-confidence floor from overriding user message.
+    floor_dampening : float, optional
+        Confidence dampening when floor overrides user message classification.
+        Default 0.8 — signals the result was floor-influenced.
     """
 
-    def __init__(self, model_path: Optional[str | Path] = None) -> None:
+    # Complexity level ordering for floor comparison
+    COMPLEXITY_ORDER = {"simple": 0, "moderate": 1, "complex": 2, "reasoning": 3}
+    LEVEL_TO_LABEL = {0: "simple", 1: "moderate", 2: "complex", 3: "reasoning"}
+
+    def __init__(
+        self,
+        model_path: Optional[str | Path] = None,
+        floor_confidence_threshold: float = 0.7,
+        floor_dampening: float = 0.8,
+    ) -> None:
         if not HAS_NUMPY:
             raise ImportError(
                 "numpy is required for the ML classifier. "
@@ -72,6 +87,8 @@ class MLComplexityClassifier:
         if model_path is None:
             model_path = Path(__file__).parent / "data" / "ml_classifier.json"
         self._model_path = Path(model_path)
+        self._floor_confidence_threshold = floor_confidence_threshold
+        self._floor_dampening = floor_dampening
 
         # Lazy-loaded model components
         self._vocabulary: Optional[dict[str, int]] = None
@@ -276,15 +293,14 @@ class MLComplexityClassifier:
 
                 # Apply floor: only upgrade, never downgrade
                 # Only apply if floor is moderate+ (simple system prompts don't boost)
-                COMPLEXITY_ORDER = {"simple": 0, "moderate": 1, "complex": 2, "reasoning": 3}
+                COMPLEXITY_ORDER = self.COMPLEXITY_ORDER
                 user_level = COMPLEXITY_ORDER.get(user_label, 0)
                 floor_level = COMPLEXITY_ORDER.get(floor_label, 0)
 
-                if floor_level > user_level and floor_level >= 1 and floor_conf > 0.7:
+                if floor_level > user_level and floor_level >= 1 and floor_conf > self._floor_confidence_threshold:
                     # Floor is higher with high confidence — apply it but cap at one level above user
                     capped_level = min(floor_level, user_level + 1)
-                    level_to_label = {0: "simple", 1: "moderate", 2: "complex", 3: "reasoning"}
-                    return level_to_label[capped_level], user_conf * 0.8
+                    return self.LEVEL_TO_LABEL[capped_level], user_conf * self._floor_dampening
                     
         return user_label, user_conf
 
