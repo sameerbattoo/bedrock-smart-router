@@ -1092,19 +1092,30 @@ class BedrockRouter:
         if self._analyzer._ml_classifier is not None:
             # ML classifier explain: show probabilities from the LAST USER MESSAGE
             # (matching what classify_request() actually uses for the decision)
-            last_user_text = self._analyzer._ml_classifier._extract_last_user_text(messages)
-            probs = self._analyzer._ml_classifier.predict_proba_all(last_user_text or "")
-            return {
+            clf = self._analyzer._ml_classifier
+            last_user_text = clf._extract_last_user_text(messages)
+            probs = clf.predict_proba_all(last_user_text or "")
+
+            # Check if floor was applied (classification differs from highest probability)
+            user_label = max(probs, key=probs.get)
+            floor_applied = (analysis.complexity.value != user_label)
+
+            explain = {
                 "classifier": "ml",
                 "score": analysis.complexity_score,
                 "classification": analysis.complexity.value,
                 "probabilities": probs,
+                "user_message_classification": user_label,
+                "floor_applied": floor_applied,
                 "tier_range": {
                     "min": min_tier.value if min_tier else "micro",
                     "max": max_tier.value if max_tier else "reasoning",
                 },
                 "model_version": "tfidf_v1_35k",
             }
+            if floor_applied:
+                explain["floor_reason"] = "System prompt complexity floor upgraded classification"
+            return explain
         else:
             # Heuristic explain: full dimension scores + markers
             return {

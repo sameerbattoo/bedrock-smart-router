@@ -185,7 +185,7 @@ export function ExplainPopup({ explanation, onClose }) {
             {/* ML Classifier: show probabilities */}
             {cx.classifier === 'ml' && cx.probabilities && (
               <div className="mb-3">
-                <div className="text-[9px] text-gray-500 mb-2">Class Probabilities:</div>
+                <div className="text-[9px] text-gray-500 mb-2">Class Probabilities (from last user message):</div>
                 <div className="grid grid-cols-4 gap-2">
                   {Object.entries(cx.probabilities).sort((a,b) => b[1] - a[1]).map(([label, prob]) => (
                     <div key={label} className={`p-2 rounded-lg border ${label === cx.classification ? 'border-orange-500/50 bg-orange-950/20' : 'border-gray-700/50 bg-gray-800/40'}`}>
@@ -199,6 +199,18 @@ export function ExplainPopup({ explanation, onClose }) {
                     </div>
                   ))}
                 </div>
+                {/* Score Breakdown — same format as heuristic */}
+                {cx.floor_applied && (
+                  <div className="mt-3">
+                    <div className="text-[9px] text-gray-500 mb-1">Score Breakdown:</div>
+                    <div className="flex items-center gap-4 text-[10px]">
+                      <span className="text-gray-400">User Message: <span className="font-mono text-white capitalize">{cx.user_message_classification}</span></span>
+                      <span className="text-gray-400">System Prompt Floor: <span className="font-mono text-white capitalize">{cx.classification}</span></span>
+                      <span className="text-gray-400">&rarr; Final: <span className="font-mono font-bold text-white capitalize">{cx.classification}</span></span>
+                      <span className="text-[9px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded font-medium">⬆ Floor applied</span>
+                    </div>
+                  </div>
+                )}
                 {cx.model_version && <div className="mt-2 text-[9px] text-gray-600">Model: {cx.model_version}</div>}
               </div>
             )}
