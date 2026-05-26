@@ -390,4 +390,53 @@ print(f"Tool use request → {r6b['routing_decision'].selected_model}")
 # print(f"Vision request → {r6c['routing_decision'].selected_model}")
 
 print(f"\nRegistered strategies: compliance, code-aware, eu-only, "
-      f"time-of-day, multi-tenant, capability-match")
+      f"time-of-day, multi-tenant, capability-match, model-allowlist")
+
+
+# ── Example 7: Model Allowlist Strategy ──────────────────────────────
+# The simplest custom strategy: restrict routing to ONLY a specific
+# set of models you've approved. The router picks the best among them
+# based on complexity and cost/quality weights.
+
+class ModelAllowlistStrategy(RoutingStrategy):
+    """Route only to an explicit list of approved models."""
+    name = "model-allowlist"
+
+    # Define your approved models here
+    ALLOWED_MODELS = {
+        "anthropic.claude-sonnet-4-6",
+        "anthropic.claude-haiku-4-5-20251001-v1:0",
+        "amazon.nova-pro-v1:0",
+    }
+
+    @property
+    def weights(self) -> dict[str, float]:
+        return {"quality": 0.5, "cost": 0.3, "latency": 0.2}
+
+    def score_model(self, model, analysis, context):
+        return {}  # Use default quality/cost/latency scoring
+
+    def filter_candidates(self, candidates, analysis, context):
+        # Only keep models in the allowlist (check both model_id and base_model_id)
+        allowed = [m for m in candidates
+                   if m.model_id in self.ALLOWED_MODELS
+                   or getattr(m, 'base_model_id', '') in self.ALLOWED_MODELS]
+        rejected = len(candidates) - len(allowed)
+        return allowed, {"allowlist_size": len(self.ALLOWED_MODELS), "rejected": rejected}
+
+
+register_strategy("model-allowlist", ModelAllowlistStrategy)
+
+# Usage:
+router7 = BedrockRouter.create({"strategy": "model-allowlist"})
+
+print("\n── Model Allowlist Strategy ──")
+print(f"Allowed models: {sorted(ModelAllowlistStrategy.ALLOWED_MODELS)}")
+
+r7a = router7.converse(messages=[{"role": "user", "content": [{"text": "Hello!"}]}])
+print(f"Simple → {r7a['routing_decision'].selected_model}")
+
+r7b = router7.converse(messages=[{"role": "user", "content": [
+    {"text": "Design a microservices architecture with event sourcing"}
+]}])
+print(f"Complex → {r7b['routing_decision'].selected_model}")
