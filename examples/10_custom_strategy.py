@@ -440,3 +440,81 @@ r7b = router7.converse(messages=[{"role": "user", "content": [
     {"text": "Design a microservices architecture with event sourcing"}
 ]}])
 print(f"Complex → {r7b['routing_decision'].selected_model}")
+
+
+# ── Example 8: ML Classifier + Custom Strategy (combined) ────────────
+# Uses the ML classifier for accurate complexity detection AND a custom
+# strategy for business-specific model selection logic.
+#
+# Scenario: A SaaS company wants:
+#   - ML-based complexity detection (more accurate than heuristic)
+#   - Only Anthropic + Amazon models (no third-party)
+#   - Reasoning tasks always go to Opus (premium quality)
+#   - Simple tasks always go to Nova Micro (cheapest)
+
+class MLAwareAllowlistStrategy(RoutingStrategy):
+    """Custom strategy that leverages ML complexity for smart routing."""
+    name = "ml-aware-allowlist"
+
+    # Only these model families are approved
+    APPROVED_FAMILIES = {"anthropic", "amazon"}
+
+    @property
+    def weights(self) -> dict[str, float]:
+        return {"complexity_fit": 0.50, "quality": 0.30, "cost": 0.20}
+
+    def score_model(self, model, analysis, context):
+        # Use the ML-detected complexity to score model fitness
+        complexity = analysis.complexity.value
+
+        if complexity == "reasoning":
+            # For reasoning: heavily prefer heavy/reasoning tier models
+            tier_fit = {"reasoning": 1.0, "heavy": 0.8, "mid": 0.3, "lite": 0.1, "micro": 0.0}
+        elif complexity == "complex":
+            # For complex: prefer mid/heavy
+            tier_fit = {"reasoning": 0.5, "heavy": 0.9, "mid": 1.0, "lite": 0.3, "micro": 0.1}
+        elif complexity == "moderate":
+            # For moderate: prefer lite/mid (good balance)
+            tier_fit = {"reasoning": 0.1, "heavy": 0.3, "mid": 0.7, "lite": 1.0, "micro": 0.5}
+        else:
+            # For simple: prefer micro/lite (cheapest)
+            tier_fit = {"reasoning": 0.0, "heavy": 0.1, "mid": 0.2, "lite": 0.7, "micro": 1.0}
+
+        return {"complexity_fit": tier_fit.get(model.tier.value, 0.5)}
+
+    def filter_candidates(self, candidates, analysis, context):
+        # Only allow Anthropic + Amazon models
+        approved = [m for m in candidates if m.family in self.APPROVED_FAMILIES]
+        return approved, {"approved_families": list(self.APPROVED_FAMILIES),
+                          "rejected": len(candidates) - len(approved)}
+
+
+register_strategy("ml-aware-allowlist", MLAwareAllowlistStrategy)
+
+# Create router with BOTH ML classifier and custom strategy
+router8 = BedrockRouter.create({
+    "classifier": "ml",                # ML for complexity detection
+    "strategy": "ml-aware-allowlist",  # Custom strategy for model selection
+})
+
+print("\n── ML Classifier + Custom Strategy ──")
+print("  (ML detects complexity → custom strategy picks from Anthropic/Amazon only)")
+
+# Simple → ML detects simple → strategy picks cheapest Amazon/Anthropic
+r8a = router8.converse(messages=[{"role": "user", "content": [{"text": "What is EC2?"}]}])
+d8a = r8a["routing_decision"]
+print(f"\n  Simple: '{d8a.complexity_detected}' → {d8a.selected_model} (${d8a.actual_cost:.6f})")
+
+# Complex → ML detects complex → strategy picks mid/heavy Anthropic/Amazon
+r8b = router8.converse(messages=[{"role": "user", "content": [
+    {"text": "Design a multi-region disaster recovery architecture for a financial trading platform"}
+]}])
+d8b = r8b["routing_decision"]
+print(f"  Complex: '{d8b.complexity_detected}' → {d8b.selected_model} (${d8b.actual_cost:.6f})")
+
+# Reasoning → ML detects reasoning → strategy picks Opus/heavy
+r8c = router8.converse(messages=[{"role": "user", "content": [
+    {"text": "Prove that the set of real numbers is uncountable using Cantor's diagonal argument. Show each step."}
+]}])
+d8c = r8c["routing_decision"]
+print(f"  Reasoning: '{d8c.complexity_detected}' → {d8c.selected_model} (${d8c.actual_cost:.6f})")
