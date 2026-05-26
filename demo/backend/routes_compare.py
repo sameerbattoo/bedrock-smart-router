@@ -76,6 +76,7 @@ async def compare_stream(
     selected_tools: str = Form("[]"),
     baseline_model: str = Form("sonnet"),
     router_strategy: str = Form("balanced"),
+    classifier: str = Form("heuristic"),
     preferred_model: str = Form(""),
     file_id: str = Form(""),
     file: UploadFile | None = File(None),
@@ -127,6 +128,17 @@ async def compare_stream(
             baseline_q.put(("done", result))
 
         def _router_task():
+            # Set classifier mode on the router's analyzer
+            if classifier == "ml":
+                if smart_router._analyzer._ml_classifier is None:
+                    try:
+                        from bedrock_smart_router.ml_classifier import MLComplexityClassifier
+                        smart_router._analyzer._ml_classifier = MLComplexityClassifier()
+                    except ImportError:
+                        pass
+            else:
+                smart_router._analyzer._ml_classifier = None
+
             result = _run_compare_router(
                 client=smart_router,
                 messages=messages,

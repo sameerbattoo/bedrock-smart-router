@@ -97,6 +97,7 @@ ROUTER_SETUP_CODE = '''from bedrock_smart_router import BedrockRouter, RoutingCo
 # Single router instance — serves ALL tenants
 router = BedrockRouter.create({
     "region": "us-west-2",
+    "classifier": "heuristic",        # or "ml" for ML-based complexity detection
     "aip": {
         "enabled": True,              # Application Inference Profiles
         "auto_create": True,          # Auto-create per tenant on first request
@@ -134,6 +135,7 @@ async def get_tenants():
 async def multi_tenant_run(
     prompt: str = Form(...),
     system_prompt: str = Form(""),
+    classifier: str = Form("heuristic"),
 ):
     """Run the same prompt through all tenant configurations with token streaming."""
     import queue
@@ -141,6 +143,17 @@ async def multi_tenant_run(
     async def event_stream() -> AsyncGenerator[str, None]:
         loop = asyncio.get_event_loop()
         result_queue: queue.Queue = queue.Queue()
+
+        # Set classifier mode on the router's analyzer
+        if classifier == "ml":
+            if smart_router._analyzer._ml_classifier is None:
+                try:
+                    from bedrock_smart_router.ml_classifier import MLComplexityClassifier
+                    smart_router._analyzer._ml_classifier = MLComplexityClassifier()
+                except ImportError:
+                    pass
+        else:
+            smart_router._analyzer._ml_classifier = None
 
         # Build messages
         messages = [{"role": "user", "content": [{"text": prompt}]}]

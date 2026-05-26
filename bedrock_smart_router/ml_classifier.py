@@ -251,9 +251,74 @@ class MLComplexityClassifier:
         system: list[dict] | None = None,
         tool_config: dict | None = None,
     ) -> tuple[str, float]:
-        """Classify a full Bedrock Converse request (system + messages + tools)."""
-        full_text = self._assemble_context(messages, system, tool_config)
-        return self.classify(full_text)
+        """Classify a full Bedrock Converse request (system + messages + tools).
+
+        Uses the same logic as the heuristic RequestAnalyzer:
+        - Primary signal: LAST USER MESSAGE only
+        - System prompt + tools: used as a complexity FLOOR (not the score)
+        - Floor only applies if it's higher than the user message classification
+
+        This prevents complex system prompts from inflating simple follow-up
+        questions to reasoning/complex.
+        """
+        # 1. Extract and classify the LAST USER MESSAGE (primary signal)
+        last_user_text = self._extract_last_user_text(messages)
+        if last_user_text:
+            user_label, user_conf = self.classify(last_user_text)
+        else:
+            user_label, user_conf = "moderate", 0.5
+
+        # 2. If there's a system prompt or tools, compute a floor
+        if system or tool_config:
+            floor_text = self._assemble_floor_context(system, tool_config)
+            if floor_text:
+                floor_label, floor_conf = self.classify(floor_text)
+
+                # Apply floor: only upgrade, never downgrade
+                # Only apply if floor is moderate+ (simple system prompts don't boost)
+                COMPLEXITY_ORDER = {"simple": 0, "moderate": 1, "complex": 2, "reasoning": 3}
+                user_level = COMPLEXITY_ORDER.get(user_label, 0)
+                floor_level = COMPLEXITY_ORDER.get(floor_label, 0)
+
+                if floor_level > user_level and floor_level >= 1 and floor_conf > 0.7:
+                    # Floor is higher with high confidence — apply it but cap at one level above user
+                    capped_level = min(floor_level, user_level + 1)
+                    level_to_label = {0: "simple", 1: "moderate", 2: "complex", 3: "reasoning"}
+                    return level_to_label[capped_level], user_conf * 0.8
+                    
+        return user_label, user_conf
+
+    @staticmethod
+    def _extract_last_user_text(messages: list[dict]) -> str:
+        """Extract text from the last user message."""
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", [])
+                if isinstance(content, list):
+                    parts = [b["text"] for b in content if isinstance(b, dict) and "text" in b]
+                    return " ".join(parts)
+                elif isinstance(content, str):
+                    return content
+        return ""
+
+    @staticmethod
+    def _assemble_floor_context(
+        system: list[dict] | None = None,
+        tool_config: dict | None = None,
+    ) -> str:
+        """Assemble system prompt + tool specs for floor calculation."""
+        parts: list[str] = []
+        if system:
+            for block in system:
+                if isinstance(block, dict) and "text" in block:
+                    parts.append(block["text"])
+        if tool_config:
+            tools = tool_config.get("tools", [])
+            if tools:
+                tool_names = [t.get("toolSpec", {}).get("name", "") for t in tools if t.get("toolSpec", {}).get("name")]
+                if tool_names:
+                    parts.append(f"[Tools: {', '.join(tool_names)}]")
+        return "\n".join(parts)
 
     def _assemble_context(
         self,

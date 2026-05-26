@@ -170,14 +170,41 @@ export function ExplainPopup({ explanation, onClose }) {
         <div className="mb-5">
           <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">Step 1: Complexity Classification</div>
           <div className="bg-gray-800/60 rounded-lg p-4">
+            {/* Header: score + classification badge */}
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-xs text-gray-400">Final Score:</span>
+              {cx.classifier === 'ml' && <span className="text-[9px] bg-purple-900/40 text-purple-300 px-1.5 py-0.5 rounded border border-purple-700/30">🧠 ML Classifier</span>}
+              {cx.classifier === 'heuristic' && <span className="text-[9px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">📐 Heuristic</span>}
+              <span className="text-xs text-gray-400">Confidence:</span>
               <span className="text-sm font-mono font-bold text-white">{cx.score?.toFixed(4)}</span>
-              {cx.score_before_boost != null && cx.score_before_boost !== cx.score && <span className="text-[9px] text-gray-500">(base: {cx.score_before_boost?.toFixed(4)})</span>}
+              {cx.classifier !== 'ml' && cx.score_before_boost != null && cx.score_before_boost !== cx.score && <span className="text-[9px] text-gray-500">(base: {cx.score_before_boost?.toFixed(4)})</span>}
               {payload && <span className="text-[9px] text-yellow-400 bg-yellow-900/30 px-1.5 py-0.5 rounded">+{payload.complexity_boost} payload boost ({(payload.bytes/1024).toFixed(0)}KB)</span>}
               <span className="text-xs text-gray-400">&rarr;</span>
               <span className={`text-xs font-bold px-2 py-0.5 rounded ${cx.classification==='simple'?'bg-green-900/40 text-green-400':cx.classification==='moderate'?'bg-blue-900/40 text-blue-400':cx.classification==='complex'?'bg-purple-900/40 text-purple-400':'bg-red-900/40 text-red-400'}`}>{cx.classification?.toUpperCase()}</span>
             </div>
+
+            {/* ML Classifier: show probabilities */}
+            {cx.classifier === 'ml' && cx.probabilities && (
+              <div className="mb-3">
+                <div className="text-[9px] text-gray-500 mb-2">Class Probabilities:</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {Object.entries(cx.probabilities).sort((a,b) => b[1] - a[1]).map(([label, prob]) => (
+                    <div key={label} className={`p-2 rounded-lg border ${label === cx.classification ? 'border-orange-500/50 bg-orange-950/20' : 'border-gray-700/50 bg-gray-800/40'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-[10px] font-medium capitalize ${label === cx.classification ? 'text-orange-300' : 'text-gray-400'}`}>{label}</span>
+                        <span className={`text-[11px] font-mono font-bold ${label === cx.classification ? 'text-orange-300' : 'text-gray-500'}`}>{(prob * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${label === cx.classification ? 'bg-orange-500' : 'bg-gray-600'}`} style={{width: `${Math.min(prob * 100, 100)}%`}} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {cx.model_version && <div className="mt-2 text-[9px] text-gray-600">Model: {cx.model_version}</div>}
+              </div>
+            )}
+
+            {/* Heuristic Classifier: show thresholds + dimension scores + markers */}
+            {cx.classifier !== 'ml' && (<>
             <div className="mb-3">
               <div className="text-[9px] text-gray-500 mb-1">Classification Thresholds:</div>
               <table className="w-full text-[10px]"><tbody>
@@ -228,6 +255,7 @@ export function ExplainPopup({ explanation, onClose }) {
                 {Object.values(cx.markers_hit||{}).every(v=>!v||v.length===0)&&<span className="text-[10px] text-gray-600 italic">No keyword markers detected</span>}
               </div>
             </div>
+            </>)}
             {payload && <div className="mt-3 text-[10px] text-yellow-300 bg-yellow-900/20 border border-yellow-800/30 rounded p-2">
               📎 Document/Image attached ({(payload.bytes/1024).toFixed(0)}KB) added +{payload.complexity_boost} to complexity score.
             </div>}

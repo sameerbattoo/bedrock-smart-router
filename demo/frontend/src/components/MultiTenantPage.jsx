@@ -43,7 +43,7 @@ function PythonCode({ code, className = '' }) {
       .replace(/\b(BedrockRouter|RoutingConfig|router)\b/g, '<span class="text-blue-300">$1</span>')
       .replace(/\.(create|converse)\b/g, '.<span class="text-yellow-300">$1</span>')
       // Named parameters
-      .replace(/\b(strategy|preferred_model|max_cost_per_request|exclude_models|metadata|tags|region|aip|enabled|auto_create|tag_keys|messages|routing|excluded_models|explain)\b(?=\s*=)/g, '<span class="text-orange-300">$1</span>')
+      .replace(/\b(strategy|preferred_model|max_cost_per_request|exclude_models|metadata|tags|region|aip|enabled|auto_create|tag_keys|messages|routing|excluded_models|explain|classifier)\b(?=\s*=)/g, '<span class="text-orange-300">$1</span>')
 
     return codePart + commentPart
   }).join('\n')
@@ -74,6 +74,7 @@ export default function MultiTenantPage({ onRun }) {
   const [isManual, setIsManual] = useState(false)
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [classifier, setClassifier] = useState('heuristic')
   const [results, setResults] = useState({})
   const [scores, setScores] = useState({})
   const [explainPopup, setExplainPopup] = useState(null)
@@ -137,6 +138,7 @@ export default function MultiTenantPage({ onRun }) {
     const form = new FormData()
     form.append('prompt', prompt.trim())
     form.append('system_prompt', systemPrompt.trim())
+    form.append('classifier', classifier)
 
     try {
       const res = await fetch(`${STREAM_API}/multi-tenant/run`, { method: 'POST', body: form })
@@ -268,13 +270,26 @@ export default function MultiTenantPage({ onRun }) {
           {/* Router setup code (expanded by default) */}
           <div className="mb-4">
             <div className="text-[10px] text-gray-500 uppercase font-bold mb-1.5">Router Setup (shared across all tenants)</div>
-            <PythonCode code={routerSetupCode} />
+            <PythonCode code={routerSetupCode.replace('"heuristic"', `"${classifier}"`)} />
             <div className="text-[9px] text-gray-600 mt-1.5 flex items-center gap-1">
               <span>☁️</span> Each tenant auto-gets a dedicated Application Inference Profile → per-tenant metrics in CloudWatch + cost breakdown in Cost Explorer
             </div>
           </div>
-          {/* Run button */}
-          <div className="flex justify-end">
+          {/* Classifier toggle + Run button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-gray-500 font-bold uppercase">Classifier</span>
+              <div className="flex bg-gray-900/80 rounded-lg p-0.5 border border-gray-800/50">
+                <button onClick={() => setClassifier('heuristic')}
+                  className={`text-[11px] px-2 py-1 rounded-md font-medium transition-all ${classifier === 'heuristic' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+                  Heuristic
+                </button>
+                <button onClick={() => setClassifier('ml')}
+                  className={`text-[11px] px-2 py-1 rounded-md font-medium transition-all ${classifier === 'ml' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+                  ML
+                </button>
+              </div>
+            </div>
             <button onClick={runAll} disabled={loading}
               className="bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white text-sm font-bold rounded-lg px-5 py-2.5 flex items-center gap-2 transition-all shadow-lg shadow-orange-900/20">
               {loading ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : <span>⚡</span>}
@@ -391,7 +406,10 @@ export default function MultiTenantPage({ onRun }) {
                     </button>
                     {expanded && (
                       <div className="px-2 pb-2">
-                        <PythonCode code={tenant.code} className="text-[9px]" />
+                        <PythonCode code={tenant.code.replace(
+                          'explain=True,',
+                          `classifier="${classifier}",\n        explain=True,`
+                        )} className="text-[9px]" />
                       </div>
                     )}
                   </div>

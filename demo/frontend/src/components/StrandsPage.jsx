@@ -8,6 +8,7 @@ export default function StrandsPage({ history, setHistory, onRun, restoreState, 
   const [options, setOptions] = useState({ baseline_models: [], router_strategies: [] })
   const [baselineModel, setBaselineModel] = useState('sonnet')
   const [routerStrategy, setRouterStrategy] = useState('quality-optimized')
+  const [classifier, setClassifier] = useState('heuristic')
   const [preferredModel, setPreferredModel] = useState('')
   const [preferredSearch, setPreferredSearch] = useState('')
   const [showPreferredDropdown, setShowPreferredDropdown] = useState(false)
@@ -109,6 +110,7 @@ export default function StrandsPage({ history, setHistory, onRun, restoreState, 
     form.append('router_session_id', '')
     form.append('baseline_model', baselineModel)
     form.append('router_strategy', routerStrategy)
+    form.append('classifier', classifier)
     form.append('skip_judge', 'true')
     try {
       const res = await fetch(`${STREAM_API}/strands-chat`, { method: 'POST', body: form })
@@ -202,6 +204,7 @@ export default function StrandsPage({ history, setHistory, onRun, restoreState, 
     form.append('router_session_id', routerSessionId)
     form.append('baseline_model', baselineModel)
     form.append('router_strategy', preferredModel ? 'balanced' : routerStrategy)
+    form.append('classifier', classifier)
     form.append('preferred_model', preferredModel || '')
     form.append('send_target', sendTarget)
 
@@ -359,6 +362,20 @@ export default function StrandsPage({ history, setHistory, onRun, restoreState, 
                   )}
                 </div>
               )}
+              {/* Classifier toggle */}
+              <div className="flex items-center gap-1.5 ml-2">
+                <span className="text-[9px] text-gray-500 font-bold uppercase">Classifier</span>
+                <div className="flex bg-gray-900/80 rounded-lg p-0.5 border border-gray-800/50">
+                  <button onClick={() => setClassifier('heuristic')}
+                    className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${classifier === 'heuristic' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+                    Heuristic
+                  </button>
+                  <button onClick={() => setClassifier('ml')}
+                    className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${classifier === 'ml' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+                    ML
+                  </button>
+                </div>
+              </div>
               {/* Reset */}
               <button onClick={resetConversation}
                 className="ml-auto text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-red-900/20 border border-red-900/30 transition-all">

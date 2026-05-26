@@ -337,7 +337,7 @@ def _run_baseline_agent(session_id: str, baseline_model: str, message: str,
 
 
 def _run_router_agent(session_id: str, router_strategy: str, preferred_model: str,
-                     message: str, result_queue: queue.Queue) -> None:
+                     message: str, result_queue: queue.Queue, classifier: str = "heuristic") -> None:
     """Execute smart router agent turn. Puts result/error/progress into queue."""
     session = _get_or_create_session(session_id, "router", None, router_strategy)
     lock = _session_locks.get(session_id)
@@ -346,6 +346,17 @@ def _run_router_agent(session_id: str, router_strategy: str, preferred_model: st
     try:
         agent = session["agent"]
         smart_model = session["smart_model"]
+
+        # Set classifier on the underlying router
+        if classifier == "ml":
+            if smart_model.router._analyzer._ml_classifier is None:
+                try:
+                    from bedrock_smart_router.ml_classifier import MLComplexityClassifier
+                    smart_model.router._analyzer._ml_classifier = MLComplexityClassifier()
+                except ImportError:
+                    pass
+        else:
+            smart_model.router._analyzer._ml_classifier = None
 
         # Update strategy/preferred model if changed mid-conversation
         current_preset = STRATEGY_TO_PRESET.get(router_strategy)
@@ -476,6 +487,7 @@ async def strands_chat(
     router_session_id: str = Form(""),
     baseline_model: str = Form("sonnet"),
     router_strategy: str = Form("balanced"),
+    classifier: str = Form("heuristic"),
     preferred_model: str = Form(""),
     send_target: str = Form("both"),
     skip_judge: bool = Form(False),
@@ -500,7 +512,7 @@ async def strands_chat(
             baseline_q.put(("skip", None))
 
         if send_target in ("both", "router"):
-            loop.run_in_executor(executor, _run_router_agent, router_session_id, router_strategy, preferred_model, message, router_q)
+            loop.run_in_executor(executor, _run_router_agent, router_session_id, router_strategy, preferred_model, message, router_q, classifier)
         else:
             router_q.put(("skip", None))
 
