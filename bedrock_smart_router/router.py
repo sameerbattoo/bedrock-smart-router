@@ -1090,10 +1090,10 @@ class BedrockRouter:
         otherwise returns the full heuristic explain with dimension scores.
         """
         if self._analyzer._ml_classifier is not None:
-            # ML classifier explain: probabilities + confidence
-            probs = self._analyzer._ml_classifier.predict_proba_all(
-                self._analyzer._ml_classifier._assemble_context(messages, system, tool_config)
-            )
+            # ML classifier explain: show probabilities from the LAST USER MESSAGE
+            # (matching what classify_request() actually uses for the decision)
+            last_user_text = self._analyzer._ml_classifier._extract_last_user_text(messages)
+            probs = self._analyzer._ml_classifier.predict_proba_all(last_user_text or "")
             return {
                 "classifier": "ml",
                 "score": analysis.complexity_score,
