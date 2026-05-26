@@ -49,6 +49,33 @@ from bedrock_smart_router.models import Complexity, RequestAnalysis
 
 logger = logging.getLogger(__name__)
 
+# ── Extracted numeric constants ─────────────────────────────────────
+
+# System prompt floor: fraction of system prompt complexity used as minimum
+SYSTEM_FLOOR_FACTOR = 0.30
+
+# Multimodal payload complexity boosts added to composite score
+PAYLOAD_BOOST_5MB = 0.30
+PAYLOAD_BOOST_1MB = 0.20
+PAYLOAD_BOOST_100KB = 0.10
+PAYLOAD_BOOST_SMALL = 0.05
+
+# Payload size thresholds (bytes)
+PAYLOAD_THRESHOLD_5MB = 5_000_000
+PAYLOAD_THRESHOLD_1MB = 1_000_000
+PAYLOAD_THRESHOLD_100KB = 100_000
+
+# Token estimation
+CHARS_PER_TOKEN = 4
+
+# Multimodal token estimates
+TOKENS_PER_IMAGE = 750
+TOKENS_PER_DOC_PAGE = 1500
+BYTES_PER_DOC_PAGE = 3000
+
+# Long context threshold (tokens)
+LONG_CONTEXT_THRESHOLD = 32_000
+
 # ── Keyword / pattern sets ──────────────────────────────────────────
 
 REASONING_MARKERS = {
@@ -371,14 +398,14 @@ class RequestAnalyzer:
         # payload size influences tier selection.
         payload_bytes = self._multimodal_payload_bytes(messages)
         if payload_bytes > 0:
-            if payload_bytes > 5_000_000:       # > 5MB
-                composite += 0.30
-            elif payload_bytes > 1_000_000:     # > 1MB
-                composite += 0.20
-            elif payload_bytes > 100_000:       # > 100KB
-                composite += 0.10
-            else:                               # < 100KB
-                composite += 0.05
+            if payload_bytes > PAYLOAD_THRESHOLD_5MB:
+                composite += PAYLOAD_BOOST_5MB
+            elif payload_bytes > PAYLOAD_THRESHOLD_1MB:
+                composite += PAYLOAD_BOOST_1MB
+            elif payload_bytes > PAYLOAD_THRESHOLD_100KB:
+                composite += PAYLOAD_BOOST_100KB
+            else:
+                composite += PAYLOAD_BOOST_SMALL
 
         composite = max(0.0, min(1.0, composite))
 
@@ -426,21 +453,21 @@ class RequestAnalyzer:
 
         # Add estimated tokens for multimodal content.
         # Bedrock converts images/documents to tokens internally:
-        # ~750 tokens per image, ~1500 tokens per document page (~3KB/page).
+        # ~TOKENS_PER_IMAGE tokens per image, ~TOKENS_PER_DOC_PAGE tokens per document page.
         payload_bytes = self._multimodal_payload_bytes(messages)
         if payload_bytes > 0:
             if has_documents:
-                # Estimate pages: ~3KB per page, ~1500 tokens per page
-                est_pages = max(1, payload_bytes // 3000)
-                est_input += int(est_pages * 1500)
+                # Estimate pages: ~BYTES_PER_DOC_PAGE bytes per page
+                est_pages = max(1, payload_bytes // BYTES_PER_DOC_PAGE)
+                est_input += int(est_pages * TOKENS_PER_DOC_PAGE)
             elif has_images:
-                # Estimate ~750 tokens per image (conservative)
+                # Estimate ~TOKENS_PER_IMAGE tokens per image (conservative)
                 image_count = sum(
                     1 for msg in messages
                     for block in (msg.get("content", []) if isinstance(msg.get("content"), list) else [])
                     if isinstance(block, dict) and "image" in block
                 )
-                est_input += image_count * 750
+                est_input += image_count * TOKENS_PER_IMAGE
 
         est_output = max(256, est_input // 3)
 
@@ -452,7 +479,7 @@ class RequestAnalyzer:
             requires_vision=has_images,
             requires_document_support=has_documents,
             requires_tool_use=requires_tool,
-            requires_long_context=est_input > 32_000,
+            requires_long_context=est_input > LONG_CONTEXT_THRESHOLD,
             requires_extended_thinking=complexity == Complexity.REASONING,
             is_code_task=scores[1] > 0.3,
             is_conversational=len(messages) > 2,
@@ -610,7 +637,7 @@ class RequestAnalyzer:
     # ── System prompt floor scaling factor ──────────────────────
     # What fraction of the system prompt's raw complexity score
     # becomes the minimum floor for any user message.
-    SYSTEM_FLOOR_FACTOR = 0.30
+    # Uses module-level SYSTEM_FLOOR_FACTOR constant.
 
     def _compute_system_floor(self, system_text_lower: str) -> float:
         """Derive a complexity floor from the system prompt.
@@ -648,7 +675,7 @@ class RequestAnalyzer:
         ))
 
         # Return a fraction as the floor
-        return raw * self.SYSTEM_FLOOR_FACTOR
+        return raw * SYSTEM_FLOOR_FACTOR
 
     @staticmethod
     def _has_images(messages: list[dict[str, Any]]) -> bool:

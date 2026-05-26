@@ -129,9 +129,12 @@ class MLComplexityClassifier:
         """Extract word-level character n-grams (1-gram to 3-gram tokens).
 
         Splits on whitespace and generates n-grams of words matching
-        the training configuration.
+        the training configuration. Truncates to first 5000 chars for
+        performance (longer text adds no classification value).
         """
-        words = text.lower().split()
+        # Truncate for performance — classifier was trained on short prompts
+        text = text[:5000].lower()
+        words = text.split()
         ngrams: list[str] = []
         min_n, max_n = self._ngram_range  # type: ignore
 
