@@ -227,7 +227,7 @@ CONTEXT_REFERENCE_SIGNALS = {
 
 # ── Structural complexity patterns ──────────────────────────────────
 
-_TABLE_PATTERN = re.compile(r'[\|\+][-=+|]+[\|\+]|(\w+\s*[,\t]\s*){3,}')
+_TABLE_PATTERN = re.compile(r'[\|\+][-=+|]+[\|\+]|(\w{1,50}\s*[,\t]\s*){3,}')
 _CSV_DATA = re.compile(r'^[^,\n]+(?:,[^,\n]+){2,}$', re.MULTILINE)
 _PARAGRAPH_BREAK = re.compile(r'\n\s*\n')
 _NUMBERED_LIST = re.compile(r'^\s*\d+[\.\)]\s', re.MULTILINE)
