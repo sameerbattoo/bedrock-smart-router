@@ -439,6 +439,17 @@ class RequestAnalyzer:
                 complexity = label_map.get(ml_label, Complexity.MODERATE)
                 # Use ML confidence as the composite score (scaled to 0-1)
                 composite = ml_conf
+
+                # Apply multimodal payload boost (same as heuristic)
+                # Large images/documents need capable models regardless of text complexity
+                if payload_bytes > 0:
+                    complexity_order = {"simple": 0, "moderate": 1, "complex": 2, "reasoning": 3}
+                    current_level = complexity_order.get(ml_label, 1)
+                    if payload_bytes > PAYLOAD_THRESHOLD_5MB and current_level < 2:
+                        complexity = Complexity.COMPLEX
+                    elif payload_bytes > PAYLOAD_THRESHOLD_100KB and current_level < 1:
+                        complexity = Complexity.MODERATE
+
             except Exception:
                 # Fall back to heuristic on any ML error
                 complexity = self._classify(composite, reasoning_count)
