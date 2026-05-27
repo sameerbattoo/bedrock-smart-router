@@ -293,6 +293,7 @@ class BedrockRouter:
             analysis=analysis, routing=routing,
             strategy_name=strategy_name, weights=weights,
             messages=messages, system=system,
+            requires_guardrail="guardrailConfig" in kwargs,
         )
         primary = resolved["primary"]
         fallback_chain = resolved["fallback_chain"]
@@ -548,6 +549,7 @@ class BedrockRouter:
             strategy_name=strategy_name, weights=weights,
             messages=messages, system=system,
             requires_streaming_tool_use=bool(tool_config),
+            requires_guardrail="guardrailConfig" in kwargs,
         )
 
         # Try invocation with fallbacks
@@ -747,6 +749,7 @@ class BedrockRouter:
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None,
         requires_streaming_tool_use: bool = False,
+        requires_guardrail: bool = False,
     ) -> dict[str, Any]:
         """Run the routing pipeline and return the selected model + metadata.
 
@@ -766,6 +769,9 @@ class BedrockRouter:
             family=routing.preferred_family,
             prefer_global=self._config.cris.allow_global,
         )
+        # Filter out models that don't support guardrails when guardrailConfig is passed
+        if requires_guardrail:
+            candidates = [c for c in candidates if c.guardrail_compatible]
         candidates = self._context_validator.filter_by_context(candidates, messages, system)
         if not candidates:
             self._raise_no_models_error(analysis=analysis, routing=routing, messages=messages, system=system)

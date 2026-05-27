@@ -1700,7 +1700,7 @@
       "supported_latency_modes": [
         "standard"
       ],
-      "guardrail_compatible": true,
+      "guardrail_compatible": false,
       "quality_baseline": 8.8
     },
     {
@@ -2804,7 +2804,7 @@
       "supported_latency_modes": [
         "standard"
       ],
-      "guardrail_compatible": true,
+      "guardrail_compatible": false,
       "quality_baseline": 6.3
     },
     {
@@ -3160,7 +3160,7 @@
       "supported_latency_modes": [
         "standard"
       ],
-      "guardrail_compatible": true,
+      "guardrail_compatible": false,
       "quality_baseline": 10.3
     },
     {

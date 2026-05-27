@@ -46,14 +46,16 @@ function GuardrailBanner({ action, trace }) {
       </div>
     )
   }
-  if (action === 'ANONYMIZED') {
+  if (action === 'ANONYMIZED' || action === 'PII_ANONYMIZED_OUTPUT') {
     return (
       <div className="mb-3 p-3 bg-yellow-900/20 border border-yellow-700/40 rounded-lg">
         <div className="flex items-center gap-2 text-yellow-300 font-medium text-sm">
           <span>🔒</span> PII ANONYMIZED
         </div>
         <div className="text-[11px] text-yellow-400/80 mt-1">
-          Sensitive data was masked before routing to model
+          {action === 'PII_ANONYMIZED_OUTPUT'
+            ? 'Pre-route passed → server-side guardrail masked PII in the response'
+            : 'Sensitive data was masked before routing to model'}
         </div>
       </div>
     )
@@ -435,7 +437,7 @@ export default function GuardrailsPage({ onRun }) {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-1.5 flex-1 justify-end">
+              <div className="flex items-center gap-1.5 flex-1">
                 <span className="text-[10px] text-gray-500 font-bold uppercase">Strategy</span>
                 {['balanced', 'cost', 'quality', 'latency'].map(s => (
                   <button key={s} onClick={() => setStrategy(s === 'cost' ? 'cost-optimized' : s === 'quality' ? 'quality-optimized' : s === 'latency' ? 'latency-optimized' : 'balanced')}
@@ -449,7 +451,7 @@ export default function GuardrailsPage({ onRun }) {
                 <button onClick={() => setClassifier('ml')}
                   className={`text-[10px] px-2 py-1 rounded-md font-medium transition-all ${classifier === 'ml' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>ML</button>
                 <button onClick={handleRun} disabled={!prompt.trim() || loading}
-                  className="text-[10px] px-3 py-1 rounded-md font-medium bg-red-600 hover:bg-red-500 text-white ml-2 disabled:bg-gray-700 disabled:text-gray-500">Re-run</button>
+                  className="text-[10px] px-3 py-1 rounded-md font-medium bg-red-600 hover:bg-red-500 text-white ml-auto disabled:bg-gray-700 disabled:text-gray-500">Re-run</button>
               </div>
             </div>
 
@@ -494,7 +496,7 @@ export default function GuardrailsPage({ onRun }) {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="text-center"><div className="text-[9px] text-gray-500">Cost</div><div className={`text-xs font-mono ${routerResult.cost === 0 ? 'text-green-400 font-bold' : 'text-gray-300'}`}>${routerResult.cost.toFixed(6)}{routerResult.cost === 0 && <span className="text-[8px] ml-0.5">FREE</span>}</div></div>
                       <div className="text-center"><div className="text-[9px] text-gray-500">Latency</div><div className="text-xs font-mono text-gray-300">{routerResult.latency_ms.toFixed(0)}ms</div></div>
-                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className={`text-xs font-mono ${routerResult.guardrail_action === 'BLOCKED' ? 'text-red-400' : routerResult.guardrail_action === 'ANONYMIZED' ? 'text-yellow-400' : 'text-green-400'}`}>{routerResult.guardrail_action === 'BLOCKED' ? '⛔ Blocked' : routerResult.guardrail_action === 'ANONYMIZED' ? '🔒 Sanitized' : '✓ Passed'}</div></div>
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className={`text-xs font-mono ${routerResult.guardrail_action === 'BLOCKED' ? 'text-red-400' : routerResult.guardrail_action === 'ANONYMIZED' || routerResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' ? 'text-yellow-400' : 'text-green-400'}`}>{routerResult.guardrail_action === 'BLOCKED' ? '⛔ Blocked' : routerResult.guardrail_action === 'ANONYMIZED' || routerResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' ? '🔒 PII Masked' : '✓ Passed'}</div></div>
                     </div>
                   ) : <div className="text-[10px] text-gray-600 animate-pulse">Waiting...</div>}
                 </div>

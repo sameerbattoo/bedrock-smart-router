@@ -265,6 +265,7 @@ def stream_converse(
     model_id: str | None = None,
     routing=None,
     on_chunk=None,
+    **extra_kwargs,
 ) -> dict:
     """Call converse_stream on any client and collect metrics.
 
@@ -287,6 +288,8 @@ def stream_converse(
         kwargs["routing"] = routing
     if system_prompt:
         kwargs["system"] = [{"text": system_prompt}]
+    # Pass through any extra kwargs (e.g., guardrailConfig)
+    kwargs.update(extra_kwargs)
 
     t_start = time.perf_counter()
     output_text = ""

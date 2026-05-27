@@ -215,18 +215,38 @@ def _run_router_with_pre_route_guardrail(
         messages=[{"role": "user", "content": [{"text": routed_prompt}]}],
         routing=RoutingConfig(strategy=strategy, classifier=classifier, explain=True),
         on_chunk=_on_chunk,
+        guardrailConfig={
+            "guardrailIdentifier": guardrail_id,
+            "guardrailVersion": guardrail_version,
+            "trace": "enabled",
+        },
     )
 
     latency_ms = (time.perf_counter() - t_start) * 1000
 
+    # Detect if server-side guardrail anonymized PII in the output
+    response_text = result.get("response_text", "")
+    pii_anonymized = any(marker in response_text for marker in [
+        "{US_SOCIAL_SECURITY_NUMBER}", "{EMAIL}", "{PHONE}", "{CREDIT_DEBIT_CARD_NUMBER}",
+        "{NAME}", "{ADDRESS}",
+    ])
+
+    # Determine effective guardrail action
+    if anonymized:
+        effective_action = "ANONYMIZED"
+    elif pii_anonymized:
+        effective_action = "PII_ANONYMIZED_OUTPUT"
+    else:
+        effective_action = "NONE"
+
     return {
-        "response_text": result.get("response_text", ""),
+        "response_text": response_text,
         "model_used": result.get("model_used", "Unknown"),
         "cost": result.get("cost", 0.0),
         "latency_ms": round(latency_ms, 1),
         "input_tokens": result.get("input_tokens", 0),
         "output_tokens": result.get("output_tokens", 0),
-        "guardrail_action": "ANONYMIZED" if anonymized else "NONE",
+        "guardrail_action": effective_action,
         "guardrail_trace": guardrail_trace,
         "cost_saved": False,
         "original_prompt": prompt if anonymized else None,
