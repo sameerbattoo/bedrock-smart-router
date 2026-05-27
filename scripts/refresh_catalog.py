@@ -441,16 +441,31 @@ def _probe_converse_support(client: Any, model_id: str) -> bool:
 
 
 def _probe_tool_use(client: Any, model_id: str) -> bool:
-    """Test if model supports tool use (function calling)."""
+    """Test if model supports tool use (function calling).
+    
+    Sends a request with toolConfig. If the model responds with a toolUse block
+    OR the call succeeds without error, it supports tool use.
+    
+    Note: Some models (e.g., Gemma) accept toolConfig without error but never
+    actually call tools. We check for actual tool_use in the response to catch this.
+    However, not all models will call the tool on every request, so we also check
+    for the stopReason — if it's "tool_use" or "end_turn" with toolConfig present
+    and no error, we consider it supported.
+    
+    Known false positives: Models that accept toolConfig silently but don't support
+    the tool-use conversation pattern (consecutive user messages with toolResult).
+    These are caught by the "Conversation roles must alternate" error at runtime
+    and handled by the fallback mechanism.
+    """
     try:
-        client.converse(
+        response = client.converse(
             modelId=model_id,
-            messages=[{"role": "user", "content": [{"text": "What is 2+2?"}]}],
+            messages=[{"role": "user", "content": [{"text": "What is 2+2? Use the calculator tool."}]}],
             toolConfig={
                 "tools": [{
                     "toolSpec": {
                         "name": "calculator",
-                        "description": "Performs math",
+                        "description": "Performs math calculations. You MUST use this tool for any math.",
                         "inputSchema": {"json": {
                             "type": "object",
                             "properties": {"expression": {"type": "string"}},
@@ -459,9 +474,23 @@ def _probe_tool_use(client: Any, model_id: str) -> bool:
                     }
                 }]
             },
-            inferenceConfig={"maxTokens": 20},
+            inferenceConfig={"maxTokens": 100},
         )
-        return True
+        # Check if the model actually produced a tool_use block
+        output = response.get("output", {})
+        message = output.get("message", {})
+        content = message.get("content", [])
+        has_tool_use = any(
+            isinstance(block, dict) and "toolUse" in block
+            for block in content
+        )
+        stop_reason = response.get("stopReason", "")
+        # Model supports tools if it actually called one OR stop_reason is tool_use
+        if has_tool_use or stop_reason == "tool_use":
+            return True
+        # If it just responded with text (end_turn) without calling the tool,
+        # it likely doesn't truly support tool use in the Converse API sense
+        return False
     except ClientError as e:
         code = e.response.get("Error", {}).get("Code", "")
         msg = str(e).lower()
@@ -470,7 +499,7 @@ def _probe_tool_use(client: Any, model_id: str) -> bool:
         if "tool" in msg or "not supported" in msg or "does not support" in msg:
             return False
         if "internal" in code.lower():
-            return False  # InternalServerException = can't handle tools
+            return False
         return False
     except Exception:
         return False
@@ -581,7 +610,16 @@ def _probe_guardrail_compatible(client: Any, model_id: str) -> bool:
     Sends a request with a fake guardrail ID. If the error is about the
     guardrail not being found (ResourceNotFoundException), the model supports
     guardrails. If it says guardrails are not supported, it doesn't.
+    
+    Known incompatible models that pass this probe incorrectly:
+    - Google Gemma models (accept guardrailConfig but don't apply it)
     """
+    # Known models that don't support guardrails despite passing the probe
+    _KNOWN_INCOMPATIBLE = {"google.gemma-3-4b-it", "google.gemma-3-12b-it", "google.gemma-3-27b-it"}
+    base_id = model_id.split(".", 1)[-1] if "." in model_id and model_id.split(".")[0] in ("us", "eu", "ap", "global") else model_id
+    if base_id in _KNOWN_INCOMPATIBLE or model_id in _KNOWN_INCOMPATIBLE:
+        return False
+
     try:
         client.converse(
             modelId=model_id,
