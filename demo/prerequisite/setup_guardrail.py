@@ -42,6 +42,8 @@ def create_guardrail(client) -> dict:
                 {"type": "EMAIL", "action": "ANONYMIZE"},
                 {"type": "PHONE", "action": "ANONYMIZE"},
                 {"type": "CREDIT_DEBIT_CARD_NUMBER", "action": "ANONYMIZE"},
+                {"type": "NAME", "action": "ANONYMIZE"},
+                {"type": "ADDRESS", "action": "ANONYMIZE"},
             ]
         },
         contentPolicyConfig={

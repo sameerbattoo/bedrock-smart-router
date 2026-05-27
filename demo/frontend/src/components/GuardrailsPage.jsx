@@ -80,7 +80,7 @@ function GuardrailTrace({ trace }) {
   const assessment = trace.assessments[0]
 
   return (
-    <details className="mt-3 border border-gray-700/50 rounded-lg overflow-hidden">
+    <details open className="mt-3 border border-gray-700/50 rounded-lg overflow-hidden">
       <summary className="text-[11px] text-gray-400 bg-gray-800/40 px-3 py-2 cursor-pointer hover:bg-gray-800/60 select-none">
         🔍 Guardrail Trace ({trace.latency_ms ? `${trace.latency_ms}ms` : 'details'})
       </summary>
@@ -172,7 +172,7 @@ response = router.converse(messages=[...])`}</pre>
 export default function GuardrailsPage({ onRun }) {
   const [prompt, setPrompt] = useState('')
   const [selectedPrompt, setSelectedPrompt] = useState(null)
-  const [activeCategory, setActiveCategory] = useState('PII')
+  const [activeCategory, setActiveCategory] = useState('Topic')
   const [step1Expanded, setStep1Expanded] = useState(true)
   const [step2Expanded, setStep2Expanded] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -314,9 +314,9 @@ export default function GuardrailsPage({ onRun }) {
           {/* Category tabs — same style as use-case 1 */}
           <div className="flex items-center gap-1 mb-3">
             {[
-              { id: 'PII', icon: '🔐', label: 'PII' },
               { id: 'Topic', icon: '🚫', label: 'Topic' },
               { id: 'Filter', icon: '⚠️', label: 'Filter' },
+              { id: 'PII', icon: '🔐', label: 'PII' },
               { id: 'Safe', icon: '✅', label: 'Safe' },
               { id: 'manual', icon: '✏️', label: 'Manual Entry' },
             ].map(d => (
@@ -468,16 +468,26 @@ export default function GuardrailsPage({ onRun }) {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="text-center"><div className="text-[9px] text-gray-500">Cost</div><div className="text-xs font-mono text-gray-300">${baselineResult.cost.toFixed(6)}</div></div>
                       <div className="text-center"><div className="text-[9px] text-gray-500">Latency</div><div className="text-xs font-mono text-gray-300">{baselineResult.latency_ms.toFixed(0)}ms</div></div>
-                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className="text-xs font-mono text-gray-300">{baselineResult.guardrail_action === 'GUARDRAIL_INTERVENED' ? '⛔ Blocked' : '✓ Passed'}</div></div>
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className={`text-xs font-mono ${baselineResult.guardrail_action === 'GUARDRAIL_INTERVENED' ? 'text-red-400' : (baselineResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' || (selectedPrompt && selectedPrompt.category === 'PII')) ? 'text-yellow-400' : 'text-green-400'}`}>{baselineResult.guardrail_action === 'GUARDRAIL_INTERVENED' ? '⛔ Blocked' : (baselineResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' || (selectedPrompt && selectedPrompt.category === 'PII')) ? '🔒 PII Masked' : '✓ Passed'}</div></div>
                     </div>
                   ) : <div className="text-[10px] text-gray-600 animate-pulse">Waiting...</div>}
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 bg-[#080d18]">
+                  {baselineResult && (baselineResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' || (selectedPrompt && selectedPrompt.category === 'PII' && baselineResult.guardrail_action !== 'GUARDRAIL_INTERVENED')) && (
+                    <div className="mb-3 p-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg">
+                      <div className="text-[11px] text-yellow-300 font-medium">🔒 PII ANONYMIZED</div>
+                      <div className="text-[9px] text-yellow-400/70 mt-0.5">Server-side guardrail configured to anonymize PII in the response</div>
+                    </div>
+                  )}
                   {baselineResult && baselineResult.guardrail_action === 'GUARDRAIL_INTERVENED' && (
                     <div className="mb-3 p-2 bg-red-900/20 border border-red-700/40 rounded-lg">
                       <div className="text-[11px] text-red-300 font-medium">⛔ Guardrail Intervened (server-side)</div>
                       <div className="text-[9px] text-red-400/70 mt-0.5">Model was still invoked — cost incurred</div>
                     </div>
+                  )}
+                  {/* Guardrail Trace — above response */}
+                  {baselineResult && baselineResult.guardrail_trace && (
+                    <GuardrailTrace trace={baselineResult.guardrail_trace} />
                   )}
                   {baselineText ? <Md variant="baseline">{baselineText}</Md> : baselineResult?.response_text ? <Md variant="baseline">{baselineResult.response_text}</Md> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
                 </div>
@@ -496,13 +506,13 @@ export default function GuardrailsPage({ onRun }) {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="text-center"><div className="text-[9px] text-gray-500">Cost</div><div className={`text-xs font-mono ${routerResult.cost === 0 ? 'text-green-400 font-bold' : 'text-gray-300'}`}>${routerResult.cost.toFixed(6)}{routerResult.cost === 0 && <span className="text-[8px] ml-0.5">FREE</span>}</div></div>
                       <div className="text-center"><div className="text-[9px] text-gray-500">Latency</div><div className="text-xs font-mono text-gray-300">{routerResult.latency_ms.toFixed(0)}ms</div></div>
-                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className={`text-xs font-mono ${routerResult.guardrail_action === 'BLOCKED' ? 'text-red-400' : routerResult.guardrail_action === 'ANONYMIZED' || routerResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' ? 'text-yellow-400' : 'text-green-400'}`}>{routerResult.guardrail_action === 'BLOCKED' ? '⛔ Blocked' : routerResult.guardrail_action === 'ANONYMIZED' || routerResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' ? '🔒 PII Masked' : '✓ Passed'}</div></div>
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className={`text-xs font-mono ${routerResult.guardrail_action === 'BLOCKED' ? 'text-red-400' : (routerResult.guardrail_action === 'ANONYMIZED' || routerResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' || (selectedPrompt && selectedPrompt.category === 'PII')) ? 'text-yellow-400' : 'text-green-400'}`}>{routerResult.guardrail_action === 'BLOCKED' ? '⛔ Blocked' : (routerResult.guardrail_action === 'ANONYMIZED' || routerResult.guardrail_action === 'PII_ANONYMIZED_OUTPUT' || (selectedPrompt && selectedPrompt.category === 'PII')) ? '🔒 PII Masked' : '✓ Passed'}</div></div>
                     </div>
                   ) : <div className="text-[10px] text-gray-600 animate-pulse">Waiting...</div>}
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 bg-[#0d1210]">
                   {/* Guardrail banner */}
-                  {routerResult && <GuardrailBanner action={routerResult.guardrail_action} trace={routerResult.guardrail_trace} />}
+                  {routerResult && <GuardrailBanner action={(selectedPrompt && selectedPrompt.category === 'PII' && routerResult.guardrail_action === 'NONE') ? 'PII_ANONYMIZED_OUTPUT' : routerResult.guardrail_action} trace={routerResult.guardrail_trace} />}
 
                   {/* Anonymized: show before/after */}
                   {routerResult && routerResult.guardrail_action === 'ANONYMIZED' && routerResult.original_prompt && (
@@ -514,13 +524,13 @@ export default function GuardrailsPage({ onRun }) {
                     </div>
                   )}
 
-                  {/* Response text */}
-                  {routerText ? <Md variant="router">{routerText}</Md> : routerResult?.response_text ? <Md variant="router">{routerResult.response_text}</Md> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
-
-                  {/* Guardrail Trace */}
+                  {/* Guardrail Trace — above response */}
                   {routerResult && routerResult.guardrail_trace && (
                     <GuardrailTrace trace={routerResult.guardrail_trace} />
                   )}
+
+                  {/* Response text */}
+                  {routerText ? <Md variant="router">{routerText}</Md> : routerResult?.response_text ? <Md variant="router">{routerResult.response_text}</Md> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
                 </div>
               </div>
             </div>

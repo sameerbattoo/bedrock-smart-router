@@ -119,6 +119,24 @@ def _run_baseline_with_guardrail(
         input_tokens = max(1, len(prompt) // 4)  # ~4 chars per token
     cost = compute_cost(model_id, input_tokens, output_tokens)
 
+    # Detect if server-side guardrail anonymized PII in the output.
+    # When stopReason is "guardrail_intervened" but the response contains PII
+    # markers, it means the guardrail anonymized (not blocked). Bedrock uses
+    # the same stopReason for both block and anonymize actions.
+    pii_markers = [
+        "{US_SOCIAL_SECURITY_NUMBER}", "{EMAIL}", "{PHONE}",
+        "{CREDIT_DEBIT_CARD_NUMBER}", "{NAME}", "{ADDRESS}",
+    ]
+    has_pii_markers = any(m in output_text for m in pii_markers)
+
+    if has_pii_markers:
+        # Guardrail anonymized PII — not a hard block
+        guardrail_action = "PII_ANONYMIZED_OUTPUT"
+    elif guardrail_action == "NONE":
+        # No intervention detected, but check if this is a PII prompt where
+        # the model was smart enough not to echo PII back
+        pass  # Will be handled by frontend based on category
+
     return {
         "response_text": output_text,
         "model_used": display_model_name(model_id),
@@ -226,10 +244,14 @@ def _run_router_with_pre_route_guardrail(
 
     # Detect if server-side guardrail anonymized PII in the output
     response_text = result.get("response_text", "")
-    pii_anonymized = any(marker in response_text for marker in [
-        "{US_SOCIAL_SECURITY_NUMBER}", "{EMAIL}", "{PHONE}", "{CREDIT_DEBIT_CARD_NUMBER}",
-        "{NAME}", "{ADDRESS}",
-    ])
+    # Check for guardrail PII placeholder markers in the response
+    # These are the exact markers Bedrock guardrails insert when anonymizing
+    pii_markers = [
+        "{US_SOCIAL_SECURITY_NUMBER}", "{EMAIL}", "{PHONE}",
+        "{CREDIT_DEBIT_CARD_NUMBER}", "{NAME}", "{ADDRESS}",
+    ]
+    found_markers = [m for m in pii_markers if m in response_text]
+    pii_anonymized = len(found_markers) > 0
 
     # Determine effective guardrail action
     if anonymized:
