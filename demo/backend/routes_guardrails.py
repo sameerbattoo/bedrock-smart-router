@@ -18,6 +18,7 @@ from fastapi.responses import StreamingResponse
 
 from shared import (
     BASELINE_MODEL,
+    BASELINE_MODELS,
     bedrock_client,
     router as smart_router,
     executor,
@@ -48,6 +49,7 @@ def _run_baseline_with_guardrail(
     prompt: str,
     guardrail_id: str,
     guardrail_version: str,
+    model_id: str,
     on_chunk,
 ) -> dict:
     """Baseline: converse_stream with server-side guardrailConfig.
@@ -63,7 +65,7 @@ def _run_baseline_with_guardrail(
 
     try:
         response = bedrock_client.converse_stream(
-            modelId=BASELINE_MODEL,
+            modelId=model_id,
             messages=[{"role": "user", "content": [{"text": prompt}]}],
             guardrailConfig={
                 "guardrailIdentifier": guardrail_id,
@@ -111,11 +113,15 @@ def _run_baseline_with_guardrail(
             raise
 
     latency_ms = (time.perf_counter() - t_start) * 1000
-    cost = compute_cost(BASELINE_MODEL, input_tokens, output_tokens)
+    # When guardrail blocks server-side, Bedrock may report 0 tokens in metadata
+    # but still charges for input processing. Estimate from prompt length.
+    if input_tokens == 0 and guardrail_action == "GUARDRAIL_INTERVENED":
+        input_tokens = max(1, len(prompt) // 4)  # ~4 chars per token
+    cost = compute_cost(model_id, input_tokens, output_tokens)
 
     return {
         "response_text": output_text,
-        "model_used": display_model_name(BASELINE_MODEL),
+        "model_used": display_model_name(model_id),
         "cost": round(cost, 6),
         "latency_ms": round(latency_ms, 1),
         "input_tokens": input_tokens,
@@ -129,6 +135,8 @@ def _run_router_with_pre_route_guardrail(
     prompt: str,
     guardrail_id: str,
     guardrail_version: str,
+    strategy: str,
+    classifier: str,
     on_chunk,
 ) -> dict:
     """Smart Router: apply_guardrail BEFORE routing.
@@ -205,7 +213,7 @@ def _run_router_with_pre_route_guardrail(
     result = stream_converse(
         client=smart_router,
         messages=[{"role": "user", "content": [{"text": routed_prompt}]}],
-        routing=RoutingConfig(strategy="balanced", explain=True),
+        routing=RoutingConfig(strategy=strategy, classifier=classifier, explain=True),
         on_chunk=_on_chunk,
     )
 
@@ -223,6 +231,9 @@ def _run_router_with_pre_route_guardrail(
         "cost_saved": False,
         "original_prompt": prompt if anonymized else None,
         "sanitized_prompt": routed_prompt if anonymized else None,
+        "explanation": result.get("explanation"),
+        "complexity_detected": result.get("complexity_detected"),
+        "fallback_used": result.get("fallback_used", False),
     }
 
 
@@ -232,6 +243,9 @@ def _run_router_with_pre_route_guardrail(
 async def guardrails_compare(
     prompt: str = Form(...),
     mode: str = Form("block"),
+    baseline_model: str = Form("sonnet"),
+    strategy: str = Form("balanced"),
+    classifier: str = Form("heuristic"),
 ):
     """Compare native guardrails (server-side) vs Smart Router (pre-route).
 
@@ -255,18 +269,21 @@ async def guardrails_compare(
         router_q: queue.Queue = queue.Queue()
 
         def _baseline_task():
+            bl_config = BASELINE_MODELS.get(baseline_model, BASELINE_MODELS["sonnet"])
+            bl_model_id = bl_config["model_id"]
             try:
                 result = _run_baseline_with_guardrail(
                     prompt=prompt,
                     guardrail_id=guardrail_id,
                     guardrail_version=guardrail_version,
+                    model_id=bl_model_id,
                     on_chunk=lambda text: baseline_q.put(("chunk", text)),
                 )
                 baseline_q.put(("done", result))
             except Exception as e:
                 baseline_q.put(("done", {
                     "response_text": f"Error: {str(e)}",
-                    "model_used": display_model_name(BASELINE_MODEL),
+                    "model_used": display_model_name(bl_model_id),
                     "cost": 0.0,
                     "latency_ms": 0,
                     "input_tokens": 0,
@@ -281,6 +298,8 @@ async def guardrails_compare(
                     prompt=prompt,
                     guardrail_id=guardrail_id,
                     guardrail_version=guardrail_version,
+                    strategy=strategy,
+                    classifier=classifier,
                     on_chunk=lambda text: router_q.put(("chunk", text)),
                 )
                 router_q.put(("done", result))

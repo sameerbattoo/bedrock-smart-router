@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Md, STREAM_API } from './shared'
+import { Md, ExplainPopup, MetricWithDelta, STREAM_API } from './shared'
 
 const TEST_PROMPTS = [
   // PII category
@@ -187,6 +187,10 @@ export default function GuardrailsPage({ onRun }) {
   const [routerStreaming, setRouterStreaming] = useState(false)
 
   const [showManualEntry, setShowManualEntry] = useState(false)
+  const [baselineModel, setBaselineModel] = useState('sonnet')
+  const [strategy, setStrategy] = useState('balanced')
+  const [classifier, setClassifier] = useState('heuristic')
+  const [explainPopup, setExplainPopup] = useState(null)
   const abortRef = useRef(null)
 
   function handleSelectPrompt(p) {
@@ -216,6 +220,9 @@ export default function GuardrailsPage({ onRun }) {
     const form = new FormData()
     form.append('prompt', prompt)
     form.append('mode', 'block')
+    form.append('baseline_model', baselineModel)
+    form.append('strategy', strategy)
+    form.append('classifier', classifier)
 
     try {
       const res = await fetch(`${STREAM_API}/guardrails-compare`, {
@@ -284,6 +291,9 @@ export default function GuardrailsPage({ onRun }) {
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Explain Popup */}
+      {explainPopup && <ExplainPopup explanation={explainPopup} onClose={() => setExplainPopup(null)} />}
+
       {/* Error */}
       {error && (
         <div className="p-2 bg-red-900/20 border border-red-700/40 rounded-lg text-xs text-red-300">{error}</div>
@@ -408,127 +418,109 @@ export default function GuardrailsPage({ onRun }) {
             <span className="text-xs font-medium text-gray-300 flex-1 text-left">Response Comparison</span>
             {routerResult && routerResult.guardrail_action === 'BLOCKED' && (
               <span className="text-[10px] text-green-400 bg-green-900/20 px-2 py-0.5 rounded border border-green-700/40">
-                💰 Saved ${baselineResult ? baselineResult.cost.toFixed(4) : '...'} (model not called)
+                💰 Saved ${baselineResult ? baselineResult.cost.toFixed(6) : '...'} (model not called)
               </span>
             )}
           </button>
 
-          <div className="grid grid-cols-2 divide-x divide-gray-800/50">
-            {/* LEFT: Baseline (native boto3) */}
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="text-xs font-medium text-blue-300">Native boto3</span>
-                <span className="text-[9px] text-gray-500 ml-auto">Server-side guardrail</span>
+          <div className="p-4">
+            {/* Control bar — Baseline left, Strategy+Classifier right */}
+            <div className="flex items-center mb-4 pb-3 border-b border-gray-800/40">
+              <div className="flex items-center gap-1.5 flex-1">
+                <span className="text-[10px] text-gray-500 font-bold uppercase">Baseline</span>
+                {['haiku', 'sonnet', 'opus', 'nova'].map(m => (
+                  <button key={m} onClick={() => setBaselineModel(m)}
+                    className={`text-[10px] px-2 py-1 rounded-md font-medium transition-all capitalize ${baselineModel === m ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>
+                    {m === 'haiku' ? 'Haiku 4.5' : m === 'sonnet' ? 'Sonnet 4.6' : m === 'opus' ? 'Opus 4.7' : 'Nova Pro'}
+                  </button>
+                ))}
               </div>
-
-              {/* Metrics */}
-              {baselineResult && (
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="bg-gray-800/40 rounded-lg p-2 text-center">
-                    <div className="text-[9px] text-gray-500">Model</div>
-                    <div className="text-[11px] text-gray-300 font-medium truncate">{baselineResult.model_used}</div>
-                  </div>
-                  <div className="bg-gray-800/40 rounded-lg p-2 text-center">
-                    <div className="text-[9px] text-gray-500">Cost</div>
-                    <div className="text-[11px] text-gray-300 font-mono">${baselineResult.cost.toFixed(4)}</div>
-                  </div>
-                  <div className="bg-gray-800/40 rounded-lg p-2 text-center">
-                    <div className="text-[9px] text-gray-500">Latency</div>
-                    <div className="text-[11px] text-gray-300 font-mono">{baselineResult.latency_ms.toFixed(0)}ms</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Guardrail action for baseline */}
-              {baselineResult && baselineResult.guardrail_action === 'GUARDRAIL_INTERVENED' && (
-                <div className="mb-3 p-2 bg-red-900/20 border border-red-700/40 rounded-lg">
-                  <div className="text-[11px] text-red-300 font-medium">⛔ Guardrail Intervened (server-side)</div>
-                  <div className="text-[9px] text-red-400/70 mt-0.5">Model was still invoked — cost incurred</div>
-                </div>
-              )}
-
-              {/* Response */}
-              <div className="bg-gray-800/30 rounded-lg p-3 min-h-[100px] max-h-[400px] overflow-y-auto">
-                {baselineStreaming && !baselineText && (
-                  <div className="flex items-center gap-2 text-gray-500 text-xs">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                    Waiting for response...
-                  </div>
-                )}
-                {(baselineText || baselineResult?.response_text) && (
-                  <div className="text-sm text-gray-300">
-                    <Md variant="baseline">{baselineText || baselineResult?.response_text}</Md>
-                  </div>
-                )}
+              <div className="flex items-center gap-1.5 flex-1 justify-end">
+                <span className="text-[10px] text-gray-500 font-bold uppercase">Strategy</span>
+                {['balanced', 'cost', 'quality', 'latency'].map(s => (
+                  <button key={s} onClick={() => setStrategy(s === 'cost' ? 'cost-optimized' : s === 'quality' ? 'quality-optimized' : s === 'latency' ? 'latency-optimized' : 'balanced')}
+                    className={`text-[10px] px-2 py-1 rounded-md font-medium transition-all capitalize ${(strategy === s || strategy === s + '-optimized') ? 'bg-orange-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>
+                    {s === 'balanced' ? 'Balanced' : s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+                <span className="text-[10px] text-gray-500 font-bold uppercase ml-2">Classifier</span>
+                <button onClick={() => setClassifier('heuristic')}
+                  className={`text-[10px] px-2 py-1 rounded-md font-medium transition-all ${classifier === 'heuristic' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>Heuristic</button>
+                <button onClick={() => setClassifier('ml')}
+                  className={`text-[10px] px-2 py-1 rounded-md font-medium transition-all ${classifier === 'ml' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>ML</button>
+                <button onClick={handleRun} disabled={!prompt.trim() || loading}
+                  className="text-[10px] px-3 py-1 rounded-md font-medium bg-red-600 hover:bg-red-500 text-white ml-2 disabled:bg-gray-700 disabled:text-gray-500">Re-run</button>
               </div>
             </div>
 
-            {/* RIGHT: Smart Router (pre-route) */}
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-orange-500" />
-                <span className="text-xs font-medium text-orange-300">⚡ Smart Router</span>
-                <span className="text-[9px] text-gray-500 ml-auto">Pre-route guardrail</span>
-              </div>
-
-              {/* Metrics */}
-              {routerResult && (
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="bg-gray-800/40 rounded-lg p-2 text-center">
-                    <div className="text-[9px] text-gray-500">Model</div>
-                    <div className="text-[11px] text-orange-300 font-medium truncate">{routerResult.model_used}</div>
+            <div className="flex gap-3 min-h-[300px]">
+              {/* Baseline */}
+              <div className="flex-1 border border-blue-900/30 rounded-lg overflow-hidden flex flex-col">
+                <div className="px-4 py-2 border-b border-blue-900/30 bg-blue-950/20">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xs font-medium text-blue-400">🧊 Native boto3</span>
+                    {baselineResult && <span className="text-[10px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded">{baselineResult.model_used}</span>}
+                    <span className="text-[10px] text-yellow-400 font-bold ml-auto bg-yellow-900/20 px-2 py-0.5 rounded border border-yellow-700/40">Server-side guardrail</span>
                   </div>
-                  <div className="bg-gray-800/40 rounded-lg p-2 text-center">
-                    <div className="text-[9px] text-gray-500">Cost</div>
-                    <div className={`text-[11px] font-mono ${routerResult.cost === 0 ? 'text-green-400 font-bold' : 'text-gray-300'}`}>
-                      ${routerResult.cost.toFixed(4)}
-                      {routerResult.cost === 0 && <span className="text-[8px] ml-1">FREE</span>}
+                  {baselineResult ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Cost</div><div className="text-xs font-mono text-gray-300">${baselineResult.cost.toFixed(6)}</div></div>
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Latency</div><div className="text-xs font-mono text-gray-300">{baselineResult.latency_ms.toFixed(0)}ms</div></div>
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className="text-xs font-mono text-gray-300">{baselineResult.guardrail_action === 'GUARDRAIL_INTERVENED' ? '⛔ Blocked' : '✓ Passed'}</div></div>
                     </div>
-                  </div>
-                  <div className="bg-gray-800/40 rounded-lg p-2 text-center">
-                    <div className="text-[9px] text-gray-500">Latency</div>
-                    <div className="text-[11px] text-gray-300 font-mono">{routerResult.latency_ms.toFixed(0)}ms</div>
-                  </div>
+                  ) : <div className="text-[10px] text-gray-600 animate-pulse">Waiting...</div>}
                 </div>
-              )}
-
-              {/* Guardrail banner */}
-              {routerResult && <GuardrailBanner action={routerResult.guardrail_action} trace={routerResult.guardrail_trace} />}
-
-              {/* Anonymized: show before/after */}
-              {routerResult && routerResult.guardrail_action === 'ANONYMIZED' && routerResult.original_prompt && (
-                <div className="mb-3 space-y-1">
-                  <div className="text-[9px] text-gray-500 uppercase tracking-wider">Before (original):</div>
-                  <div className="text-[11px] text-red-300/80 bg-red-900/10 border border-red-800/30 rounded px-2 py-1 font-mono">
-                    {routerResult.original_prompt}
-                  </div>
-                  <div className="text-[9px] text-gray-500 uppercase tracking-wider mt-1">After (sanitized):</div>
-                  <div className="text-[11px] text-green-300/80 bg-green-900/10 border border-green-800/30 rounded px-2 py-1 font-mono">
-                    {routerResult.sanitized_prompt}
-                  </div>
+                <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 bg-[#080d18]">
+                  {baselineResult && baselineResult.guardrail_action === 'GUARDRAIL_INTERVENED' && (
+                    <div className="mb-3 p-2 bg-red-900/20 border border-red-700/40 rounded-lg">
+                      <div className="text-[11px] text-red-300 font-medium">⛔ Guardrail Intervened (server-side)</div>
+                      <div className="text-[9px] text-red-400/70 mt-0.5">Model was still invoked — cost incurred</div>
+                    </div>
+                  )}
+                  {baselineText ? <Md variant="baseline">{baselineText}</Md> : baselineResult?.response_text ? <Md variant="baseline">{baselineResult.response_text}</Md> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
                 </div>
-              )}
-
-              {/* Response */}
-              <div className="bg-gray-800/30 rounded-lg p-3 min-h-[100px] max-h-[400px] overflow-y-auto">
-                {routerStreaming && !routerText && (
-                  <div className="flex items-center gap-2 text-gray-500 text-xs">
-                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                    {routerResult?.guardrail_action === 'BLOCKED' ? 'Blocked' : 'Checking guardrails...'}
-                  </div>
-                )}
-                {(routerText || routerResult?.response_text) && (
-                  <div className="text-sm text-gray-300">
-                    <Md variant="router">{routerText || routerResult?.response_text}</Md>
-                  </div>
-                )}
               </div>
 
-              {/* Guardrail Trace */}
-              {routerResult && routerResult.guardrail_trace && (
-                <GuardrailTrace trace={routerResult.guardrail_trace} />
-              )}
+              {/* Router */}
+              <div className="flex-1 border border-orange-900/30 rounded-lg overflow-hidden flex flex-col">
+                <div className="px-4 py-2 border-b border-orange-900/30 bg-orange-950/20">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xs font-medium text-orange-400">⚡ Smart Router</span>
+                    {routerResult && <span className="text-[10px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded">{routerResult.model_used}</span>}
+                    <span className="text-[10px] text-green-400 font-bold ml-auto bg-green-900/20 px-2 py-0.5 rounded border border-green-700/40">Pre-route guardrail</span>
+                    {routerResult && routerResult.explanation && <button onClick={() => setExplainPopup({...routerResult.explanation, _fallback_used: routerResult.fallback_used, _actual_model: routerResult.model_used})} className="text-[10px] text-orange-400 hover:text-orange-300 bg-orange-900/20 hover:bg-orange-900/40 px-1.5 py-0.5 rounded transition-all ml-1">ⓘ Explain</button>}
+                  </div>
+                  {routerResult ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Cost</div><div className={`text-xs font-mono ${routerResult.cost === 0 ? 'text-green-400 font-bold' : 'text-gray-300'}`}>${routerResult.cost.toFixed(6)}{routerResult.cost === 0 && <span className="text-[8px] ml-0.5">FREE</span>}</div></div>
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Latency</div><div className="text-xs font-mono text-gray-300">{routerResult.latency_ms.toFixed(0)}ms</div></div>
+                      <div className="text-center"><div className="text-[9px] text-gray-500">Guardrail</div><div className={`text-xs font-mono ${routerResult.guardrail_action === 'BLOCKED' ? 'text-red-400' : routerResult.guardrail_action === 'ANONYMIZED' ? 'text-yellow-400' : 'text-green-400'}`}>{routerResult.guardrail_action === 'BLOCKED' ? '⛔ Blocked' : routerResult.guardrail_action === 'ANONYMIZED' ? '🔒 Sanitized' : '✓ Passed'}</div></div>
+                    </div>
+                  ) : <div className="text-[10px] text-gray-600 animate-pulse">Waiting...</div>}
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 text-sm text-gray-300 bg-[#0d1210]">
+                  {/* Guardrail banner */}
+                  {routerResult && <GuardrailBanner action={routerResult.guardrail_action} trace={routerResult.guardrail_trace} />}
+
+                  {/* Anonymized: show before/after */}
+                  {routerResult && routerResult.guardrail_action === 'ANONYMIZED' && routerResult.original_prompt && (
+                    <div className="mb-3 space-y-1">
+                      <div className="text-[9px] text-gray-500 uppercase tracking-wider">Before (original):</div>
+                      <div className="text-[11px] text-red-300/80 bg-red-900/10 border border-red-800/30 rounded px-2 py-1 font-mono">{routerResult.original_prompt}</div>
+                      <div className="text-[9px] text-gray-500 uppercase tracking-wider mt-1">After (sanitized):</div>
+                      <div className="text-[11px] text-green-300/80 bg-green-900/10 border border-green-800/30 rounded px-2 py-1 font-mono">{routerResult.sanitized_prompt}</div>
+                    </div>
+                  )}
+
+                  {/* Response text */}
+                  {routerText ? <Md variant="router">{routerText}</Md> : routerResult?.response_text ? <Md variant="router">{routerResult.response_text}</Md> : loading ? <div className="animate-pulse text-gray-600">Generating...</div> : null}
+
+                  {/* Guardrail Trace */}
+                  {routerResult && routerResult.guardrail_trace && (
+                    <GuardrailTrace trace={routerResult.guardrail_trace} />
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
