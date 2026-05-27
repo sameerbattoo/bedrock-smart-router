@@ -51,7 +51,7 @@ export default function AnalyticsPanel({ history }) {
   const avgRouterScore = scoredRuns.length > 0 ? (scoredRuns.reduce((s,h) => s + h.router_score, 0) / scoredRuns.length).toFixed(1) : '—'
   const avgAccuracyDelta = scoredRuns.length > 0 ? ((avgRouterScore - avgBaselineScore)).toFixed(1) : '—'
 
-  const chartData = validRuns.slice(-20).map((h, i) => ({ ...h, runNum: i + 1 }))
+  const chartData = validRuns.map((h, i) => ({ ...h, runNum: i + 1 }))
   const tooltipStyle = {background:'#1f2937',border:'1px solid #374151',borderRadius:8,fontSize:11}
 
   return (
@@ -131,7 +131,7 @@ export default function AnalyticsPanel({ history }) {
             {history.some(h=>h.baseline_score) && <div className="p-3 border-b border-gray-800/50 hover:bg-gray-800/20 hover:-translate-y-0.5 transition-all duration-200 rounded-lg">
               <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Accuracy (0-10) based on LLM judge</div>
               <ResponsiveContainer width="100%" height={90}>
-                <LineChart data={history.filter(h=>h.baseline_score).slice(-20).map((h,i)=>({...h,runNum:i+1}))}><CartesianGrid strokeDasharray="3 3" stroke="#1f2937"/><XAxis dataKey="runNum" tick={{fontSize:9,fill:'#6b7280'}} label={{value:"Runs",position:"bottom",fontSize:9,fill:"#6b7280",offset:-5}}/><YAxis domain={[0,10]} tick={{fontSize:9,fill:'#6b7280'}} width={25}/><Tooltip cursor={false} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="baseline_score" stroke="#3b82f6" name="Baseline" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={100}/><Line type="monotone" dataKey="router_score" stroke="#f97316" name="Router" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={300}/></LineChart>
+                <LineChart data={history.filter(h=>h.baseline_score).map((h,i)=>({...h,runNum:i+1}))}><CartesianGrid strokeDasharray="3 3" stroke="#1f2937"/><XAxis dataKey="runNum" tick={{fontSize:9,fill:'#6b7280'}} label={{value:"Runs",position:"bottom",fontSize:9,fill:"#6b7280",offset:-5}}/><YAxis domain={[0,10]} tick={{fontSize:9,fill:'#6b7280'}} width={25}/><Tooltip cursor={false} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="baseline_score" stroke="#3b82f6" name="Baseline" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={100}/><Line type="monotone" dataKey="router_score" stroke="#f97316" name="Router" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={300}/></LineChart>
               </ResponsiveContainer>
             </div>}
           </>}
@@ -187,7 +187,7 @@ export default function AnalyticsPanel({ history }) {
               {history.some(h=>h.baseline_score) && <div className="rounded-lg p-3 border border-transparent hover:border-gray-700 hover:bg-gray-800/20 hover:-translate-y-1 hover:shadow-lg transition-all duration-200">
                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Accuracy (0-10) based on LLM judge</div>
                 <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={history.filter(h=>h.baseline_score).slice(-20).map((h,i)=>({...h,runNum:i+1}))}><CartesianGrid strokeDasharray="3 3" stroke="#1f2937"/><XAxis dataKey="runNum" tick={{fontSize:9,fill:'#6b7280'}} label={{value:"Runs",position:"bottom",fontSize:9,fill:"#6b7280",offset:-5}}/><YAxis domain={[0,10]} tick={{fontSize:9,fill:'#6b7280'}} width={25}/><Tooltip cursor={false} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="baseline_score" stroke="#3b82f6" name="Baseline" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={100}/><Line type="monotone" dataKey="router_score" stroke="#f97316" name="Router" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={300}/></LineChart>
+                  <LineChart data={history.filter(h=>h.baseline_score).map((h,i)=>({...h,runNum:i+1}))}><CartesianGrid strokeDasharray="3 3" stroke="#1f2937"/><XAxis dataKey="runNum" tick={{fontSize:9,fill:'#6b7280'}} label={{value:"Runs",position:"bottom",fontSize:9,fill:"#6b7280",offset:-5}}/><YAxis domain={[0,10]} tick={{fontSize:9,fill:'#6b7280'}} width={25}/><Tooltip cursor={false} contentStyle={tooltipStyle}/><Line type="monotone" dataKey="baseline_score" stroke="#3b82f6" name="Baseline" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={100}/><Line type="monotone" dataKey="router_score" stroke="#f97316" name="Router" strokeWidth={2} dot={{r:3}} animationDuration={1000} animationBegin={300}/></LineChart>
                 </ResponsiveContainer>
               </div>}
             </div>

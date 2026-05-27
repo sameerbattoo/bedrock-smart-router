@@ -73,13 +73,14 @@ router.converse(
 }
 
 
-def _build_routing_config(tenant_id: str) -> dict[str, Any]:
+def _build_routing_config(tenant_id: str, classifier: str = "heuristic") -> dict[str, Any]:
     """Build routing kwargs for a tenant."""
     tenant = TENANTS[tenant_id]
     config: dict[str, Any] = {
         "strategy": tenant["strategy"],
         "metadata": {"tenant": tenant["name"], "tier": tenant["tier"].lower()},
         "tags": tenant["tags"],
+        "classifier": classifier,
     }
     if tenant["preferred_model"]:
         config["preferred_model"] = tenant["preferred_model"]
@@ -144,23 +145,12 @@ async def multi_tenant_run(
         loop = asyncio.get_event_loop()
         result_queue: queue.Queue = queue.Queue()
 
-        # Set classifier mode on the router's analyzer
-        if classifier == "ml":
-            if smart_router._analyzer._ml_classifier is None:
-                try:
-                    from bedrock_smart_router.ml_classifier import MLComplexityClassifier
-                    smart_router._analyzer._ml_classifier = MLComplexityClassifier()
-                except ImportError:
-                    pass
-        else:
-            smart_router._analyzer._ml_classifier = None
-
         # Build messages
         messages = [{"role": "user", "content": [{"text": prompt}]}]
 
         # Fire all tenants in parallel
         for tenant_id in TENANTS:
-            routing_config = _build_routing_config(tenant_id)
+            routing_config = _build_routing_config(tenant_id, classifier=classifier)
             loop.run_in_executor(
                 executor,
                 _run_tenant,

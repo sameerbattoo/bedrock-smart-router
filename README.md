@@ -79,6 +79,8 @@ The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` 
 - Variable-aware semantic cache — same intent + different parameters = cache miss
 - Auto-extracting semantic cache — LLM-based intent + variable extraction, no manual tagging needed
 - Multi-turn semantic cache — resolves conversation history into a single query for cache matching
+- Pluggable response store backends — inline, filesystem, S3, DynamoDB (or custom subclass)
+- Cache filter — selective caching, app decides which responses are worth storing
 - Semantic intent router — route queries to specialized models by meaning
 
 **Observability**
@@ -393,7 +395,7 @@ The [`examples/`](examples/) folder contains runnable code for every feature, wi
 | [`18_cross_region_data_residency.py`](examples/18_cross_region_data_residency.py) | CRIS profiles: US-only, EU-only (GDPR), global routing |
 | [`19_opentelemetry.py`](examples/19_opentelemetry.py) | OTEL tracing and metrics (X-Ray, Jaeger, Datadog, etc.) |
 | [`20_semantic_cache.py`](examples/20_semantic_cache.py) | Semantic cache: match by meaning, variable-aware caching |
-| [`21_semantic_cache_deep_dive.py`](examples/21_semantic_cache_deep_dive.py) | Vector stores (memory/FAISS/Redis), threshold tuning |
+| [`21_semantic_cache_deep_dive.py`](examples/21_semantic_cache_deep_dive.py) | Vector stores, response store backends, cache filter, threshold tuning |
 | [`22_semantic_router.py`](examples/22_semantic_router.py) | Intent routing: route queries to specialized models by meaning |
 | [`23_tag_and_conditional_routing.py`](examples/23_tag_and_conditional_routing.py) | Tag-based routing (free/paid tiers, teams) and metadata-driven conditions |
 | [`24_budget_and_tier_pricing.py`](examples/24_budget_and_tier_pricing.py) | Per-request cost ceilings, rolling budgets, latency mode pricing (Standard/Optimized) |
@@ -1090,6 +1092,63 @@ agent_with_cache("What is DynamoDB?")       # MISS → calls Bedrock
 agent_with_cache("Tell me about DynamoDB")  # HIT → instant, free
 ```
 
+### Response Store Backends
+
+By default, responses are stored inline in the vector store payload. For large responses (SQL results, charts, full LLM outputs), configure an external response store to keep the vector store lean:
+
+| Backend | Best For | Max Size | Auto-Expiry |
+|---|---|---|---|
+| `inline` (default) | Small responses, simple setups | Limited by vector store | Via cache TTL |
+| `filesystem` | Dev/testing, Lambda /tmp, EFS | Unlimited | Manual |
+| `s3` | Large responses, durability, multi-region | 5TB | S3 lifecycle rules |
+| `dynamodb` | Serverless production, low-latency | 400KB | DynamoDB TTL |
+
+```python
+from bedrock_smart_router.semantic_response_store import (
+    FilesystemResponseStore, S3ResponseStore, DynamoDBResponseStore,
+)
+
+# Filesystem (dev/testing, Lambda /tmp, EFS mounts)
+cache = SemanticCache(
+    config=SemanticCacheConfig(auto_extract=True, vector_store_backend="faiss"),
+    response_store=FilesystemResponseStore(path="/tmp/cache_responses"),
+)
+
+# S3 (production, large payloads, durability)
+cache = SemanticCache(
+    config=SemanticCacheConfig(auto_extract=True, vector_store_backend="faiss"),
+    response_store=S3ResponseStore(bucket="my-bucket", prefix="cache/"),
+)
+
+# DynamoDB (serverless, low-latency, auto-expiry via TTL)
+cache = SemanticCache(
+    config=SemanticCacheConfig(auto_extract=True, vector_store_backend="faiss"),
+    response_store=DynamoDBResponseStore(table_name="cache-responses", ttl_seconds=3600),
+)
+```
+
+Custom backends: subclass `ResponseStore` and implement `save()`, `load()`, `delete()`.
+
+### Cache Filter (Selective Caching)
+
+Not all responses should be cached. Use `cache_filter` to let the app decide which responses are worth storing:
+
+```python
+cache = SemanticCache(
+    config=SemanticCacheConfig(auto_extract=True),
+    # Only cache responses with actual data (skip errors/empty)
+    cache_filter=lambda query, response: (
+        response.get("row_count", 0) > 0
+        and not response.get("error")
+    ),
+)
+
+cache.put("top products", {"row_count": 5, "results": [...]})  # ✅ Stored
+cache.put("bad query", {"error": "syntax error", "row_count": 0})  # ❌ Filtered
+```
+
+The filter is a callable `(query_text, response) -> bool`. Return `True` to cache, `False` to skip. Exceptions are caught and treated as `False` (safe default). Stats include a `filtered` count.
+
 ### Cost
 
 | Component | Cost per call | Notes |
@@ -1723,6 +1782,7 @@ bedrock_smart_router/
   custom_strategy.py           # Strategy plugin registration
   strands_model.py             # Strands Agents SDK Model provider (SmartRouterModel)
   semantic_cache.py            # Embedding-based semantic cache (optional)
+  semantic_response_store.py   # Pluggable response storage backends (filesystem, S3, DynamoDB)
   intent_extractor.py          # Auto-extraction of intent + variables for semantic cache
   opensearch_vector_store.py   # OpenSearch Serverless vector store backend
   semantic_router.py           # Intent routing via embeddings (optional)

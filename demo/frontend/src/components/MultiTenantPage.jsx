@@ -406,10 +406,7 @@ export default function MultiTenantPage({ onRun }) {
                     </button>
                     {expanded && (
                       <div className="px-2 pb-2">
-                        <PythonCode code={tenant.code.replace(
-                          'explain=True,',
-                          `classifier="${classifier}",\n        explain=True,`
-                        )} className="text-[9px]" />
+                        <PythonCode code={tenant.code} className="text-[9px]" />
                       </div>
                     )}
                   </div>

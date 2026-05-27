@@ -61,6 +61,7 @@ class RoutingConfig:
     metadata: dict[str, Any] | None = None
     fallback_enabled: bool | None = None
     explain: bool = False  # Include detailed explanation in RoutingDecision
+    classifier: str | None = None  # Per-request override: "heuristic" | "ml" (None = use router default)
 
 
 # ── Named presets ───────────────────────────────────────────────────
@@ -119,6 +120,7 @@ def resolve_preset(config: RoutingConfig) -> RoutingConfig:
         fallback_enabled=config.fallback_enabled,
         preferred_model=config.preferred_model,
         explain=config.explain,
+        classifier=config.classifier,
     )
     return merged
 

@@ -72,6 +72,11 @@ class MLComplexityClassifier:
     COMPLEXITY_ORDER = {"simple": 0, "moderate": 1, "complex": 2, "reasoning": 3}
     LEVEL_TO_LABEL = {0: "simple", 1: "moderate", 2: "complex", 3: "reasoning"}
 
+    # Minimum confidence to trust the ML prediction.
+    # Below this threshold, the model is essentially guessing (near-uniform distribution).
+    # Falls back to "simple" to avoid over-classifying ambiguous/short inputs.
+    MIN_CONFIDENCE_THRESHOLD = 0.50
+
     def __init__(
         self,
         model_path: Optional[str | Path] = None,
@@ -290,6 +295,12 @@ class MLComplexityClassifier:
             # Fall back to classifying the full context
             full_text = self._assemble_context(messages, system, tool_config)
             return self.classify(full_text)
+
+        # 1b. Low-confidence guard: if the model predicts complex/reasoning
+        # but with low confidence (near-uniform distribution), default to
+        # "simple" to avoid over-classifying short/ambiguous inputs.
+        if user_conf < self.MIN_CONFIDENCE_THRESHOLD and user_label in ("complex", "reasoning"):
+            user_label = "simple"
 
         # 2. If there's a system prompt or tools, compute a floor
         if system or tool_config:

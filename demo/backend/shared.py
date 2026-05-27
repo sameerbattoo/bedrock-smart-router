@@ -42,7 +42,7 @@ SUPPORTED_DOC_TYPES = {"application/pdf"}
 
 session = boto3.Session(region_name=REGION)
 bedrock_client = session.client("bedrock-runtime")
-router = BedrockRouter.create({"region": REGION, "excluded_models": ["deepseek.*"], "aip": {"enabled": True, "auto_create": True, "tag_keys": ["tenant", "tier"]}})
+router = BedrockRouter.create({"region": REGION, "excluded_models": ["deepseek.*"], "prompt_cache_boost": False, "aip": {"enabled": True, "auto_create": True, "tag_keys": ["tenant", "tier"]}})
 executor = ThreadPoolExecutor(max_workers=6)
 
 # ── Temp File Storage ───────────────────────────────────────────────

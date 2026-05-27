@@ -13,6 +13,15 @@ from bedrock_smart_router.strategy_engine import (
     StrategyContext,
 )
 
+from bedrock_smart_router.semantic_cache import SemanticCache, SemanticCacheConfig
+from bedrock_smart_router.semantic_response_store import (
+    ResponseStore,
+    InlineResponseStore,
+    FilesystemResponseStore,
+    S3ResponseStore,
+    DynamoDBResponseStore,
+)
+
 # Strands integration (optional — only available when strands-agents is installed)
 try:
     from bedrock_smart_router.strands_model import SmartRouterModel as SmartRouterModel
@@ -36,6 +45,13 @@ __all__ = [
     "StrategyResult",
     "StrategyExplanation",
     "StrategyContext",
+    "SemanticCache",
+    "SemanticCacheConfig",
+    "ResponseStore",
+    "InlineResponseStore",
+    "FilesystemResponseStore",
+    "S3ResponseStore",
+    "DynamoDBResponseStore",
     *((["SmartRouterModel"] if _HAS_STRANDS else [])),
 ]
 

@@ -112,6 +112,7 @@ class SmartRouterModel(Model):
             exclude_models: Glob patterns of models to exclude.
             tags: Tags forwarded to the routing decision.
             metadata: Arbitrary metadata forwarded to the router.
+            classifier: Per-request classifier override ("heuristic" or "ml").
         """
 
         streaming: bool
@@ -123,6 +124,7 @@ class SmartRouterModel(Model):
         exclude_models: Optional[list[str]]
         tags: Optional[list[str]]
         metadata: Optional[dict[str, Any]]
+        classifier: Optional[str]
 
     def __init__(
         self,
@@ -529,6 +531,7 @@ class SmartRouterModel(Model):
             tags=self.config.get("tags"),
             metadata=self.config.get("metadata"),
             explain=self.config.get("explain", False),
+            classifier=self.config.get("classifier"),
         )
 
     @staticmethod

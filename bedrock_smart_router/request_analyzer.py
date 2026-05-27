@@ -320,8 +320,30 @@ def _extract_last_user_text(messages: list[dict[str, Any]]) -> str:
 
 
 def _count_matches(text_lower: str, keywords: set[str]) -> int:
-    """Count how many keywords appear in the lowered text."""
-    return sum(1 for kw in keywords if kw in text_lower)
+    """Count how many keywords appear in the lowered text.
+    
+    For short keywords (≤3 chars), uses word boundary matching to avoid
+    false positives from substring matches (e.g., "rds" in "words").
+    """
+    count = 0
+    for kw in keywords:
+        if _kw_matches(kw, text_lower):
+            count += 1
+    return count
+
+
+def _kw_matches(kw: str, text_lower: str) -> bool:
+    """Check if a keyword matches in text, with word boundary for short keywords."""
+    if len(kw) <= 3:
+        idx = text_lower.find(kw)
+        while idx != -1:
+            before_ok = (idx == 0 or not text_lower[idx - 1].isalnum())
+            after_ok = (idx + len(kw) >= len(text_lower) or not text_lower[idx + len(kw)].isalnum())
+            if before_ok and after_ok:
+                return True
+            idx = text_lower.find(kw, idx + 1)
+        return False
+    return kw in text_lower
 
 
 # ── Main analyzer ───────────────────────────────────────────────────
@@ -359,6 +381,7 @@ class RequestAnalyzer:
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None = None,
         tool_config: dict[str, Any] | None = None,
+        classifier_override: str | None = None,
     ) -> RequestAnalysis:
         """Analyze a request and return a ``RequestAnalysis``.
 
@@ -424,8 +447,22 @@ class RequestAnalyzer:
         # Use last user message for reasoning marker count too
         reasoning_count = _count_matches(scoring_text_lower, REASONING_MARKERS)
 
+        # Determine which classifier to use (per-request override or default)
+        use_ml = self._ml_classifier is not None
+        if classifier_override == "ml":
+            use_ml = True
+            # Lazily initialize ML classifier if not already available
+            if self._ml_classifier is None:
+                try:
+                    from bedrock_smart_router.ml_classifier import MLComplexityClassifier
+                    self._ml_classifier = MLComplexityClassifier()
+                except ImportError:
+                    use_ml = False
+        elif classifier_override == "heuristic":
+            use_ml = False
+
         # If ML classifier is available, use it for complexity detection
-        if self._ml_classifier is not None:
+        if use_ml and self._ml_classifier is not None:
             try:
                 ml_label, ml_conf = self._ml_classifier.classify_request(
                     messages, system=system, tool_config=tool_config,
@@ -757,20 +794,20 @@ class RequestAnalyzer:
 
         # Collect matched markers from last user message
         matched_markers: dict[str, list[str]] = {
-            "reasoning": [kw for kw in REASONING_MARKERS if kw in scoring_text_lower],
-            "code": [kw for kw in CODE_MARKERS if kw in scoring_text_lower],
-            "code_languages": [kw for kw in CODE_LANG_KEYWORDS if kw in scoring_text_lower],
-            "simple": [kw for kw in SIMPLE_INDICATORS if kw in scoring_text_lower],
-            "multi_step": [kw for kw in MULTI_STEP_PATTERNS if kw in scoring_text_lower],
-            "tool_use": [kw for kw in TOOL_USE_SIGNALS if kw in scoring_text_lower],
-            "aws": [kw for kw in AWS_SIGNALS if kw in scoring_text_lower],
-            "math": [kw for kw in MATH_SIGNALS if kw in scoring_text_lower],
-            "creative": [kw for kw in CREATIVE_SIGNALS if kw in scoring_text_lower],
-            "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if kw in scoring_text_lower],
-            "output_format": [kw for kw in OUTPUT_FORMAT_SIGNALS if kw in scoring_text_lower],
-            "constraints": [kw for kw in CONSTRAINT_SIGNALS if kw in scoring_text_lower],
-            "context_references": [kw for kw in CONTEXT_REFERENCE_SIGNALS if kw in scoring_text_lower],
-            "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if kw in scoring_text_lower],
+            "reasoning": [kw for kw in REASONING_MARKERS if _kw_matches(kw, scoring_text_lower)],
+            "code": [kw for kw in CODE_MARKERS if _kw_matches(kw, scoring_text_lower)],
+            "code_languages": [kw for kw in CODE_LANG_KEYWORDS if _kw_matches(kw, scoring_text_lower)],
+            "simple": [kw for kw in SIMPLE_INDICATORS if _kw_matches(kw, scoring_text_lower)],
+            "multi_step": [kw for kw in MULTI_STEP_PATTERNS if _kw_matches(kw, scoring_text_lower)],
+            "tool_use": [kw for kw in TOOL_USE_SIGNALS if _kw_matches(kw, scoring_text_lower)],
+            "aws": [kw for kw in AWS_SIGNALS if _kw_matches(kw, scoring_text_lower)],
+            "math": [kw for kw in MATH_SIGNALS if _kw_matches(kw, scoring_text_lower)],
+            "creative": [kw for kw in CREATIVE_SIGNALS if _kw_matches(kw, scoring_text_lower)],
+            "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if _kw_matches(kw, scoring_text_lower)],
+            "output_format": [kw for kw in OUTPUT_FORMAT_SIGNALS if _kw_matches(kw, scoring_text_lower)],
+            "constraints": [kw for kw in CONSTRAINT_SIGNALS if _kw_matches(kw, scoring_text_lower)],
+            "context_references": [kw for kw in CONTEXT_REFERENCE_SIGNALS if _kw_matches(kw, scoring_text_lower)],
+            "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if _kw_matches(kw, scoring_text_lower)],
         }
 
         marker_counts = {k: len(v) for k, v in matched_markers.items()}
@@ -815,15 +852,16 @@ class RequestAnalyzer:
             system_floor = round(self._compute_system_floor(system_text_lower), 4)
             floor_applied = system_floor > user_message_score
             # Show which system prompt keywords contributed
+            # Use _kw_matches for word-boundary-aware matching on short keywords
             system_floor_markers = {
-                "reasoning": [kw for kw in REASONING_MARKERS if kw in system_text_lower],
-                "code": [kw for kw in CODE_MARKERS if kw in system_text_lower],
-                "aws": [kw for kw in AWS_SIGNALS if kw in system_text_lower],
-                "math": [kw for kw in MATH_SIGNALS if kw in system_text_lower],
-                "creative": [kw for kw in CREATIVE_SIGNALS if kw in system_text_lower],
-                "constraints": [kw for kw in CONSTRAINT_SIGNALS if kw in system_text_lower],
-                "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if kw in system_text_lower],
-                "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if kw in system_text_lower],
+                "reasoning": [kw for kw in REASONING_MARKERS if _kw_matches(kw, system_text_lower)],
+                "code": [kw for kw in CODE_MARKERS if _kw_matches(kw, system_text_lower)],
+                "aws": [kw for kw in AWS_SIGNALS if _kw_matches(kw, system_text_lower)],
+                "math": [kw for kw in MATH_SIGNALS if _kw_matches(kw, system_text_lower)],
+                "creative": [kw for kw in CREATIVE_SIGNALS if _kw_matches(kw, system_text_lower)],
+                "constraints": [kw for kw in CONSTRAINT_SIGNALS if _kw_matches(kw, system_text_lower)],
+                "complex_questions": [kw for kw in COMPLEX_QUESTION_PATTERNS if _kw_matches(kw, system_text_lower)],
+                "data_analysis": [kw for kw in DATA_ANALYSIS_SIGNALS if _kw_matches(kw, system_text_lower)],
             }
             # Remove empty categories
             system_floor_markers = {k: v for k, v in system_floor_markers.items() if v}

@@ -7,11 +7,13 @@ backends, and the variable-aware caching feature.
 Demonstrates:
   - In-memory vector store (default, no dependencies)
   - FAISS vector store (fast in-process, pip install bedrock-smart-router[faiss])
-  - Redis/Valkey vector store (shared across instances, requires Redis 7+ with RediSearch or Valkey 8.2+, pip install bedrock-smart-router[redis])
-  - OpenSearch Serverless vector store (AWS managed, pip install bedrock-smart-router[opensearch])
+  - Redis/Valkey vector store (shared across instances)
+  - OpenSearch Serverless vector store (AWS managed)
   - FAISS with auto-extract (automatic intent + variable extraction)
   - Caching without variables (intent-only matching)
   - Caching with variables (intent + variable values must match)
+  - Response store backends (inline, filesystem, S3, DynamoDB)
+  - Cache filter (selective caching — app decides what to cache)
   - Threshold tuning
   - Cache stats and invalidation
 """
@@ -118,47 +120,38 @@ print(f"\nRedis backend: (uncomment to run with a real Redis instance)")
 #
 # Requires an active AOSS collection with VECTORSEARCH type.
 # The index is auto-created on first use.
+# NOTE: AOSS has eventual consistency — data takes ~60-90s to be searchable.
 
-import time
+# import time
+# AOSS_ENDPOINT = "https://your-collection-id.us-west-2.aoss.amazonaws.com"
+#
+# cache_opensearch = SemanticCache(
+#     config=SemanticCacheConfig(
+#         threshold=0.85,
+#         vector_store_backend="opensearch",
+#         opensearch_endpoint=AOSS_ENDPOINT,
+#         opensearch_index_name="bsr-example-21",
+#         embedding_dimension=1024,
+#         auto_extract=True,
+#         extraction_model="us.amazon.nova-micro-v1:0",
+#     ),
+#     region="us-west-2",
+# )
+#
+# cache_opensearch.put(
+#     "Count users by geography for 2026 with sales > $200",
+#     {"result": "42 users across 5 regions"},
+# )
+#
+# # AOSS has eventual consistency — wait for propagation
+# time.sleep(90)
+#
+# hit = cache_opensearch.get("Show user distribution by geo, year 2026, sales over $200")
+# print(f"  Same intent+vars: {'HIT' if hit else 'MISS'}")
+#
+# cache_opensearch.invalidate()
 
-AOSS_ENDPOINT = "https://7lut6jmi4b3hpeubgbde.us-west-2.aoss.amazonaws.com"
-
-cache_opensearch = SemanticCache(
-    config=SemanticCacheConfig(
-        threshold=0.85,
-        vector_store_backend="opensearch",
-        opensearch_endpoint=AOSS_ENDPOINT,
-        opensearch_index_name="bsr-example-21",
-        embedding_dimension=1024,
-        auto_extract=True,
-        extraction_model="us.amazon.nova-micro-v1:0",
-    ),
-    region="us-west-2",
-)
-
-# Store a response — auto-extract pulls out intent + variables
-cache_opensearch.put(
-    "Count users by geography for 2026 with sales > $200",
-    {"result": "42 users across 5 regions"},
-)
-
-# AOSS has eventual consistency — data takes ~60-90s to be searchable
-print(f"\nOpenSearch Serverless backend:")
-print(f"  Stored entry. Waiting 90s for AOSS to propagate...")
-time.sleep(90)
-
-# Same intent + same variables → HIT
-hit = cache_opensearch.get("Show user distribution by geo, year 2026, sales over $200")
-print(f"  Same intent+vars:    {'HIT' if hit else 'MISS'}")
-
-# Different variables → MISS
-hit = cache_opensearch.get("Count users by geography for 2025 with sales > $100")
-print(f"  Different variables: {'HIT' if hit else 'MISS'}")
-
-print(f"  Backend: {cache_opensearch.stats['backend']}, entries: {cache_opensearch.stats['entries']}")
-
-# Cleanup
-cache_opensearch.invalidate()
+print(f"\nOpenSearch Serverless backend: (commented out — requires live AOSS endpoint + 90s wait)")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -369,3 +362,130 @@ print(f"\nCache stats: {cache.stats}")
 count = cache.invalidate()
 print(f"Invalidated {count} entries")
 print(f"After invalidation: {cache.stats['entries']} entries")
+
+# ═══════════════════════════════════════════════════════════════════
+# Example 9: Response Store Backends
+# ═══════════════════════════════════════════════════════════════════
+# By default, responses are stored "inline" in the vector store payload.
+# For large responses (SQL results, charts, full LLM outputs), use an
+# external response store to keep the vector store lean.
+#
+# Available backends:
+#   - "inline"     — store in vector payload (default, good for <100KB)
+#   - "filesystem" — store on disk (dev/testing, Lambda /tmp, EFS)
+#   - "s3"         — store in S3 (production, large payloads, durability)
+#   - "dynamodb"   — store in DynamoDB (serverless, low-latency, auto-expiry)
+#
+# You can also pass a custom ResponseStore instance for full control.
+
+from bedrock_smart_router.semantic_response_store import (
+    FilesystemResponseStore,
+    S3ResponseStore,
+    DynamoDBResponseStore,
+)
+
+# Option A: Configure via SemanticCacheConfig
+cache_fs_config = SemanticCache(
+    config=SemanticCacheConfig(
+        threshold=0.90,
+        vector_store_backend="faiss",
+        response_store_backend="filesystem",
+        response_store_path="/tmp/my_cache_responses",
+    ),
+    region="us-west-2",
+)
+
+# Option B: Pass a ResponseStore instance directly (takes precedence over config)
+cache_fs_instance = SemanticCache(
+    config=SemanticCacheConfig(threshold=0.90, vector_store_backend="faiss"),
+    response_store=FilesystemResponseStore(path="/tmp/my_cache_responses"),
+    region="us-west-2",
+)
+
+# Option C: S3 for production (large responses, durability, lifecycle rules)
+# cache_s3 = SemanticCache(
+#     config=SemanticCacheConfig(threshold=0.90, vector_store_backend="faiss"),
+#     response_store=S3ResponseStore(
+#         bucket="my-cache-bucket",
+#         prefix="semantic_cache/",
+#         region="us-west-2",
+#     ),
+# )
+
+# Option D: DynamoDB for serverless (low-latency, auto-expiry via TTL)
+# cache_ddb = SemanticCache(
+#     config=SemanticCacheConfig(threshold=0.90, vector_store_backend="faiss"),
+#     response_store=DynamoDBResponseStore(
+#         table_name="cache-responses",
+#         ttl_seconds=3600,
+#         region="us-west-2",
+#     ),
+# )
+
+# Option E: Custom response store (subclass ResponseStore)
+# from bedrock_smart_router.semantic_response_store import ResponseStore
+#
+# class MyCustomStore(ResponseStore):
+#     def save(self, key, response): ...
+#     def load(self, reference): ...
+#     def delete(self, reference): ...
+#
+# cache_custom = SemanticCache(
+#     config=SemanticCacheConfig(threshold=0.90),
+#     response_store=MyCustomStore(),
+# )
+
+print(f"\nResponse store backends:")
+print(f"  Filesystem: {cache_fs_config.stats['response_store']}")
+print(f"  Instance:   configured via FilesystemResponseStore")
+
+# Store and retrieve — works the same regardless of backend
+cache_fs_config.put("What is DynamoDB?", {"answer": "A serverless NoSQL database..."})
+hit = cache_fs_config.get("Tell me about DynamoDB")
+print(f"  Filesystem store: {'HIT' if hit else 'MISS'}")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Example 10: Cache Filter — Selective Caching
+# ═══════════════════════════════════════════════════════════════════
+# Not all responses should be cached.  Use a cache_filter to let the
+# app decide which responses are worth storing.
+#
+# The filter is a callable: (query_text, response) -> bool
+# - Return True to cache the response
+# - Return False to skip caching
+# - Exceptions are caught and treated as False (safe default)
+
+# Only cache responses that have actual data (skip errors/empty)
+cache_filtered = SemanticCache(
+    config=SemanticCacheConfig(threshold=0.90, vector_store_backend="memory"),
+    cache_filter=lambda query, response: (
+        response.get("row_count", 0) > 0
+        and not response.get("error")
+    ),
+    region="us-west-2",
+)
+
+# This gets cached (has results)
+cache_filtered.put("Top products", {"row_count": 5, "results": [{"name": "Widget"}]})
+
+# This gets FILTERED (error response)
+cache_filtered.put("Bad query", {"error": "SQL syntax error", "row_count": 0})
+
+# This gets FILTERED (empty results)
+cache_filtered.put("No data", {"row_count": 0, "results": []})
+
+print(f"\nCache filter:")
+print(f"  Entries stored: {cache_filtered.stats['entries']}")
+print(f"  Filtered (skipped): {cache_filtered.stats['filtered']}")
+
+# More filter examples:
+# Only cache if response is large enough to be worth caching
+# cache = SemanticCache(
+#     cache_filter=lambda q, r: len(str(r)) > 500,
+# )
+
+# Only cache successful responses with high confidence
+# cache = SemanticCache(
+#     cache_filter=lambda q, r: r.get("status") == "success" and r.get("confidence", 0) > 0.8,
+# )

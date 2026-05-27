@@ -176,6 +176,8 @@ export function ExplainPopup({ explanation, onClose }) {
               {cx.classifier === 'heuristic' && <span className="text-[9px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">📐 Heuristic</span>}
               <span className="text-xs text-gray-400">Confidence:</span>
               <span className="text-sm font-mono font-bold text-white">{cx.score?.toFixed(4)}</span>
+              {cx.classifier === 'ml' && cx.floor_applied && !cx.low_confidence_override && cx.user_confidence != null && !payload && <span className="text-[9px] text-gray-500">({cx.user_confidence?.toFixed(4)} × {cx.floor_dampening || 0.8} floor dampening)</span>}
+              {cx.classifier === 'ml' && cx.floor_applied && !cx.low_confidence_override && cx.user_confidence != null && payload && <span className="text-[9px] text-gray-500">({cx.user_confidence?.toFixed(4)} × {cx.floor_dampening || 0.8} + {payload.complexity_boost} boost)</span>}
               {cx.classifier !== 'ml' && cx.score_before_boost != null && cx.score_before_boost !== cx.score && <span className="text-[9px] text-gray-500">(base: {cx.score_before_boost?.toFixed(4)})</span>}
               {payload && <span className="text-[9px] text-yellow-400 bg-yellow-900/30 px-1.5 py-0.5 rounded">+{payload.complexity_boost} payload boost ({(payload.bytes/1024).toFixed(0)}KB)</span>}
               <span className="text-xs text-gray-400">&rarr;</span>
@@ -187,7 +189,7 @@ export function ExplainPopup({ explanation, onClose }) {
               <div className="mb-3">
                 <div className="text-[9px] text-gray-500 mb-2">Class Probabilities (from last user message):</div>
                 <div className="grid grid-cols-4 gap-2">
-                  {Object.entries(cx.probabilities).sort((a,b) => b[1] - a[1]).map(([label, prob]) => (
+                  {['simple','moderate','complex','reasoning'].filter(l => cx.probabilities[l] != null).map(label => [label, cx.probabilities[label]]).map(([label, prob]) => (
                     <div key={label} className={`p-2 rounded-lg border ${label === cx.classification ? 'border-orange-500/50 bg-orange-950/20' : 'border-gray-700/50 bg-gray-800/40'}`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className={`text-[10px] font-medium capitalize ${label === cx.classification ? 'text-orange-300' : 'text-gray-400'}`}>{label}</span>
@@ -199,15 +201,24 @@ export function ExplainPopup({ explanation, onClose }) {
                     </div>
                   ))}
                 </div>
-                {/* Score Breakdown — same format as heuristic */}
-                {cx.floor_applied && (
+                {/* Score Breakdown — shows when low-confidence override or floor applied or payload upgraded */}
+                {(cx.floor_applied || cx.low_confidence_override || (payload && cx.user_message_classification !== cx.classification)) && (
                   <div className="mt-3">
                     <div className="text-[9px] text-gray-500 mb-1">Score Breakdown:</div>
-                    <div className="flex items-center gap-4 text-[10px]">
-                      <span className="text-gray-400">User Message: <span className="font-mono text-white capitalize">{cx.user_message_classification}</span></span>
-                      <span className="text-gray-400">System Prompt Floor: <span className="font-mono text-white capitalize">{cx.classification}</span></span>
+                    <div className="flex items-center gap-4 text-[10px] flex-wrap">
+                      {cx.low_confidence_override && (
+                        <span className="text-gray-400">Raw Prediction: <span className="font-mono text-white capitalize">{cx.raw_prediction}</span> <span className="text-[9px] text-yellow-400">({(cx.user_confidence * 100).toFixed(1)}% &lt; 50% threshold → Simple)</span></span>
+                      )}
+                      {!cx.low_confidence_override && (
+                        <span className="text-gray-400">User Message: <span className="font-mono text-white capitalize">{cx.user_message_classification}</span></span>
+                      )}
+                      {cx.floor_applied && <span className="text-gray-400">System Prompt Floor: <span className="font-mono text-white capitalize">{cx.classification}</span></span>}
+                      {!cx.floor_applied && payload && cx.user_message_classification !== cx.classification && (
+                        <span className="text-gray-400">Payload Boost: <span className="font-mono text-white capitalize">{cx.user_message_classification} → {cx.classification}</span></span>
+                      )}
                       <span className="text-gray-400">&rarr; Final: <span className="font-mono font-bold text-white capitalize">{cx.classification}</span></span>
-                      <span className="text-[9px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded font-medium">⬆ Floor applied</span>
+                      {cx.low_confidence_override && <span className="text-[9px] bg-yellow-900/40 text-yellow-300 px-1.5 py-0.5 rounded font-medium">⚠ Low confidence guard</span>}
+                      {cx.floor_applied && <span className="text-[9px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded font-medium">⬆ Floor applied</span>}
                     </div>
                   </div>
                 )}

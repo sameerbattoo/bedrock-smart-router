@@ -303,20 +303,18 @@ def _run_baseline_agent(session_id: str, baseline_model: str, message: str,
             response_text = response_text.replace(old_name, new_name)
         response_text = _rewrite_diagram_paths(response_text)
 
-        # Extract metrics
-        input_tokens = output_tokens = cache_read = cache_write = 0
+        # Extract metrics (ignore cache tokens for fair cost comparison)
+        input_tokens = output_tokens = 0
         latency_ms = wall_clock_ms
         if hasattr(response, 'metrics') and response.metrics:
             usage = getattr(response.metrics, 'accumulated_usage', {}) or {}
             metrics_data = getattr(response.metrics, 'accumulated_metrics', {}) or {}
             input_tokens = usage.get('inputTokens', 0)
             output_tokens = usage.get('outputTokens', 0)
-            cache_read = usage.get('cacheReadInputTokens', 0)
-            cache_write = usage.get('cacheWriteInputTokens', 0)
             if metrics_data.get('latencyMs'):
                 latency_ms = metrics_data['latencyMs']
 
-        cost = compute_cost(session["model_id"], input_tokens, output_tokens, cache_read, cache_write)
+        cost = compute_cost(session["model_id"], input_tokens, output_tokens)
 
         result_queue.put(("done", {
             "response_text": response_text,
@@ -324,7 +322,7 @@ def _run_baseline_agent(session_id: str, baseline_model: str, message: str,
             "latency_ms": round(latency_ms, 1),
             "ttft_ms": round(ttft_ms[0], 1) if ttft_ms[0] else round(latency_ms, 1),
             "input_tokens": input_tokens, "output_tokens": output_tokens,
-            "cache_read_tokens": cache_read, "cache_write_tokens": cache_write,
+            "cache_read_tokens": 0, "cache_write_tokens": 0,
             "cost": round(cost, 6), "strategy_used": "direct (fixed model)",
             "_tools_used": tools_used,
         }))
@@ -347,16 +345,8 @@ def _run_router_agent(session_id: str, router_strategy: str, preferred_model: st
         agent = session["agent"]
         smart_model = session["smart_model"]
 
-        # Set classifier on the underlying router
-        if classifier == "ml":
-            if smart_model.router._analyzer._ml_classifier is None:
-                try:
-                    from bedrock_smart_router.ml_classifier import MLComplexityClassifier
-                    smart_model.router._analyzer._ml_classifier = MLComplexityClassifier()
-                except ImportError:
-                    pass
-        else:
-            smart_model.router._analyzer._ml_classifier = None
+        # Set classifier on the SmartRouterModel config (per-request override)
+        smart_model.update_config(classifier=classifier)
 
         # Update strategy/preferred model if changed mid-conversation
         current_preset = STRATEGY_TO_PRESET.get(router_strategy)
@@ -421,10 +411,16 @@ def _run_router_agent(session_id: str, router_strategy: str, preferred_model: st
                     decision.explanation.get("reason", "unknown") if decision.explanation else "unknown",
                     decision.selected_model,
                 )
+            # Recalculate cost WITHOUT cache tokens for fair comparison
+            # (Bedrock's native prompt caching makes the router appear cheaper
+            #  which confuses the demo — we want apples-to-apples cost comparison)
+            fair_cost = compute_cost(
+                decision.selected_model, strands_input, strands_output
+            )
             result.update({
                 "model_used": display_model_name(decision.selected_model),
                 "model_id_full": decision.cris_profile or decision.selected_model,
-                "cost": round(decision.actual_cost or 0, 6),
+                "cost": round(fair_cost, 6),
                 "input_tokens": strands_input, "output_tokens": strands_output,
                 "complexity_detected": decision.complexity_detected,
                 "strategy_used": decision.strategy_used,

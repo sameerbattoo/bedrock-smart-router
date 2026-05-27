@@ -72,6 +72,7 @@ async def text2sql_chat(
     message: str = Form(...),
     session_id: str = Form("default"),
     strategy: str = Form("balanced"),
+    classifier: str = Form("heuristic"),
 ):
     """Chat with the Text2SQL agent. Streams response via SSE."""
 
@@ -85,8 +86,9 @@ async def text2sql_chat(
             set_active_session(session)
             session.reset_metrics()
 
-            # Update strategy on all 3 agent models
+            # Update strategy and classifier on all 3 agent models
             session.update_strategy(strategy)
+            session.update_classifier(classifier)
 
             # Wire status callback to stream progress events
             session._status_callback = lambda msg: result_queue.put(("status", msg))
@@ -101,57 +103,68 @@ async def text2sql_chat(
             _log = _logging.getLogger("text2sql.route")
             print(f"[CACHE] Checking: '{message}' (session={session_id})", flush=True)
             cached = session.cache.get(query_text=message)
-            print(f"[CACHE] Result: {'HIT' if cached else 'MISS'} (entries={session.cache.stats().get('entries', 0)})", flush=True)
+            print(f"[CACHE] Result: {'HIT' if cached else 'MISS'} (entries={session.cache.stats.get('entries', 0)})", flush=True)
             if cached is not None:
                 session.metrics["cache_hits"] += 1
-                result_queue.put(("status", "⚡ Cache hit — returning cached result"))
-                # Stream the cached response as tokens
+                result_queue.put(("status", "⚡ Cache hit — skipping DB query & chart generation"))
+
+                # Feed cached data to the orchestrator so it can generate
+                # key insights and followup questions (we skip DB + chart, not the LLM)
                 import json as _json
-                cached_text = _json.dumps(cached, default=str)
-                # Let the orchestrator format it
-                # Actually just return the raw cached data formatted
-                elapsed_ms = (time.perf_counter() - t_start) * 1000
+                # Inject the cached result as if the tool returned it
+                session._last_tool_result = cached
+                cache_context = _json.dumps(cached, default=str)
+                cache_message = (
+                    f"[SEMANTIC CACHE HIT] The following data was retrieved from cache "
+                    f"(original query: '{message}'). Format this data with key insights "
+                    f"and followup questions as usual:\n\n{cache_context}"
+                )
 
-                # Build a formatted response from cached data
-                response_parts = []
-                if cached.get("results"):
-                    response_parts.append(f"**Cached Result** ({cached.get('row_count', 0)} rows)\n\n")
-                    # Build HTML table
-                    cols = cached.get("columns", [])
-                    if cols:
-                        response_parts.append('<div style="overflow-x: auto; margin: 20px 0;">\n<table>\n<thead><tr>')
-                        for c in cols:
-                            response_parts.append(f'<th>{c}</th>')
-                        response_parts.append('</tr></thead>\n<tbody>')
-                        for row in cached["results"][:20]:
-                            response_parts.append('<tr>')
-                            for c in cols:
-                                response_parts.append(f'<td>{row.get(c, "")}</td>')
-                            response_parts.append('</tr>')
-                        response_parts.append('</tbody>\n</table>\n</div>')
-                    if cached.get("chart_filename"):
-                        response_parts.append(f'\n\n<img src="/api/text2sql/charts/{cached["chart_filename"]}" alt="Chart" style="max-width: 100%; height: auto; border-radius: 4px;" />')
-                    if cached.get("sql"):
-                        response_parts.append(f'\n\n<details><summary>SQL Query</summary>\n\n```sql\n{cached["sql"]}\n```\n</details>')
+                def _callback(**kwargs):
+                    nonlocal ttft
+                    if "data" in kwargs:
+                        if ttft[0] is None:
+                            ttft[0] = (time.perf_counter() - t_start) * 1000
+                        result_queue.put(("token", kwargs["data"]))
+                    elif "current_tool_use" in kwargs and kwargs["current_tool_use"].get("name"):
+                        result_queue.put(("tool", kwargs["current_tool_use"]["name"]))
 
-                full_text = "".join(response_parts)
-                result_queue.put(("token", full_text))
+                agent = session.orchestrator
+                agent.callback_handler = _callback
+                try:
+                    response = agent(cache_message)
+                    agent.callback_handler = None
+                    elapsed_ms = (time.perf_counter() - t_start) * 1000
 
-                # Metrics
-                model = session._orch_model
-                metrics = session.get_metrics()
-                metrics["latency_ms"] = round(elapsed_ms, 1)
-                metrics["ttft_ms"] = round(elapsed_ms, 1)
-                metrics["model_used"] = "Semantic Cache"
-                metrics["complexity"] = "cached"
-                metrics["cost"] = 0
-                metrics["prompt_cache_read"] = 0
-                metrics["prompt_cache_write"] = 0
-                metrics["routing_overhead_ms"] = 0
-                metrics["fallback_used"] = False
-                metrics["explanation"] = None
-                result_queue.put(("metrics", metrics))
-                result_queue.put(("done", None))
+                    # Capture orchestrator token usage (same as normal path)
+                    if hasattr(response, 'metrics') and response.metrics:
+                        usage = getattr(response.metrics, 'accumulated_usage', {}) or {}
+                        orch_input = usage.get('inputTokens', 0)
+                        orch_output = usage.get('outputTokens', 0)
+                        session.metrics["total_input_tokens"] += orch_input
+                        session.metrics["total_output_tokens"] += orch_output
+
+                    model = session._orch_model
+                    decision = model.last_routing_decision
+
+                    metrics = session.get_metrics()
+                    metrics["latency_ms"] = round(elapsed_ms, 1)
+                    metrics["ttft_ms"] = round(ttft[0], 1) if ttft[0] else round(elapsed_ms, 1)
+                    metrics["model_used"] = display_model_name(decision.selected_model) if decision else "unknown"
+                    metrics["complexity"] = "cached"
+                    metrics["cost"] = round(decision.actual_cost or 0, 6) if decision else 0
+                    metrics["prompt_cache_read"] = 0
+                    metrics["prompt_cache_write"] = 0
+                    metrics["routing_overhead_ms"] = decision.routing_decision_ms if decision else None
+                    metrics["fallback_used"] = decision.fallback_used if decision else False
+                    metrics["explanation"] = decision.explanation if decision else None
+                    metrics["cache_hit"] = True
+                    result_queue.put(("metrics", metrics))
+                    result_queue.put(("done", None))
+                except Exception as exc:
+                    import traceback
+                    traceback.print_exc()
+                    result_queue.put(("error", str(exc)[:300]))
                 return
             last_decision = [None]  # Fix #7: capture per-call
 
@@ -199,10 +212,10 @@ async def text2sql_chat(
                 metrics["fallback_used"] = decision.fallback_used if decision else False
                 metrics["explanation"] = decision.explanation if decision else None
 
-                # Cache the result using the ORIGINAL user message as key
-                # (not the orchestrator's modified query passed to the tool)
+                # Cache the result — the cache_filter decides if it's worth storing
+                # (only caches responses with actual results, skips errors/empty)
                 tool_result = getattr(session, '_last_tool_result', None)
-                if tool_result and tool_result.get("results") and tool_result.get("row_count", 0) > 0:
+                if tool_result:
                     session.cache.put(query_text=message, response=tool_result)
 
                 result_queue.put(("metrics", metrics))

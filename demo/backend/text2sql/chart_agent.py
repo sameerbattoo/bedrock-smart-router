@@ -60,11 +60,14 @@ class ChartAgent:
 
         try:
             # Fresh agent per chart to avoid conversation pollution
+            # Use a no-op callback to prevent chart agent output from leaking
+            # into the orchestrator's streaming response
             agent = Agent(
                 model=self._router_model,
                 system_prompt=self._build_system_prompt(),
                 tools=[python_repl, file_write],
-                conversation_manager=SlidingWindowConversationManager(window_size=2),
+                conversation_manager=SlidingWindowConversationManager(window_size=4),
+                callback_handler=None,
             )
             agent(prompt)
 
@@ -109,4 +112,7 @@ CRITICAL RULES:
 - Then import matplotlib.pyplot as plt
 - Save to the exact path given. Do NOT use plt.show().
 - Always embed the full data as a Python literal. Do NOT use json.loads().
+- After the chart is saved successfully, respond with ONLY: "Chart saved successfully to <path>"
+- Do NOT describe the chart, explain its features, or provide commentary.
+- Keep your response minimal — just generate the code, execute it, confirm success.
 """

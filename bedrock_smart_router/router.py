@@ -262,7 +262,8 @@ class BedrockRouter:
                         break
 
         # ── Step 2: Analyse the request ─────────────────────────
-        analysis = self._analyzer.analyze(messages, system, tool_config)
+        analysis = self._analyzer.analyze(messages, system, tool_config,
+                                          classifier_override=routing.classifier)
 
         # ── Step 3: Check response cache ────────────────────────
         cached = self._cache.get(messages, system, inference_config)
@@ -540,7 +541,8 @@ class BedrockRouter:
                         break
 
         # Routing pipeline (same as converse)
-        analysis = self._analyzer.analyze(messages, system, tool_config)
+        analysis = self._analyzer.analyze(messages, system, tool_config,
+                                          classifier_override=routing.classifier)
         resolved = self._resolve_model(
             analysis=analysis, routing=routing,
             strategy_name=strategy_name, weights=weights,
@@ -918,6 +920,7 @@ class BedrockRouter:
                 "complexity": self._build_complexity_explanation(
                     analysis, analysis_explanation, payload_bytes, payload_boost,
                     min_tier, max_tier, messages, system, None,
+                    classifier_override=routing.classifier,
                 ),
                 "strategy": {
                     "name": strategy_name,
@@ -1083,22 +1086,42 @@ class BedrockRouter:
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None,
         tool_config: dict[str, Any] | None,
+        classifier_override: str | None = None,
     ) -> dict[str, Any]:
         """Build the complexity section of the explain dict.
 
         Returns ML-style explain when ML classifier is active,
         otherwise returns the full heuristic explain with dimension scores.
         """
-        if self._analyzer._ml_classifier is not None:
+        # Determine which classifier was used for this request
+        use_ml = self._analyzer._ml_classifier is not None
+        if classifier_override == "ml":
+            use_ml = True
+        elif classifier_override == "heuristic":
+            use_ml = False
+
+        if use_ml and self._analyzer._ml_classifier is not None:
             # ML classifier explain: show probabilities from the LAST USER MESSAGE
             # (matching what classify_request() actually uses for the decision)
             clf = self._analyzer._ml_classifier
             last_user_text = clf._extract_last_user_text(messages)
             probs = clf.predict_proba_all(last_user_text or "")
 
-            # Check if floor was applied (classification differs from highest probability)
-            user_label = max(probs, key=probs.get)
-            floor_applied = (analysis.complexity.value != user_label)
+            # Determine user's classification from probabilities
+            # Apply the same low-confidence guard as classify_request
+            raw_user_label = max(probs, key=probs.get)
+            user_confidence = probs.get(raw_user_label, 0.0)
+            low_confidence_override = False
+            if user_confidence < clf.MIN_CONFIDENCE_THRESHOLD and raw_user_label in ("complex", "reasoning"):
+                user_label = "simple"
+                low_confidence_override = True
+            else:
+                user_label = raw_user_label
+
+            # Check if floor was actually applied by re-running classify_request
+            # and comparing the returned label to the effective user label
+            ml_label, ml_conf = clf.classify_request(messages, system=system, tool_config=tool_config)
+            floor_applied = (ml_label != user_label)
 
             explain = {
                 "classifier": "ml",
@@ -1106,12 +1129,20 @@ class BedrockRouter:
                 "classification": analysis.complexity.value,
                 "probabilities": probs,
                 "user_message_classification": user_label,
+                "raw_prediction": raw_user_label if low_confidence_override else None,
+                "low_confidence_override": low_confidence_override,
+                "user_confidence": round(user_confidence, 4),
                 "floor_applied": floor_applied,
+                "floor_dampening": clf._floor_dampening,
                 "tier_range": {
                     "min": min_tier.value if min_tier else "micro",
                     "max": max_tier.value if max_tier else "reasoning",
                 },
                 "model_version": "tfidf_v1_35k",
+                "multimodal_payload": {
+                    "bytes": payload_bytes,
+                    "complexity_boost": payload_boost,
+                } if payload_bytes > 0 else None,
             }
             if floor_applied:
                 explain["floor_reason"] = "System prompt complexity floor upgraded classification"

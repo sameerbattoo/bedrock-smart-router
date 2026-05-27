@@ -17,7 +17,7 @@ from strands_tools import current_time
 from bedrock_smart_router.strands_model import SmartRouterModel
 from text2sql.sql_agent import SQLAgent
 from text2sql.chart_agent import ChartAgent
-from text2sql.cache import FilesystemSemanticCache
+from text2sql.cache import get_shared_cache
 from text2sql.db import get_table_list
 
 logger = logging.getLogger(__name__)
@@ -121,17 +121,6 @@ def get_sample_questions() -> str:
     ])
 
 
-# Global shared semantic cache (singleton across all sessions)
-_shared_cache: "FilesystemSemanticCache | None" = None
-
-
-def _get_shared_cache(region: str = "us-west-2") -> "FilesystemSemanticCache":
-    global _shared_cache
-    if _shared_cache is None:
-        _shared_cache = FilesystemSemanticCache(region=region)
-    return _shared_cache
-
-
 class Text2SQLSession:
     """Manages a single user session with all agents and cache."""
 
@@ -164,7 +153,7 @@ class Text2SQLSession:
         self._chart_model = chart_model
 
         # Shared cache across all sessions (FAISS in-memory persists across requests)
-        self.cache = _get_shared_cache(region)
+        self.cache = get_shared_cache(region)
         self.sql_agent = SQLAgent(router_model=sql_model, token_callback=self._token_cb)
         self.chart_agent = ChartAgent(router_model=chart_model, token_callback=self._token_cb)
 
@@ -236,6 +225,7 @@ CRITICAL: Always check tool responses for chart data.
    ```
 3. The chart should appear AFTER the data table and BEFORE the insights section.
 4. If no `chart_filename` field exists, the chart generation failed or data wasn't suitable — simply skip the chart section. Do NOT mention the failure.
+5. Do NOT describe how the chart was generated, what tools were used, or what the chart looks like. Just display the image tag. The chart speaks for itself.
 </chart_display_rules>
 
 <response_format>
@@ -296,8 +286,13 @@ When responding to a user query, follow this structure:
         self._sql_model.update_config(routing_preset=preset)
         # Chart model keeps its preferred_model to avoid reasoning content issues
 
+    def update_classifier(self, classifier: str) -> None:
+        """Update classifier on all agent models (heuristic or ml)."""
+        self._orch_model.update_config(classifier=classifier)
+        self._sql_model.update_config(classifier=classifier)
+
     def get_metrics(self) -> dict[str, Any]:
-        cache_stats = self.cache.stats() if hasattr(self.cache, 'stats') else {}
+        cache_stats = self.cache.stats if hasattr(self.cache, 'stats') else {}
         return {**self.metrics, "cache_stats": cache_stats}
 
     def _token_cb(

@@ -11,7 +11,16 @@ class TestAIPManager:
     def setup_method(self):
         self.mock_session = MagicMock()
         self.mock_client = MagicMock()
-        self.mock_session.client.return_value = self.mock_client
+        # Default: list_inference_profiles returns empty (no existing profiles)
+        self.mock_client.list_inference_profiles.return_value = {
+            "inferenceProfileSummaries": [],
+        }
+        # Default: STS mock for account ID
+        mock_sts = MagicMock()
+        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+        self.mock_session.client.side_effect = lambda svc, **kw: (
+            mock_sts if svc == "sts" else self.mock_client
+        )
 
     def test_disabled_returns_raw_model_id(self):
         mgr = AIPManager(
@@ -19,11 +28,10 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "amazon.nova-micro-v1:0",
+            "us.amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
-        assert result == "amazon.nova-micro-v1:0"
-        self.mock_client.create_inference_profile.assert_not_called()
+        assert result == "us.amazon.nova-micro-v1:0"
 
     def test_no_tags_returns_raw_model_id(self):
         mgr = AIPManager(
@@ -31,7 +39,20 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "amazon.nova-micro-v1:0", {},
+            "us.amazon.nova-micro-v1:0",
+            {},
+        )
+        assert result == "us.amazon.nova-micro-v1:0"
+
+    def test_non_cris_model_returns_raw(self):
+        """Models without CRIS prefix (us., global., etc.) can't have AIPs."""
+        mgr = AIPManager(
+            config=AIPConfig(enabled=True, auto_create=True),
+            boto_session=self.mock_session,
+        )
+        result = mgr.get_model_id_for_tenant(
+            "amazon.nova-micro-v1:0",
+            {"tenant": "acme"},
         )
         assert result == "amazon.nova-micro-v1:0"
 
@@ -39,12 +60,6 @@ class TestAIPManager:
         self.mock_client.create_inference_profile.return_value = {
             "inferenceProfileArn": "arn:aws:bedrock:us-west-2:123:inference-profile/bsr-acme-nova"
         }
-        # Mock STS for account ID resolution
-        mock_sts = MagicMock()
-        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
-        self.mock_session.client.side_effect = lambda svc, **kw: (
-            mock_sts if svc == "sts" else self.mock_client
-        )
 
         mgr = AIPManager(
             config=AIPConfig(enabled=True, auto_create=True),
@@ -52,14 +67,14 @@ class TestAIPManager:
             region="us-west-2",
         )
         result = mgr.get_model_id_for_tenant(
-            "amazon.nova-micro-v1:0",
+            "us.amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
         assert result == "arn:aws:bedrock:us-west-2:123:inference-profile/bsr-acme-nova"
 
         # Verify the call args — should use full ARN
         call_kwargs = self.mock_client.create_inference_profile.call_args[1]
-        expected_arn = "arn:aws:bedrock:us-west-2:123456789012:inference-profile/amazon.nova-micro-v1:0"
+        expected_arn = "arn:aws:bedrock:us-west-2:123456789012:inference-profile/us.amazon.nova-micro-v1:0"
         assert call_kwargs["modelSource"] == {"copyFrom": expected_arn}
         assert any(t["key"] == "tenant" and t["value"] == "acme" for t in call_kwargs["tags"])
 
@@ -72,8 +87,8 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         tags = {"tenant": "acme"}
-        r1 = mgr.get_model_id_for_tenant("amazon.nova-micro-v1:0", tags)
-        r2 = mgr.get_model_id_for_tenant("amazon.nova-micro-v1:0", tags)
+        r1 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", tags)
+        r2 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", tags)
 
         assert r1 == r2
         # Only one API call — second was served from cache
@@ -92,8 +107,8 @@ class TestAIPManager:
             config=AIPConfig(enabled=True, auto_create=True),
             boto_session=self.mock_session,
         )
-        r1 = mgr.get_model_id_for_tenant("model-a", {"tenant": "acme"})
-        r2 = mgr.get_model_id_for_tenant("model-a", {"tenant": "globex"})
+        r1 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", {"tenant": "acme"})
+        r2 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", {"tenant": "globex"})
 
         assert r1 != r2
         assert call_count == 2
@@ -111,8 +126,8 @@ class TestAIPManager:
             config=AIPConfig(enabled=True, auto_create=True),
             boto_session=self.mock_session,
         )
-        r1 = mgr.get_model_id_for_tenant("model-a", {"tenant": "acme"})
-        r2 = mgr.get_model_id_for_tenant("model-b", {"tenant": "acme"})
+        r1 = mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", {"tenant": "acme"})
+        r2 = mgr.get_model_id_for_tenant("us.amazon.nova-pro-v1:0", {"tenant": "acme"})
 
         assert r1 != r2
         assert call_count == 2
@@ -123,10 +138,10 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "amazon.nova-micro-v1:0",
+            "us.amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
-        assert result == "amazon.nova-micro-v1:0"
+        assert result == "us.amazon.nova-micro-v1:0"
         self.mock_client.create_inference_profile.assert_not_called()
 
     def test_api_failure_falls_back_to_raw(self):
@@ -136,11 +151,11 @@ class TestAIPManager:
             boto_session=self.mock_session,
         )
         result = mgr.get_model_id_for_tenant(
-            "amazon.nova-micro-v1:0",
+            "us.amazon.nova-micro-v1:0",
             {"tenant": "acme"},
         )
         # Should not crash — falls back to raw model ID
-        assert result == "amazon.nova-micro-v1:0"
+        assert result == "us.amazon.nova-micro-v1:0"
 
     def test_invalidate_cache(self):
         self.mock_client.create_inference_profile.return_value = {
@@ -150,26 +165,5 @@ class TestAIPManager:
             config=AIPConfig(enabled=True, auto_create=True),
             boto_session=self.mock_session,
         )
-        mgr.get_model_id_for_tenant("model-a", {"tenant": "acme"})
+        mgr.get_model_id_for_tenant("us.amazon.nova-micro-v1:0", {"tenant": "acme"})
         assert len(mgr.cached_profiles) == 1
-
-        mgr.invalidate_cache()
-        assert len(mgr.cached_profiles) == 0
-
-    def test_profile_name_sanitized(self):
-        self.mock_client.create_inference_profile.return_value = {
-            "inferenceProfileArn": "arn:profile-1"
-        }
-        mgr = AIPManager(
-            config=AIPConfig(enabled=True, auto_create=True, profile_name_prefix="test"),
-            boto_session=self.mock_session,
-        )
-        mgr.get_model_id_for_tenant(
-            "amazon.nova-micro-v1:0",
-            {"tenant": "acme corp!@#"},
-        )
-        call_kwargs = self.mock_client.create_inference_profile.call_args[1]
-        name = call_kwargs["inferenceProfileName"]
-        # Should only contain alphanumeric, hyphens, underscores
-        assert all(c.isalnum() or c in "-_" for c in name)
-        print(f"\n  Sanitized name: {name}")

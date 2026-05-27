@@ -41,6 +41,7 @@ export default function Text2SQLPage({ onRun }) {
   const [showSystemPrompt, setShowSystemPrompt] = useState(false)
   const [systemPromptText, setSystemPromptText] = useState('')
   const [strategy, setStrategy] = useState('quality-optimized')
+  const [classifier, setClassifier] = useState('heuristic')
   const [lastOriginalQuestion, setLastOriginalQuestion] = useState(null)
 
   useEffect(() => {
@@ -114,6 +115,7 @@ export default function Text2SQLPage({ onRun }) {
     form.append('message', msg)
     form.append('session_id', sessionId)
     form.append('strategy', strategy)
+    form.append('classifier', classifier)
 
     try {
       const res = await fetch(`${STREAM_API}/text2sql/chat`, { method: 'POST', body: form })
@@ -184,7 +186,7 @@ export default function Text2SQLPage({ onRun }) {
     } finally {
       setLoading(false)
     }
-  }, [input, loading, sessionId, onRun, strategy])
+  }, [input, loading, sessionId, onRun, strategy, classifier])
 
   const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }
 
@@ -219,6 +221,21 @@ export default function Text2SQLPage({ onRun }) {
                   {s.replace('-optimized','').replace('-',' ')}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Classifier toggle */}
+          <div className="flex items-center gap-1.5 ml-3">
+            <span className="text-[9px] text-gray-500 font-bold uppercase">Classifier</span>
+            <div className="flex bg-gray-900/80 rounded-lg p-0.5 border border-gray-800/50">
+              <button onClick={() => setClassifier('heuristic')}
+                className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${classifier === 'heuristic' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+                Heuristic
+              </button>
+              <button onClick={() => setClassifier('ml')}
+                className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-all ${classifier === 'ml' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>
+                ML
+              </button>
             </div>
           </div>
 

@@ -103,7 +103,11 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
     setStep2Visible(true)
     setStep2Expanded(true)
     setStep1Expanded(false)
-    // Clear previous results
+    // Clear file attachment and previous results
+    setFile(null)
+    setHistoryFileId('')
+    setHistoryFileName('')
+    if (fileRef.current) fileRef.current.value = ''
     setStep3Visible(false)
     setBaselineText('')
     setRouterText('')
@@ -119,6 +123,11 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
     setStep2Visible(true)
     setStep2Expanded(true)
     setStep1Expanded(false)
+    // Clear file attachment and previous results
+    setFile(null)
+    setHistoryFileId('')
+    setHistoryFileName('')
+    if (fileRef.current) fileRef.current.value = ''
     setStep3Visible(false)
     setBaselineText('')
     setRouterText('')

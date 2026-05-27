@@ -49,6 +49,7 @@ def _run_compare_router(
     strategy: str,
     preferred_model: str,
     on_chunk,
+    classifier: str = "heuristic",
 ) -> dict:
     """Smart Router: same API, just swap the client. Returns result dict."""
     return stream_converse(
@@ -58,6 +59,7 @@ def _run_compare_router(
         routing=RoutingConfig(
             strategy=strategy,
             preferred_model=preferred_model if preferred_model else None,
+            classifier=classifier,
             explain=True,
         ),
         on_chunk=on_chunk,
@@ -128,23 +130,13 @@ async def compare_stream(
             baseline_q.put(("done", result))
 
         def _router_task():
-            # Set classifier mode on the router's analyzer
-            if classifier == "ml":
-                if smart_router._analyzer._ml_classifier is None:
-                    try:
-                        from bedrock_smart_router.ml_classifier import MLComplexityClassifier
-                        smart_router._analyzer._ml_classifier = MLComplexityClassifier()
-                    except ImportError:
-                        pass
-            else:
-                smart_router._analyzer._ml_classifier = None
-
             result = _run_compare_router(
                 client=smart_router,
                 messages=messages,
                 system_prompt=system_prompt,
                 strategy=strategy,
                 preferred_model=preferred_model,
+                classifier=classifier,
                 on_chunk=lambda text: router_q.put(("chunk", text)),
             )
             result["has_multimodal"] = file_bytes is not None

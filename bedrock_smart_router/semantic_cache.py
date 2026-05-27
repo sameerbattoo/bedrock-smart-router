@@ -90,7 +90,7 @@ class SemanticCacheConfig:
     embedding_dimension: int = 1024  # Titan v2 default
     max_entries: int = 5000
     ttl_seconds: float = 3600.0
-    # Vector store backend
+    # Vector store backend (for embeddings + similarity search)
     vector_store_backend: str = "memory"  # "memory" | "faiss" | "redis" | "opensearch"
     redis_url: str = ""
     redis_key_prefix: str = "bsr:semcache:"
@@ -100,6 +100,17 @@ class SemanticCacheConfig:
     # Auto-extraction (optional)
     auto_extract: bool = False
     extraction_model: str = "amazon.nova-micro-v1:0"
+    # Response store backend (for actual response payloads)
+    # "inline" = store in vector payload (default, good for small responses)
+    # "filesystem" = store on disk (dev/testing, Lambda /tmp, EFS)
+    # "s3" = store in S3 (production, large payloads, durability)
+    # "dynamodb" = store in DynamoDB (serverless, low-latency, auto-expiry)
+    response_store_backend: str = "inline"
+    response_store_path: str = "/tmp/semantic_cache_responses"  # filesystem
+    response_store_s3_bucket: str = ""  # s3
+    response_store_s3_prefix: str = "semantic_cache/"  # s3
+    response_store_dynamodb_table: str = ""  # dynamodb
+    response_store_dynamodb_ttl: int = 3600  # dynamodb TTL in seconds
 
 
 class SemanticCache:
@@ -120,15 +131,23 @@ class SemanticCache:
         boto_session: Any | None = None,
         region: str = "us-west-2",
         vector_store: VectorStore | None = None,
+        response_store: Any | None = None,
+        cache_filter: Any | None = None,
     ) -> None:
         self.config = config or SemanticCacheConfig()
         self._session = boto_session
         self._region = region
         self._hits = 0
         self._misses = 0
+        self._filtered = 0  # responses skipped by cache_filter
         # LRU cache for embeddings — avoids redundant Bedrock API calls
         self._embedding_cache: dict[str, list[float]] = {}
         self._embedding_cache_max = 500
+
+        # Cache filter: callable(query_text, response) -> bool
+        # When provided, put() only caches if the filter returns True.
+        # This lets the app decide which responses are worth caching.
+        self._cache_filter = cache_filter
 
         # Use provided vector store or build from config
         self._store = vector_store or build_vector_store(
@@ -141,6 +160,22 @@ class SemanticCache:
             opensearch_index_name=self.config.opensearch_index_name,
             opensearch_region=self._region,
         )
+
+        # Response store: use provided instance or build from config
+        if response_store is not None:
+            self._response_store = response_store
+        else:
+            from bedrock_smart_router.semantic_response_store import build_response_store
+            self._response_store = build_response_store(
+                backend=self.config.response_store_backend,
+                path=self.config.response_store_path,
+                s3_bucket=self.config.response_store_s3_bucket,
+                s3_prefix=self.config.response_store_s3_prefix,
+                dynamodb_table=self.config.response_store_dynamodb_table,
+                dynamodb_ttl_seconds=self.config.response_store_dynamodb_ttl,
+                region=self._region,
+                boto_session=self._session,
+            )
 
         # Lazy-init intent extractor (only when auto_extract is enabled)
         self._extractor: Any | None = None
@@ -277,7 +312,21 @@ class SemanticCache:
                 "Semantic cache HIT (score=%.3f, query='%s', vars=%s)",
                 result.score, lookup_text[:50], lookup_vars,
             )
-            return payload.get("response")
+            # Load response via the response store
+            response_ref = payload.get("response_ref")
+            if response_ref is not None:
+                # External response store — load by reference
+                loaded = self._response_store.load(response_ref)
+                if loaded is None:
+                    # Reference exists but payload is gone (expired/deleted)
+                    self._store.delete(result.id)
+                    self._hits -= 1
+                    self._misses += 1
+                    continue
+                return loaded
+            else:
+                # Legacy inline storage (backward compatible)
+                return payload.get("response")
 
         self._misses += 1
         return None
@@ -298,11 +347,32 @@ class SemanticCache:
             variables: Optional variable values (manual mode).  Ignored
                 when ``auto_extract`` is enabled.
             messages: Full conversation history (multi-turn).
+
+        Note:
+            If a ``cache_filter`` was provided at init time, this method
+            will only store the response if the filter returns True.
+            The app can also simply not call ``put()`` for responses it
+            doesn't want cached.
         """
         if not self.config.enabled:
             return
         if response is None:
             return
+
+        # Apply cache filter if configured
+        if self._cache_filter is not None:
+            try:
+                if not self._cache_filter(query_text, response):
+                    self._filtered += 1
+                    logger.debug(
+                        "Cache filter rejected: query='%s'",
+                        (query_text or "")[:50],
+                    )
+                    return
+            except Exception as exc:
+                logger.warning("Cache filter raised exception: %s", exc)
+                # On filter error, skip caching (safe default)
+                return
 
         # Resolve the storage text and variables
         store_text, store_vars = self._resolve_lookup(
@@ -321,7 +391,7 @@ class SemanticCache:
             id=entry_id,
             embedding=embedding,
             payload={
-                "response": response,
+                "response_ref": self._response_store.save(entry_id, response),
                 "query": store_text,
                 "variables": store_vars or {},
                 "var_hash": var_hash,
@@ -411,9 +481,11 @@ class SemanticCache:
         return {
             "hits": self._hits,
             "misses": self._misses,
+            "filtered": self._filtered,
             "hit_rate": round(self.hit_rate, 4),
             "entries": self._store.count(),
             "backend": self.config.vector_store_backend,
+            "response_store": self.config.response_store_backend,
             "threshold": self.config.threshold,
             "embedding_model": self.config.embedding_model,
             "auto_extract": self.config.auto_extract,
