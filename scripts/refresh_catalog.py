@@ -441,72 +441,106 @@ def _probe_converse_support(client: Any, model_id: str) -> bool:
 
 
 def _probe_tool_use(client: Any, model_id: str) -> bool:
-    """Test if model supports tool use (function calling).
+    """Test if model supports tool use (function calling) via Converse API.
     
-    Sends a request with toolConfig. If the model responds with a toolUse block
-    OR the call succeeds without error, it supports tool use.
+    Sends a request with toolConfig. The model supports tool_use if it responds
+    with a proper toolUse block OR the stopReason is "tool_use".
     
-    Note: Some models (e.g., Gemma) accept toolConfig without error but never
-    actually call tools. We check for actual tool_use in the response to catch this.
-    However, not all models will call the tool on every request, so we also check
-    for the stopReason — if it's "tool_use" or "end_turn" with toolConfig present
-    and no error, we consider it supported.
+    Known false positives: Models that accept toolConfig but return tool calls
+    as plain text (e.g., Gemma, Llama 3.3, Magistral). These don't support the
+    Converse API tool_use conversation pattern (toolResult messages).
     
-    Known false positives: Models that accept toolConfig silently but don't support
-    the tool-use conversation pattern (consecutive user messages with toolResult).
-    These are caught by the "Conversation roles must alternate" error at runtime
-    and handled by the fallback mechanism.
+    Known false negatives: Models with reasoning/thinking that may hit maxTokens
+    before emitting the toolUse block. We use maxTokens=500 and retry once on
+    max_tokens stopReason to mitigate this.
     """
-    try:
-        response = client.converse(
-            modelId=model_id,
-            messages=[{"role": "user", "content": [{"text": "What is 2+2? Use the calculator tool."}]}],
-            toolConfig={
-                "tools": [{
-                    "toolSpec": {
-                        "name": "calculator",
-                        "description": "Performs math calculations. You MUST use this tool for any math.",
-                        "inputSchema": {"json": {
-                            "type": "object",
-                            "properties": {"expression": {"type": "string"}},
-                            "required": ["expression"],
-                        }},
-                    }
-                }]
-            },
-            inferenceConfig={"maxTokens": 100},
-        )
-        # Check if the model actually produced a tool_use block
-        output = response.get("output", {})
-        message = output.get("message", {})
-        content = message.get("content", [])
-        has_tool_use = any(
-            isinstance(block, dict) and "toolUse" in block
-            for block in content
-        )
-        stop_reason = response.get("stopReason", "")
-        # Model supports tools if it actually called one OR stop_reason is tool_use
-        if has_tool_use or stop_reason == "tool_use":
-            return True
-        # If it just responded with text (end_turn) without calling the tool,
-        # it likely doesn't truly support tool use in the Converse API sense
+    # Known models that don't support Converse API tool_use pattern
+    # (they accept toolConfig but return tool calls as text, not toolUse blocks)
+    _KNOWN_NO_TOOL_USE = {
+        "google.gemma-3-4b-it", "google.gemma-3-12b-it", "google.gemma-3-27b-it",
+    }
+    base_id = model_id.split(".", 1)[-1] if "." in model_id and model_id.split(".")[0] in ("us", "eu", "ap", "global") else model_id
+    if base_id in _KNOWN_NO_TOOL_USE or model_id in _KNOWN_NO_TOOL_USE:
         return False
-    except ClientError as e:
-        code = e.response.get("Error", {}).get("Code", "")
-        msg = str(e).lower()
-        if "throttl" in msg:
-            return True
-        if "tool" in msg or "not supported" in msg or "does not support" in msg:
+
+    def _try_probe(max_tokens: int) -> bool | None:
+        """Returns True/False if conclusive, None if inconclusive (max_tokens hit)."""
+        try:
+            response = client.converse(
+                modelId=model_id,
+                messages=[{"role": "user", "content": [{"text": "What is 2+2? Use the calculator tool."}]}],
+                toolConfig={
+                    "tools": [{
+                        "toolSpec": {
+                            "name": "calculator",
+                            "description": "Performs math calculations. You MUST use this tool for any math.",
+                            "inputSchema": {"json": {
+                                "type": "object",
+                                "properties": {"expression": {"type": "string"}},
+                                "required": ["expression"],
+                            }},
+                        }
+                    }]
+                },
+                inferenceConfig={"maxTokens": max_tokens},
+            )
+            output = response.get("output", {})
+            message = output.get("message", {})
+            content = message.get("content", [])
+            has_tool_use = any(
+                isinstance(block, dict) and "toolUse" in block
+                for block in content
+            )
+            stop_reason = response.get("stopReason", "")
+            # Model supports tools if it actually called one OR stop_reason is tool_use
+            if has_tool_use or stop_reason == "tool_use":
+                return True
+            # If hit max_tokens, the model might support tools but ran out of budget
+            # (common with reasoning models that emit thinking before tool call)
+            if stop_reason == "max_tokens":
+                return None  # Inconclusive
+            # end_turn without tool call = doesn't support tool_use
             return False
-        if "internal" in code.lower():
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "")
+            msg = str(e).lower()
+            if "throttl" in msg:
+                return True
+            if "tool" in msg or "not supported" in msg or "does not support" in msg:
+                return False
+            if "internal" in code.lower():
+                return False
             return False
-        return False
-    except Exception:
-        return False
+        except Exception:
+            return False
+
+    # First attempt with 500 tokens (enough for most models)
+    result = _try_probe(500)
+    if result is not None:
+        return result
+    # Retry with higher budget for reasoning models
+    result = _try_probe(2000)
+    if result is not None:
+        return result
+    # If still inconclusive after retry, assume it supports tools
+    # (it accepted toolConfig without error, just ran out of tokens)
+    return True
 
 
 def _probe_streaming_tool_use(client: Any, model_id: str) -> bool:
-    """Test if model supports streaming with tool use."""
+    """Test if model supports streaming with tool use.
+    
+    This checks if the converse_stream API accepts toolConfig without error.
+    Models that don't support tool_use at all should also fail this probe.
+    """
+    # If tool_use is known to be unsupported, streaming_tool_use is also unsupported
+    _KNOWN_NO_TOOL_USE = {
+        "google.gemma-3-4b-it", "google.gemma-3-12b-it", "google.gemma-3-27b-it",
+    }
+    base_id = model_id.split(".", 1)[-1] if "." in model_id and model_id.split(".")[0] in ("us", "eu", "ap", "global") else model_id
+    if base_id in _KNOWN_NO_TOOL_USE or model_id in _KNOWN_NO_TOOL_USE:
+        return False
+
     try:
         resp = client.converse_stream(
             modelId=model_id,
@@ -559,6 +593,9 @@ def _probe_extended_thinking(client: Any, model_id: str) -> bool:
         msg = str(e).lower()
         if "throttl" in msg:
             return True
+        # Model explicitly rejects the thinking field as unknown/extra
+        if "extra inputs are not permitted" in msg or "extra_forbidden" in msg:
+            return False
         if "budget_tokens" in msg or ("thinking" in msg and "must be" in msg):
             return True  # Model knows about thinking, just param mismatch
         if any(phrase in msg for phrase in [

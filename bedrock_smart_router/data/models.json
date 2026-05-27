@@ -1684,7 +1684,7 @@
         "tool_use": false,
         "vision": true,
         "streaming": true,
-        "streaming_tool_use": true,
+        "streaming_tool_use": false,
         "document_support": true,
         "extended_thinking": true,
         "prompt_caching": false
@@ -2788,7 +2788,7 @@
         "tool_use": false,
         "vision": true,
         "streaming": true,
-        "streaming_tool_use": true,
+        "streaming_tool_use": false,
         "document_support": true,
         "extended_thinking": true,
         "prompt_caching": false
@@ -3144,7 +3144,7 @@
         "tool_use": false,
         "vision": true,
         "streaming": true,
-        "streaming_tool_use": true,
+        "streaming_tool_use": false,
         "document_support": true,
         "extended_thinking": true,
         "prompt_caching": false
@@ -3777,10 +3777,10 @@
       "tier": "mid",
       "display_name": "Magistral Small 2509",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": true,
         "streaming": true,
-        "streaming_tool_use": true,
+        "streaming_tool_use": false,
         "document_support": true,
         "extended_thinking": true,
         "prompt_caching": false
@@ -4785,7 +4785,7 @@
       "tier": "mid",
       "display_name": "Llama 3.3 70B Instruct",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": false,
         "streaming": true,
         "streaming_tool_use": false,
@@ -5096,7 +5096,7 @@
         "streaming": true,
         "streaming_tool_use": false,
         "document_support": false,
-        "extended_thinking": true,
+        "extended_thinking": false,
         "prompt_caching": false
       },
       "max_input_tokens": 32000,
@@ -5130,7 +5130,7 @@
         "streaming": true,
         "streaming_tool_use": false,
         "document_support": false,
-        "extended_thinking": true,
+        "extended_thinking": false,
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
@@ -5202,7 +5202,7 @@
         "streaming": true,
         "streaming_tool_use": false,
         "document_support": true,
-        "extended_thinking": true,
+        "extended_thinking": false,
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
