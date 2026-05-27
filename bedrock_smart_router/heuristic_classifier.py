@@ -3,25 +3,48 @@
 Zero-dependency, sub-millisecond complexity classification using weighted
 keyword matching across 15 scoring dimensions. No API calls, no ML models.
 
-The heuristic classifier is the default classifier for the Bedrock Smart Router.
-It provides fast, deterministic classification based on text patterns.
+Scoring Strategy
+----------------
+Complexity is determined by two signals combined via ``max()``:
 
-Dimensions scored:
-1. Token count (text length)
-2. Code presence (code markers + language keywords)
-3. Reasoning markers (analytical/logical keywords)
-4. Technical depth (keyword density)
-5. Simple indicators (greetings, basic questions)
-6. Multi-step patterns (structural complexity)
-7. Tool use signals
-8. Document/domain analysis (AWS + math + data)
-9. Conversation depth (turn count)
-10. AWS specificity
-11. Question complexity (complex vs simple patterns)
+1. **User Message Score** — The last user message is scored across 15
+   keyword/pattern dimensions.  Only the last user message is used,
+   NOT the full conversation history or system prompt.  This prevents
+   multi-turn conversations and verbose system prompts from inflating
+   the complexity of simple follow-up messages like "Hi" or "Thanks".
+
+2. **System Prompt Floor** — The system prompt establishes a baseline
+   task complexity.  A complex system prompt (e.g. "You are a senior
+   architect, analyze trade-offs, design well-architected solutions")
+   means even short user messages require a capable model.  The floor
+   is computed as ``system_prompt_keyword_score × SYSTEM_FLOOR_FACTOR
+   (0.30)``.
+
+The final score is ``max(user_message_score, system_prompt_floor)``.
+
+This design ensures:
+- "Hi" with a complex system prompt → MODERATE (floor applies)
+- "Hi" with no system prompt → SIMPLE (no floor)
+- "Design a DR architecture" → COMPLEX (user message score dominates)
+- Short follow-ups in multi-turn don't inherit prior turn complexity
+
+Scoring Dimensions (15)
+------------------------
+1.  Token count (text length, log-scaled)
+2.  Code presence (code markers + language keywords)
+3.  Reasoning markers (analytical/logical keywords)
+4.  Technical depth (keyword density per 200 chars)
+5.  Simple indicators (greetings, basic questions — inverted)
+6.  Structural complexity (tables, CSV, code blocks, paragraphs)
+7.  Tool use signals
+8.  Domain specificity (AWS + math + data analysis)
+9.  Conversation depth (turn count)
+10. Multi-step patterns (sequential instructions)
+11. Question complexity (complex vs simple question patterns)
 12. Creative/open-ended signals
-13. Output format constraints
-14. Constraint density
-15. Context references
+13. Output format constraints (JSON, YAML, structured output)
+14. Constraint density (must/should/exactly/at least)
+15. Context references (references to external context)
 """
 
 from __future__ import annotations

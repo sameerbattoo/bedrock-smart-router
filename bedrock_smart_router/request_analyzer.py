@@ -1,40 +1,26 @@
-"""Zero-API-call request complexity analyzer.
+"""Request analysis orchestrator — delegates complexity classification and detects capabilities.
 
-Classifies incoming requests across 15 scoring dimensions to determine
-the appropriate model tier, entirely locally with sub-millisecond overhead.
+Orchestrates request analysis by combining two concerns:
 
-Scoring Strategy
-----------------
-Complexity is determined by two signals combined via ``max()``:
+1. **Complexity Classification** — Delegates to a pluggable classifier
+   (heuristic or ML) to determine how "hard" the request is. The classifier
+   scores the last user message and applies a system prompt floor.
 
-1. **User Message Score** — The last user message is scored across 15
-   keyword/pattern dimensions (token count, code presence, reasoning
-   markers, technical depth, etc.).  Only the last user message is used,
-   NOT the full conversation history or system prompt.  This prevents
-   multi-turn conversations and verbose system prompts from inflating
-   the complexity of simple follow-up messages like "Hi" or "Thanks".
+2. **Capability Detection & Token Estimation** — Uses the full request
+   context (all messages + system + tool_config) to detect:
+   - Vision requirements (inline images)
+   - Document support requirements (inline PDFs/documents)
+   - Tool use requirements (tool_config or tool-related language)
+   - Long context requirements (estimated tokens > 32K)
+   - Multimodal payload boost (large images/documents bump complexity)
 
-2. **System Prompt Floor** — The system prompt establishes a baseline
-   task complexity.  A complex system prompt (e.g. "You are a senior
-   architect, analyze trade-offs, design well-architected solutions")
-   means even short user messages require a capable model because the
-   system prompt defines what the model must do.  The floor is computed
-   as ``system_prompt_keyword_score × SYSTEM_FLOOR_FACTOR (0.30)``.
+The ``RequestAnalyzer.analyze()`` method produces a ``RequestAnalysis``
+object consumed by the router for model tier selection.
 
-The final score is ``max(user_message_score, system_prompt_floor)``.
-
-This design ensures:
-- "Hi" with a complex system prompt → MODERATE (floor applies)
-- "Hi" with no system prompt → SIMPLE (no floor)
-- "Design a DR architecture" → COMPLEX (user message score dominates)
-- Short follow-ups in multi-turn don't inherit prior turn complexity
-
-Capability Detection (separate from complexity)
------------------------------------------------
-Full context (all messages + system + tool_config) is still used for:
-- Token estimation (for cost prediction)
-- Capability requirements (vision, documents, tool use, long context)
-- Conversation metadata (turn count, multi-turn flag)
+Classifier selection:
+- ``classifier="heuristic"`` (default) — 15-dimension keyword scoring
+- ``classifier="ml"`` — TF-IDF + Logistic Regression (requires numpy)
+- Per-request override via ``classifier_override`` parameter
 """
 
 from __future__ import annotations
@@ -127,9 +113,14 @@ def _extract_last_user_text(messages: list[dict[str, Any]]) -> str:
 # ── Main analyzer ───────────────────────────────────────────────────
 
 class RequestAnalyzer:
-    """Classifies requests using 15 local scoring dimensions.
+    """Orchestrates request analysis: classification + capability detection.
 
-    No API calls — runs in sub-millisecond time.
+    Delegates complexity scoring to a classifier (heuristic or ML),
+    detects multimodal capabilities, estimates tokens, applies payload
+    boost, and produces a ``RequestAnalysis`` for the router.
+
+    No external API calls — runs in sub-millisecond time (heuristic)
+    or single-digit milliseconds (ML).
     """
 
     def __init__(

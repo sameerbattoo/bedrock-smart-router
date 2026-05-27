@@ -4,6 +4,11 @@ This module provides an optional ML classifier that uses a pre-trained TF-IDF
 vectorizer and Logistic Regression model for prompt complexity classification.
 It uses pure numpy inference at runtime — no sklearn dependency required.
 
+Inherits from ``ComplexityClassifier``, gaining system prompt floor logic,
+message extraction helpers, and the ``classify_request()`` pipeline for free.
+Adds an ML-specific low-confidence guard that defaults to "simple" when the
+model predicts complex/reasoning with < 50% confidence.
+
 The classifier categorizes prompts into four complexity levels:
 - simple: Basic questions, greetings, factual lookups
 - moderate: Multi-step tasks, summarization, moderate reasoning

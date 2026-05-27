@@ -48,6 +48,32 @@ self-contained query before extraction::
     # → Resolves to "Count users by geography for 2026 with sales > $200"
     # → Matches cached single-turn query with same intent + variables
 
+**Response store (pluggable):**
+
+By default, responses are stored inline in the vector store payload.
+For large responses, configure an external response store to keep the
+vector index lean::
+
+    from bedrock_smart_router.semantic_response_store import S3ResponseStore
+
+    cache = SemanticCache(
+        response_store=S3ResponseStore(bucket="my-bucket", prefix="cache/"),
+    )
+
+Backends: ``inline`` (default), ``filesystem``, ``s3``, ``dynamodb``.
+See ``semantic_response_store.py`` for details.
+
+**Cache filter (optional):**
+
+Pass a ``cache_filter`` callable to control which responses get cached.
+The filter receives ``(query_text, response)`` and returns ``True`` to
+cache or ``False`` to skip::
+
+    def only_successful(query, response):
+        return response.get("stopReason") == "end_turn"
+
+    cache = SemanticCache(cache_filter=only_successful)
+
 Vector store backends:
   - ``memory`` (default): In-process brute-force. Good for dev.
   - ``faiss``: Fast in-process ANN. ``pip install bedrock-smart-router[faiss]``
