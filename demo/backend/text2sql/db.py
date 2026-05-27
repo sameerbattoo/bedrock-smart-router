@@ -12,7 +12,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 DB_PATH = Path("/tmp/text2sql_demo.db")
-SEED_SQL = Path(__file__).parent / "seed_data.sql"
+SEED_SQL = Path(__file__).parent.parent.parent / "prerequisite" / "seed_data.sql"
 
 _local = threading.local()
 
