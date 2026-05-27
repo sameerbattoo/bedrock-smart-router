@@ -10547,3 +10547,145 @@ INSERT INTO shipments (shipment_id, order_id, shipping_method_id, shipping_addre
   (1915, 2014, 3, 3, 'UPS', 'UPS199414096', 'created', NULL, NULL, '2023-02-18 17:27:00'),
   (1916, 2015, 1, 15, 'Amazon Logistics', 'AMA647262253', 'created', NULL, NULL, '2024-08-27 23:55:11');
 
+
+
+-- ═══════════════════════════════════════════════════════════════════
+-- New customers (IDs 11-30) with created_at spread across 2024-2025
+-- Enables "customer acquisition trend" queries for 2025
+-- ═══════════════════════════════════════════════════════════════════
+
+INSERT INTO customers (customer_id, first_name, last_name, email, phone, address, city, state, country, postal_code, created_at) VALUES
+  (11, 'Sophia', 'Chen', 'sophia.chen@email.com', '555-1101', '45 Oak Ave', 'San Francisco', 'CA', 'USA', '94102', '2024-01-10 09:15:00'),
+  (12, 'Marcus', 'Johnson', 'marcus.j@email.com', '555-1102', '789 Pine St', 'Chicago', 'IL', 'USA', '60601', '2024-02-14 11:30:00'),
+  (13, 'Aisha', 'Patel', 'aisha.patel@email.com', '555-1103', '321 Elm Dr', 'Austin', 'TX', 'USA', '73301', '2024-03-22 14:45:00'),
+  (14, 'Ryan', 'O''Brien', 'ryan.obrien@email.com', '555-1104', '567 Cedar Ln', 'Denver', 'CO', 'USA', '80201', '2024-05-08 10:00:00'),
+  (15, 'Mei', 'Wong', 'mei.wong@email.com', '555-1105', '890 Birch Rd', 'Portland', 'OR', 'USA', '97201', '2024-06-15 16:20:00'),
+  (16, 'Carlos', 'Rivera', 'carlos.r@email.com', '555-1106', '234 Maple Ct', 'Miami', 'FL', 'USA', '33101', '2024-08-03 08:45:00'),
+  (17, 'Emma', 'Taylor', 'emma.taylor@email.com', '555-1107', '678 Walnut St', 'Boston', 'MA', 'USA', '02101', '2024-09-19 13:10:00'),
+  (18, 'David', 'Kim', 'david.kim@email.com', '555-1108', '901 Spruce Ave', 'Seattle', 'WA', 'USA', '98101', '2024-11-05 15:30:00'),
+  (19, 'Olivia', 'Brown', 'olivia.brown@email.com', '555-1109', '345 Ash Blvd', 'Atlanta', 'GA', 'USA', '30301', '2024-12-12 09:00:00'),
+  (20, 'James', 'Wilson', 'james.wilson@email.com', '555-1110', '678 Poplar Dr', 'Dallas', 'TX', 'USA', '75201', '2025-01-08 10:15:00'),
+  (21, 'Priya', 'Sharma', 'priya.sharma@email.com', '555-1111', '123 Willow Ln', 'San Jose', 'CA', 'USA', '95101', '2025-01-22 14:30:00'),
+  (22, 'Noah', 'Garcia', 'noah.garcia@email.com', '555-1112', '456 Hickory St', 'Phoenix', 'AZ', 'USA', '85001', '2025-02-05 11:45:00'),
+  (23, 'Zara', 'Ahmed', 'zara.ahmed@email.com', '555-1113', '789 Cypress Rd', 'Minneapolis', 'MN', 'USA', '55401', '2025-02-18 16:00:00'),
+  (24, 'Liam', 'Murphy', 'liam.murphy@email.com', '555-1114', '234 Redwood Ave', 'Nashville', 'TN', 'USA', '37201', '2025-03-10 09:30:00'),
+  (25, 'Isabella', 'Lopez', 'isabella.l@email.com', '555-1115', '567 Sequoia Dr', 'Charlotte', 'NC', 'USA', '28201', '2025-03-28 12:15:00'),
+  (26, 'Ethan', 'Clark', 'ethan.clark@email.com', '555-1116', '890 Magnolia Ct', 'Detroit', 'MI', 'USA', '48201', '2025-04-15 10:45:00'),
+  (27, 'Ava', 'Lewis', 'ava.lewis@email.com', '555-1117', '123 Dogwood Ln', 'Orlando', 'FL', 'USA', '32801', '2025-05-02 14:00:00'),
+  (28, 'Mason', 'Hall', 'mason.hall@email.com', '555-1118', '456 Juniper St', 'Salt Lake City', 'UT', 'USA', '84101', '2025-05-20 08:30:00'),
+  (29, 'Chloe', 'Young', 'chloe.young@email.com', '555-1119', '789 Sycamore Ave', 'Raleigh', 'NC', 'USA', '27601', '2025-06-08 15:45:00'),
+  (30, 'Lucas', 'King', 'lucas.king@email.com', '555-1120', '234 Chestnut Rd', 'Columbus', 'OH', 'USA', '43201', '2025-06-25 11:00:00');
+
+-- ═══════════════════════════════════════════════════════════════════
+-- Orders for new customers (IDs 2016-2075)
+-- Each customer gets 2-4 orders AFTER their created_at date
+-- ═══════════════════════════════════════════════════════════════════
+
+INSERT INTO orders (order_id, customer_id, order_date, status, total_amount, shipping_address, shipping_city, shipping_state, shipping_country, shipping_postal_code) VALUES
+  -- Customer 11 (created 2024-01-10)
+  (2016, 11, '2024-01-25 10:30:00', 'delivered', 1358.68, '45 Oak Ave', 'San Francisco', 'CA', 'USA', '94102'),
+  (2017, 11, '2024-04-12 14:15:00', 'delivered', 83.27, '45 Oak Ave', 'San Francisco', 'CA', 'USA', '94102'),
+  (2018, 11, '2024-09-05 09:45:00', 'delivered', 202.48, '45 Oak Ave', 'San Francisco', 'CA', 'USA', '94102'),
+  -- Customer 12 (created 2024-02-14)
+  (2019, 12, '2024-03-01 11:00:00', 'delivered', 874.67, '789 Pine St', 'Chicago', 'IL', 'USA', '60601'),
+  (2020, 12, '2024-07-20 16:30:00', 'delivered', 52.47, '789 Pine St', 'Chicago', 'IL', 'USA', '60601'),
+  -- Customer 13 (created 2024-03-22)
+  (2021, 13, '2024-04-15 13:20:00', 'delivered', 30.80, '321 Elm Dr', 'Austin', 'TX', 'USA', '73301'),
+  (2022, 13, '2024-08-10 10:00:00', 'delivered', 1327.88, '321 Elm Dr', 'Austin', 'TX', 'USA', '73301'),
+  (2023, 13, '2025-01-15 09:30:00', 'delivered', 202.48, '321 Elm Dr', 'Austin', 'TX', 'USA', '73301'),
+  -- Customer 14 (created 2024-05-08)
+  (2024, 14, '2024-05-20 15:45:00', 'delivered', 52.47, '567 Cedar Ln', 'Denver', 'CO', 'USA', '80201'),
+  (2025, 14, '2024-11-30 12:00:00', 'delivered', 874.67, '567 Cedar Ln', 'Denver', 'CO', 'USA', '80201'),
+  -- Customer 15 (created 2024-06-15)
+  (2026, 15, '2024-07-01 10:15:00', 'delivered', 202.48, '890 Birch Rd', 'Portland', 'OR', 'USA', '97201'),
+  (2027, 15, '2025-02-10 14:30:00', 'delivered', 1327.88, '890 Birch Rd', 'Portland', 'OR', 'USA', '97201'),
+  -- Customer 16 (created 2024-08-03)
+  (2028, 16, '2024-08-20 09:00:00', 'delivered', 30.80, '234 Maple Ct', 'Miami', 'FL', 'USA', '33101'),
+  (2029, 16, '2024-12-15 16:45:00', 'delivered', 52.47, '234 Maple Ct', 'Miami', 'FL', 'USA', '33101'),
+  (2030, 16, '2025-03-22 11:30:00', 'delivered', 874.67, '234 Maple Ct', 'Miami', 'FL', 'USA', '33101'),
+  -- Customer 17 (created 2024-09-19)
+  (2031, 17, '2024-10-05 13:00:00', 'delivered', 1327.88, '678 Walnut St', 'Boston', 'MA', 'USA', '02101'),
+  (2032, 17, '2025-01-28 10:15:00', 'delivered', 202.48, '678 Walnut St', 'Boston', 'MA', 'USA', '02101'),
+  -- Customer 18 (created 2024-11-05)
+  (2033, 18, '2024-11-20 15:30:00', 'delivered', 874.67, '901 Spruce Ave', 'Seattle', 'WA', 'USA', '98101'),
+  (2034, 18, '2025-02-14 09:45:00', 'delivered', 52.47, '901 Spruce Ave', 'Seattle', 'WA', 'USA', '98101'),
+  (2035, 18, '2025-05-10 14:00:00', 'shipped', 1327.88, '901 Spruce Ave', 'Seattle', 'WA', 'USA', '98101'),
+  -- Customer 19 (created 2024-12-12)
+  (2036, 19, '2024-12-28 11:00:00', 'delivered', 202.48, '345 Ash Blvd', 'Atlanta', 'GA', 'USA', '30301'),
+  (2037, 19, '2025-03-05 16:30:00', 'delivered', 30.80, '345 Ash Blvd', 'Atlanta', 'GA', 'USA', '30301'),
+  -- Customer 20 (created 2025-01-08)
+  (2038, 20, '2025-01-15 10:00:00', 'delivered', 874.67, '678 Poplar Dr', 'Dallas', 'TX', 'USA', '75201'),
+  (2039, 20, '2025-04-02 13:45:00', 'delivered', 52.47, '678 Poplar Dr', 'Dallas', 'TX', 'USA', '75201'),
+  (2040, 20, '2025-06-18 09:30:00', 'shipped', 1327.88, '678 Poplar Dr', 'Dallas', 'TX', 'USA', '75201'),
+  -- Customer 21 (created 2025-01-22)
+  (2041, 21, '2025-02-01 14:15:00', 'delivered', 202.48, '123 Willow Ln', 'San Jose', 'CA', 'USA', '95101'),
+  (2042, 21, '2025-04-20 10:30:00', 'delivered', 30.80, '123 Willow Ln', 'San Jose', 'CA', 'USA', '95101'),
+  -- Customer 22 (created 2025-02-05)
+  (2043, 22, '2025-02-20 11:45:00', 'delivered', 1327.88, '456 Hickory St', 'Phoenix', 'AZ', 'USA', '85001'),
+  (2044, 22, '2025-05-15 15:00:00', 'shipped', 874.67, '456 Hickory St', 'Phoenix', 'AZ', 'USA', '85001'),
+  -- Customer 23 (created 2025-02-18)
+  (2045, 23, '2025-03-01 09:00:00', 'delivered', 52.47, '789 Cypress Rd', 'Minneapolis', 'MN', 'USA', '55401'),
+  (2046, 23, '2025-05-28 14:30:00', 'shipped', 202.48, '789 Cypress Rd', 'Minneapolis', 'MN', 'USA', '55401'),
+  -- Customer 24 (created 2025-03-10)
+  (2047, 24, '2025-03-25 10:45:00', 'delivered', 874.67, '234 Redwood Ave', 'Nashville', 'TN', 'USA', '37201'),
+  (2048, 24, '2025-06-10 13:15:00', 'shipped', 30.80, '234 Redwood Ave', 'Nashville', 'TN', 'USA', '37201'),
+  -- Customer 25 (created 2025-03-28)
+  (2049, 25, '2025-04-10 15:30:00', 'delivered', 1327.88, '567 Sequoia Dr', 'Charlotte', 'NC', 'USA', '28201'),
+  (2050, 25, '2025-06-22 09:00:00', 'pending', 52.47, '567 Sequoia Dr', 'Charlotte', 'NC', 'USA', '28201'),
+  -- Customer 26 (created 2025-04-15)
+  (2051, 26, '2025-04-28 11:00:00', 'delivered', 202.48, '890 Magnolia Ct', 'Detroit', 'MI', 'USA', '48201'),
+  (2052, 26, '2025-06-30 14:45:00', 'pending', 874.67, '890 Magnolia Ct', 'Detroit', 'MI', 'USA', '48201'),
+  -- Customer 27 (created 2025-05-02)
+  (2053, 27, '2025-05-15 10:30:00', 'delivered', 30.80, '123 Dogwood Ln', 'Orlando', 'FL', 'USA', '32801'),
+  (2054, 27, '2025-06-28 16:00:00', 'pending', 1327.88, '123 Dogwood Ln', 'Orlando', 'FL', 'USA', '32801'),
+  -- Customer 28 (created 2025-05-20)
+  (2055, 28, '2025-06-01 09:15:00', 'shipped', 52.47, '456 Juniper St', 'Salt Lake City', 'UT', 'USA', '84101'),
+  -- Customer 29 (created 2025-06-08)
+  (2056, 29, '2025-06-20 13:30:00', 'pending', 874.67, '789 Sycamore Ave', 'Raleigh', 'NC', 'USA', '27601'),
+  -- Customer 30 (created 2025-06-25)
+  (2057, 30, '2025-07-05 10:00:00', 'pending', 202.48, '234 Chestnut Rd', 'Columbus', 'OH', 'USA', '43201');
+
+-- Order items for new orders
+INSERT INTO order_items (order_item_id, order_id, product_id, quantity, unit_price, subtotal) VALUES
+  (6023, 2016, 1, 1, 1327.88, 1327.88), (6024, 2016, 2, 1, 30.80, 30.80),
+  (6025, 2017, 3, 1, 52.47, 52.47), (6026, 2017, 2, 1, 30.80, 30.80),
+  (6027, 2018, 4, 1, 202.48, 202.48),
+  (6028, 2019, 5, 1, 874.67, 874.67),
+  (6029, 2020, 3, 1, 52.47, 52.47),
+  (6030, 2021, 2, 1, 30.80, 30.80),
+  (6031, 2022, 1, 1, 1327.88, 1327.88),
+  (6032, 2023, 4, 1, 202.48, 202.48),
+  (6033, 2024, 3, 1, 52.47, 52.47),
+  (6034, 2025, 5, 1, 874.67, 874.67),
+  (6035, 2026, 4, 1, 202.48, 202.48),
+  (6036, 2027, 1, 1, 1327.88, 1327.88),
+  (6037, 2028, 2, 1, 30.80, 30.80),
+  (6038, 2029, 3, 1, 52.47, 52.47),
+  (6039, 2030, 5, 1, 874.67, 874.67),
+  (6040, 2031, 1, 1, 1327.88, 1327.88),
+  (6041, 2032, 4, 1, 202.48, 202.48),
+  (6042, 2033, 5, 1, 874.67, 874.67),
+  (6043, 2034, 3, 1, 52.47, 52.47),
+  (6044, 2035, 1, 1, 1327.88, 1327.88),
+  (6045, 2036, 4, 1, 202.48, 202.48),
+  (6046, 2037, 2, 1, 30.80, 30.80),
+  (6047, 2038, 5, 1, 874.67, 874.67),
+  (6048, 2039, 3, 1, 52.47, 52.47),
+  (6049, 2040, 1, 1, 1327.88, 1327.88),
+  (6050, 2041, 4, 1, 202.48, 202.48),
+  (6051, 2042, 2, 1, 30.80, 30.80),
+  (6052, 2043, 1, 1, 1327.88, 1327.88),
+  (6053, 2044, 5, 1, 874.67, 874.67),
+  (6054, 2045, 3, 1, 52.47, 52.47),
+  (6055, 2046, 4, 1, 202.48, 202.48),
+  (6056, 2047, 5, 1, 874.67, 874.67),
+  (6057, 2048, 2, 1, 30.80, 30.80),
+  (6058, 2049, 1, 1, 1327.88, 1327.88),
+  (6059, 2050, 3, 1, 52.47, 52.47),
+  (6060, 2051, 4, 1, 202.48, 202.48),
+  (6061, 2052, 5, 1, 874.67, 874.67),
+  (6062, 2053, 2, 1, 30.80, 30.80),
+  (6063, 2054, 1, 1, 1327.88, 1327.88),
+  (6064, 2055, 3, 1, 52.47, 52.47),
+  (6065, 2056, 5, 1, 874.67, 874.67),
+  (6066, 2057, 4, 1, 202.48, 202.48);

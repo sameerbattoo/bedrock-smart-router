@@ -149,15 +149,18 @@ DATABASE SCHEMA:
 {self._optimized_schema}
 
 RULES:
-1. Use ONLY the tables and columns defined above.
+1. Use ONLY the tables and columns defined in the schema above. Do NOT invent or guess column names.
 2. Return ONLY the SQL query. No explanation, no markdown fences.
 3. Generate SELECT statements ONLY. Never use DROP, DELETE, INSERT, UPDATE, ALTER, CREATE.
 4. Use SQLite syntax (e.g., strftime for dates, || for concatenation).
-5. For date filtering use: strftime('%Y', order_date) or date(order_date).
+5. For date filtering use: strftime('%Y', column_name) or column LIKE '2025%'.
 6. End with a semicolon.
 7. Use appropriate JOINs based on foreign key relationships.
 8. For aggregations, ensure GROUP BY includes all non-aggregated columns.
 9. Use LIMIT for top-N queries.
+10. CRITICAL: If a column doesn't exist in the schema, DO NOT use it. Double-check every column name against the schema before generating the query.
+11. For customer names, concatenate first_name and last_name if needed (e.g., first_name || ' ' || last_name).
+12. The customers table uses 'created_at' for when the customer was created, NOT 'date_first_purchase' or 'signup_date'.
 """
 
     @staticmethod

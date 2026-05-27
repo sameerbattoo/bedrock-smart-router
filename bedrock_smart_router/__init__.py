@@ -21,6 +21,8 @@ from bedrock_smart_router.semantic_response_store import (
     S3ResponseStore,
     DynamoDBResponseStore,
 )
+from bedrock_smart_router.complexity_classifier import ComplexityClassifier
+from bedrock_smart_router.heuristic_classifier import HeuristicClassifier
 
 # Strands integration (optional — only available when strands-agents is installed)
 try:
@@ -52,6 +54,8 @@ __all__ = [
     "FilesystemResponseStore",
     "S3ResponseStore",
     "DynamoDBResponseStore",
+    "ComplexityClassifier",
+    "HeuristicClassifier",
     *((["SmartRouterModel"] if _HAS_STRANDS else [])),
 ]
 

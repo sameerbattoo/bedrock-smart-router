@@ -98,7 +98,7 @@ async def text2sql_chat(
 
             # Pre-orchestrator semantic cache check
             # (The orchestrator may skip the tool call if it has conversation context)
-            result_queue.put(("status", "🔍 Checking semantic cache..."))
+            result_queue.put(("status", "🔍 Extracting intent & checking cache..."))
             import logging as _logging
             _log = _logging.getLogger("text2sql.route")
             print(f"[CACHE] Checking: '{message}' (session={session_id})", flush=True)
@@ -175,6 +175,8 @@ async def text2sql_chat(
                     result_queue.put(("token", kwargs["data"]))
                 elif "current_tool_use" in kwargs and kwargs["current_tool_use"].get("name"):
                     result_queue.put(("tool", kwargs["current_tool_use"]["name"]))
+                elif "tool_result" in kwargs:
+                    result_queue.put(("status", "🧠 Generating insights..."))
 
             agent = session.orchestrator
             agent.callback_handler = _callback

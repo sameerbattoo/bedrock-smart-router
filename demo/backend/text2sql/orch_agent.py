@@ -88,7 +88,7 @@ def query_database(user_query: str) -> str:
         _status("❌ SQL generation failed")
         return json.dumps({"error": result["error"], "cache_hit": False}, default=str)
 
-    _status(f"✅ Query returned {result.get('row_count', 0)} rows — generating chart...")
+    _status(f"✅ Query returned {result.get('row_count', 0)} rows")
 
     # Always attempt chart generation when there's numeric data
     if result.get("results") and result.get("row_count", 0) > 1:
@@ -97,7 +97,6 @@ def query_database(user_query: str) -> str:
         )
         if chart_result.get("success"):
             result["chart_filename"] = chart_result["filename"]
-            _status("📊 Chart generated")
         else:
             _status("📊 Chart skipped (not suitable for visualization)")
 
@@ -155,7 +154,11 @@ class Text2SQLSession:
         # Shared cache across all sessions (FAISS in-memory persists across requests)
         self.cache = get_shared_cache(region)
         self.sql_agent = SQLAgent(router_model=sql_model, token_callback=self._token_cb)
-        self.chart_agent = ChartAgent(router_model=chart_model, token_callback=self._token_cb)
+        self.chart_agent = ChartAgent(
+            router_model=chart_model,
+            token_callback=self._token_cb,
+            status_callback=lambda msg: self._status_callback(msg) if self._status_callback else None,
+        )
 
         # Build orchestrator
         tables = get_table_list()
@@ -209,6 +212,14 @@ You analyse each question and call the right tool.
   <pre><code>SELECT ... FROM ...</code></pre>
   </details>
   ```
+
+## Error handling and retries:
+- If query_database returns 0 rows or an error, DO NOT give up immediately.
+- Analyze why the query failed (wrong column name, wrong date format, wrong table, etc.)
+- Call query_database AGAIN with a corrected question/approach.
+- Try up to 2 retries with different SQL approaches before reporting failure.
+- Common fixes: try different date formats, check column names, use LIKE instead of exact match.
+- Only report failure to the user after exhausting retry attempts.
 </tool_instructions>
 
 <chart_display_rules>

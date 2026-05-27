@@ -41,29 +41,26 @@ from __future__ import annotations
 
 import logging
 import math
-import re
-from dataclasses import dataclass, field
 from typing import Any
 
 from bedrock_smart_router.models import Complexity, RequestAnalysis
 
+# ── Import heuristic constants, keyword sets, utilities, and dataclasses ──
+from bedrock_smart_router.heuristic_classifier import (
+    REASONING_MARKERS, CODE_MARKERS, CODE_LANG_KEYWORDS, SIMPLE_INDICATORS,
+    MULTI_STEP_PATTERNS, TOOL_USE_SIGNALS, DOCUMENT_SIGNALS, MATH_SIGNALS,
+    DATA_ANALYSIS_SIGNALS, CREATIVE_SIGNALS, AWS_SIGNALS, COMPLEX_QUESTION_PATTERNS,
+    SIMPLE_QUESTION_PATTERNS, OUTPUT_FORMAT_SIGNALS, CONSTRAINT_SIGNALS,
+    CONTEXT_REFERENCE_SIGNALS, SYSTEM_FLOOR_FACTOR, PAYLOAD_BOOST_5MB,
+    PAYLOAD_BOOST_1MB, PAYLOAD_BOOST_100KB, PAYLOAD_BOOST_SMALL,
+    PAYLOAD_THRESHOLD_5MB, PAYLOAD_THRESHOLD_1MB, PAYLOAD_THRESHOLD_100KB,
+    _TABLE_PATTERN, _CSV_DATA, _PARAGRAPH_BREAK, _NUMBERED_LIST, _CODE_BLOCK,
+    AnalyzerWeights, ComplexityThresholds, _count_matches, _kw_matches,
+)
+
 logger = logging.getLogger(__name__)
 
-# ── Extracted numeric constants ─────────────────────────────────────
-
-# System prompt floor: fraction of system prompt complexity used as minimum
-SYSTEM_FLOOR_FACTOR = 0.30
-
-# Multimodal payload complexity boosts added to composite score
-PAYLOAD_BOOST_5MB = 0.30
-PAYLOAD_BOOST_1MB = 0.20
-PAYLOAD_BOOST_100KB = 0.10
-PAYLOAD_BOOST_SMALL = 0.05
-
-# Payload size thresholds (bytes)
-PAYLOAD_THRESHOLD_5MB = 5_000_000
-PAYLOAD_THRESHOLD_1MB = 1_000_000
-PAYLOAD_THRESHOLD_100KB = 100_000
+# ── Request-analysis-specific constants ─────────────────────────────
 
 # Token estimation
 CHARS_PER_TOKEN = 4
@@ -75,199 +72,6 @@ BYTES_PER_DOC_PAGE = 3000
 
 # Long context threshold (tokens)
 LONG_CONTEXT_THRESHOLD = 32_000
-
-# ── Keyword / pattern sets ──────────────────────────────────────────
-
-REASONING_MARKERS = {
-    "step by step", "step-by-step", "analyze", "analyse", "analysis",
-    "evaluate", "compare and contrast",
-    "prove", "derive", "reason through", "think through", "work through",
-    "explain why", "explain how", "trade-off", "tradeoff", "pros and cons",
-    "critically", "systematically", "deduce", "infer", "hypothesize",
-    "build a", "design a", "architect", "implement a", "construct",
-    "optimize", "refactor", "for each", "for every",
-    "calculate the", "compute the", "determine the",
-    "showing", "demonstrating", "comprehensive",
-}
-
-CODE_MARKERS = {
-    "```", "def ", "class ", "function ", "import ", "const ", "let ", "var ",
-    "return ", "if __name__", "async def", "lambda ", "=>", "public static",
-    "private ", "protected ", "#include", "package ", "func ", "fn ",
-    "write a function", "write a program", "implement a", "code that",
-    "write code", "write a script", "write a class", "write a method",
-}
-
-CODE_LANG_KEYWORDS = {
-    "python", "javascript", "typescript", "java", "rust", "golang", "go ",
-    "c++", "c#", "ruby", "swift", "kotlin", "scala", "sql", "html", "css",
-    "react", "angular", "vue", "django", "flask", "fastapi", "spring",
-    "terraform", "dockerfile", "yaml", "json schema",
-}
-
-SIMPLE_INDICATORS = {
-    "hello", "hi ", "hey ", "thanks", "thank you", "yes", "no", "ok",
-    "what is", "what's", "define ", "who is", "when was", "where is",
-    "how old", "how many", "how much", "translate",
-}
-
-MULTI_STEP_PATTERNS = {
-    "first,", "first ", "then,", "then ", "next,", "next ", "finally,",
-    "step 1", "step 2", "1.", "2.", "3.", "after that", "followed by",
-    "once you", "before you", "make sure to",
-}
-
-TOOL_USE_SIGNALS = {
-    "function call", "tool_use", "tool use", "json schema", "structured output",
-    "json output", "return json", "api call", "execute", "run the",
-    "call the function", "invoke",
-}
-
-DOCUMENT_SIGNALS = {
-    "document", "pdf", "attached", "file", "spreadsheet", "csv",
-    "the following text", "the above", "this article", "this paper",
-    "summarize the", "extract from", "based on the",
-}
-
-MATH_SIGNALS = {
-    "equation", "formula", "calculate", "compute", "integral", "derivative",
-    "probability", "optimize", "minimize", "maximize", "proof", "theorem",
-    "algorithm", "complexity", "big-o", "matrix", "vector", "linear algebra",
-}
-
-DATA_ANALYSIS_SIGNALS = {
-    "cohort", "retention", "funnel", "segmentation", "rfm",
-    "churn", "lifetime value", "clv", "ltv",
-    "window function", "partition by", "over (", "over(",
-    "ntile", "percentile", "lag(", "lead(", "row_number",
-    "dense_rank", "rank()", "cte",
-    "regr_slope", "stddev", "variance", "correlation",
-    "pivot", "unpivot", "rollup", "cube", "grouping sets",
-    "generate_series", "date_trunc", "interval",
-    "subquery", "nested query", "self join", "cross join",
-    "full outer", "lateral join",
-    "month-over-month", "year-over-year", "yoy", "mom",
-    "forecast", "trend", "anomaly", "outlier",
-    "waterfall", "basket analysis", "market basket",
-    "running total", "moving average", "cumulative",
-    "top 5", "top 10", "top n", "bottom 5", "bottom 10",
-    "group by", "having", "case when",
-}
-
-CREATIVE_SIGNALS = {
-    "write a story", "write a poem", "imagine", "creative", "brainstorm",
-    "come up with", "invent", "fiction", "narrative", "compose",
-    "design a", "create a", "generate ideas",
-}
-
-AWS_SIGNALS = {
-    "aws", "amazon web services", "s3", "ec2", "lambda", "dynamodb",
-    "cloudformation", "cdk", "iam", "vpc", "ecs", "eks", "sagemaker",
-    "bedrock", "cloudwatch", "sns", "sqs", "api gateway", "route 53",
-    "rds", "aurora", "redshift", "kinesis", "step functions",
-    "arn:", "arn:aws:",
-}
-
-COMPLEX_QUESTION_PATTERNS = {
-    "how would", "how can i", "how do i", "how to implement",
-    "what are the tradeoffs", "what are the pros", "what approach",
-    "design a", "build a", "create a system", "architect",
-    "optimize", "debug", "troubleshoot", "refactor",
-    "compare", "evaluate", "analyze the",
-}
-
-SIMPLE_QUESTION_PATTERNS = {
-    "what is", "what's", "who is", "when was", "where is",
-    "how old", "how many", "how much", "define ",
-    "what does", "is it", "can you",
-}
-
-# ── Output format constraint signals ───────────────────────────────
-
-OUTPUT_FORMAT_SIGNALS = {
-    "return as json", "return json", "output as json", "json format",
-    "format as", "output format", "in the format", "formatted as",
-    "as a table", "as a list", "as bullet points", "as markdown",
-    "```json", "```yaml", "```xml", "```csv",
-    "structured output", "json schema", "output schema",
-    "respond with json", "reply in json", "answer in json",
-    "return a json", "provide json", "give me json",
-    "xml format", "yaml format", "csv format",
-    "following format", "this format", "exact format",
-    "schema:", "fields:", "columns:",
-}
-
-# ── Constraint density signals ─────────────────────────────────────
-
-CONSTRAINT_SIGNALS = {
-    "must be", "must not", "must include", "must have",
-    "should be", "should not", "should include",
-    "no more than", "no less than", "no longer than",
-    "at least", "at most", "exactly", "precisely",
-    "without using", "only use", "do not use", "don't use",
-    "limited to", "restricted to", "confined to",
-    "between", "within", "not exceeding",
-    "ensure that", "make sure", "guarantee",
-    "required", "mandatory", "necessary",
-    "exclude", "avoid", "never",
-    "maximum", "minimum",
-}
-
-# ── Context reference signals ──────────────────────────────────────
-
-CONTEXT_REFERENCE_SIGNALS = {
-    "the above", "the following", "the below",
-    "given the", "based on the", "according to the",
-    "from the", "in the", "using the",
-    "this document", "this text", "this article", "this paper",
-    "the provided", "the attached", "the given",
-    "extract from", "summarize the", "analyze the",
-    "refer to", "as shown", "as described",
-}
-
-# ── Structural complexity patterns ──────────────────────────────────
-
-_TABLE_PATTERN = re.compile(r'[\|\+][-=+|]+[\|\+]|(\w{1,50}\s*[,\t]\s*){3,}')
-_CSV_DATA = re.compile(r'^[^,\n]+(?:,[^,\n]+){2,}$', re.MULTILINE)
-_PARAGRAPH_BREAK = re.compile(r'\n\s*\n')
-_NUMBERED_LIST = re.compile(r'^\s*\d+[\.\)]\s', re.MULTILINE)
-_CODE_BLOCK = re.compile(r'```[\s\S]*?```|^    \S', re.MULTILINE)
-
-
-# ── Dimension weights (must sum to 1.0) ─────────────────────────────
-
-@dataclass
-class AnalyzerWeights:
-    """Configurable weights for the 15 scoring dimensions."""
-
-    token_count: float = 0.3784
-    code_presence: float = 0.0573
-    reasoning_markers: float = 0.0813
-    technical_depth: float = 0.0486
-    simple_indicators: float = 0.0072
-    multi_step: float = 0.0010
-    tool_use: float = 0.0418
-    document_analysis: float = 0.1265
-    conversation_depth: float = 0.0097
-    aws_specificity: float = 0.0257
-    math_logical: float = 0.0257
-    creative_open: float = 0.0962
-    # New dimensions
-    output_format: float = 0.0987
-    constraint_density: float = 0.0010
-    context_ratio: float = 0.0010
-
-
-# ── Complexity thresholds ───────────────────────────────────────────
-
-@dataclass
-class ComplexityThresholds:
-    """Score boundaries for complexity classification."""
-
-    simple_max: float = 0.125
-    moderate_max: float = 0.350
-    complex_max: float = 0.500
-    reasoning_marker_count: int = 4  # Auto-promote to reasoning if >= N markers
 
 
 # ── Token estimation ────────────────────────────────────────────────
@@ -318,32 +122,6 @@ def _extract_last_user_text(messages: list[dict[str, Any]]) -> str:
             return "\n".join(parts)
     return ""
 
-
-def _count_matches(text_lower: str, keywords: set[str]) -> int:
-    """Count how many keywords appear in the lowered text.
-    
-    For short keywords (≤3 chars), uses word boundary matching to avoid
-    false positives from substring matches (e.g., "rds" in "words").
-    """
-    count = 0
-    for kw in keywords:
-        if _kw_matches(kw, text_lower):
-            count += 1
-    return count
-
-
-def _kw_matches(kw: str, text_lower: str) -> bool:
-    """Check if a keyword matches in text, with word boundary for short keywords."""
-    if len(kw) <= 3:
-        idx = text_lower.find(kw)
-        while idx != -1:
-            before_ok = (idx == 0 or not text_lower[idx - 1].isalnum())
-            after_ok = (idx + len(kw) >= len(text_lower) or not text_lower[idx + len(kw)].isalnum())
-            if before_ok and after_ok:
-                return True
-            idx = text_lower.find(kw, idx + 1)
-        return False
-    return kw in text_lower
 
 
 # ── Main analyzer ───────────────────────────────────────────────────

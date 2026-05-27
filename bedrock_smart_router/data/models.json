@@ -1681,7 +1681,7 @@
       "tier": "lite",
       "display_name": "Gemma 3 12B IT",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": true,
         "streaming": true,
         "streaming_tool_use": true,
@@ -2785,7 +2785,7 @@
       "tier": "micro",
       "display_name": "Gemma 3 4B IT",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": true,
         "streaming": true,
         "streaming_tool_use": true,
@@ -3141,7 +3141,7 @@
       "tier": "lite",
       "display_name": "Gemma 3 27B PT",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": true,
         "streaming": true,
         "streaming_tool_use": true,

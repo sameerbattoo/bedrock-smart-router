@@ -25,9 +25,11 @@ CHART_DIR.mkdir(exist_ok=True)
 class ChartAgent:
     """Generates chart images from query results using python_repl."""
 
-    def __init__(self, router_model: SmartRouterModel, token_callback: Callable | None = None):
+    def __init__(self, router_model: SmartRouterModel, token_callback: Callable | None = None,
+                 status_callback: Callable | None = None):
         self._router_model = router_model
         self._token_callback = token_callback
+        self._status_callback = status_callback
 
     def generate_chart(
         self, user_query: str, rows: list[dict], columns: list[str],
@@ -36,10 +38,16 @@ class ChartAgent:
         if not rows or len(rows) < 2:
             return {"success": False, "filename": None, "message": "Not enough data for chart."}
 
+        def _status(msg: str):
+            if self._status_callback:
+                self._status_callback(msg)
+
         start = time.perf_counter()
         timestamp = int(time.time())
         filename = f"chart_{timestamp}.png"
         filepath = CHART_DIR / filename
+
+        _status("📊 Generating chart...")
 
         data_sample = json.dumps(rows[:50], default=str)
         prompt = (
@@ -60,8 +68,6 @@ class ChartAgent:
 
         try:
             # Fresh agent per chart to avoid conversation pollution
-            # Use a no-op callback to prevent chart agent output from leaking
-            # into the orchestrator's streaming response
             agent = Agent(
                 model=self._router_model,
                 system_prompt=self._build_system_prompt(),
@@ -84,13 +90,16 @@ class ChartAgent:
 
             if filepath.exists():
                 elapsed = time.perf_counter() - start
+                _status(f"📊 Chart saved ({elapsed:.1f}s)")
                 logger.info("Chart generated in %.1fs: %s", elapsed, filename)
                 return {"success": True, "filename": filename, "message": "Chart generated."}
             else:
+                _status("📊 Chart generation failed")
                 return {"success": False, "filename": None, "message": "Chart file not created."}
 
         except Exception as exc:
             logger.error("Chart generation failed: %s", exc)
+            _status("📊 Chart generation failed")
             return {"success": False, "filename": None, "message": str(exc)[:200]}
 
     @staticmethod

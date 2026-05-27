@@ -40,7 +40,15 @@ import json
 import math
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
+from bedrock_smart_router.complexity_classifier import (
+    ComplexityClassifier,
+    COMPLEXITY_ORDER,
+    LEVEL_TO_LABEL,
+    DEFAULT_FLOOR_CONFIDENCE_THRESHOLD,
+    DEFAULT_FLOOR_DAMPENING,
+)
 
 try:
     import numpy as np
@@ -49,7 +57,7 @@ except ImportError:
     HAS_NUMPY = False
 
 
-class MLComplexityClassifier:
+class MLComplexityClassifier(ComplexityClassifier):
     """ML-based complexity classifier using TF-IDF + Logistic Regression.
 
     Uses pure numpy for inference — no sklearn required at runtime.
@@ -68,10 +76,6 @@ class MLComplexityClassifier:
         Default 0.8 — signals the result was floor-influenced.
     """
 
-    # Complexity level ordering for floor comparison
-    COMPLEXITY_ORDER = {"simple": 0, "moderate": 1, "complex": 2, "reasoning": 3}
-    LEVEL_TO_LABEL = {0: "simple", 1: "moderate", 2: "complex", 3: "reasoning"}
-
     # Minimum confidence to trust the ML prediction.
     # Below this threshold, the model is essentially guessing (near-uniform distribution).
     # Falls back to "simple" to avoid over-classifying ambiguous/short inputs.
@@ -80,8 +84,8 @@ class MLComplexityClassifier:
     def __init__(
         self,
         model_path: Optional[str | Path] = None,
-        floor_confidence_threshold: float = 0.7,
-        floor_dampening: float = 0.8,
+        floor_confidence_threshold: float = DEFAULT_FLOOR_CONFIDENCE_THRESHOLD,
+        floor_dampening: float = DEFAULT_FLOOR_DAMPENING,
     ) -> None:
         if not HAS_NUMPY:
             raise ImportError(
@@ -89,11 +93,14 @@ class MLComplexityClassifier:
                 "Install it with: pip install bedrock-smart-router[ml]"
             )
 
+        super().__init__(
+            floor_confidence_threshold=floor_confidence_threshold,
+            floor_dampening=floor_dampening,
+        )
+
         if model_path is None:
             model_path = Path(__file__).parent / "data" / "ml_classifier.json"
         self._model_path = Path(model_path)
-        self._floor_confidence_threshold = floor_confidence_threshold
-        self._floor_dampening = floor_dampening
 
         # Lazy-loaded model components
         self._vocabulary: Optional[dict[str, int]] = None
@@ -276,87 +283,42 @@ class MLComplexityClassifier:
         system: list[dict] | None = None,
         tool_config: dict | None = None,
     ) -> tuple[str, float]:
-        """Classify a full Bedrock Converse request (system + messages + tools).
+        """Classify a full Bedrock Converse request.
 
-        Uses the same logic as the heuristic RequestAnalyzer:
-        - Primary signal: LAST USER MESSAGE only
-        - System prompt + tools: used as a complexity FLOOR (not the score)
-        - Floor only applies if it's higher than the user message classification
-
-        This prevents complex system prompts from inflating simple follow-up
-        questions to reasoning/complex.
+        Extends the base class pipeline with an ML-specific low-confidence
+        guard: if the model predicts complex/reasoning with < 50% confidence,
+        it defaults to "simple" to avoid over-classifying ambiguous inputs.
         """
         # 1. Extract and classify the LAST USER MESSAGE (primary signal)
-        last_user_text = self._extract_last_user_text(messages)
+        last_user_text = self.extract_last_user_text(messages)
         if last_user_text:
             user_label, user_conf = self.classify(last_user_text)
         else:
-            # No text in user messages (e.g., only toolResult blocks)
-            # Fall back to classifying the full context
-            full_text = self._assemble_context(messages, system, tool_config)
+            # No text in user messages — fall back to full context
+            full_text = self.assemble_full_context(messages, system, tool_config)
             return self.classify(full_text)
 
-        # 1b. Low-confidence guard: if the model predicts complex/reasoning
-        # but with low confidence (near-uniform distribution), default to
-        # "simple" to avoid over-classifying short/ambiguous inputs.
+        # 1b. ML-specific: Low-confidence guard
+        # If the model predicts complex/reasoning but with low confidence
+        # (near-uniform distribution), default to "simple".
         if user_conf < self.MIN_CONFIDENCE_THRESHOLD and user_label in ("complex", "reasoning"):
             user_label = "simple"
 
-        # 2. If there's a system prompt or tools, compute a floor
-        if system or tool_config:
-            floor_text = self._assemble_floor_context(system, tool_config)
-            if floor_text:
-                floor_label, floor_conf = self.classify(floor_text)
-
-                # Apply floor: only upgrade, never downgrade
-                # Only apply if floor is moderate+ (simple system prompts don't boost)
-                COMPLEXITY_ORDER = self.COMPLEXITY_ORDER
-                user_level = COMPLEXITY_ORDER.get(user_label, 0)
-                floor_level = COMPLEXITY_ORDER.get(floor_label, 0)
-
-                if floor_level > user_level and floor_level >= 1 and floor_conf > self._floor_confidence_threshold:
-                    # Floor is higher with high confidence — apply it but cap at one level above user
-                    capped_level = min(floor_level, user_level + 1)
-                    return self.LEVEL_TO_LABEL[capped_level], user_conf * self._floor_dampening
-                    
-        return user_label, user_conf
+        # 2. Apply system prompt floor (shared logic from base class)
+        return self._apply_floor(user_label, user_conf, system, tool_config)
 
     @staticmethod
     def _extract_last_user_text(messages: list[dict]) -> str:
-        """Extract text from the last user message that has actual text content.
-        
-        Skips user messages that only contain toolResult blocks (from Strands
-        agent loop tool calls) — these are not real user questions.
-        """
-        for msg in reversed(messages):
-            if msg.get("role") == "user":
-                content = msg.get("content", [])
-                if isinstance(content, list):
-                    parts = [b["text"] for b in content if isinstance(b, dict) and "text" in b]
-                    if parts:  # Only return if there's actual text (not just toolResult)
-                        return " ".join(parts)
-                elif isinstance(content, str) and content.strip():
-                    return content
-        return ""
+        """Legacy alias — use extract_last_user_text() from base class."""
+        return ComplexityClassifier.extract_last_user_text(messages)
 
     @staticmethod
     def _assemble_floor_context(
         system: list[dict] | None = None,
         tool_config: dict | None = None,
     ) -> str:
-        """Assemble system prompt + tool specs for floor calculation."""
-        parts: list[str] = []
-        if system:
-            for block in system:
-                if isinstance(block, dict) and "text" in block:
-                    parts.append(block["text"])
-        if tool_config:
-            tools = tool_config.get("tools", [])
-            if tools:
-                tool_names = [t.get("toolSpec", {}).get("name", "") for t in tools if t.get("toolSpec", {}).get("name")]
-                if tool_names:
-                    parts.append(f"[Tools: {', '.join(tool_names)}]")
-        return "\n".join(parts)
+        """Legacy alias — use assemble_floor_context() from base class."""
+        return ComplexityClassifier.assemble_floor_context(system, tool_config)
 
     def _assemble_context(
         self,
@@ -364,50 +326,5 @@ class MLComplexityClassifier:
         system: list[dict] | None = None,
         tool_config: dict | None = None,
     ) -> str:
-        """Assemble full context text from system + messages + tools.
-
-        Parameters
-        ----------
-        messages : list[dict]
-            Bedrock Converse messages (role + content blocks).
-        system : list[dict], optional
-            System prompt blocks.
-        tool_config : dict, optional
-            Tool configuration.
-
-        Returns
-        -------
-        str
-            Combined context string for classification.
-        """
-        context_parts: list[str] = []
-
-        # 1. System prompt
-        if system:
-            for block in system:
-                if isinstance(block, dict) and "text" in block:
-                    context_parts.append(block["text"])
-
-        # 2. Tool specs
-        if tool_config:
-            tools = tool_config.get("tools", [])
-            if tools:
-                tool_names = []
-                for t in tools:
-                    spec = t.get("toolSpec", {})
-                    name = spec.get("name", "")
-                    desc = spec.get("description", "")
-                    if name:
-                        tool_names.append(f"{name}: {desc[:50]}" if desc else name)
-                if tool_names:
-                    context_parts.append(f"[Tools available: {', '.join(tool_names)}]")
-
-        # 3. Conversation messages
-        for msg in messages:
-            content = msg.get("content", [])
-            if isinstance(content, list):
-                for block in content:
-                    if isinstance(block, dict) and "text" in block:
-                        context_parts.append(block["text"])
-
-        return "\n\n".join(context_parts)
+        """Legacy alias — use assemble_full_context() from base class."""
+        return self.assemble_full_context(messages, system, tool_config)
