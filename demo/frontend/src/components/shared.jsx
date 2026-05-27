@@ -12,6 +12,7 @@ export const USE_CASES = [
   { id: 'strands', label: 'Strands Agents', icon: '🤖', description: 'Use Smart Router as a model provider in Strands' },
   { id: 'multi-tenant', label: 'Multi-Tenant Routing', icon: '🏢', description: 'Per-tenant tracking, budgets and model segregation' },
   { id: 'semantic-cache', label: 'Semantic Caching', icon: '💾', description: 'Text2SQL with semantic cache, FAISS vectors, and chart generation' },
+  { id: 'guardrails', label: 'Pre-Route Guardrails', icon: '🛡️', description: 'Content safety check BEFORE model selection — blocked requests cost $0' },
 ]
 
 export const TIME_FILTERS = [

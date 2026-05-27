@@ -30,6 +30,7 @@ from routes_throttle import router as throttle_router
 from routes_strands import router as strands_router
 from routes_multi_tenant import router as multi_tenant_router
 from routes_text2sql import router as text2sql_router
+from routes_guardrails import router as guardrails_router
 
 app = FastAPI(title="Bedrock Smart Router Demo")
 app.add_middleware(
@@ -45,6 +46,7 @@ app.include_router(throttle_router, prefix="/api")
 app.include_router(strands_router, prefix="/api")
 app.include_router(multi_tenant_router, prefix="/api")
 app.include_router(text2sql_router, prefix="/api")
+app.include_router(guardrails_router, prefix="/api")
 
 # Initialize Text2SQL database on startup
 import threading

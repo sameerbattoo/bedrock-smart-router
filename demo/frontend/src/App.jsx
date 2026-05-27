@@ -6,6 +6,7 @@ import ThrottlePage from './components/ThrottlePage'
 import StrandsPage from './components/StrandsPage'
 import MultiTenantPage from './components/MultiTenantPage'
 import Text2SQLPage from './components/Text2SQLPage'
+import GuardrailsPage from './components/GuardrailsPage'
 
 export default function App() {
   const [activePage, setActivePage] = useState('compare')
@@ -155,6 +156,10 @@ export default function App() {
         ) : activePage === 'semantic-cache' ? (
           <div key={activePage} className="flex-1 animate-page-in overflow-hidden flex">
             <Text2SQLPage onRun={() => setNavOpen(false)} />
+          </div>
+        ) : activePage === 'guardrails' ? (
+          <div key={activePage} className="flex-1 animate-page-in overflow-hidden flex">
+            <GuardrailsPage onRun={() => setNavOpen(false)} />
           </div>
         ) : (
           <div key={activePage} className="flex-1 flex items-center justify-center animate-page-in">
