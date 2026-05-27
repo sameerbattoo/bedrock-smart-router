@@ -7,11 +7,12 @@
 #   1. Checks prerequisites (Python, Node.js, npm, AWS credentials)
 #   2. Installs the bedrock-smart-router Python package (editable)
 #   3. Installs backend Python dependencies
-#   4. Installs frontend npm packages
-#   5. Builds the frontend
-#   6. Kills any existing processes on the required ports
-#   7. Starts backend + frontend
-#   8. Runs health checks
+#   4. Runs prerequisites (database + guardrail)
+#   5. Installs frontend npm packages
+#   6. Builds the frontend
+#   7. Kills any existing processes on the required ports
+#   8. Starts backend + frontend
+#   9. Runs health checks
 #
 # Usage:
 #   bash demo/start.sh          (from project root)
@@ -43,7 +44,7 @@ ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
 warn() { echo -e "  ${YELLOW}⚠${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; exit 1; }
 
-TOTAL_STEPS=8
+TOTAL_STEPS=9
 
 echo ""
 echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
@@ -117,8 +118,13 @@ if ! $PYTHON -c "import fastapi, uvicorn, boto3, strands" &>/dev/null; then
 fi
 ok "Backend imports verified (fastapi, uvicorn, boto3, strands)"
 
-# ── Step 4: Install frontend npm packages ───────────────────────────
-step 4 "Installing frontend npm packages..."
+# ── Step 4: Run prerequisites (database + guardrail) ────────────────
+step 4 "Running prerequisites (database + guardrail)..."
+$PYTHON "$DEMO_DIR/prerequisite/setup_all.py"
+ok "Prerequisites ready"
+
+# ── Step 5: Install frontend npm packages ───────────────────────────
+step 5 "Installing frontend npm packages..."
 
 if [ ! -d "$FRONTEND_DIR/node_modules" ] || [ "$FRONTEND_DIR/package.json" -nt "$FRONTEND_DIR/node_modules/.package-lock.json" ]; then
   (cd "$FRONTEND_DIR" && npm install --silent 2>&1 | tail -3)
@@ -127,8 +133,8 @@ else
   ok "npm packages up to date"
 fi
 
-# ── Step 5: Build frontend ──────────────────────────────────────────
-step 5 "Building frontend..."
+# ── Step 6: Build frontend ──────────────────────────────────────────
+step 6 "Building frontend..."
 
 (cd "$FRONTEND_DIR" && npm run build 2>&1 | grep -E "(built|error)" | head -3)
 if [ -f "$FRONTEND_DIR/dist/index.html" ]; then
@@ -137,8 +143,8 @@ else
   fail "Frontend build failed. Run 'npm run build' in demo/frontend/ for details."
 fi
 
-# ── Step 6: Kill existing processes ─────────────────────────────────
-step 6 "Killing existing processes on ports $BACKEND_PORT, $FRONTEND_PORT..."
+# ── Step 7: Kill existing processes ─────────────────────────────────
+step 7 "Killing existing processes on ports $BACKEND_PORT, $FRONTEND_PORT..."
 
 KILLED=0
 for PORT in $BACKEND_PORT $FRONTEND_PORT; do
@@ -156,8 +162,8 @@ else
   ok "Ports are free"
 fi
 
-# ── Step 7: Start servers ───────────────────────────────────────────
-step 7 "Starting servers..."
+# ── Step 8: Start servers ───────────────────────────────────────────
+step 8 "Starting servers..."
 
 # Backend
 echo -e "  Starting backend (FastAPI) on port $BACKEND_PORT..."
@@ -171,8 +177,8 @@ FRONTEND_PID=$!
 
 ok "Backend PID: $BACKEND_PID | Frontend PID: $FRONTEND_PID"
 
-# ── Step 8: Health checks ───────────────────────────────────────────
-step 8 "Running health checks..."
+# ── Step 9: Health checks ───────────────────────────────────────────
+step 9 "Running health checks..."
 
 # Backend health
 RETRIES=0

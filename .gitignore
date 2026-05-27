@@ -33,6 +33,9 @@ credentials.json
 # Kiro
 .kiro/
 
+# Demo prerequisite generated config
+demo/prerequisite/.guardrail_config.json
+
 # Temp files
 .commit_msg.txt
 
