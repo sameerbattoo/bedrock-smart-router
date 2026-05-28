@@ -231,6 +231,149 @@ class BedrockRouter:
 
     # ── Public API ──────────────────────────────────────────────
 
+    def _build_decision(
+        self,
+        *,
+        used_model: BedrockModel,
+        resolved: dict[str, Any],
+        analysis: Any,
+        strategy_name: str,
+        guardrail_checked: bool,
+        t_start: float,
+        t_routing_done: float,
+        elapsed_ms: float,
+        used_cris: str,
+        used_tier: str,
+        usage: dict[str, Any],
+        stop_reason: str = "",
+        bedrock_latency: float | None = None,
+        actual_service_tier: str = "",
+        perf_config: dict[str, Any] | None = None,
+        guardrail_trace: dict[str, Any] | None = None,
+        ttft_ms: float | None = None,
+    ) -> RoutingDecision:
+        """Build a RoutingDecision from invocation results.
+
+        Shared by converse() and converse_stream() post-invocation.
+        """
+        primary = resolved["primary"]
+        fallback_chain = resolved["fallback_chain"]
+        ab_variant = resolved["ab_variant"]
+        is_canary = resolved["is_canary"]
+
+        input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
+        output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
+        prompt_cache_read = usage.get("cacheReadInputTokens", 0)
+        prompt_cache_write = usage.get("cacheWriteInputTokens", 0)
+        total_tokens = usage.get("totalTokens", input_tokens + output_tokens)
+        cache_details = usage.get("cacheDetails", [])
+
+        actual_cost = used_model.pricing.estimate_cost(
+            input_tokens, output_tokens,
+            cache_read_tokens=prompt_cache_read,
+            cache_write_tokens=prompt_cache_write,
+        )
+
+        return RoutingDecision(
+            selected_model=used_model.model_id,
+            strategy_used=strategy_name,
+            complexity_detected=analysis.complexity.value,
+            complexity_score=analysis.complexity_score,
+            candidates_evaluated=resolved["candidates_evaluated"],
+            candidate_scores=resolved.get("scores", {}),
+            fallback_chain=[m.model_id for m in fallback_chain],
+            estimated_cost=primary.pricing.estimate_cost(
+                analysis.estimated_input_tokens,
+                analysis.estimated_output_tokens,
+            ),
+            actual_cost=actual_cost,
+            latency_ms=round(elapsed_ms, 1),
+            ttft_ms=round(ttft_ms, 1) if ttft_ms is not None else None,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            fallback_used=(used_model.model_id != primary.model_id),
+            fallback_model=(
+                used_model.model_id if used_model.model_id != primary.model_id else None
+            ),
+            circuit_breaker_skipped=resolved.get("skipped", []),
+            inference_tier=used_tier,
+            cris_profile=used_cris,
+            prompt_cache_savings=resolved.get("cache_savings", 0.0),
+            prompt_cache_read_tokens=prompt_cache_read,
+            prompt_cache_write_tokens=prompt_cache_write,
+            guardrail_checked=guardrail_checked,
+            stop_reason=stop_reason,
+            bedrock_latency_ms=bedrock_latency,
+            actual_service_tier=actual_service_tier,
+            total_tokens=total_tokens,
+            cache_details=cache_details,
+            performance_config=perf_config or {},
+            guardrail_trace=guardrail_trace or {},
+            metadata={
+                **({"ab_variant": ab_variant} if ab_variant else {}),
+                **({"is_canary": is_canary} if is_canary else {}),
+            },
+            routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
+            explanation=resolved.get("explanation"),
+        )
+
+    def _prepare_call_args(
+        self,
+        model: BedrockModel,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]] | None]:
+        """Strip unsupported blocks (reasoning, cache points) for a target model."""
+        call_messages = self._strip_reasoning_content(messages) if model.tier.value != "reasoning" else messages
+        if not getattr(model.capabilities, "prompt_caching", False):
+            call_messages = self._strip_cache_points_from_messages(call_messages)
+            call_system = self._strip_cache_points(system) if system else system
+        else:
+            call_system = system
+        return call_messages, call_system
+
+    def _pre_invoke_pipeline(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None,
+        tool_config: dict[str, Any] | None,
+        routing: RoutingConfig,
+        requires_streaming_tool_use: bool = False,
+        **kwargs: Any,
+    ) -> tuple[list[dict[str, Any]], str, dict[str, float], float, bool, Any, dict[str, Any]]:
+        """Shared pre-invocation: guardrail → analyze → resolve model."""
+        strategy_name = routing.strategy or self._config.strategy
+        weights = routing.weights or self._config.weights
+        t_start = time.monotonic()
+
+        # Pre-route guardrail check
+        guardrail_checked = False
+        if self._guardrails.has_pre_route:
+            gr_result = self._guardrails.check_input(messages)
+            guardrail_checked = True
+            if gr_result.output_text and gr_result.blocked:
+                messages = [dict(m) for m in messages]
+                for msg in reversed(messages):
+                    if msg.get("role") == "user":
+                        msg["content"] = [{"text": gr_result.output_text}]
+                        break
+
+        # Analyse the request
+        analysis = self._analyzer.analyze(messages, system, tool_config,
+                                          classifier_override=routing.classifier)
+
+        # Resolve model
+        resolved = self._resolve_model(
+            analysis=analysis, routing=routing,
+            strategy_name=strategy_name, weights=weights,
+            messages=messages, system=system,
+            requires_streaming_tool_use=requires_streaming_tool_use,
+            requires_guardrail="guardrailConfig" in kwargs,
+        )
+
+        return messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved
+
     def converse(
         self,
         *,
@@ -243,29 +386,15 @@ class BedrockRouter:
     ) -> dict[str, Any]:
         """Route and invoke a Bedrock Converse call."""
         routing = resolve_preset(routing or RoutingConfig())
-        strategy_name = routing.strategy or self._config.strategy
-        weights = routing.weights or self._config.weights
-        t_start = time.monotonic()
 
-        # ── Step 1: Pre-route guardrail check ───────────────────
-        guardrail_checked = False
-        if self._guardrails.has_pre_route:
-            gr_result = self._guardrails.check_input(messages)
-            guardrail_checked = True
-            # If sanitize mode returned cleaned text, swap it in
-            # Copy messages to avoid mutating the caller's data
-            if gr_result.output_text and gr_result.blocked:
-                messages = [dict(m) for m in messages]
-                for msg in reversed(messages):
-                    if msg.get("role") == "user":
-                        msg["content"] = [{"text": gr_result.output_text}]
-                        break
+        # ── Pre-invoke pipeline (guardrail → analyze → resolve) ─
+        messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved = \
+            self._pre_invoke_pipeline(
+                messages=messages, system=system, tool_config=tool_config,
+                routing=routing, **kwargs,
+            )
 
-        # ── Step 2: Analyse the request ─────────────────────────
-        analysis = self._analyzer.analyze(messages, system, tool_config,
-                                          classifier_override=routing.classifier)
-
-        # ── Step 3: Check response cache ────────────────────────
+        # ── Check response cache (converse-only, not streaming) ─
         cached = self._cache.get(messages, system, inference_config)
         if cached is not None:
             decision = RoutingDecision(
@@ -288,22 +417,11 @@ class BedrockRouter:
             )
             return cached
 
-        # ── Step 4: Resolve model (shared with converse_stream) ─
-        resolved = self._resolve_model(
-            analysis=analysis, routing=routing,
-            strategy_name=strategy_name, weights=weights,
-            messages=messages, system=system,
-            requires_guardrail="guardrailConfig" in kwargs,
-        )
         primary = resolved["primary"]
         fallback_chain = resolved["fallback_chain"]
-        skipped = resolved["skipped"]
-        cache_savings = resolved["cache_savings"]
-        ab_variant = resolved["ab_variant"]
-        is_canary = resolved["is_canary"]
 
         # ── Step 5: Invoke with fallbacks ───────────────────────
-        t_routing_done = time.monotonic()  # Routing decision complete
+        t_routing_done = time.monotonic()
         models_to_try = [primary] + fallback_chain
         last_error: Exception | None = None
         used_model: BedrockModel | None = None
@@ -330,14 +448,7 @@ class BedrockRouter:
                         k: str(v) for k, v in routing.metadata.items()
                         if isinstance(k, str) and len(str(v)) <= 256
                     }
-                # Strip reasoningContent blocks if target model doesn't support reasoning
-                call_messages = self._strip_reasoning_content(messages) if model.tier.value != "reasoning" else messages
-                # Strip cachePoint blocks if target model doesn't support prompt caching
-                if not getattr(model.capabilities, "prompt_caching", False):
-                    call_messages = self._strip_cache_points_from_messages(call_messages)
-                    call_system = self._strip_cache_points(system) if system else system
-                else:
-                    call_system = system
+                call_messages, call_system = self._prepare_call_args(model, messages, system)
                 response = self._invoke_bedrock(
                     model_id=invoke_model_id,
                     messages=call_messages,
@@ -378,6 +489,7 @@ class BedrockRouter:
                 self._guardrails.check_output(output_text)
 
         # ── Step 7: Record canary result ────────────────────────
+        is_canary = resolved["is_canary"]
         if is_canary or self._canary.is_active:
             self._canary.record_result(
                 is_canary=is_canary,
@@ -397,68 +509,30 @@ class BedrockRouter:
 
         # ── Step 9: Build routing decision ──────────────────────
         usage = response.get("usage", {})
-        input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
-        output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
-        prompt_cache_read = usage.get("cacheReadInputTokens", 0)
-        prompt_cache_write = usage.get("cacheWriteInputTokens", 0)
-        bedrock_latency = response.get("metrics", {}).get("latencyMs")
-        stop_reason = response.get("stopReason", "")
-        actual_service_tier = response.get("serviceTier", {}).get("type", "")
-        total_tokens = usage.get("totalTokens", input_tokens + output_tokens)
-        cache_details = usage.get("cacheDetails", [])
-        perf_config = response.get("performanceConfig", {})
-        guardrail_trace = response.get("trace", {}).get("guardrail", {})
-        actual_cost = used_model.pricing.estimate_cost(
-            input_tokens, output_tokens,
-            cache_read_tokens=prompt_cache_read,
-            cache_write_tokens=prompt_cache_write,
-        )
-
-        decision = RoutingDecision(
-            selected_model=used_model.model_id,
-            strategy_used=strategy_name,
-            complexity_detected=analysis.complexity.value,
-            complexity_score=analysis.complexity_score,
-            candidates_evaluated=resolved["candidates_evaluated"],
-            candidate_scores=resolved["scores"],
-            fallback_chain=[m.model_id for m in fallback_chain],
-            estimated_cost=primary.pricing.estimate_cost(
-                analysis.estimated_input_tokens,
-                analysis.estimated_output_tokens,
-            ),
-            actual_cost=actual_cost,
-            latency_ms=round(elapsed_ms, 1),
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            fallback_used=(used_model.model_id != primary.model_id),
-            fallback_model=(
-                used_model.model_id if used_model.model_id != primary.model_id else None
-            ),
-            circuit_breaker_skipped=skipped,
-            inference_tier=used_tier,
-            cris_profile=used_cris,
-            prompt_cache_savings=cache_savings,
-            prompt_cache_read_tokens=prompt_cache_read,
-            prompt_cache_write_tokens=prompt_cache_write,
+        decision = self._build_decision(
+            used_model=used_model,
+            resolved=resolved,
+            analysis=analysis,
+            strategy_name=strategy_name,
             guardrail_checked=guardrail_checked,
-            stop_reason=stop_reason,
-            bedrock_latency_ms=bedrock_latency,
-            actual_service_tier=actual_service_tier,
-            total_tokens=total_tokens,
-            cache_details=cache_details,
-            performance_config=perf_config,
-            guardrail_trace=guardrail_trace,
-            metadata={
-                **({"ab_variant": ab_variant} if ab_variant else {}),
-                **({"is_canary": is_canary} if is_canary else {}),
-            },
-            routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
-            explanation=resolved.get("explanation"),
+            t_start=t_start,
+            t_routing_done=t_routing_done,
+            elapsed_ms=elapsed_ms,
+            used_cris=used_cris,
+            used_tier=used_tier,
+            usage=usage,
+            stop_reason=response.get("stopReason", ""),
+            bedrock_latency=response.get("metrics", {}).get("latencyMs"),
+            actual_service_tier=response.get("serviceTier", {}).get("type", ""),
+            perf_config=response.get("performanceConfig", {}),
+            guardrail_trace=response.get("trace", {}).get("guardrail", {}),
         )
         self._last_decision = decision
         response["routing_decision"] = decision
 
         # ── Step 10: Record metrics (background) ────────────────
+        input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
+        output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
         tenant_id = (routing.metadata or {}).get("tenant", "")
         self._record_async(
             RequestRecord(
@@ -467,7 +541,7 @@ class BedrockRouter:
                 latency_ms=elapsed_ms,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cost=actual_cost,
+                cost=decision.actual_cost or 0,
                 success=True,
                 strategy=strategy_name,
                 complexity=analysis.complexity.value,
@@ -476,8 +550,8 @@ class BedrockRouter:
                 cris_profile=used_cris,
                 fallback_used=(used_model.model_id != primary.model_id),
                 cache_hit=False,
-                prompt_cache_read_tokens=prompt_cache_read,
-                prompt_cache_write_tokens=prompt_cache_write,
+                prompt_cache_read_tokens=usage.get("cacheReadInputTokens", 0),
+                prompt_cache_write_tokens=usage.get("cacheWriteInputTokens", 0),
             ),
             decision,
             duration_ms=(time.monotonic() - t_start) * 1000,
@@ -523,34 +597,14 @@ class BedrockRouter:
                     print(f"\\nModel: {event['routing_decision'].selected_model}")
         """
         routing = resolve_preset(routing or RoutingConfig())
-        strategy_name = routing.strategy or self._config.strategy
-        weights = routing.weights or self._config.weights
-        t_start = time.monotonic()
 
-        # Pre-route guardrail
-        guardrail_checked = False
-        if self._guardrails.has_pre_route:
-            gr_result = self._guardrails.check_input(messages)
-            guardrail_checked = True
-            # If sanitize mode returned cleaned text, swap it in
-            # Copy messages to avoid mutating the caller's data
-            if gr_result.output_text and gr_result.blocked:
-                messages = [dict(m) for m in messages]
-                for msg in reversed(messages):
-                    if msg.get("role") == "user":
-                        msg["content"] = [{"text": gr_result.output_text}]
-                        break
-
-        # Routing pipeline (same as converse)
-        analysis = self._analyzer.analyze(messages, system, tool_config,
-                                          classifier_override=routing.classifier)
-        resolved = self._resolve_model(
-            analysis=analysis, routing=routing,
-            strategy_name=strategy_name, weights=weights,
-            messages=messages, system=system,
-            requires_streaming_tool_use=bool(tool_config),
-            requires_guardrail="guardrailConfig" in kwargs,
-        )
+        # ── Pre-invoke pipeline (guardrail → analyze → resolve) ─
+        messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved = \
+            self._pre_invoke_pipeline(
+                messages=messages, system=system, tool_config=tool_config,
+                routing=routing, requires_streaming_tool_use=bool(tool_config),
+                **kwargs,
+            )
 
         # Try invocation with fallbacks
         t_routing_done = time.monotonic()  # Routing decision complete
@@ -574,19 +628,11 @@ class BedrockRouter:
             try:
                 call_kwargs: dict[str, Any] = {
                     "modelId": invoke_model_id,
-                    "messages": messages,
                 }
-                # Strip reasoningContent blocks if target model doesn't support reasoning
-                if model.tier.value != "reasoning":
-                    call_kwargs["messages"] = self._strip_reasoning_content(messages)
-                # Strip cachePoint blocks if target model doesn't support prompt caching
-                if not getattr(model.capabilities, "prompt_caching", False):
-                    call_kwargs["messages"] = self._strip_cache_points_from_messages(call_kwargs["messages"])
-                if system:
-                    if not getattr(model.capabilities, "prompt_caching", False):
-                        call_kwargs["system"] = self._strip_cache_points(system)
-                    else:
-                        call_kwargs["system"] = system
+                call_messages, call_system = self._prepare_call_args(model, messages, system)
+                call_kwargs["messages"] = call_messages
+                if call_system:
+                    call_kwargs["system"] = call_system
                 if tool_config:
                     call_kwargs["toolConfig"] = tool_config
                 if inference_config:
@@ -661,52 +707,29 @@ class BedrockRouter:
 
         # Post-stream: build decision and record metrics
         elapsed_ms = (time.monotonic() - t_start) * 1000
-        input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
-        output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
-        prompt_cache_read = usage.get("cacheReadInputTokens", 0)
-        prompt_cache_write = usage.get("cacheWriteInputTokens", 0)
-        total_tokens = usage.get("totalTokens", input_tokens + output_tokens)
-        cache_details = usage.get("cacheDetails", [])
-        bedrock_latency = stream_metrics.get("latencyMs")
-        actual_cost = used_model.pricing.estimate_cost(
-            input_tokens, output_tokens,
-            cache_read_tokens=prompt_cache_read,
-            cache_write_tokens=prompt_cache_write,
-        )
-
-        decision = RoutingDecision(
-            selected_model=used_model.model_id,
-            strategy_used=strategy_name,
-            complexity_detected=analysis.complexity.value,
-            complexity_score=analysis.complexity_score,
-            candidates_evaluated=resolved["candidates_evaluated"],
-            fallback_chain=[m.model_id for m in resolved["fallback_chain"]],
-            estimated_cost=resolved["primary"].pricing.estimate_cost(
-                analysis.estimated_input_tokens, analysis.estimated_output_tokens,
-            ),
-            actual_cost=actual_cost,
-            latency_ms=round(elapsed_ms, 1),
-            ttft_ms=round(ttft_ms, 1) if ttft_ms is not None else None,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            fallback_used=(used_model.model_id != resolved["primary"].model_id),
-            inference_tier=used_tier,
-            cris_profile=used_cris,
-            prompt_cache_read_tokens=prompt_cache_read,
-            prompt_cache_write_tokens=prompt_cache_write,
+        decision = self._build_decision(
+            used_model=used_model,
+            resolved=resolved,
+            analysis=analysis,
+            strategy_name=strategy_name,
             guardrail_checked=guardrail_checked,
+            t_start=t_start,
+            t_routing_done=t_routing_done,
+            elapsed_ms=elapsed_ms,
+            used_cris=used_cris,
+            used_tier=used_tier,
+            usage=usage,
             stop_reason=stream_stop_reason,
-            bedrock_latency_ms=bedrock_latency,
+            bedrock_latency=stream_metrics.get("latencyMs"),
             actual_service_tier=stream_service_tier,
-            total_tokens=total_tokens,
-            cache_details=cache_details,
-            performance_config=stream_perf_config,
+            perf_config=stream_perf_config,
             guardrail_trace=stream_guardrail_trace,
-            routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
-            explanation=resolved.get("explanation"),
+            ttft_ms=ttft_ms,
         )
         self._last_decision = decision
 
+        input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
+        output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
         stream_tenant = (routing.metadata or {}).get("tenant", "")
         self._record_async(
             RequestRecord(
@@ -716,7 +739,7 @@ class BedrockRouter:
                 ttft_ms=ttft_ms or 0.0,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cost=actual_cost,
+                cost=decision.actual_cost or 0,
                 success=True,
                 strategy=strategy_name,
                 complexity=analysis.complexity.value,
@@ -725,8 +748,8 @@ class BedrockRouter:
                 cris_profile=used_cris,
                 fallback_used=(used_model.model_id != resolved["primary"].model_id),
                 cache_hit=False,
-                prompt_cache_read_tokens=prompt_cache_read,
-                prompt_cache_write_tokens=prompt_cache_write,
+                prompt_cache_read_tokens=usage.get("cacheReadInputTokens", 0),
+                prompt_cache_write_tokens=usage.get("cacheWriteInputTokens", 0),
             ),
             decision,
             duration_ms=elapsed_ms,
