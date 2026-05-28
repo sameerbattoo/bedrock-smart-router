@@ -311,25 +311,3 @@ class MLComplexityClassifier(ComplexityClassifier):
 
         # 2. Apply system prompt floor (shared logic from base class)
         return self._apply_floor(user_label, user_conf, system, tool_config)
-
-    @staticmethod
-    def _extract_last_user_text(messages: list[dict]) -> str:
-        """Legacy alias — use extract_last_user_text() from base class."""
-        return ComplexityClassifier.extract_last_user_text(messages)
-
-    @staticmethod
-    def _assemble_floor_context(
-        system: list[dict] | None = None,
-        tool_config: dict | None = None,
-    ) -> str:
-        """Legacy alias — use assemble_floor_context() from base class."""
-        return ComplexityClassifier.assemble_floor_context(system, tool_config)
-
-    def _assemble_context(
-        self,
-        messages: list[dict],
-        system: list[dict] | None = None,
-        tool_config: dict | None = None,
-    ) -> str:
-        """Legacy alias — use assemble_full_context() from base class."""
-        return self.assemble_full_context(messages, system, tool_config)
