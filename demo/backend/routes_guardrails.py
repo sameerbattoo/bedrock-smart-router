@@ -17,16 +17,16 @@ from fastapi import APIRouter, Form
 from fastapi.responses import StreamingResponse
 
 from shared import (
+    REGION,
     BASELINE_MODEL,
     BASELINE_MODELS,
     bedrock_client,
-    router as smart_router,
     executor,
     display_model_name,
     compute_cost,
     stream_converse,
 )
-from bedrock_smart_router import RoutingConfig
+from bedrock_smart_router import BedrockRouter, RoutingConfig, GuardrailBlockedError
 
 router = APIRouter()
 
@@ -41,6 +41,36 @@ def _load_guardrail_config() -> dict | None:
         return None
     with open(GUARDRAIL_CONFIG_PATH) as f:
         return json.load(f)
+
+
+def _get_guardrail_router() -> BedrockRouter | None:
+    """Create a Smart Router instance with pre-route guardrails configured."""
+    config = _load_guardrail_config()
+    if not config:
+        return None
+    return BedrockRouter.create({
+        "region": REGION,
+        "excluded_models": ["deepseek.*"],
+        "prompt_cache_boost": False,
+        "guardrails": {
+            "pre_route": {
+                "guardrail_id": config["guardrail_id"],
+                "guardrail_version": config["guardrail_version"],
+                "action_on_block": "reject",
+            }
+        },
+    })
+
+
+# Initialize guardrail router at module load (avoids cold start on first request)
+_guardrail_router: BedrockRouter | None = _get_guardrail_router()
+
+
+def _get_or_create_guardrail_router() -> BedrockRouter | None:
+    global _guardrail_router
+    if _guardrail_router is None:
+        _guardrail_router = _get_guardrail_router()
+    return _guardrail_router
 
 
 # ── Info Endpoint ───────────────────────────────────────────────────
@@ -177,46 +207,85 @@ def _run_router_with_pre_route_guardrail(
     classifier: str,
     on_chunk,
 ) -> dict:
-    """Smart Router: apply_guardrail BEFORE routing.
+    """Smart Router: pre-route guardrail is built into the router.
 
-    If blocked: return immediately with $0 cost (model never called).
-    If anonymized: route the sanitized text.
-    If none: route normally.
+    The router's GuardrailsManager runs apply_guardrail(source="INPUT")
+    automatically before model selection. If blocked, raises
+    GuardrailBlockedError with full trace ($0 cost, model never called).
+    If passed, routes normally with guardrailConfig for output PII masking.
     """
     t_start = time.perf_counter()
 
-    # Step 1: Pre-route guardrail check
-    guardrail_response = bedrock_client.apply_guardrail(
-        guardrailIdentifier=guardrail_id,
-        guardrailVersion=guardrail_version,
-        source="INPUT",
-        content=[{"text": {"text": prompt}}],
-    )
+    guardrail_router = _get_or_create_guardrail_router()
+    if guardrail_router is None:
+        return {
+            "response_text": "Guardrail router not configured.",
+            "model_used": "None",
+            "cost": 0.0,
+            "latency_ms": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "guardrail_action": "ERROR",
+            "guardrail_trace": None,
+            "cost_saved": False,
+        }
 
-    guardrail_action = guardrail_response.get("action", "NONE")
-    assessments = guardrail_response.get("assessments", [])
-    outputs = guardrail_response.get("outputs", [])
-
-    guardrail_latency_ms = (time.perf_counter() - t_start) * 1000
-
-    # Build trace info
-    guardrail_trace = {
-        "action": guardrail_action,
-        "assessments": assessments,
-        "outputs": outputs,
-        "latency_ms": round(guardrail_latency_ms, 1),
-    }
-
-    # Case 1: BLOCKED — don't call the model at all
-    if guardrail_action == "GUARDRAIL_INTERVENED":
-        # Get the blocked message from outputs
-        blocked_message = ""
-        if outputs:
-            blocked_message = outputs[0].get("text", "Content blocked by guardrail.")
-        else:
-            blocked_message = "Content blocked by guardrail."
+    try:
+        # The router handles pre-route guardrail automatically.
+        # We also pass guardrailConfig for server-side PII masking on output.
+        result = stream_converse(
+            client=guardrail_router,
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            routing=RoutingConfig(strategy=strategy, classifier=classifier, explain=True),
+            on_chunk=on_chunk,
+            guardrailConfig={
+                "guardrailIdentifier": guardrail_id,
+                "guardrailVersion": guardrail_version,
+                "trace": "enabled",
+            },
+        )
 
         latency_ms = (time.perf_counter() - t_start) * 1000
+
+        # Detect if server-side guardrail anonymized PII in the output
+        response_text = result.get("response_text", "")
+        pii_markers = [
+            "{US_SOCIAL_SECURITY_NUMBER}", "{EMAIL}", "{PHONE}",
+            "{CREDIT_DEBIT_CARD_NUMBER}", "{NAME}", "{ADDRESS}",
+        ]
+        found_markers = [m for m in pii_markers if m in response_text]
+        pii_anonymized = len(found_markers) > 0
+
+        # Determine effective guardrail action
+        effective_action = "PII_ANONYMIZED_OUTPUT" if pii_anonymized else "NONE"
+
+        return {
+            "response_text": response_text,
+            "model_used": result.get("model_used", "Unknown"),
+            "cost": result.get("cost", 0.0),
+            "latency_ms": round(latency_ms, 1),
+            "input_tokens": result.get("input_tokens", 0),
+            "output_tokens": result.get("output_tokens", 0),
+            "guardrail_action": effective_action,
+            "guardrail_trace": {"action": "NONE", "assessments": [], "latency_ms": None},
+            "cost_saved": False,
+            "explanation": result.get("explanation"),
+            "complexity_detected": result.get("complexity_detected"),
+            "fallback_used": result.get("fallback_used", False),
+        }
+
+    except GuardrailBlockedError as e:
+        # Pre-route guardrail blocked the request — $0 cost
+        # Use the guardrail's own latency (not wall clock which includes router init)
+        latency_ms = e.latency_ms or (time.perf_counter() - t_start) * 1000
+        blocked_message = e.output_text or "Content blocked by guardrail."
+
+        guardrail_trace = {
+            "action": "GUARDRAIL_INTERVENED",
+            "assessments": e.assessments,
+            "latency_ms": e.latency_ms,
+        }
+
         return {
             "response_text": blocked_message,
             "model_used": "None (blocked pre-route)",
@@ -229,74 +298,6 @@ def _run_router_with_pre_route_guardrail(
             "cost_saved": True,
             "original_prompt": prompt,
         }
-
-    # Case 2: Content passed or was anonymized — route via smart router
-    # Check if text was modified (anonymized)
-    routed_prompt = prompt
-    anonymized = False
-    if outputs:
-        output_text = outputs[0].get("text", "")
-        if output_text and output_text != prompt:
-            routed_prompt = output_text
-            anonymized = True
-            guardrail_trace["action"] = "ANONYMIZED"
-
-    # Route via smart router
-    router_q: queue.Queue = queue.Queue()
-
-    def _on_chunk(text):
-        if on_chunk:
-            on_chunk(text)
-
-    result = stream_converse(
-        client=smart_router,
-        messages=[{"role": "user", "content": [{"text": routed_prompt}]}],
-        routing=RoutingConfig(strategy=strategy, classifier=classifier, explain=True),
-        on_chunk=_on_chunk,
-        guardrailConfig={
-            "guardrailIdentifier": guardrail_id,
-            "guardrailVersion": guardrail_version,
-            "trace": "enabled",
-        },
-    )
-
-    latency_ms = (time.perf_counter() - t_start) * 1000
-
-    # Detect if server-side guardrail anonymized PII in the output
-    response_text = result.get("response_text", "")
-    # Check for guardrail PII placeholder markers in the response
-    # These are the exact markers Bedrock guardrails insert when anonymizing
-    pii_markers = [
-        "{US_SOCIAL_SECURITY_NUMBER}", "{EMAIL}", "{PHONE}",
-        "{CREDIT_DEBIT_CARD_NUMBER}", "{NAME}", "{ADDRESS}",
-    ]
-    found_markers = [m for m in pii_markers if m in response_text]
-    pii_anonymized = len(found_markers) > 0
-
-    # Determine effective guardrail action
-    if anonymized:
-        effective_action = "ANONYMIZED"
-    elif pii_anonymized:
-        effective_action = "PII_ANONYMIZED_OUTPUT"
-    else:
-        effective_action = "NONE"
-
-    return {
-        "response_text": response_text,
-        "model_used": result.get("model_used", "Unknown"),
-        "cost": result.get("cost", 0.0),
-        "latency_ms": round(latency_ms, 1),
-        "input_tokens": result.get("input_tokens", 0),
-        "output_tokens": result.get("output_tokens", 0),
-        "guardrail_action": effective_action,
-        "guardrail_trace": guardrail_trace,
-        "cost_saved": False,
-        "original_prompt": prompt if anonymized else None,
-        "sanitized_prompt": routed_prompt if anonymized else None,
-        "explanation": result.get("explanation"),
-        "complexity_detected": result.get("complexity_detected"),
-        "fallback_used": result.get("fallback_used", False),
-    }
 
 
 # ── API Endpoint ────────────────────────────────────────────────────

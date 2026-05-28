@@ -19,12 +19,34 @@ logger = logging.getLogger(__name__)
 
 
 class GuardrailBlockedError(Exception):
-    """Raised when a guardrail blocks a request and action is 'reject'."""
+    """Raised when a guardrail blocks a request and action is 'reject'.
 
-    def __init__(self, message: str, action: str, assessments: list[Any] | None = None):
+    Attributes:
+        action: The action taken ("reject").
+        assessments: Full guardrail assessment details (topics, PII, filters detected).
+        output_text: The blocked message text from the guardrail.
+        latency_ms: Time taken for the guardrail check.
+        guardrail_id: The guardrail identifier that blocked.
+        guardrail_version: The guardrail version that blocked.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        action: str,
+        assessments: list[Any] | None = None,
+        output_text: str | None = None,
+        latency_ms: float | None = None,
+        guardrail_id: str | None = None,
+        guardrail_version: str | None = None,
+    ):
         super().__init__(message)
         self.action = action
         self.assessments = assessments or []
+        self.output_text = output_text
+        self.latency_ms = latency_ms
+        self.guardrail_id = guardrail_id
+        self.guardrail_version = guardrail_version
 
 
 @dataclass
@@ -52,6 +74,7 @@ class GuardrailResult:
     blocked: bool
     output_text: str | None = None  # Sanitized text if action_on_block="sanitize"
     assessments: list[Any] | None = None
+    latency_ms: float | None = None  # Time taken for the guardrail API call
 
 
 class GuardrailsManager:
@@ -125,10 +148,12 @@ class GuardrailsManager:
         source: str,
     ) -> GuardrailResult:
         """Call the ApplyGuardrail API."""
+        import time as _time
         client = self._get_client()
 
         content = [{"text": {"text": t}} for t in texts]
 
+        t0 = _time.perf_counter()
         try:
             resp = client.apply_guardrail(
                 guardrailIdentifier=cfg.guardrail_id,
@@ -140,12 +165,13 @@ class GuardrailsManager:
             logger.error("ApplyGuardrail failed: %s", exc)
             # Fail open — don't block the request if guardrails are down
             return GuardrailResult(action="NONE", blocked=False)
+        latency_ms = (_time.perf_counter() - t0) * 1000
 
         action = resp.get("action", "NONE")
         blocked = action == "GUARDRAIL_INTERVENED"
         assessments = resp.get("assessments", [])
 
-        # Extract sanitized output if available
+        # Extract sanitized/blocked output text
         output_text = None
         outputs = resp.get("outputs", [])
         if outputs:
@@ -156,20 +182,26 @@ class GuardrailsManager:
             blocked=blocked,
             output_text=output_text,
             assessments=assessments,
+            latency_ms=round(latency_ms, 1),
         )
 
         if blocked:
             logger.warning(
-                "Guardrail %s blocked %s content (action_on_block=%s)",
+                "Guardrail %s blocked %s content (action_on_block=%s, latency=%.1fms)",
                 cfg.guardrail_id,
                 source,
                 cfg.action_on_block,
+                latency_ms,
             )
             if cfg.action_on_block == "reject":
                 raise GuardrailBlockedError(
                     f"Guardrail {cfg.guardrail_id} blocked the {source.lower()} content",
                     action=cfg.action_on_block,
                     assessments=assessments,
+                    output_text=output_text,
+                    latency_ms=round(latency_ms, 1),
+                    guardrail_id=cfg.guardrail_id,
+                    guardrail_version=cfg.guardrail_version,
                 )
 
         return result

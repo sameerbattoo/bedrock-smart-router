@@ -143,8 +143,10 @@ function GuardrailTrace({ trace }) {
   )
 }
 
-function CodeDisplay() {
+function CodeDisplay({ guardrailConfig }) {
   const [open, setOpen] = useState(false)
+  const gId = guardrailConfig?.guardrail_id || 'your-guardrail-id'
+  const gVer = guardrailConfig?.guardrail_version || '1'
   return (
     <details open={open} onToggle={e => setOpen(e.target.open)} className="mt-4 border border-gray-700/50 rounded-lg overflow-hidden">
       <summary className="text-[11px] text-gray-400 bg-gray-800/40 px-3 py-2 cursor-pointer hover:bg-gray-800/60 select-none">
@@ -154,8 +156,8 @@ function CodeDisplay() {
         <pre className="text-[11px] text-gray-300 font-mono whitespace-pre-wrap leading-relaxed">{`# Smart Router with pre-route guardrails
 router = BedrockRouter.create({
     "guardrails": {
-        "guardrail_id": "ckiw1jx6vdqd",
-        "guardrail_version": "1",
+        "guardrail_id": "${gId}",
+        "guardrail_version": "${gVer}",
         "mode": "pre_route",
     }
 })
@@ -434,28 +436,6 @@ export default function GuardrailsPage({ onRun }) {
               </div>
             </div>
 
-            {/* Router Setup Code */}
-            <div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1.5">Router Setup (Pre-Route Guardrail)</div>
-              <div className="bg-[#0d1117] border border-gray-800/60 rounded-lg p-3 font-mono text-[11px] leading-relaxed overflow-x-auto">
-                <div><span className="text-gray-500">from</span> <span className="text-blue-300">bedrock_smart_router</span> <span className="text-gray-500">import</span> <span className="text-yellow-300">BedrockRouter</span>, <span className="text-yellow-300">RoutingConfig</span></div>
-                <div className="mt-2 text-gray-500"># Single router instance with pre-route guardrail</div>
-                <div><span className="text-gray-300">router</span> = <span className="text-yellow-300">BedrockRouter</span>.<span className="text-yellow-300">create</span>({'{'}</div>
-                <div className="pl-4"><span className="text-green-300">"region"</span>: <span className="text-orange-300">"us-west-2"</span>,</div>
-                <div className="pl-4"><span className="text-green-300">"guardrails"</span>: {'{'}</div>
-                <div className="pl-8"><span className="text-green-300">"guardrail_id"</span>: <span className="text-orange-300">"ckiw1jx6vdqd"</span>,</div>
-                <div className="pl-8"><span className="text-green-300">"guardrail_version"</span>: <span className="text-orange-300">"1"</span>,</div>
-                <div className="pl-8"><span className="text-green-300">"mode"</span>: <span className="text-orange-300">"pre_route"</span>,{' '}<span className="text-gray-600"># Check BEFORE model selection</span></div>
-                <div className="pl-4">{'}'},</div>
-                <div>{'}'})</div>
-                <div className="mt-2 text-gray-500"># Guardrail runs automatically — blocked = $0, sanitized = PII masked</div>
-                <div><span className="text-gray-300">response</span> = router.<span className="text-yellow-300">converse</span>(<span className="text-orange-300">messages</span>=[...])</div>
-              </div>
-              <div className="text-[9px] text-gray-600 mt-1.5 flex items-center gap-1">
-                <span>🛡️</span> Blocked requests never reach the model — $0 cost. PII is anonymized before routing.
-              </div>
-            </div>
-
             {/* Run button */}
             <div className="flex justify-end">
               <button onClick={handleRun} disabled={!prompt.trim() || loading}
@@ -518,34 +498,60 @@ export default function GuardrailsPage({ onRun }) {
                 <span>💻</span> Code Comparison — boto3 vs Smart Router
               </summary>
               <div className="grid grid-cols-2 gap-0 divide-x divide-gray-800/40">
-                <div className="p-3">
-                  <div className="text-[9px] text-blue-400 font-bold uppercase mb-1.5">Native boto3 (server-side guardrail)</div>
-                  <pre className="text-[10px] font-mono text-gray-400 leading-relaxed whitespace-pre-wrap">{`response = bedrock.converse_stream(
-    modelId="${baselineModel === 'sonnet' ? 'global.anthropic.claude-sonnet-4-6' : baselineModel === 'haiku' ? 'global.anthropic.claude-haiku-4-5-20251001-v1:0' : baselineModel === 'opus' ? 'anthropic.claude-opus-4-7' : 'amazon.nova-pro-v1:0'}",
-    messages=[{"role": "user", "content": [...]}],
-    guardrailConfig={
-        "guardrailIdentifier": "${guardrailConfig?.guardrail_id || 'xxx'}",
-        "guardrailVersion": "${guardrailConfig?.guardrail_version || '1'}",
-    },
-)`}</pre>
-                  <div className="text-[9px] text-gray-600 mt-1.5">⚠️ Model is always invoked — cost incurred even if blocked</div>
+                <div className="p-3 bg-[#0d1117]">
+                  <div className="text-[9px] text-blue-400 font-bold uppercase mb-2">Native boto3 (server-side guardrail)</div>
+                  <div className="font-mono text-[10px] leading-relaxed space-y-0.5">
+                    <div><span className="text-gray-500">import</span> <span className="text-blue-300">boto3</span></div>
+                    <div className="text-gray-600"># Create bedrock client</div>
+                    <div><span className="text-gray-300">bedrock</span> = boto3.<span className="text-yellow-300">Session</span>().<span className="text-yellow-300">client</span>(<span className="text-orange-300">"bedrock-runtime"</span>)</div>
+                    <div className="mt-2"><span className="text-gray-600"># Guardrail applied server-side (model always invoked)</span></div>
+                    <div><span className="text-purple-400">try</span>:</div>
+                    <div className="pl-4"><span className="text-gray-300">response</span> = bedrock.<span className="text-yellow-300">converse_stream</span>(</div>
+                    <div className="pl-8"><span className="text-green-300">modelId</span>=<span className="text-orange-300">"{baselineModel === 'sonnet' ? 'global.anthropic.claude-sonnet-4-6' : baselineModel === 'haiku' ? 'global.anthropic.claude-haiku-4-5-20251001-v1:0' : baselineModel === 'opus' ? 'anthropic.claude-opus-4-7' : 'amazon.nova-pro-v1:0'}"</span>,</div>
+                    <div className="pl-8"><span className="text-green-300">messages</span>=[{'{'}..{'}'}],</div>
+                    <div className="pl-8"><span className="text-green-300">guardrailConfig</span>={'{'}
+                    </div>
+                    <div className="pl-12"><span className="text-green-300">"guardrailIdentifier"</span>: <span className="text-orange-300">"{guardrailConfig?.guardrail_id || 'xxx'}"</span>,</div>
+                    <div className="pl-12"><span className="text-green-300">"guardrailVersion"</span>: <span className="text-orange-300">"{guardrailConfig?.guardrail_version || '1'}"</span>,</div>
+                    <div className="pl-8">{'}'},</div>
+                    <div className="pl-4">)</div>
+                    <div><span className="text-purple-400">except</span> <span className="text-blue-300">Exception</span>:</div>
+                    <div className="pl-4"><span className="text-gray-500"># Guardrail blocked — but cost already incurred</span></div>
+                    <div className="pl-4"><span className="text-purple-400">pass</span></div>
+                  </div>
+                  <div className="text-[9px] text-yellow-600 mt-2 flex items-center gap-1">⚠️ Model is always invoked — cost incurred even if guardrail blocks</div>
                 </div>
-                <div className="p-3">
-                  <div className="text-[9px] text-orange-400 font-bold uppercase mb-1.5">Smart Router (pre-route + server-side)</div>
-                  <pre className="text-[10px] font-mono text-gray-400 leading-relaxed whitespace-pre-wrap">{`# Step 1: Pre-route check ($0 if blocked)
-result = bedrock.apply_guardrail(
-    guardrailIdentifier="${guardrailConfig?.guardrail_id || 'xxx'}",
-    guardrailVersion="${guardrailConfig?.guardrail_version || '1'}",
-    source="INPUT",
-    content=[{"text": {"text": prompt}}],
-)
-# Step 2: Route only if passed
-response = router.converse_stream(
-    messages=[...],
-    guardrailConfig={...},  # server-side PII masking
-    routing=RoutingConfig(strategy="${strategy}"),
-)`}</pre>
-                  <div className="text-[9px] text-green-600 mt-1.5">✅ Blocked requests never reach the model — $0 cost</div>
+                <div className="p-3 bg-[#0d1117]">
+                  <div className="text-[9px] text-orange-400 font-bold uppercase mb-2">Smart Router (pre-route + server-side)</div>
+                  <div className="font-mono text-[10px] leading-relaxed space-y-0.5">
+                    <div><span className="text-gray-500">from</span> <span className="text-blue-300">bedrock_smart_router</span> <span className="text-gray-500">import</span> <span className="text-yellow-300">BedrockRouter</span>, <span className="text-yellow-300">GuardrailBlockedError</span></div>
+                    <div className="mt-1 text-gray-600"># Router with built-in pre-route guardrail</div>
+                    <div><span className="text-gray-300">router</span> = <span className="text-yellow-300">BedrockRouter</span>.<span className="text-yellow-300">create</span>({'{'}
+                    </div>
+                    <div className="pl-4"><span className="text-green-300">"guardrails"</span>: {'{'}
+                    </div>
+                    <div className="pl-8"><span className="text-green-300">"pre_route"</span>: {'{'}
+                    </div>
+                    <div className="pl-12"><span className="text-green-300">"guardrail_id"</span>: <span className="text-orange-300">"{guardrailConfig?.guardrail_id || 'xxx'}"</span>,</div>
+                    <div className="pl-12"><span className="text-green-300">"guardrail_version"</span>: <span className="text-orange-300">"{guardrailConfig?.guardrail_version || '1'}"</span>,</div>
+                    <div className="pl-12"><span className="text-green-300">"action_on_block"</span>: <span className="text-orange-300">"reject"</span>,</div>
+                    <div className="pl-8">{'}'}
+                    </div>
+                    <div className="pl-4">{'}'}
+                    </div>
+                    <div>{'}'})</div>
+                    <div className="mt-2"><span className="text-purple-400">try</span>:</div>
+                    <div className="pl-4"><span className="text-gray-500"># Pre-route check runs automatically inside converse()</span></div>
+                    <div className="pl-4"><span className="text-gray-300">response</span> = router.<span className="text-yellow-300">converse_stream</span>(</div>
+                    <div className="pl-8"><span className="text-green-300">messages</span>=[{'{'}..{'}'}],</div>
+                    <div className="pl-8"><span className="text-green-300">routing</span>=<span className="text-yellow-300">RoutingConfig</span>(<span className="text-green-300">strategy</span>=<span className="text-orange-300">"{strategy}"</span>),</div>
+                    <div className="pl-8"><span className="text-green-300">guardrailConfig</span>={'{'}..{'}'}, <span className="text-gray-500"># server-side PII masking</span></div>
+                    <div className="pl-4">)</div>
+                    <div><span className="text-purple-400">except</span> <span className="text-blue-300">GuardrailBlockedError</span> <span className="text-purple-400">as</span> e:</div>
+                    <div className="pl-4"><span className="text-gray-500"># Blocked pre-route — $0 cost, model never called</span></div>
+                    <div className="pl-4"><span className="text-yellow-300">print</span>(e.<span className="text-gray-300">assessments</span>) <span className="text-gray-500"># full trace</span></div>
+                  </div>
+                  <div className="text-[9px] text-green-600 mt-2 flex items-center gap-1">✅ Blocked requests never reach the model — $0 cost</div>
                 </div>
               </div>
             </details>

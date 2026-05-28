@@ -6,6 +6,7 @@ from bedrock_smart_router.models import BedrockModel, ModelCapabilities, ModelPr
 from bedrock_smart_router.model_registry import base_model_id
 from bedrock_smart_router.observability import RoutingEvent
 from bedrock_smart_router.exceptions import NoModelsMatchError
+from bedrock_smart_router.guardrails_integration import GuardrailBlockedError
 from bedrock_smart_router.strategy_engine import (
     RoutingStrategy,
     StrategyResult,
@@ -43,6 +44,7 @@ __all__ = [
     "TIER_PRICING_MULTIPLIER",
     "RoutingEvent",
     "NoModelsMatchError",
+    "GuardrailBlockedError",
     "RoutingStrategy",
     "StrategyResult",
     "StrategyExplanation",

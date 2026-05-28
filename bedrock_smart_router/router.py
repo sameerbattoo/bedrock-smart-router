@@ -352,12 +352,16 @@ class BedrockRouter:
         if self._guardrails.has_pre_route:
             gr_result = self._guardrails.check_input(messages)
             guardrail_checked = True
-            if gr_result.output_text and gr_result.blocked:
-                messages = [dict(m) for m in messages]
-                for msg in reversed(messages):
-                    if msg.get("role") == "user":
-                        msg["content"] = [{"text": gr_result.output_text}]
-                        break
+            # If sanitize mode returned cleaned text, swap it in
+            if gr_result.output_text and not gr_result.blocked:
+                # Check if text was modified (anonymized)
+                original_texts = self._guardrails._extract_text(messages)
+                if gr_result.output_text != "\n".join(original_texts):
+                    messages = [dict(m) for m in messages]
+                    for msg in reversed(messages):
+                        if msg.get("role") == "user":
+                            msg["content"] = [{"text": gr_result.output_text}]
+                            break
 
         # Analyse the request
         analysis = self._analyzer.analyze(messages, system, tool_config,
