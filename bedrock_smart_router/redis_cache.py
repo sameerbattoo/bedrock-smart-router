@@ -97,11 +97,12 @@ class RedisCache(ResponseCache):
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
+        routing_key: str | None = None,
     ) -> dict[str, Any] | None:
         if not self.config.enabled:
             return None
 
-        cache_hash = _make_cache_key(messages, system, inference_config)
+        cache_hash = _make_cache_key(messages, system, inference_config, routing_key)
         try:
             client = self._get_client()
             raw = client.get(self._key(cache_hash))
@@ -129,11 +130,12 @@ class RedisCache(ResponseCache):
         model_id: str = "",
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
+        routing_key: str | None = None,
     ) -> None:
         if not self.config.enabled:
             return
 
-        cache_hash = _make_cache_key(messages, system, inference_config)
+        cache_hash = _make_cache_key(messages, system, inference_config, routing_key)
         ttl = int(self.config.ttl_seconds)
 
         try:

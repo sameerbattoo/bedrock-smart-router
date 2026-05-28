@@ -41,13 +41,19 @@ def _make_cache_key(
     messages: list[dict[str, Any]],
     system: list[dict[str, Any]] | None = None,
     inference_config: dict[str, Any] | None = None,
+    routing_key: str | None = None,
 ) -> str:
-    """Deterministic hash of the user's request — model-independent."""
+    """Deterministic hash of the user's request.
+
+    Includes routing_key (strategy name) so different strategies
+    don't share cache entries for the same prompt.
+    """
     payload = json.dumps(
         {
             "messages": messages,
             "system": system or [],
             "config": inference_config or {},
+            "routing": routing_key or "",
         },
         sort_keys=True,
         default=str,
@@ -71,6 +77,7 @@ class ResponseCache(ABC):
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
+        routing_key: str | None = None,
     ) -> dict[str, Any] | None:
         ...
 
@@ -82,6 +89,7 @@ class ResponseCache(ABC):
         model_id: str = "",
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
+        routing_key: str | None = None,
     ) -> None:
         ...
 
@@ -122,11 +130,12 @@ class InMemoryCache(ResponseCache):
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
+        routing_key: str | None = None,
     ) -> dict[str, Any] | None:
         if not self.config.enabled:
             return None
 
-        key = _make_cache_key(messages, system, inference_config)
+        key = _make_cache_key(messages, system, inference_config, routing_key)
         with self._lock:
             entry = self._cache.get(key)
             if entry is None:
@@ -150,11 +159,12 @@ class InMemoryCache(ResponseCache):
         model_id: str = "",
         system: list[dict[str, Any]] | None = None,
         inference_config: dict[str, Any] | None = None,
+        routing_key: str | None = None,
     ) -> None:
         if not self.config.enabled:
             return
 
-        key = _make_cache_key(messages, system, inference_config)
+        key = _make_cache_key(messages, system, inference_config, routing_key)
         with self._lock:
             self._cache[key] = _MemoryCacheEntry(
                 response=response, model_id=model_id, created_at=time.monotonic(),

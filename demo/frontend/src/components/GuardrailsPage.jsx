@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Md, ExplainPopup, MetricWithDelta, STREAM_API } from './shared'
 
 const TEST_PROMPTS = [
@@ -177,6 +177,9 @@ export default function GuardrailsPage({ onRun }) {
   const [step2Expanded, setStep2Expanded] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [guardrailConfig, setGuardrailConfig] = useState(null)
+  const [configExpanded, setConfigExpanded] = useState(false)
+  const [codeExpanded, setCodeExpanded] = useState(false)
 
   // Baseline state
   const [baselineText, setBaselineText] = useState('')
@@ -194,6 +197,14 @@ export default function GuardrailsPage({ onRun }) {
   const [classifier, setClassifier] = useState('heuristic')
   const [explainPopup, setExplainPopup] = useState(null)
   const abortRef = useRef(null)
+
+  // Fetch guardrail config on mount
+  useEffect(() => {
+    fetch(`${STREAM_API}/guardrails-config`)
+      .then(r => r.json())
+      .then(data => setGuardrailConfig(data))
+      .catch(() => {})
+  }, [])
 
   function handleSelectPrompt(p) {
     setSelectedPrompt(p.id)
@@ -299,6 +310,52 @@ export default function GuardrailsPage({ onRun }) {
       {/* Error */}
       {error && (
         <div className="p-2 bg-red-900/20 border border-red-700/40 rounded-lg text-xs text-red-300">{error}</div>
+      )}
+
+      {/* ═══ Guardrail Configuration (collapsible) ═══ */}
+      {guardrailConfig && guardrailConfig.configured && (
+        <details open={configExpanded} onToggle={e => setConfigExpanded(e.target.open)} className="border border-gray-800/60 rounded-xl overflow-hidden bg-gray-900/20">
+          <summary className="flex items-center gap-3 px-4 py-2.5 bg-gray-900/60 hover:bg-gray-800/60 transition-all cursor-pointer select-none">
+            <span className="text-[11px] text-yellow-400">🛡️</span>
+            <span className="text-xs font-medium text-gray-300">Active Guardrail Configuration</span>
+            <span className="text-[9px] text-gray-500 ml-auto font-mono">{guardrailConfig.guardrail_name} (v{guardrailConfig.guardrail_version})</span>
+          </summary>
+          <div className="p-4 grid grid-cols-3 gap-4 text-[11px]">
+            <div>
+              <div className="text-gray-500 font-bold uppercase mb-1.5">PII Entities (Anonymize)</div>
+              <div className="space-y-1">
+                {guardrailConfig.pii_entities.map(e => (
+                  <div key={e} className="flex items-center gap-1.5 text-yellow-300">
+                    <span className="text-yellow-500 text-[9px]">●</span>
+                    <span className="font-mono text-[10px]">{e}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-500 font-bold uppercase mb-1.5">Content Filters (Block)</div>
+              <div className="space-y-1">
+                {guardrailConfig.content_filters.map(f => (
+                  <div key={f} className="flex items-center gap-1.5 text-red-300">
+                    <span className="text-red-500 text-[9px]">●</span>
+                    <span className="font-mono text-[10px]">{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-500 font-bold uppercase mb-1.5">Denied Topics (Block)</div>
+              <div className="space-y-1">
+                {guardrailConfig.topics_denied.map(t => (
+                  <div key={t} className="flex items-center gap-1.5 text-purple-300">
+                    <span className="text-purple-500 text-[9px]">●</span>
+                    <span className="font-mono text-[10px]">{t}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
       )}
 
       {/* ═══ Step 1: Choose Test Prompt ═══ */}
@@ -454,6 +511,44 @@ export default function GuardrailsPage({ onRun }) {
                   className="text-[10px] px-3 py-1 rounded-md font-medium bg-red-600 hover:bg-red-500 text-white ml-auto disabled:bg-gray-700 disabled:text-gray-500">Re-run</button>
               </div>
             </div>
+
+            {/* Code comparison — collapsible */}
+            <details open={codeExpanded} onToggle={e => setCodeExpanded(e.target.open)} className="mb-4 border border-gray-800/40 rounded-lg overflow-hidden">
+              <summary className="px-3 py-2 text-[10px] text-gray-500 hover:text-gray-300 bg-gray-900/40 cursor-pointer select-none flex items-center gap-1.5">
+                <span>💻</span> Code Comparison — boto3 vs Smart Router
+              </summary>
+              <div className="grid grid-cols-2 gap-0 divide-x divide-gray-800/40">
+                <div className="p-3">
+                  <div className="text-[9px] text-blue-400 font-bold uppercase mb-1.5">Native boto3 (server-side guardrail)</div>
+                  <pre className="text-[10px] font-mono text-gray-400 leading-relaxed whitespace-pre-wrap">{`response = bedrock.converse_stream(
+    modelId="${baselineModel === 'sonnet' ? 'global.anthropic.claude-sonnet-4-6' : baselineModel === 'haiku' ? 'global.anthropic.claude-haiku-4-5-20251001-v1:0' : baselineModel === 'opus' ? 'anthropic.claude-opus-4-7' : 'amazon.nova-pro-v1:0'}",
+    messages=[{"role": "user", "content": [...]}],
+    guardrailConfig={
+        "guardrailIdentifier": "${guardrailConfig?.guardrail_id || 'xxx'}",
+        "guardrailVersion": "${guardrailConfig?.guardrail_version || '1'}",
+    },
+)`}</pre>
+                  <div className="text-[9px] text-gray-600 mt-1.5">⚠️ Model is always invoked — cost incurred even if blocked</div>
+                </div>
+                <div className="p-3">
+                  <div className="text-[9px] text-orange-400 font-bold uppercase mb-1.5">Smart Router (pre-route + server-side)</div>
+                  <pre className="text-[10px] font-mono text-gray-400 leading-relaxed whitespace-pre-wrap">{`# Step 1: Pre-route check ($0 if blocked)
+result = bedrock.apply_guardrail(
+    guardrailIdentifier="${guardrailConfig?.guardrail_id || 'xxx'}",
+    guardrailVersion="${guardrailConfig?.guardrail_version || '1'}",
+    source="INPUT",
+    content=[{"text": {"text": prompt}}],
+)
+# Step 2: Route only if passed
+response = router.converse_stream(
+    messages=[...],
+    guardrailConfig={...},  # server-side PII masking
+    routing=RoutingConfig(strategy="${strategy}"),
+)`}</pre>
+                  <div className="text-[9px] text-green-600 mt-1.5">✅ Blocked requests never reach the model — $0 cost</div>
+                </div>
+              </div>
+            </details>
 
             <div className="flex gap-3 min-h-[300px]">
               {/* Baseline */}

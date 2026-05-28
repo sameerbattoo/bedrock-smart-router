@@ -387,6 +387,27 @@ class BedrockRouter:
         """Route and invoke a Bedrock Converse call."""
         routing = resolve_preset(routing or RoutingConfig())
 
+        # Boto3 drop-in compatibility: extract modelId/model_id from kwargs
+        # and use as preferred_model (so the router respects the user's choice)
+        boto3_model = kwargs.pop("modelId", None) or kwargs.pop("model_id", None)
+        if boto3_model and not routing.preferred_model:
+            routing = RoutingConfig(
+                preset=routing.preset, strategy=routing.strategy, weights=routing.weights,
+                preferred_model=boto3_model, preferred_family=routing.preferred_family,
+                required_capabilities=routing.required_capabilities,
+                min_context_window=routing.min_context_window,
+                exclude_models=routing.exclude_models,
+                max_cost_per_request=routing.max_cost_per_request,
+                tags=routing.tags, metadata=routing.metadata,
+                fallback_enabled=routing.fallback_enabled,
+                explain=routing.explain, classifier=routing.classifier,
+            )
+        # Also handle camelCase inference_config from boto3 users
+        if "inferenceConfig" in kwargs and inference_config is None:
+            inference_config = kwargs.pop("inferenceConfig")
+        if "toolConfig" in kwargs and tool_config is None:
+            tool_config = kwargs.pop("toolConfig")
+
         # ── Pre-invoke pipeline (guardrail → analyze → resolve) ─
         messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved = \
             self._pre_invoke_pipeline(
@@ -395,7 +416,7 @@ class BedrockRouter:
             )
 
         # ── Check response cache (converse-only, not streaming) ─
-        cached = self._cache.get(messages, system, inference_config)
+        cached = self._cache.get(messages, system, inference_config, routing_key=strategy_name)
         if cached is not None:
             decision = RoutingDecision(
                 selected_model=cached.get("_cached_model", "unknown"),
@@ -568,6 +589,7 @@ class BedrockRouter:
             model_id=used_model.model_id,
             system=system,
             inference_config=inference_config,
+            routing_key=strategy_name,
         )
 
         return response
@@ -597,6 +619,25 @@ class BedrockRouter:
                     print(f"\\nModel: {event['routing_decision'].selected_model}")
         """
         routing = resolve_preset(routing or RoutingConfig())
+
+        # Boto3 drop-in compatibility: extract modelId/model_id from kwargs
+        boto3_model = kwargs.pop("modelId", None) or kwargs.pop("model_id", None)
+        if boto3_model and not routing.preferred_model:
+            routing = RoutingConfig(
+                preset=routing.preset, strategy=routing.strategy, weights=routing.weights,
+                preferred_model=boto3_model, preferred_family=routing.preferred_family,
+                required_capabilities=routing.required_capabilities,
+                min_context_window=routing.min_context_window,
+                exclude_models=routing.exclude_models,
+                max_cost_per_request=routing.max_cost_per_request,
+                tags=routing.tags, metadata=routing.metadata,
+                fallback_enabled=routing.fallback_enabled,
+                explain=routing.explain, classifier=routing.classifier,
+            )
+        if "inferenceConfig" in kwargs and inference_config is None:
+            inference_config = kwargs.pop("inferenceConfig")
+        if "toolConfig" in kwargs and tool_config is None:
+            tool_config = kwargs.pop("toolConfig")
 
         # ── Pre-invoke pipeline (guardrail → analyze → resolve) ─
         messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved = \
@@ -1133,7 +1174,7 @@ class BedrockRouter:
             # ML classifier explain: show probabilities from the LAST USER MESSAGE
             # (matching what classify_request() actually uses for the decision)
             clf = self._analyzer._ml_classifier
-            last_user_text = clf._extract_last_user_text(messages)
+            last_user_text = clf.extract_last_user_text(messages)
             probs = clf.predict_proba_all(last_user_text or "")
 
             # Determine user's classification from probabilities

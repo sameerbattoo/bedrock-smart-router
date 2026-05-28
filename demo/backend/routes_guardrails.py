@@ -43,6 +43,26 @@ def _load_guardrail_config() -> dict | None:
         return json.load(f)
 
 
+# ── Info Endpoint ───────────────────────────────────────────────────
+
+@router.get("/guardrails-config")
+def guardrails_config_info():
+    """Return the current guardrail configuration for the UI."""
+    config = _load_guardrail_config()
+    if not config:
+        return {"configured": False}
+
+    return {
+        "configured": True,
+        "guardrail_id": config.get("guardrail_id", ""),
+        "guardrail_version": config.get("guardrail_version", ""),
+        "guardrail_name": config.get("guardrail_name", ""),
+        "pii_entities": ["US_SOCIAL_SECURITY_NUMBER", "EMAIL", "PHONE", "CREDIT_DEBIT_CARD_NUMBER", "NAME", "ADDRESS"],
+        "content_filters": ["HATE", "INSULTS", "SEXUAL", "VIOLENCE"],
+        "topics_denied": ["investment_advice", "medical_diagnosis"],
+    }
+
+
 # ── Execution Functions ─────────────────────────────────────────────
 
 def _run_baseline_with_guardrail(

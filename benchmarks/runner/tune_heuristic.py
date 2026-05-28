@@ -389,7 +389,7 @@ def analyze_dimensions(data: list[dict[str, Any]]) -> None:
         text = item["text"][:4000]
         messages = [{"role": "user", "content": [{"text": text}]}]
         text_lower = text.lower()
-        scores = analyzer._score_dimensions(text_lower, messages, None)
+        scores = analyzer._heuristic_classifier._score_dimensions(text_lower, text)
         label = item["label"]
         for dim_name, score in zip(dim_names, scores):
             dim_scores[label][dim_name].append(score)

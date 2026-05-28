@@ -153,7 +153,13 @@ class ModelRegistry:
     # ── Queries ─────────────────────────────────────────────────
 
     def get(self, model_id: str) -> BedrockModel | None:
-        return self._models.get(model_id)
+        model = self._models.get(model_id)
+        if model is None:
+            # Try stripping geo prefix (us., eu., ap., global.)
+            base = base_model_id(model_id)
+            if base != model_id:
+                model = self._models.get(base)
+        return model
 
     def list_models(
         self,
