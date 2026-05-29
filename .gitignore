@@ -44,5 +44,8 @@ demo/backend/repl_state/
 # Temp files
 .commit_msg.txt
 
+# Script-generated caches (auto-downloaded, large)
+scripts/_litellm_models.json
+
 # Large data files (exceed GitHub 100MB limit)
 benchmarks/data/industry_standard/text_datasets/trex/raw/re-nlg_0-10000.json
