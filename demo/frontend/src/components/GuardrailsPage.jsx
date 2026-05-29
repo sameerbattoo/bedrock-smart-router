@@ -180,7 +180,7 @@ export default function GuardrailsPage({ onRun }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [guardrailConfig, setGuardrailConfig] = useState(null)
-  const [configExpanded, setConfigExpanded] = useState(false)
+  const [configExpanded, setConfigExpanded] = useState(true)
   const [codeExpanded, setCodeExpanded] = useState(false)
 
   // Baseline state
@@ -213,6 +213,7 @@ export default function GuardrailsPage({ onRun }) {
     setPrompt(p.prompt)
     setShowManualEntry(false)
     setStep1Expanded(false)
+    setConfigExpanded(false)
     setStep2Expanded(true)
   }
 

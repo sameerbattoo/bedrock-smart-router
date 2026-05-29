@@ -65,6 +65,8 @@ Your capabilities:
 - Explain complex AWS concepts clearly with examples
 
 Guidelines:
+- ALWAYS use the search_documentation or read_documentation tools when asked about ANY AWS service, feature, or concept — even if you think you know the answer. AWS launches new services and features constantly, and your training data may be outdated.
+- NEVER say "I'm not familiar with" an AWS service or feature. Instead, search for it first using your tools. If the search returns no results, then explain that you couldn't find documentation for it.
 - Always cite AWS documentation when providing technical details
 - When the user asks for a diagram, use the generate_diagram tool and include the generated image path in your response using markdown: ![description](path)
 - Provide cost estimates when relevant
@@ -85,7 +87,7 @@ def _create_aws_docs_client():
             args=["awslabs.aws-documentation-mcp-server@latest"],
             env={"FASTMCP_LOG_LEVEL": "ERROR"},
         )
-    ))
+    ), startup_timeout=120)
 
 
 def _create_aws_diagram_client():
@@ -95,7 +97,7 @@ def _create_aws_diagram_client():
             args=["awslabs.aws-diagram-mcp-server@1.0.23"],
             env={"FASTMCP_LOG_LEVEL": "ERROR"},
         )
-    ))
+    ), startup_timeout=120)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -217,17 +219,26 @@ def _get_or_create_session(session_id: str, agent_type: str,
         return _sessions[session_id]
 
     global _mcp_ready
-    docs_client = _create_aws_docs_client()
+    tool_list = []
+
+    # Try to load MCP tools — gracefully degrade if they fail
+    docs_client = None
     diagram_client = None
     try:
-        diagram_client = _create_aws_diagram_client()
-    except Exception:
-        pass
+        docs_client = _create_aws_docs_client()
+        tool_list.append(docs_client)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("AWS docs MCP client failed to init: %s", exc)
 
-    tool_list = [docs_client]
-    if diagram_client:
+    try:
+        diagram_client = _create_aws_diagram_client()
         tool_list.append(diagram_client)
-    _mcp_ready = True
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("AWS diagram MCP client failed to init: %s", exc)
+
+    _mcp_ready = len(tool_list) > 0
 
     if agent_type == "baseline":
         bl_config = BASELINE_MODELS.get(baseline_model or "sonnet", BASELINE_MODELS["sonnet"])

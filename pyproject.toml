@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Intelligent model routing for Amazon Bedrock"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = "MIT"
 dependencies = [
     "boto3>=1.34.0",
 ]
@@ -39,6 +39,9 @@ dev = [
     "pytest-cov>=5.0",
     "moto[dynamodb]>=5.0",
 ]
+
+[tool.setuptools.packages.find]
+include = ["bedrock_smart_router*"]
 
 [tool.setuptools.package-data]
 bedrock_smart_router = ["data/*.json"]

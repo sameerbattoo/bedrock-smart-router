@@ -88,6 +88,47 @@ else
   ok "AWS credentials valid (account: $AWS_ACCOUNT)"
 fi
 
+# uvx (required for MCP servers in Strands agents)
+if ! command -v uvx &>/dev/null; then
+  # Check if uvx exists in Python's bin directory but isn't on PATH
+  UVX_PATH=$($PYTHON -c "import shutil; p = shutil.which('uvx'); print(p or '')" 2>/dev/null)
+  if [ -z "$UVX_PATH" ]; then
+    echo -e "  Installing uv (provides uvx for MCP servers)..."
+    $PYTHON -m pip install uv --quiet 2>&1 | tail -2
+    UVX_PATH=$($PYTHON -c "import shutil; p = shutil.which('uvx'); print(p or '')" 2>/dev/null)
+  fi
+  if [ -n "$UVX_PATH" ]; then
+    UVX_DIR=$(dirname "$UVX_PATH")
+    export PATH="$UVX_DIR:$PATH"
+    ok "uvx found at $UVX_PATH (added to PATH)"
+  else
+    warn "uvx not found. Strands Agents (use-case 3) will not work without it."
+    warn "Install with: pip install uv"
+  fi
+else
+  ok "uvx $(uvx --version 2>/dev/null || echo 'available')"
+fi
+
+# Graphviz (required for AWS diagram MCP server)
+if ! command -v dot &>/dev/null; then
+  echo -e "  Installing graphviz (required for diagram generation)..."
+  if command -v brew &>/dev/null; then
+    brew install graphviz --quiet 2>&1 | tail -2
+  elif command -v apt-get &>/dev/null; then
+    sudo apt-get install -y graphviz --quiet 2>&1 | tail -2
+  elif command -v yum &>/dev/null; then
+    sudo yum install -y graphviz --quiet 2>&1 | tail -2
+  else
+    warn "graphviz not found and no package manager detected. Diagram generation will not work."
+    warn "Install manually: https://graphviz.org/download/"
+  fi
+  if command -v dot &>/dev/null; then
+    ok "graphviz installed ($(dot -V 2>&1 | head -1))"
+  fi
+else
+  ok "graphviz $(dot -V 2>&1 | head -1)"
+fi
+
 # ── Step 2: Install bedrock-smart-router package ────────────────────
 step 2 "Installing bedrock-smart-router package (editable)..."
 
@@ -120,8 +161,16 @@ ok "Backend imports verified (fastapi, uvicorn, boto3, strands)"
 
 # ── Step 4: Run prerequisites (database + guardrail) ────────────────
 step 4 "Running prerequisites (database + guardrail)..."
-$PYTHON "$DEMO_DIR/prerequisite/setup_all.py"
+$PYTHON "$DEMO_DIR/prerequisite/setup_all.py" || warn "Prerequisites partially failed (non-critical). Continuing..."
 ok "Prerequisites ready"
+
+# Pre-warm MCP server packages (uvx downloads on first run, which can timeout)
+if command -v uvx &>/dev/null; then
+  echo -e "  Pre-warming MCP server packages (first run downloads ~60s)..."
+  uv tool install --force awslabs.aws-documentation-mcp-server --quiet 2>/dev/null || true
+  uv tool install --force awslabs.aws-diagram-mcp-server==1.0.23 --quiet 2>/dev/null || true
+  ok "MCP server packages cached"
+fi
 
 # ── Step 5: Install frontend npm packages ───────────────────────────
 step 5 "Installing frontend npm packages..."

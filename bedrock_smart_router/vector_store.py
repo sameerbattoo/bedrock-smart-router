@@ -152,7 +152,7 @@ def build_vector_store(
     """
     if backend == "faiss":
         from bedrock_smart_router.faiss_vector_store import FAISSVectorStore
-        return FAISSVectorStore(dimension=dimension)
+        return FAISSVectorStore(dimension=dimension, max_entries=max_entries)
 
     if backend in ("redis", "valkey"):
         from bedrock_smart_router.redis_vector_store import RedisVectorStore
