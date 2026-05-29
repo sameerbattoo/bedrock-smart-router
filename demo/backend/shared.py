@@ -159,6 +159,8 @@ Consider: accuracy, completeness, relevance, clarity, and helpfulness.
 
 Today's date is {today}. Use this to evaluate whether any dates mentioned in the response are reasonable.
 
+IMPORTANT: If the context indicates the agent used documentation tools (search_documentation, read_documentation) to retrieve information, the response is grounded in official sources. Do NOT penalize it for containing information you are unfamiliar with — the agent has access to more current documentation than your training data.
+
 User prompt: {prompt}
 
 AI Response: {response_text}

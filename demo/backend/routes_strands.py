@@ -95,7 +95,11 @@ def _create_aws_diagram_client():
         StdioServerParameters(
             command="uvx",
             args=["awslabs.aws-diagram-mcp-server@1.0.23"],
-            env={"FASTMCP_LOG_LEVEL": "ERROR"},
+            env={
+                "FASTMCP_LOG_LEVEL": "ERROR",
+                "OUTPUT_DIR": str(DIAGRAM_DIR),
+            },
+            cwd=str(DIAGRAM_DIR),
         )
     ), startup_timeout=120)
 
@@ -287,12 +291,22 @@ def _run_baseline_agent(session_id: str, baseline_model: str, message: str,
         t_start = time.perf_counter()
         ttft_ms = [None]
         tools_used = []
+        tool_interactions = []  # Capture tool name + input for judge context
 
         def _callback(**kwargs):
             if "current_tool_use" in kwargs and kwargs["current_tool_use"].get("name"):
                 tool_name = kwargs['current_tool_use']['name']
+                tool_input = kwargs['current_tool_use'].get('input', {})
                 if tool_name not in tools_used:
                     tools_used.append(tool_name)
+                # Capture a summary of what the tool was called with
+                input_summary = ""
+                if isinstance(tool_input, dict):
+                    # Common MCP tool input patterns
+                    input_summary = tool_input.get('query', '') or tool_input.get('search_phrase', '') or tool_input.get('url', '') or tool_input.get('topic', '') or str(tool_input)[:200]
+                elif isinstance(tool_input, str):
+                    input_summary = tool_input[:200]
+                tool_interactions.append(f"{tool_name}({input_summary})")
                 result_queue.put(("progress", f"🔧 Using tool: {tool_name}"))
             elif "data" in kwargs:
                 if ttft_ms[0] is None:
@@ -336,6 +350,7 @@ def _run_baseline_agent(session_id: str, baseline_model: str, message: str,
             "cache_read_tokens": 0, "cache_write_tokens": 0,
             "cost": round(cost, 6), "strategy_used": "direct (fixed model)",
             "_tools_used": tools_used,
+            "_tool_interactions": tool_interactions,
         }))
     except Exception as e:
         latency_ms = (time.perf_counter() - t_start) * 1000 if 't_start' in locals() else 0
@@ -370,12 +385,21 @@ def _run_router_agent(session_id: str, router_strategy: str, preferred_model: st
         t_start = time.perf_counter()
         ttft_ms = [None]
         tools_used = []
+        tool_interactions = []  # Capture tool name + input for judge context
 
         def _callback(**kwargs):
             if "current_tool_use" in kwargs and kwargs["current_tool_use"].get("name"):
                 tool_name = kwargs['current_tool_use']['name']
+                tool_input = kwargs['current_tool_use'].get('input', {})
                 if tool_name not in tools_used:
                     tools_used.append(tool_name)
+                # Capture a summary of what the tool was called with
+                input_summary = ""
+                if isinstance(tool_input, dict):
+                    input_summary = tool_input.get('query', '') or tool_input.get('search_phrase', '') or tool_input.get('url', '') or tool_input.get('topic', '') or str(tool_input)[:200]
+                elif isinstance(tool_input, str):
+                    input_summary = tool_input[:200]
+                tool_interactions.append(f"{tool_name}({input_summary})")
                 result_queue.put(("progress", f"🔧 Using tool: {tool_name}"))
             elif "data" in kwargs:
                 if ttft_ms[0] is None:
@@ -439,11 +463,13 @@ def _run_router_agent(session_id: str, router_strategy: str, preferred_model: st
                 "routing_overhead_ms": decision.routing_decision_ms,
                 "explanation": decision.explanation,
                 "_tools_used": tools_used,
+                "_tool_interactions": tool_interactions,
             })
         else:
             result["model_used"] = "unknown"
             result["strategy_used"] = router_strategy
             result["_tools_used"] = tools_used
+            result["_tool_interactions"] = tool_interactions
 
         result_queue.put(("done", result))
     except Exception as e:
@@ -571,18 +597,24 @@ async def strands_chat(
             tools_context_parts = []
             bl_tools = baseline_result_data.get("_tools_used") or []
             rt_tools = router_result_data.get("_tools_used") or []
+            bl_interactions = baseline_result_data.get("_tool_interactions") or []
+            rt_interactions = router_result_data.get("_tool_interactions") or []
             # Also detect tool usage from progress messages embedded in response
             bl_text = baseline_result_data.get("response_text", "")
             rt_text = router_result_data.get("response_text", "")
 
-            if bl_tools:
+            if bl_interactions:
+                tools_context_parts.append(f"Baseline agent tool calls: {'; '.join(bl_interactions)}")
+            elif bl_tools:
                 tools_context_parts.append(f"Baseline agent used MCP tools: {', '.join(bl_tools)}")
-            if rt_tools:
+            if rt_interactions:
+                tools_context_parts.append(f"Router agent tool calls: {'; '.join(rt_interactions)}")
+            elif rt_tools:
                 tools_context_parts.append(f"Router agent used MCP tools: {', '.join(rt_tools)}")
 
             tools_note = ""
             if tools_context_parts:
-                tools_note = "\n" + "\n".join(tools_context_parts) + "\nNote: These agents have access to live AWS documentation via MCP tools. Information retrieved from official AWS docs should be considered accurate and up-to-date."
+                tools_note = "\n\nTool usage context:\n" + "\n".join(tools_context_parts) + "\n\nIMPORTANT: Both agents have access to live AWS documentation via MCP tools (search_documentation, read_documentation). When an agent uses these tools, its response is grounded in official, up-to-date AWS documentation. Do NOT penalize responses for containing information about new or unfamiliar AWS services if the agent retrieved that information from official docs via tools."
 
             conv_context = f"User question: {message}{tools_note}"
             bl_img, bl_type = _find_diagram_bytes(bl_text)

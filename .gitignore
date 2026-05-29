@@ -36,6 +36,11 @@ credentials.json
 # Demo prerequisite generated config
 demo/prerequisite/.guardrail_config.json
 
+# Demo generated diagrams and artifacts
+demo/backend/*.png
+demo/backend/*_diagram/
+demo/backend/repl_state/
+
 # Temp files
 .commit_msg.txt
 
