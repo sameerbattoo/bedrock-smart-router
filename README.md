@@ -645,7 +645,7 @@ Week 5: Full rollout → make the new model the default
 
 ## Budget Enforcement
 
-The SDK provides three levels of cost control, from simple per-request caps to rolling budget windows with automatic downgrade.
+The SDK provides three levels of cost control, from simple per-request caps to rolling budget windows with persistent tracking and automatic downgrade.
 
 ### Level 1: Per-Request Cost Ceiling
 
@@ -670,8 +670,8 @@ from bedrock_smart_router.budget_strategy import BudgetRule
 # Enterprise: generous limits, downgrade on exceed
 enterprise = BudgetRule(
     max_cost_per_request=0.05,     # Max $0.05 per request
-    max_hourly_spend=1.00,         # Max $1.00/hour
-    max_daily_spend=10.00,         # Max $10.00/day
+    max_hourly_spend=1.00,         # Max $1.00/hour (rolling window)
+    max_daily_spend=10.00,         # Max $10.00/day (rolling 24h window)
     on_exceeded="downgrade",       # Switch to cheaper model (vs "reject")
     downgrade_to_tier="lite",      # Downgrade target tier
 )
@@ -688,8 +688,8 @@ free = BudgetRule(
 | Field | What it does |
 |---|---|
 | `max_cost_per_request` | Excludes models whose estimated cost exceeds this |
-| `max_hourly_spend` | Rolling 1-hour spend window per scope |
-| `max_daily_spend` | Rolling 24-hour spend window per scope |
+| `max_hourly_spend` | Rolling 1-hour spend window per scope (resets naturally as records age out) |
+| `max_daily_spend` | Rolling 24-hour spend window per scope (resets naturally as records age out) |
 | `on_exceeded` | `"downgrade"` picks the cheapest model; `"reject"` raises `BudgetExceededError` |
 | `downgrade_to_tier` | When downgrading, restrict to this tier or below |
 
@@ -719,6 +719,126 @@ daily  = tracker.get_spend("user-u123", 86400)    # Last 24 hours
 weekly = tracker.get_spend("team-engineering", 604800)  # Last 7 days
 ```
 
+### Level 4: Persistent Budget Tracking
+
+By default, the `BudgetTracker` is in-memory — fast but resets on process restart. For production deployments that need spend tracking to survive restarts and work across multiple instances, add a persistent backend:
+
+```python
+from bedrock_smart_router.budget_strategy import BudgetTracker
+from bedrock_smart_router.budget_store import SQLiteBudgetStore, DynamoDBBudgetStore
+
+# SQLite — single instance, zero config, auto-creates table + indexes
+tracker = BudgetTracker(
+    store=SQLiteBudgetStore(path="/tmp/bsr_budget.db"),
+    sync_interval=5.0,  # Flush to disk every 5 seconds
+)
+
+# DynamoDB — multi-instance, serverless, auto-TTL cleanup
+tracker = BudgetTracker(
+    store=DynamoDBBudgetStore(
+        table_name="bsr-budget-tracking",
+        region="us-west-2",
+        ttl_seconds=86400,           # Records auto-expire after 24h
+        auto_create_table=True,      # Create table if missing (dev/testing)
+    ),
+    sync_interval=5.0,
+)
+```
+
+**DynamoDB table schema (for manual creation):**
+
+If you set `auto_create_table=False` (the default for production), create the table with:
+
+```bash
+aws dynamodb create-table \
+  --table-name bsr-budget-tracking \
+  --attribute-definitions \
+    AttributeName=scope,AttributeType=S \
+    AttributeName=timestamp,AttributeType=N \
+  --key-schema \
+    AttributeName=scope,KeyType=HASH \
+    AttributeName=timestamp,KeyType=RANGE \
+  --billing-mode PAY_PER_REQUEST
+
+# Enable TTL for automatic cleanup of old records
+aws dynamodb update-time-to-live \
+  --table-name bsr-budget-tracking \
+  --time-to-live-specification Enabled=true,AttributeName=ttl
+```
+
+No GSI required — the partition key (`scope`) + sort key (`timestamp`) covers the primary query: "total spend for user X in the last N seconds."
+
+**IAM permissions required:**
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "dynamodb:BatchWriteItem",
+    "dynamodb:Query",
+    "dynamodb:Scan"
+  ],
+  "Resource": "arn:aws:dynamodb:*:*:table/bsr-budget-tracking"
+}
+```
+
+Add `dynamodb:CreateTable` and `dynamodb:UpdateTimeToLive` if using `auto_create_table=True`.
+
+**How it works:**
+
+1. **Hot path (every request):** `record_spend()` and `check_budget()` use in-memory data — no I/O, sub-microsecond
+2. **Background sync:** Every `sync_interval` seconds, pending records are flushed to the persistent store
+3. **On startup:** Recent spend is loaded from the store into memory (recovery after restart)
+4. **Rolling windows:** `max_hourly_spend` and `max_daily_spend` use rolling time windows — spend naturally "resets" as old records age past the window boundary. No cron jobs or calendar resets needed
+
+**Sample config (via router config dict):**
+
+```python
+router = BedrockRouter.create({
+    "budget": {
+        "tracker_backend": "sqlite",              # "memory" | "sqlite" | "dynamodb"
+        "sqlite_path": "/tmp/bsr_budget.db",
+        "scope_key": "user_id",                   # Track spend per user (from routing metadata)
+        "rule_key": "tier",                       # Match rules by tier (from routing metadata)
+        "sync_interval_seconds": 5,
+        "rules": {
+            "default": {"max_hourly_spend": 1.0, "max_daily_spend": 10.0, "on_exceeded": "downgrade"},
+            "free": {"max_hourly_spend": 0.10, "max_daily_spend": 0.50, "on_exceeded": "reject"},
+            "pro": {"max_hourly_spend": 2.0, "max_daily_spend": 20.0, "on_exceeded": "downgrade"},
+            "enterprise": {"max_hourly_spend": 10.0, "max_daily_spend": 100.0, "on_exceeded": "downgrade"},
+        },
+    },
+})
+
+# The router automatically tracks spend and enforces budgets
+# based on the user_id and tier from routing metadata:
+response = router.converse(
+    messages=[...],
+    routing=RoutingConfig(metadata={"user_id": "alice", "tier": "free"}),
+)
+```
+
+**Custom backends:** Subclass `BudgetStore` to implement any persistence layer (Postgres, Redis, etc.):
+
+```python
+from bedrock_smart_router.budget_store import BudgetStore, SpendRecord
+
+class PostgresBudgetStore(BudgetStore):
+    def write_batch(self, records: list[SpendRecord]) -> None: ...
+    def get_spend(self, scope: str, window_seconds: float) -> float: ...
+    def get_all_spend(self, window_seconds: float) -> dict[str, float]: ...
+    def cleanup(self, older_than_seconds: float) -> int: ...
+```
+
+**Backend comparison:**
+
+| Backend | Persistence | Multi-instance | Auto-cleanup | Dependencies | Best for |
+|---|---|---|---|---|---|
+| `memory` (default) | No | No | N/A | None | Dev, Lambda, single-instance |
+| `sqlite` | Yes | No | Manual (via `cleanup()`) | None (stdlib) | Single-instance production |
+| `dynamodb` | Yes | Yes | Auto (TTL) | None (`boto3` already required) | Multi-instance production |
+| Custom (`BudgetStore`) | Yes | Depends | Depends | Your choice | Postgres, Redis, etc. |
+
 **When to use each level:**
 
 | Scenario | Use |
@@ -726,11 +846,9 @@ weekly = tracker.get_spend("team-engineering", 604800)  # Last 7 days
 | Simple cost cap, no tracking needed | `RoutingConfig(max_cost_per_request=...)` |
 | Different limits for free/paid tiers | `BudgetRule` per tier |
 | Per-user or per-team rolling budgets | `BudgetTracker` + `BudgetRule` |
+| Survive restarts (single instance) | `BudgetTracker` + `SQLiteBudgetStore` |
+| Multi-instance with shared budgets | `BudgetTracker` + `DynamoDBBudgetStore` |
 | SaaS with tenant cost isolation | `BudgetTracker` keyed by tenant ID + `BudgetRule` per plan |
-
-The `BudgetTracker` is in-memory — it resets on process restart and doesn't share across instances. This works well for single-instance deployments and Lambda (where each invocation is independent anyway).
-
-For multi-instance persistent budget tracking, the DynamoDB metrics store (`metrics.backend: "dynamodb"`) records every request with `cost` and `tenant_id`, but there's no built-in query for "total spend by tenant in the last hour." You'd need to add a GSI on `tenant_id` or build a separate spend-tracking table. This is on the roadmap but not yet implemented.
 
 ## Multimodal Routing: Images and Documents
 

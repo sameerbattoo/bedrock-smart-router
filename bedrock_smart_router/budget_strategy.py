@@ -3,6 +3,15 @@
 Enforces per-request cost ceilings and rolling budget windows
 (per-user, per-team, per-tenant).  When the budget is exceeded the
 strategy either downgrades to a cheaper tier or rejects the request.
+
+Persistence:
+  The ``BudgetTracker`` is in-memory by default (fast, no I/O on the
+  hot path).  When a ``BudgetStore`` is provided, spend records are
+  flushed to the store asynchronously and loaded on startup for
+  recovery after restarts.
+
+  Supported backends: ``sqlite``, ``dynamodb``, or any custom
+  ``BudgetStore`` subclass.
 """
 
 from __future__ import annotations
@@ -46,21 +55,119 @@ class _SpendRecord:
 
 
 class BudgetTracker:
-    """Tracks spend per scope and checks budget limits."""
+    """Tracks spend per scope and checks budget limits.
 
-    def __init__(self) -> None:
+    In-memory by default.  When a ``BudgetStore`` is provided:
+    - Spend records are flushed to the store every ``sync_interval`` seconds
+    - On init, recent spend is loaded from the store (recovery after restart)
+    - The hot path (record_spend, check_budget) always uses in-memory data
+
+    Args:
+        store: Optional persistent backend (SQLite, DynamoDB, or custom).
+        sync_interval: Seconds between flushes to the persistent store.
+        cleanup_interval: Seconds between cleanup of old records in the store.
+    """
+
+    def __init__(
+        self,
+        store: Any | None = None,
+        sync_interval: float = 5.0,
+        cleanup_interval: float = 3600.0,
+    ) -> None:
         self._spend: dict[str, deque[_SpendRecord]] = defaultdict(
             lambda: deque(maxlen=10_000)
         )
         self._lock = threading.Lock()
+        self._store = store
+        self._pending: list[Any] = []  # SpendRecords waiting to be flushed
+        self._pending_lock = threading.Lock()
 
-    def record_spend(self, scope: str, cost: float) -> None:
-        with self._lock:
-            self._spend[scope].append(
-                _SpendRecord(timestamp=time.monotonic(), cost=cost)
+        # Load existing spend from store on init
+        if self._store is not None:
+            self._hydrate_from_store()
+            # Start background sync thread
+            self._sync_interval = sync_interval
+            self._cleanup_interval = cleanup_interval
+            self._sync_thread = threading.Thread(
+                target=self._sync_loop, daemon=True, name="budget-sync"
             )
+            self._sync_thread.start()
+
+    def _hydrate_from_store(self) -> None:
+        """Load recent spend from the persistent store into memory."""
+        try:
+            # Load last 24 hours (covers both hourly and daily windows)
+            all_spend = self._store.get_all_spend(86400)
+            with self._lock:
+                for scope, total in all_spend.items():
+                    # Add as a single aggregated record at current time
+                    # (we lose per-record granularity but get correct totals)
+                    if total > 0:
+                        self._spend[scope].append(
+                            _SpendRecord(timestamp=time.monotonic(), cost=total)
+                        )
+            logger.info(
+                "BudgetTracker hydrated from store: %d scopes loaded",
+                len(all_spend),
+            )
+        except Exception as e:
+            logger.warning("Failed to hydrate BudgetTracker from store: %s", e)
+
+    def _sync_loop(self) -> None:
+        """Background thread: flush pending records and cleanup old data."""
+        last_cleanup = time.monotonic()
+        while True:
+            time.sleep(self._sync_interval)
+            self._flush_pending()
+            # Periodic cleanup (every cleanup_interval)
+            if time.monotonic() - last_cleanup >= self._cleanup_interval:
+                try:
+                    self._store.cleanup(older_than_seconds=86400)
+                except Exception as e:
+                    logger.debug("Budget store cleanup failed: %s", e)
+                last_cleanup = time.monotonic()
+
+    def _flush_pending(self) -> None:
+        """Flush pending spend records to the persistent store."""
+        with self._pending_lock:
+            if not self._pending:
+                return
+            batch = self._pending[:]
+            self._pending.clear()
+        try:
+            self._store.write_batch(batch)
+        except Exception as e:
+            logger.warning("Failed to flush budget records to store: %s", e)
+            # Re-queue failed records (will retry on next sync)
+            with self._pending_lock:
+                self._pending = batch + self._pending
+
+    def record_spend(
+        self, scope: str, cost: float, model_id: str = "", metadata: dict | None = None
+    ) -> None:
+        """Record a spend event for a scope.
+
+        Writes to in-memory immediately (fast). If a persistent store
+        is configured, queues the record for async flush.
+        """
+        now_mono = time.monotonic()
+        with self._lock:
+            self._spend[scope].append(_SpendRecord(timestamp=now_mono, cost=cost))
+
+        # Queue for persistence (non-blocking)
+        if self._store is not None:
+            from bedrock_smart_router.budget_store import SpendRecord
+            with self._pending_lock:
+                self._pending.append(SpendRecord(
+                    scope=scope,
+                    cost=cost,
+                    timestamp=time.time(),  # Wall clock for persistence
+                    model_id=model_id,
+                    metadata=metadata,
+                ))
 
     def get_spend(self, scope: str, window_seconds: float) -> float:
+        """Get total spend for a scope within a rolling time window."""
         cutoff = time.monotonic() - window_seconds
         with self._lock:
             return sum(

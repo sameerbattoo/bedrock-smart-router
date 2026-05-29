@@ -13,6 +13,7 @@ export const USE_CASES = [
   { id: 'multi-tenant', label: 'Multi-Tenant Routing', icon: '🏢', description: 'Per-tenant tracking, budgets and model segregation' },
   { id: 'semantic-cache', label: 'Semantic Caching', icon: '💾', description: 'Text2SQL with semantic cache, FAISS vectors, and chart generation' },
   { id: 'guardrails', label: 'Pre-Route Guardrails', icon: '🛡️', description: 'Content safety check BEFORE model selection — blocked requests cost $0' },
+  { id: 'usage-tracking', label: 'Usage & Cost Tracking', icon: '📊', description: 'Per-user budget enforcement with automatic tier downgrade' },
 ]
 
 export const TIME_FILTERS = [

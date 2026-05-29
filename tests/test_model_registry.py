@@ -102,7 +102,7 @@ class TestJsonCatalog:
     def test_loads_from_bundled_json(self):
         """Default registry loads from data/models.json."""
         reg = ModelRegistry()
-        assert len(reg) == 65  # regional + global CRIS profiles (legacy models excluded)
+        assert len(reg) == 59  # one entry per model (no global.* duplicates)
 
     def test_loads_from_custom_path(self, tmp_path):
         """Registry can load from a user-provided JSON file."""

@@ -150,6 +150,28 @@ class ObservabilityConfig:
 
 
 @dataclass
+class BudgetConfig:
+    """Budget enforcement configuration.
+
+    When configured, the router automatically tracks spend per scope
+    and enforces rolling budget limits before each request.
+    """
+
+    tracker_backend: str = "memory"  # "memory" | "sqlite" | "dynamodb"
+    scope_key: str = "user_id"  # Metadata key to track spend by
+    rule_key: str = "tier"  # Metadata key to match rules by
+    sync_interval_seconds: float = 5.0
+    # SQLite-specific
+    sqlite_path: str = "/tmp/bsr_budget.db"
+    # DynamoDB-specific
+    dynamodb_table: str = "bsr-budget-tracking"
+    dynamodb_ttl_seconds: int = 86400
+    dynamodb_auto_create: bool = False
+    # Rules per tier (keyed by rule_key value)
+    rules: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class RouterConfig:
     """Global router configuration.
 
@@ -183,6 +205,9 @@ class RouterConfig:
     ab_test: ABTestConfig = field(default_factory=lambda: ABTestConfig(enabled=False))
     canary: CanaryConfig = field(default_factory=CanaryConfig)
     shadow: ShadowConfig = field(default_factory=ShadowConfig)
+
+    # Budget enforcement (optional — only active when rules are defined)
+    budget: BudgetConfig = field(default_factory=BudgetConfig)
 
     excluded_models: list[str] = field(default_factory=list)
 
@@ -234,6 +259,7 @@ class RouterConfig:
             ab_test=_build_ab_test(data.get("ab_test", {})),
             canary=_build_canary(data.get("canary", {})),
             shadow=_build_sub(ShadowConfig, data.get("shadow", {})),
+            budget=_build_budget(data.get("budget", {})),
             excluded_models=data.get("excluded_models", []),
             classifier=data.get("classifier", "heuristic"),
             catalog_path=data.get("catalog_path"),
@@ -291,4 +317,21 @@ def _build_canary(data: dict[str, Any]) -> CanaryConfig:
         canary_percentage=data.get("canary_percentage", 5.0),
         auto_rollback=_build_sub(CanaryThresholds, rollback) if rollback else CanaryThresholds(),
         auto_promote=_build_sub(CanaryThresholds, promote) if promote else CanaryThresholds(),
+    )
+
+
+def _build_budget(data: dict[str, Any]) -> BudgetConfig:
+    """Build BudgetConfig from a dict with nested rules."""
+    if not data:
+        return BudgetConfig()
+    return BudgetConfig(
+        tracker_backend=data.get("tracker_backend", "memory"),
+        scope_key=data.get("scope_key", "user_id"),
+        rule_key=data.get("rule_key", "tier"),
+        sync_interval_seconds=data.get("sync_interval_seconds", 5.0),
+        sqlite_path=data.get("sqlite_path", "/tmp/bsr_budget.db"),
+        dynamodb_table=data.get("dynamodb_table", "bsr-budget-tracking"),
+        dynamodb_ttl_seconds=data.get("dynamodb_ttl_seconds", 86400),
+        dynamodb_auto_create=data.get("dynamodb_auto_create", False),
+        rules=data.get("rules", {}),
     )

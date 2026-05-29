@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from setup_database import main as setup_database
 from setup_guardrail import main as setup_guardrail
+from setup_usage_tracking import main as setup_usage_tracking
 
 
 def main():
@@ -30,6 +31,10 @@ def main():
 
     # 2. Guardrail
     results["guardrail"] = setup_guardrail()
+    print()
+
+    # 3. Usage Tracking
+    results["usage_tracking"] = setup_usage_tracking()
     print()
 
     # Summary

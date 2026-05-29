@@ -58,6 +58,7 @@ from bedrock_smart_router.request_analyzer import RequestAnalyzer
 from bedrock_smart_router.retry_handler import RetryConfig, RetryHandler
 from bedrock_smart_router.shadow_mode import ShadowManager
 from bedrock_smart_router.strategy_engine import resolve_strategy
+from bedrock_smart_router.budget_strategy import BudgetExceededError, BudgetRule, BudgetTracker
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +182,43 @@ class BedrockRouter:
             config=config.shadow,
             invoke_fn=None,  # Set after bedrock client is created
         )
+
+        # Budget enforcement (optional — only active when rules are defined)
+        self._budget_tracker: BudgetTracker | None = None
+        self._budget_rules: dict[str, BudgetRule] = {}
+        self._budget_scope_key = config.budget.scope_key
+        self._budget_rule_key = config.budget.rule_key
+        if config.budget.rules:
+            from bedrock_smart_router.budget_store import build_budget_store
+            store = build_budget_store(
+                backend=config.budget.tracker_backend,
+                sqlite_path=config.budget.sqlite_path,
+                dynamodb_table=config.budget.dynamodb_table,
+                dynamodb_region=config.region,
+                dynamodb_ttl_seconds=config.budget.dynamodb_ttl_seconds,
+                dynamodb_auto_create=config.budget.dynamodb_auto_create,
+                boto_session=session,
+            )
+            self._budget_tracker = BudgetTracker(
+                store=store,
+                sync_interval=config.budget.sync_interval_seconds,
+            )
+            # Parse rules
+            for rule_name, rule_data in config.budget.rules.items():
+                if isinstance(rule_data, dict):
+                    self._budget_rules[rule_name] = BudgetRule(
+                        max_cost_per_request=rule_data.get("max_cost_per_request"),
+                        max_hourly_spend=rule_data.get("max_hourly_spend"),
+                        max_daily_spend=rule_data.get("max_daily_spend"),
+                        on_exceeded=rule_data.get("on_exceeded", "downgrade"),
+                        downgrade_to_tier=rule_data.get("downgrade_to_tier", "lite"),
+                    )
+                elif isinstance(rule_data, BudgetRule):
+                    self._budget_rules[rule_name] = rule_data
+            logger.info(
+                "Budget enforcement enabled: %d rules, backend=%s, scope_key=%s",
+                len(self._budget_rules), config.budget.tracker_backend, self._budget_scope_key,
+            )
 
         # Bedrock client
         client_kwargs: dict[str, Any] = {}
@@ -342,7 +380,7 @@ class BedrockRouter:
         requires_streaming_tool_use: bool = False,
         **kwargs: Any,
     ) -> tuple[list[dict[str, Any]], str, dict[str, float], float, bool, Any, dict[str, Any]]:
-        """Shared pre-invocation: guardrail → analyze → resolve model."""
+        """Shared pre-invocation: guardrail → budget → analyze → resolve model."""
         strategy_name = routing.strategy or self._config.strategy
         weights = routing.weights or self._config.weights
         t_start = time.monotonic()
@@ -362,6 +400,27 @@ class BedrockRouter:
                         if msg.get("role") == "user":
                             msg["content"] = [{"text": gr_result.output_text}]
                             break
+
+        # Budget enforcement check (if rules are configured)
+        if self._budget_tracker and self._budget_rules:
+            metadata = routing.metadata or {}
+            scope = metadata.get(self._budget_scope_key, "")
+            rule_name = metadata.get(self._budget_rule_key, "default")
+            rule = self._budget_rules.get(rule_name) or self._budget_rules.get("default")
+            if scope and rule:
+                exceeded = self._budget_tracker.check_budget(scope, rule)
+                if exceeded:
+                    if rule.on_exceeded == "reject":
+                        raise BudgetExceededError(
+                            f"Budget exceeded for '{scope}': {exceeded}"
+                        )
+                    else:
+                        # Downgrade: switch to cost-optimized strategy
+                        strategy_name = "cost-optimized"
+                        logger.info(
+                            "Budget exceeded for '%s' (%s) — downgrading to cost-optimized",
+                            scope, exceeded,
+                        )
 
         # Analyse the request
         analysis = self._analyzer.analyze(messages, system, tool_config,
@@ -586,6 +645,10 @@ class BedrockRouter:
             output_tokens_for_cost=output_tokens,
         )
 
+        # ── Step 10b: Record budget spend ───────────────────────
+        if self._budget_tracker and decision.actual_cost:
+            self._record_budget_spend(routing, decision, used_model)
+
         # ── Step 11: Cache the response ─────────────────────────
         response["_cached_model"] = used_model.model_id
         self._cache.put(
@@ -802,10 +865,25 @@ class BedrockRouter:
             metadata=routing.metadata,
         )
 
+        # Record budget spend (shared with converse)
+        if self._budget_tracker and decision.actual_cost:
+            self._record_budget_spend(routing, decision, used_model)
+
         # Yield final event with routing decision
         yield {"routing_decision": decision}
 
     # ── Helpers ──────────────────────────────────────────────────
+
+    def _record_budget_spend(
+        self, routing: RoutingConfig, decision: RoutingDecision, used_model: BedrockModel
+    ) -> None:
+        """Record spend in the budget tracker (shared by converse and converse_stream)."""
+        metadata = routing.metadata or {}
+        scope = metadata.get(self._budget_scope_key, "")
+        if scope and decision.actual_cost:
+            self._budget_tracker.record_spend(
+                scope, decision.actual_cost, model_id=used_model.model_id,
+            )
 
     def _resolve_model(
         self,
