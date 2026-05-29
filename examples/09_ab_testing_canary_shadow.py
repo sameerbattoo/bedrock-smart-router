@@ -23,7 +23,7 @@ router = BedrockRouter.create({
     },
 })
 
-# Same user always gets the same variant
+# Same user always gets the same variant (sticky)
 for i in range(3):
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": f"Request {i}"}]}],
@@ -31,6 +31,21 @@ for i in range(3):
     )
     d = response["routing_decision"]
     print(f"  Alice request {i}: {d.selected_model} (variant={d.metadata.get('ab_variant')})")
+
+# Different users get assigned to different variants (50/50 split)
+print("\n  Multiple users (showing split):")
+variant_counts = {}
+for i in range(20):
+    response = router.converse(
+        messages=[{"role": "user", "content": [{"text": f"Request {i}"}]}],
+        routing=RoutingConfig(metadata={"user_id": f"user-{i}"}),
+    )
+    d = response["routing_decision"]
+    variant = d.metadata.get("ab_variant", "unknown")
+    variant_counts[variant] = variant_counts.get(variant, 0) + 1
+
+for variant, count in sorted(variant_counts.items()):
+    print(f"    {variant}: {count}/20 requests ({count/20*100:.0f}%)")
 
 print(f"\nA/B stats: {router.ab_test.stats}")
 
@@ -42,20 +57,24 @@ router = BedrockRouter.create({
         "enabled": True,
         "baseline": "us.anthropic.claude-sonnet-4-6",
         "canary_model": "us.anthropic.claude-opus-4-7",
-        "canary_percentage": 10,
+        "canary_percentage": 20,
         "auto_rollback": {"max_error_rate": 0.10, "max_latency_p95_ms": 5000},
         "auto_promote": {"min_requests": 50, "max_error_rate": 0.02},
     },
 })
 
-for i in range(5):
+canary_hits = 0
+for i in range(30):
     response = router.converse(
         messages=[{"role": "user", "content": [{"text": f"Canary test {i}"}]}],
     )
     d = response["routing_decision"]
     is_canary = d.metadata.get("is_canary", False)
-    print(f"  Request {i}: {d.selected_model} {'(CANARY)' if is_canary else ''}")
+    if is_canary:
+        canary_hits += 1
+        print(f"  Request {i}: {d.selected_model} (CANARY)")
 
+print(f"  Canary received {canary_hits}/30 requests ({canary_hits/30*100:.0f}%)")
 print(f"\nCanary stats: {router.canary.stats}")
 
 

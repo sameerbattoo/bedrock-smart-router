@@ -437,7 +437,8 @@ r7a = router7.converse(messages=[{"role": "user", "content": [{"text": "Hello!"}
 print(f"Simple → {r7a['routing_decision'].selected_model}")
 
 r7b = router7.converse(messages=[{"role": "user", "content": [
-    {"text": "Design a microservices architecture with event sourcing"}
+    {"text": "Design a microservices architecture with event sourcing and CQRS pattern. "
+             "Include service boundaries, data flow, and failure handling."}
 ]}])
 print(f"Complex → {r7b['routing_decision'].selected_model}")
 

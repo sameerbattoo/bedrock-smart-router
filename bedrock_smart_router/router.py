@@ -823,8 +823,16 @@ class BedrockRouter:
 
         Shared by ``converse()`` and ``converse_stream()``.
         """
-        min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
-        max_tier = COMPLEXITY_MAX_TIER.get(analysis.complexity.value)
+        # For custom strategies (non-built-in), skip tier filtering so the
+        # strategy's filter_candidates sees all models. Built-in strategies
+        # rely on tier filtering for complexity-aware routing.
+        builtin_strategies = {"cost-optimized", "latency-optimized", "balanced", "quality-optimized"}
+        if strategy_name in builtin_strategies:
+            min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
+            max_tier = COMPLEXITY_MAX_TIER.get(analysis.complexity.value)
+        else:
+            min_tier = None
+            max_tier = None
         candidates = self._registry.eligible_models(
             min_tier=min_tier,
             max_tier=max_tier,
@@ -895,7 +903,9 @@ class BedrockRouter:
                 ab_variant = ab_result.variant_name
                 override = self._registry.get(ab_result.model_id)
                 result = strategy.select(available, analysis)
-                primary = override if (override and override in available) else result.selected_model
+                # A/B variant model is used regardless of tier filtering
+                # (the operator explicitly configured this test)
+                primary = override if override else result.selected_model
             else:
                 result = strategy.select(available, analysis)
                 primary = result.selected_model
@@ -903,7 +913,9 @@ class BedrockRouter:
             canary_id, is_canary = self._canary.select_model()
             result = strategy.select(available, analysis)
             override = self._registry.get(canary_id)
-            if is_canary and override and override in available:
+            if is_canary and override:
+                # Canary model is used regardless of tier filtering
+                # (same as preferred_model — the operator explicitly chose it)
                 primary = override
             else:
                 primary = result.selected_model

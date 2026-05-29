@@ -212,151 +212,6 @@
       "quality_baseline": 31.1
     },
     {
-      "model_id": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-      "family": "anthropic",
-      "regions": [
-        {
-          "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-3",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-south-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-2",
-          "cris_profiles": [
-            "au",
-            "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "eu-central-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-north-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-2",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-3",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "sa-east-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "us-east-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-east-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        }
-      ],
-      "tier": "lite",
-      "display_name": "Claude Haiku 4.5 (Global)",
-      "capabilities": {
-        "tool_use": true,
-        "vision": true,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": true,
-        "extended_thinking": true,
-        "prompt_caching": true
-      },
-      "max_input_tokens": 200000,
-      "max_output_tokens": 64000,
-      "pricing": {
-        "input_per_1k": 0.0009,
-        "output_per_1k": 0.0045,
-        "cache_read_per_1k": 9e-05,
-        "cache_write_per_1k": 0.001125
-      },
-      "supported_latency_modes": [
-        "standard"
-      ],
-      "guardrail_compatible": true,
-      "quality_baseline": 31.1
-    },
-    {
       "model_id": "qwen.qwen3-235b-a22b-2507-v1:0",
       "family": "qwen",
       "regions": [
@@ -903,152 +758,6 @@
       "quality_baseline": 44.4
     },
     {
-      "model_id": "global.anthropic.claude-sonnet-4-6",
-      "family": "anthropic",
-      "regions": [
-        {
-          "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-3",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-south-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-2",
-          "cris_profiles": [
-            "au",
-            "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "eu-central-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-north-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-2",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ],
-          "direct": true
-        },
-        {
-          "name": "eu-west-3",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "sa-east-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "us-east-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-east-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        }
-      ],
-      "tier": "mid",
-      "display_name": "Claude Sonnet 4.6 (Global)",
-      "capabilities": {
-        "tool_use": true,
-        "vision": true,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": true,
-        "extended_thinking": true,
-        "prompt_caching": true
-      },
-      "max_input_tokens": 1000000,
-      "max_output_tokens": 64000,
-      "pricing": {
-        "input_per_1k": 0.0027,
-        "output_per_1k": 0.0135,
-        "cache_read_per_1k": 0.00027,
-        "cache_write_per_1k": 0.003375
-      },
-      "supported_latency_modes": [
-        "standard"
-      ],
-      "guardrail_compatible": true,
-      "quality_baseline": 44.4
-    },
-    {
       "model_id": "minimax.minimax-m2",
       "family": "minimax",
       "regions": [
@@ -1434,136 +1143,6 @@
       "quality_baseline": 12.7
     },
     {
-      "model_id": "global.amazon.nova-2-lite-v1:0",
-      "family": "amazon",
-      "regions": [
-        {
-          "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-south-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "eu-central-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-north-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-3",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "us-east-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-east-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        }
-      ],
-      "tier": "lite",
-      "display_name": "Nova 2 Lite (Global)",
-      "capabilities": {
-        "tool_use": true,
-        "vision": true,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": true,
-        "extended_thinking": false,
-        "prompt_caching": true
-      },
-      "max_input_tokens": 1000000,
-      "max_output_tokens": 64000,
-      "pricing": {
-        "input_per_1k": 0.0004725,
-        "output_per_1k": 0.00433125,
-        "cache_read_per_1k": 0.000118125,
-        "cache_write_per_1k": 0.0
-      },
-      "supported_latency_modes": [
-        "standard"
-      ],
-      "guardrail_compatible": true,
-      "quality_baseline": 12.7
-    },
-    {
       "model_id": "minimax.minimax-m2.5",
       "family": "minimax",
       "regions": [
@@ -1739,10 +1318,10 @@
       "tier": "reasoning",
       "display_name": "Kimi K2 Thinking",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": false,
         "streaming": true,
-        "streaming_tool_use": true,
+        "streaming_tool_use": false,
         "document_support": false,
         "extended_thinking": true,
         "prompt_caching": false
@@ -2326,150 +1905,6 @@
       "quality_baseline": 46.5
     },
     {
-      "model_id": "global.anthropic.claude-opus-4-6-v1",
-      "family": "anthropic",
-      "regions": [
-        {
-          "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-3",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-south-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-2",
-          "cris_profiles": [
-            "au",
-            "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "eu-central-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-north-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-2",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ],
-          "direct": true
-        },
-        {
-          "name": "eu-west-3",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "sa-east-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "us-east-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-east-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        }
-      ],
-      "tier": "heavy",
-      "display_name": "Claude Opus 4.6 (Global)",
-      "capabilities": {
-        "tool_use": true,
-        "vision": true,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": true,
-        "extended_thinking": true,
-        "prompt_caching": true
-      },
-      "max_input_tokens": 1000000,
-      "max_output_tokens": 128000,
-      "pricing": {
-        "input_per_1k": 0.0045,
-        "output_per_1k": 0.0225,
-        "cache_read_per_1k": 0.00045,
-        "cache_write_per_1k": 0.005625
-      },
-      "supported_latency_modes": [
-        "standard"
-      ],
-      "guardrail_compatible": true,
-      "quality_baseline": 46.5
-    },
-    {
       "model_id": "nvidia.nemotron-nano-9b-v2",
       "family": "nvidia",
       "regions": [
@@ -2808,6 +2243,151 @@
       "quality_baseline": 6.3
     },
     {
+      "model_id": "anthropic.claude-opus-4-8",
+      "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global",
+            "jp"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
+      "tier": "reasoning",
+      "display_name": "Claude Opus 4.8",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": true,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 128000,
+      "pricing": {
+        "input_per_1k": 0.005,
+        "output_per_1k": 0.025,
+        "cache_read_per_1k": 0.0005,
+        "cache_write_per_1k": 0.00625
+      },
+      "supported_latency_modes": [
+        "standard"
+      ],
+      "guardrail_compatible": true,
+      "quality_baseline": 51.8
+    },
+    {
       "model_id": "anthropic.claude-opus-4-7",
       "family": "anthropic",
       "regions": [
@@ -2929,151 +2509,6 @@
       ],
       "tier": "reasoning",
       "display_name": "Claude Opus 4.7",
-      "capabilities": {
-        "tool_use": true,
-        "vision": true,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": true,
-        "extended_thinking": true,
-        "prompt_caching": true
-      },
-      "max_input_tokens": 1000000,
-      "max_output_tokens": 128000,
-      "pricing": {
-        "input_per_1k": 0.0045,
-        "output_per_1k": 0.0225,
-        "cache_read_per_1k": 0.00045,
-        "cache_write_per_1k": 0.005625
-      },
-      "supported_latency_modes": [
-        "standard"
-      ],
-      "guardrail_compatible": true,
-      "quality_baseline": 51.8
-    },
-    {
-      "model_id": "global.anthropic.claude-opus-4-7",
-      "family": "anthropic",
-      "regions": [
-        {
-          "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-3",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-south-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-2",
-          "cris_profiles": [
-            "au",
-            "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "eu-central-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-north-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-2",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-3",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "sa-east-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "us-east-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-east-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        }
-      ],
-      "tier": "reasoning",
-      "display_name": "Claude Opus 4.7 (Global)",
       "capabilities": {
         "tool_use": true,
         "vision": true,
@@ -3285,151 +2720,6 @@
       ],
       "tier": "mid",
       "display_name": "Claude Sonnet 4.5",
-      "capabilities": {
-        "tool_use": true,
-        "vision": true,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": true,
-        "extended_thinking": true,
-        "prompt_caching": true
-      },
-      "max_input_tokens": 200000,
-      "max_output_tokens": 64000,
-      "pricing": {
-        "input_per_1k": 0.0027,
-        "output_per_1k": 0.0135,
-        "cache_read_per_1k": 0.00027,
-        "cache_write_per_1k": 0.003375
-      },
-      "supported_latency_modes": [
-        "standard"
-      ],
-      "guardrail_compatible": true,
-      "quality_baseline": 37.1
-    },
-    {
-      "model_id": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-      "family": "anthropic",
-      "regions": [
-        {
-          "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-3",
-          "cris_profiles": [
-            "global",
-            "jp"
-          ]
-        },
-        {
-          "name": "ap-south-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-2",
-          "cris_profiles": [
-            "au",
-            "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "eu-central-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-north-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-2",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-3",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "sa-east-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "us-east-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-east-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        }
-      ],
-      "tier": "mid",
-      "display_name": "Claude Sonnet 4.5 (Global)",
       "capabilities": {
         "tool_use": true,
         "vision": true,
@@ -4042,148 +3332,6 @@
       ],
       "tier": "heavy",
       "display_name": "Claude Opus 4.5",
-      "capabilities": {
-        "tool_use": true,
-        "vision": true,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": true,
-        "extended_thinking": true,
-        "prompt_caching": true
-      },
-      "max_input_tokens": 200000,
-      "max_output_tokens": 64000,
-      "pricing": {
-        "input_per_1k": 0.0045,
-        "output_per_1k": 0.0225,
-        "cache_read_per_1k": 0.00045,
-        "cache_write_per_1k": 0.005625
-      },
-      "supported_latency_modes": [
-        "standard"
-      ],
-      "guardrail_compatible": true,
-      "quality_baseline": 43.1
-    },
-    {
-      "model_id": "global.anthropic.claude-opus-4-5-20251101-v1:0",
-      "family": "anthropic",
-      "regions": [
-        {
-          "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-3",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-south-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-southeast-2",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "eu-central-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-north-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-1",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-2",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "eu-west-3",
-          "cris_profiles": [
-            "eu",
-            "global"
-          ]
-        },
-        {
-          "name": "sa-east-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "us-east-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-east-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-1",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        },
-        {
-          "name": "us-west-2",
-          "cris_profiles": [
-            "global",
-            "us"
-          ]
-        }
-      ],
-      "tier": "heavy",
-      "display_name": "Claude Opus 4.5 (Global)",
       "capabilities": {
         "tool_use": true,
         "vision": true,

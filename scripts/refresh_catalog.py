@@ -1165,16 +1165,6 @@ def build_catalog(
 
         catalog.append(entry)
 
-        # Also add global variant if regions include global prefix
-        has_global = any("global" in r.get("cris_profiles", []) for r in region_entries)
-        if has_global and not model_id.startswith("global."):
-            global_id = f"global.{base_id}"
-            global_entry = dict(entry)
-            global_entry["model_id"] = global_id
-            global_entry["display_name"] = f"{display_name} (Global)"
-            global_entry["regions"] = region_entries
-            catalog.append(global_entry)
-
     logger.info(f"  Built catalog with {len(catalog)} entries")
     return catalog
 
