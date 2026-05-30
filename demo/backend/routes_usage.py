@@ -181,28 +181,35 @@ async def simulate_usage(
         loop = asyncio.get_event_loop()
 
         for req_num in range(requests_per_user):
+            # Fire all users in parallel for this round
+            import concurrent.futures
+            futures = {}
             for entity in entities:
                 eid = entity["id"]
-                rule = BUDGET_RULES.get(entity.get("tier", eid))
-                budget = rule.max_hourly_spend if rule else 0
-
-                # Pick a prompt
                 cx = random.choice(["simple", "moderate", "complex"]) if complexity == "mixed" else complexity
                 prompt = random.choice(SIM_PROMPTS[cx])
 
-                # Build metadata — for tenant mode, use tenant ID as user_id
-                # so the router's scope_key ("user_id") tracks per-tenant
                 if scope == "tenant":
                     metadata = {"user_id": eid, "tier": eid}
                 else:
                     metadata = {"user_id": eid, "team": entity.get("team", ""), "tier": entity.get("tier", "pro")}
 
-                try:
-                    result = await loop.run_in_executor(
-                        None, _run_request, prompt, metadata, strategy, classifier
-                    )
+                futures[eid] = {
+                    "future": loop.run_in_executor(None, _run_request, prompt, metadata, strategy, classifier),
+                    "entity": entity,
+                    "prompt": prompt,
+                }
 
-                    # Detect downgrade (router switched to cost-optimized)
+            # Collect results as they complete
+            for eid, ctx in futures.items():
+                entity = ctx["entity"]
+                prompt = ctx["prompt"]
+                rule = BUDGET_RULES.get(entity.get("tier", eid))
+                budget = rule.max_hourly_spend if rule else 0
+
+                try:
+                    result = await ctx["future"]
+
                     downgraded = result.get("strategy_used") == "cost-optimized" and strategy != "cost-optimized"
                     if downgraded and not entity_was_downgraded[eid]:
                         entity_was_downgraded[eid] = True

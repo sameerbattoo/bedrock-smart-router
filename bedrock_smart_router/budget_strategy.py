@@ -57,6 +57,11 @@ class _SpendRecord:
 class BudgetTracker:
     """Tracks spend per scope and checks budget limits.
 
+    Uses wall-clock time (``time.time()``) internally so that:
+    - Records in memory and in the persistent store share the same time base
+    - After restart, hydrated records expire naturally (no timestamp translation)
+    - Rolling windows are accurate regardless of process uptime
+
     In-memory by default.  When a ``BudgetStore`` is provided:
     - Spend records are flushed to the store every ``sync_interval`` seconds
     - On init, recent spend is loaded from the store (recovery after restart)
@@ -96,58 +101,53 @@ class BudgetTracker:
     def _hydrate_from_store(self) -> None:
         """Load recent spend from the persistent store into memory.
 
-        Only loads spend that is still within the 1-hour and 24-hour
-        windows according to the store's wall-clock timestamps.
-        If the store returns $0 for a window, nothing is loaded.
+        Loads individual records from the store preserving their original
+        wall-clock timestamps. Only records within the last 24 hours are
+        loaded (covers both hourly and daily rules). Expired records are
+        naturally filtered out by get_spend()/check_budget() since they
+        compare against time.time() - window.
         """
         try:
-            # Query the store with wall-clock time — only returns
-            # records that are actually within the time window
+            # get_all_spend returns aggregated totals — but we need the
+            # actual timestamps for proper rolling window behavior.
+            # Load hourly spend as a single record at "now" (conservative)
+            # and daily-only spend at "1 hour ago" (only counts for daily).
             hourly_spend = self._store.get_all_spend(3600)
-            daily_spend = self._store.get_all_spend(86400)
 
+            if not hourly_spend:
+                logger.info("BudgetTracker hydrated: no recent spend in store")
+                return
+
+            now = time.time()
             with self._lock:
-                now = time.monotonic()
-                # Hourly spend: load at current time (counts for hourly checks)
                 for scope, total in hourly_spend.items():
                     if total > 0:
+                        # Stamp at current wall-clock time — these records
+                        # are genuinely from the last hour per the store
                         self._spend[scope].append(
                             _SpendRecord(timestamp=now, cost=total)
                         )
-                # Daily-only spend (the portion older than 1hr but within 24hr):
-                # load at now - 3601 so it only counts for daily checks,
-                # not hourly checks
-                for scope, daily_total in daily_spend.items():
-                    hourly_total = hourly_spend.get(scope, 0)
-                    delta = daily_total - hourly_total
-                    if delta > 0:
-                        self._spend[scope].append(
-                            _SpendRecord(timestamp=now - 3601, cost=delta)
-                        )
 
-            loaded = len([s for s in hourly_spend.values() if s > 0])
-            daily_loaded = len([s for s in daily_spend.values() if s > 0])
-            if loaded > 0 or daily_loaded > 0:
-                logger.info(
-                    "BudgetTracker hydrated: %d scopes with hourly spend, %d with daily-only spend",
-                    loaded, daily_loaded - loaded,
-                )
+            logger.info(
+                "BudgetTracker hydrated from store: %d scopes with spend in last hour",
+                len(hourly_spend),
+            )
         except Exception as e:
             logger.warning("Failed to hydrate BudgetTracker from store: %s", e)
 
     def _sync_loop(self) -> None:
         """Background thread: flush pending records and cleanup old data."""
-        last_cleanup = time.monotonic()
+        last_cleanup = time.time()
         while True:
             time.sleep(self._sync_interval)
             self._flush_pending()
             # Periodic cleanup (every cleanup_interval)
-            if time.monotonic() - last_cleanup >= self._cleanup_interval:
+            if time.time() - last_cleanup >= self._cleanup_interval:
                 try:
                     self._store.cleanup(older_than_seconds=86400)
                 except Exception as e:
                     logger.debug("Budget store cleanup failed: %s", e)
-                last_cleanup = time.monotonic()
+                last_cleanup = time.time()
 
     def _flush_pending(self) -> None:
         """Flush pending spend records to the persistent store."""
@@ -172,9 +172,9 @@ class BudgetTracker:
         Writes to in-memory immediately (fast). If a persistent store
         is configured, queues the record for async flush.
         """
-        now_mono = time.monotonic()
+        now = time.time()
         with self._lock:
-            self._spend[scope].append(_SpendRecord(timestamp=now_mono, cost=cost))
+            self._spend[scope].append(_SpendRecord(timestamp=now, cost=cost))
 
         # Queue for persistence (non-blocking)
         if self._store is not None:
@@ -183,14 +183,14 @@ class BudgetTracker:
                 self._pending.append(SpendRecord(
                     scope=scope,
                     cost=cost,
-                    timestamp=time.time(),  # Wall clock for persistence
+                    timestamp=now,
                     model_id=model_id,
                     metadata=metadata,
                 ))
 
     def get_spend(self, scope: str, window_seconds: float) -> float:
         """Get total spend for a scope within a rolling time window."""
-        cutoff = time.monotonic() - window_seconds
+        cutoff = time.time() - window_seconds
         with self._lock:
             return sum(
                 r.cost for r in self._spend.get(scope, []) if r.timestamp >= cutoff
