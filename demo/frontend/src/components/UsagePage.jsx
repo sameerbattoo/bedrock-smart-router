@@ -66,6 +66,14 @@ export default function UsagePage({ onRun }) {
     { id: 'diana', name: 'Diana Patel', team: 'Executive', tier: 'enterprise', budget: 0.05, on_exceeded: 'downgrade', color: 'orange' },
   ]
 
+  const TENANTS = [
+    { id: 'acme-corp', name: 'Acme Corp', team: '12 members', tier: 'acme-corp', budget: 0.03, on_exceeded: 'downgrade', color: 'purple' },
+    { id: 'globex-inc', name: 'Globex Inc', team: '8 members', tier: 'globex-inc', budget: 0.008, on_exceeded: 'reject', color: 'blue' },
+    { id: 'initech', name: 'Initech', team: '6 members', tier: 'initech', budget: 0.05, on_exceeded: 'downgrade', color: 'green' },
+    { id: 'umbrella-co', name: 'Umbrella Co', team: '4 members', tier: 'umbrella-co', budget: 0.06, on_exceeded: 'downgrade', color: 'orange' },
+  ]
+
+  const [scope, setScope] = useState('user')
   const [selectedUsers, setSelectedUsers] = useState(['alice', 'bob', 'charlie'])
   const [strategy, setStrategy] = useState('quality-optimized')
   const [classifier, setClassifier] = useState('heuristic')
@@ -81,15 +89,16 @@ export default function UsagePage({ onRun }) {
   const logRef = useRef(null)
   const abortRef = useRef(null)
 
-  // Load existing data from SQLite on mount
+  // Load existing data on mount
   useEffect(() => {
-    fetch(`${STREAM_API}/usage-dashboard`)
+    fetch(`${STREAM_API}/usage-dashboard?scope=${scope}`)
       .then(r => r.json())
       .then(data => {
-        if (data.users && data.users.length > 0) {
+        const entities = data.entities || []
+        if (entities.length > 0) {
           const dashMap = {}
           let totalCost = 0
-          for (const u of data.users) {
+          for (const u of entities) {
             dashMap[u.user_id] = {
               requests: 0,
               cumulative_cost: u.total_cost || 0,
@@ -106,7 +115,7 @@ export default function UsagePage({ onRun }) {
         }
       })
       .catch(() => {})
-  }, [])
+  }, [scope])
 
   // Auto-scroll log to bottom
   useEffect(() => {
@@ -133,6 +142,7 @@ export default function UsagePage({ onRun }) {
 
     const form = new FormData()
     form.append('selected_users', selectedUsers.join(','))
+    form.append('scope', scope)
     form.append('strategy', strategy)
     form.append('classifier', classifier)
     form.append('complexity', complexity)
@@ -241,10 +251,13 @@ export default function UsagePage({ onRun }) {
     setEvents([])
     setTotals({ requests: 0, cost: 0, overBudget: 0 })
     setProgress({})
+    setRequestLog([])
   }
 
+  const entities = scope === 'tenant' ? TENANTS : USERS
   const dashboardUsers = selectedUsers.map(uid => {
-    const user = USERS.find(u => u.id === uid)
+    const user = entities.find(u => u.id === uid)
+    if (!user) return null
     const data = dashboard[uid]
     return {
       ...user,
@@ -257,7 +270,7 @@ export default function UsagePage({ onRun }) {
       downgraded: data?.downgraded || false,
       on_exceeded: user.on_exceeded,
     }
-  })
+  }).filter(Boolean)
 
   const overBudgetCount = dashboardUsers.filter(u => u.status === 'over').length
 
@@ -275,11 +288,26 @@ export default function UsagePage({ onRun }) {
             </div>
           </div>
           <div className="p-4 space-y-4">
-            {/* User selection */}
+            {/* Scope toggle */}
             <div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-2">Select Users (multi-select)</div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-2">Tracking Scope</div>
+              <div className="flex gap-1">
+                <button onClick={() => { setScope('user'); setSelectedUsers(['alice', 'bob', 'charlie']); setDashboard({}); setRequestLog([]); setEvents([]) }}
+                  className={`text-[10px] px-3 py-1.5 rounded-md font-medium transition-all ${scope === 'user' ? 'bg-orange-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>
+                  👤 Per User
+                </button>
+                <button onClick={() => { setScope('tenant'); setSelectedUsers(['acme-corp', 'globex-inc', 'initech']); setDashboard({}); setRequestLog([]); setEvents([]) }}
+                  className={`text-[10px] px-3 py-1.5 rounded-md font-medium transition-all ${scope === 'tenant' ? 'bg-orange-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>
+                  🏢 Per Tenant (Department)
+                </button>
+              </div>
+            </div>
+
+            {/* Entity selection */}
+            <div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-2">Select {scope === 'tenant' ? 'Departments' : 'Users'} (multi-select)</div>
               <div className="grid grid-cols-2 gap-2">
-                {USERS.map(u => (
+                {entities.map(u => (
                   <UserCard key={u.id} user={u} selected={selectedUsers.includes(u.id)} onToggle={() => toggleUser(u.id)} />
                 ))}
               </div>
@@ -378,7 +406,7 @@ export default function UsagePage({ onRun }) {
             </div>
             <div ref={logRef} className={`${events.length > 0 ? 'max-h-[200px]' : 'max-h-[400px]'} overflow-y-auto divide-y divide-gray-800/20`}>
               {requestLog.map((entry, i) => {
-                const colors = COLOR_MAP[USERS.find(u => u.id === entry.user_id)?.color] || COLOR_MAP.purple
+                const colors = COLOR_MAP[entities.find(u => u.id === entry.user_id)?.color] || COLOR_MAP.purple
                 const isOver = entry.downgraded || entry.status === 'over'
                 return (
                   <div key={i} className={`px-3 py-2 text-[10px] ${isOver ? 'bg-red-900/10 border-l-2 border-red-500' : 'hover:bg-gray-800/20'}`}>
@@ -456,7 +484,7 @@ export default function UsagePage({ onRun }) {
           {/* Per-user table */}
           <div className="border border-gray-800/40 rounded-lg overflow-hidden">
             <div className="px-3 py-2 bg-gray-900/60 border-b border-gray-800/40">
-              <span className="text-[10px] text-gray-400 font-bold uppercase">Per-User Tracking (rolling 1-hour window)</span>
+              <span className="text-[10px] text-gray-400 font-bold uppercase">Per-{scope === 'tenant' ? 'Tenant' : 'User'} Tracking (rolling 1-hour window)</span>
             </div>
             <div className="divide-y divide-gray-800/30">
               {dashboardUsers.map(u => {
@@ -507,11 +535,11 @@ export default function UsagePage({ onRun }) {
               <div className="p-3 text-[10px] text-gray-400 space-y-2">
                 <div className="flex items-start gap-2">
                   <span className="text-green-400">1.</span>
-                  <span>Each request is tagged with <code className="text-orange-300">user_id</code> and <code className="text-orange-300">tier</code> via routing metadata</span>
+                  <span>Each request is tagged with <code className="text-orange-300">{scope === 'tenant' ? 'team' : 'user_id'}</code> and <code className="text-orange-300">tier</code> via routing metadata</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-green-400">2.</span>
-                  <span>Cost is tracked per-user via <code className="text-orange-300">BudgetTracker</code> + <code className="text-orange-300">SQLiteBudgetStore</code> (in-memory hot path, async persistence)</span>
+                  <span>Cost is tracked per-{scope} via <code className="text-orange-300">BudgetTracker</code> + <code className="text-orange-300">SQLiteBudgetStore</code> (in-memory hot path, async persistence)</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-green-400">3.</span>

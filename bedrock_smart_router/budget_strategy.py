@@ -94,22 +94,44 @@ class BudgetTracker:
             self._sync_thread.start()
 
     def _hydrate_from_store(self) -> None:
-        """Load recent spend from the persistent store into memory."""
+        """Load recent spend from the persistent store into memory.
+
+        Only loads spend that is still within the 1-hour and 24-hour
+        windows according to the store's wall-clock timestamps.
+        If the store returns $0 for a window, nothing is loaded.
+        """
         try:
-            # Load last 24 hours (covers both hourly and daily windows)
-            all_spend = self._store.get_all_spend(86400)
+            # Query the store with wall-clock time — only returns
+            # records that are actually within the time window
+            hourly_spend = self._store.get_all_spend(3600)
+            daily_spend = self._store.get_all_spend(86400)
+
             with self._lock:
-                for scope, total in all_spend.items():
-                    # Add as a single aggregated record at current time
-                    # (we lose per-record granularity but get correct totals)
+                now = time.monotonic()
+                # Hourly spend: load at current time (counts for hourly checks)
+                for scope, total in hourly_spend.items():
                     if total > 0:
                         self._spend[scope].append(
-                            _SpendRecord(timestamp=time.monotonic(), cost=total)
+                            _SpendRecord(timestamp=now, cost=total)
                         )
-            logger.info(
-                "BudgetTracker hydrated from store: %d scopes loaded",
-                len(all_spend),
-            )
+                # Daily-only spend (the portion older than 1hr but within 24hr):
+                # load at now - 3601 so it only counts for daily checks,
+                # not hourly checks
+                for scope, daily_total in daily_spend.items():
+                    hourly_total = hourly_spend.get(scope, 0)
+                    delta = daily_total - hourly_total
+                    if delta > 0:
+                        self._spend[scope].append(
+                            _SpendRecord(timestamp=now - 3601, cost=delta)
+                        )
+
+            loaded = len([s for s in hourly_spend.values() if s > 0])
+            daily_loaded = len([s for s in daily_spend.values() if s > 0])
+            if loaded > 0 or daily_loaded > 0:
+                logger.info(
+                    "BudgetTracker hydrated: %d scopes with hourly spend, %d with daily-only spend",
+                    loaded, daily_loaded - loaded,
+                )
         except Exception as e:
             logger.warning("Failed to hydrate BudgetTracker from store: %s", e)
 

@@ -18,7 +18,7 @@ from fastapi import APIRouter, Form
 from fastapi.responses import StreamingResponse
 
 from bedrock_smart_router import BedrockRouter, RoutingConfig
-from bedrock_smart_router.budget_strategy import BudgetExceededError
+from bedrock_smart_router.budget_strategy import BudgetExceededError, BudgetTracker
 from shared import display_model_name, compute_cost
 
 router = APIRouter()
@@ -36,9 +36,15 @@ _smart_router = BedrockRouter.create({
         "rule_key": "tier",
         "sync_interval_seconds": 2,
         "rules": {
+            # Per-user rules (keyed by tier)
             "free": {"max_hourly_spend": 0.005, "on_exceeded": "reject"},
             "pro": {"max_hourly_spend": 0.015, "on_exceeded": "downgrade"},
             "enterprise": {"max_hourly_spend": 0.05, "on_exceeded": "downgrade"},
+            # Per-tenant rules (keyed by tenant name)
+            "acme-corp": {"max_hourly_spend": 0.03, "on_exceeded": "downgrade"},
+            "globex-inc": {"max_hourly_spend": 0.008, "on_exceeded": "reject"},
+            "initech": {"max_hourly_spend": 0.05, "on_exceeded": "downgrade"},
+            "umbrella-co": {"max_hourly_spend": 0.06, "on_exceeded": "downgrade"},
         },
     },
 })
@@ -57,6 +63,22 @@ for u in USERS:
     rule = BUDGET_RULES.get(u["tier"])
     u["budget"] = rule.max_hourly_spend if rule else 0
     u["on_exceeded"] = rule.on_exceeded if rule else "downgrade"
+
+# ── Tenant (Department) Personas ────────────────────────────────────
+
+TENANTS = [
+    {"id": "acme-corp", "name": "Acme Corp", "members": 12, "color": "purple"},
+    {"id": "globex-inc", "name": "Globex Inc", "members": 8, "color": "blue"},
+    {"id": "initech", "name": "Initech", "members": 6, "color": "green"},
+    {"id": "umbrella-co", "name": "Umbrella Co", "members": 4, "color": "orange"},
+]
+
+for t in TENANTS:
+    rule = BUDGET_RULES.get(t["id"])
+    t["budget"] = rule.max_hourly_spend if rule else 0
+    t["on_exceeded"] = rule.on_exceeded if rule else "downgrade"
+    t["team"] = f"{t['members']} members"
+    t["tier"] = t["id"]
 
 # ── Simulation Prompts ──────────────────────────────────────────────
 
@@ -89,39 +111,44 @@ SIM_PROMPTS = {
 
 @router.get("/usage-users")
 def get_users():
-    """Return available user personas with their budget rules."""
-    return {"users": USERS}
+    """Return available user personas and tenant personas."""
+    return {"users": USERS, "tenants": TENANTS}
 
 
 @router.get("/usage-dashboard")
-def get_dashboard():
-    """Return current spend from the router's budget tracker."""
-    tracker = _smart_router._budget_tracker
-    if not tracker:
-        return {"users": []}
+def get_dashboard(scope: str = "user"):
+    """Return current spend from the persistent store (wall-clock accurate)."""
+    from bedrock_smart_router.budget_store import SQLiteBudgetStore
+    store = _smart_router._budget_tracker._store if _smart_router._budget_tracker else None
 
-    users_data = []
-    for user in USERS:
-        uid = user["id"]
-        rule = BUDGET_RULES.get(user["tier"])
+    entities = TENANTS if scope == "tenant" else USERS
+    entities_data = []
+    for entity in entities:
+        eid = entity["id"]
+        rule = BUDGET_RULES.get(entity.get("tier", eid))
         budget = rule.max_hourly_spend if rule else 0
-        spend = tracker.get_spend(uid, 3600)
+        # Query the persistent store with wall-clock time (accurate after restart)
+        spend = store.get_spend(eid, 3600) if store else 0
         remaining = max(0, budget - spend)
         pct = (spend / budget * 100) if budget > 0 else 0
         status = "over" if pct >= 100 else "warning" if pct >= 80 else "ok"
-        users_data.append({
-            "user_id": uid, "name": user["name"], "team": user["team"],
-            "tier": user["tier"], "total_cost": round(spend, 6),
+        entities_data.append({
+            "user_id": eid, "name": entity["name"],
+            "team": entity.get("team", ""),
+            "tier": entity.get("tier", eid),
+            "total_cost": round(spend, 6),
             "budget": budget, "remaining": round(remaining, 6),
             "pct_used": round(pct, 1), "status": status,
-            "on_exceeded": user["on_exceeded"], "color": user["color"],
+            "on_exceeded": entity.get("on_exceeded", "downgrade"),
+            "color": entity["color"],
         })
-    return {"users": users_data}
+    return {"entities": entities_data}
 
 
 @router.post("/usage-simulate")
 async def simulate_usage(
     selected_users: str = Form("alice,bob,charlie"),
+    scope: str = Form("user"),
     strategy: str = Form("quality-optimized"),
     classifier: str = Form("heuristic"),
     complexity: str = Form("mixed"),
@@ -131,10 +158,16 @@ async def simulate_usage(
     """Run simulation. The router handles budget enforcement automatically."""
     import random
 
-    user_ids = [u.strip() for u in selected_users.split(",") if u.strip()]
-    users = [u for u in USERS if u["id"] in user_ids]
-    if not users:
-        users = USERS[:2]
+    entity_ids = [u.strip() for u in selected_users.split(",") if u.strip()]
+
+    if scope == "tenant":
+        entities = [t for t in TENANTS if t["id"] in entity_ids]
+        if not entities:
+            entities = TENANTS[:2]
+    else:
+        entities = [u for u in USERS if u["id"] in entity_ids]
+        if not entities:
+            entities = USERS[:2]
 
     session_id = str(uuid.uuid4())[:8]
     delay_map = {"slow": 2.0, "normal": 1.0, "fast": 0.3}
@@ -143,34 +176,41 @@ async def simulate_usage(
     async def event_stream():
         yield f"event: session_init\ndata: {json.dumps({'session_id': session_id})}\n\n"
 
-        user_was_rejected: dict[str, bool] = {u["id"]: False for u in users}
-        user_was_downgraded: dict[str, bool] = {u["id"]: False for u in users}
+        entity_was_rejected: dict[str, bool] = {e["id"]: False for e in entities}
+        entity_was_downgraded: dict[str, bool] = {e["id"]: False for e in entities}
         loop = asyncio.get_event_loop()
 
         for req_num in range(requests_per_user):
-            for user in users:
-                uid = user["id"]
-                budget = user["budget"]
+            for entity in entities:
+                eid = entity["id"]
+                rule = BUDGET_RULES.get(entity.get("tier", eid))
+                budget = rule.max_hourly_spend if rule else 0
 
                 # Pick a prompt
                 cx = random.choice(["simple", "moderate", "complex"]) if complexity == "mixed" else complexity
                 prompt = random.choice(SIM_PROMPTS[cx])
 
+                # Build metadata — for tenant mode, use tenant ID as user_id
+                # so the router's scope_key ("user_id") tracks per-tenant
+                if scope == "tenant":
+                    metadata = {"user_id": eid, "tier": eid}
+                else:
+                    metadata = {"user_id": eid, "team": entity.get("team", ""), "tier": entity.get("tier", "pro")}
+
                 try:
-                    # Just call the router — it handles budget check + downgrade internally
                     result = await loop.run_in_executor(
-                        None, _run_request, prompt, uid, user["team"], user["tier"], strategy, classifier
+                        None, _run_request, prompt, metadata, strategy, classifier
                     )
 
-                    # Check if downgraded (strategy was overridden to cost-optimized)
+                    # Detect downgrade (router switched to cost-optimized)
                     downgraded = result.get("strategy_used") == "cost-optimized" and strategy != "cost-optimized"
-                    if downgraded and not user_was_downgraded[uid]:
-                        user_was_downgraded[uid] = True
-                        yield f"event: budget_exceeded\ndata: {json.dumps({'user_id': uid, 'name': user['name'], 'budget': budget, 'action': 'downgrade'})}\n\n"
+                    if downgraded and not entity_was_downgraded[eid]:
+                        entity_was_downgraded[eid] = True
+                        yield f"event: budget_exceeded\ndata: {json.dumps({'user_id': eid, 'name': entity['name'], 'budget': budget, 'action': 'downgrade'})}\n\n"
 
-                    spend = _smart_router._budget_tracker.get_spend(uid, 3600)
+                    spend = _smart_router._budget_tracker.get_spend(eid, 3600)
                     event_data = {
-                        "user_id": uid, "name": user["name"],
+                        "user_id": eid, "name": entity["name"],
                         "request_num": req_num + 1, "total_requests": requests_per_user,
                         "prompt": prompt[:80], "response_text": result["response_text"],
                         "model": result["display_model"], "complexity": result["complexity"],
@@ -185,14 +225,13 @@ async def simulate_usage(
                     yield f"event: request_complete\ndata: {json.dumps(event_data)}\n\n"
 
                 except BudgetExceededError as e:
-                    # Router rejected the request — $0 cost, no model called
-                    if not user_was_rejected[uid]:
-                        user_was_rejected[uid] = True
-                        yield f"event: budget_exceeded\ndata: {json.dumps({'user_id': uid, 'name': user['name'], 'budget': budget, 'action': 'reject', 'reason': str(e)})}\n\n"
+                    if not entity_was_rejected[eid]:
+                        entity_was_rejected[eid] = True
+                        yield f"event: budget_exceeded\ndata: {json.dumps({'user_id': eid, 'name': entity['name'], 'budget': budget, 'action': 'reject', 'reason': str(e)})}\n\n"
 
-                    spend = _smart_router._budget_tracker.get_spend(uid, 3600)
+                    spend = _smart_router._budget_tracker.get_spend(eid, 3600)
                     event_data = {
-                        "user_id": uid, "name": user["name"],
+                        "user_id": eid, "name": entity["name"],
                         "request_num": req_num + 1, "total_requests": requests_per_user,
                         "prompt": prompt[:80],
                         "response_text": "[REJECTED] Budget exceeded — no model called, $0 cost",
@@ -204,12 +243,12 @@ async def simulate_usage(
                     yield f"event: request_complete\ndata: {json.dumps(event_data)}\n\n"
 
                 except Exception as e:
-                    yield f"event: request_error\ndata: {json.dumps({'user_id': uid, 'error': str(e)[:100]})}\n\n"
+                    yield f"event: request_error\ndata: {json.dumps({'user_id': eid, 'error': str(e)[:100]})}\n\n"
 
             if req_num < requests_per_user - 1:
                 await asyncio.sleep(delay)
 
-        yield f"event: simulation_complete\ndata: {json.dumps({'total_requests': requests_per_user * len(users)})}\n\n"
+        yield f"event: simulation_complete\ndata: {json.dumps({'total_requests': requests_per_user * len(entities)})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -218,29 +257,30 @@ async def simulate_usage(
 @router.post("/usage-reset")
 def reset_usage():
     """Reset budget tracking data."""
-    if _smart_router._budget_tracker and _smart_router._budget_tracker._store:
-        _smart_router._budget_tracker._store.cleanup(older_than_seconds=0)
-    # Reinitialize tracker
-    from bedrock_smart_router.budget_store import SQLiteBudgetStore
-    from bedrock_smart_router.budget_strategy import BudgetTracker
-    store = SQLiteBudgetStore(path="/tmp/bsr_budget.db")
-    _smart_router._budget_tracker = BudgetTracker(store=store, sync_interval=2.0)
+    tracker = _smart_router._budget_tracker
+    if tracker:
+        # Flush any pending writes before cleanup
+        if hasattr(tracker, '_flush_pending'):
+            tracker._flush_pending()
+        if tracker._store:
+            tracker._store.cleanup(older_than_seconds=0)
+        # Clear in-memory spend (reuse existing tracker, don't orphan sync thread)
+        with tracker._lock:
+            tracker._spend.clear()
     return {"status": "ok"}
 
 
 # ── Internal ────────────────────────────────────────────────────────
 
-def _run_request(prompt: str, user_id: str, team: str, tier: str,
-                 strategy: str, classifier: str) -> dict:
+def _run_request(prompt: str, metadata: dict, strategy: str, classifier: str) -> dict:
     """Execute a single request through the router. Budget enforcement is automatic."""
-    # Invalidate cache to get real costs
     _smart_router._cache.invalidate()
 
     response = _smart_router.converse(
         messages=[{"role": "user", "content": [{"text": prompt}]}],
         routing=RoutingConfig(
             strategy=strategy,
-            metadata={"user_id": user_id, "team": team, "tier": tier},
+            metadata=metadata,
             classifier=classifier,
         ),
         inferenceConfig={"maxTokens": 100},
