@@ -338,7 +338,7 @@ export default function UsagePage({ onRun }) {
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">Complexity</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1">Prompt Complexity</div>
                 <div className="flex gap-1">
                   {['simple', 'moderate', 'complex', 'mixed'].map(c => (
                     <button key={c} onClick={() => setComplexity(c)}
@@ -423,9 +423,12 @@ export default function UsagePage({ onRun }) {
                     <div className="text-gray-500 truncate pl-3">
                       <span className="text-gray-600">Q:</span> {entry.prompt}
                     </div>
-                    <div className={`truncate pl-3 ${isOver ? 'text-red-300/70' : 'text-gray-400'}`}>
-                      <span className="text-gray-600">A:</span> {entry.response || '...'}
-                    </div>
+                    <details className="pl-3">
+                      <summary className={`truncate cursor-pointer hover:text-gray-300 ${isOver ? 'text-red-300/70' : 'text-gray-400'}`}>
+                        <span className="text-gray-600">A:</span> {(entry.response || '...').slice(0, 80)}{(entry.response || '').length > 80 ? '...' : ''}
+                      </summary>
+                      <div className={`text-[10px] mt-1 whitespace-pre-wrap pl-3 ${isOver ? 'text-red-300/70' : 'text-gray-400'}`}>{entry.response || '...'}</div>
+                    </details>
                   </div>
                 )
               })}

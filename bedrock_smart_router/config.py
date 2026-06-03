@@ -258,7 +258,7 @@ class RouterConfig:
             prompt_cache_boost=data.get("prompt_cache_boost", True),
             ab_test=_build_ab_test(data.get("ab_test", {})),
             canary=_build_canary(data.get("canary", {})),
-            shadow=_build_sub(ShadowConfig, data.get("shadow", {})),
+            shadow=_build_shadow(data.get("shadow", {})),
             budget=_build_budget(data.get("budget", {})),
             excluded_models=data.get("excluded_models", []),
             classifier=data.get("classifier", "heuristic"),
@@ -286,9 +286,13 @@ def _build_guardrails(data: dict[str, Any]) -> GuardrailsConfig:
 
 def _build_ab_test(data: dict[str, Any]) -> ABTestConfig:
     """Build ABTestConfig from a dict with nested variants."""
-    if not data or not data.get("enabled"):
+    if not data:
         return ABTestConfig(enabled=False)
+    # If the block exists with variants, it's enabled by default
+    # (no need for explicit "enabled: true")
     variants_raw = data.get("variants", {})
+    if not variants_raw:
+        return ABTestConfig(enabled=False)
     variants = []
     for name, v in variants_raw.items():
         variants.append(ABVariant(
@@ -300,13 +304,16 @@ def _build_ab_test(data: dict[str, Any]) -> ABTestConfig:
         name=data.get("name", ""),
         variants=variants,
         sticky=data.get("sticky", True),
-        enabled=True,
+        enabled=data.get("enabled", True),
     )
 
 
 def _build_canary(data: dict[str, Any]) -> CanaryConfig:
     """Build CanaryConfig from a dict with nested thresholds."""
-    if not data or not data.get("enabled"):
+    if not data:
+        return CanaryConfig()
+    # If the block exists with a canary_model, it's enabled by default
+    if not data.get("canary_model"):
         return CanaryConfig()
     rollback = data.get("auto_rollback", {})
     promote = data.get("auto_promote", {})
@@ -334,4 +341,17 @@ def _build_budget(data: dict[str, Any]) -> BudgetConfig:
         dynamodb_ttl_seconds=data.get("dynamodb_ttl_seconds", 86400),
         dynamodb_auto_create=data.get("dynamodb_auto_create", False),
         rules=data.get("rules", {}),
+    )
+
+
+def _build_shadow(data: dict[str, Any]) -> ShadowConfig:
+    """Build ShadowConfig from a dict. Enabled if shadow_model is present."""
+    if not data:
+        return ShadowConfig()
+    if not data.get("shadow_model"):
+        return ShadowConfig()
+    return ShadowConfig(
+        enabled=data.get("enabled", True),
+        shadow_model=data.get("shadow_model", ""),
+        sample_rate=data.get("sample_rate", 0.2),
     )

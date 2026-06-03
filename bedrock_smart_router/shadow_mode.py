@@ -39,6 +39,9 @@ class ShadowResult:
     timestamp: float = 0.0
     shadow_quality_baseline: float = 0.0
     primary_quality_baseline: float = 0.0
+    prompt: str = ""
+    response_text: str = ""
+    cost: float = 0.0
 
 
 class ShadowManager:
@@ -49,10 +52,14 @@ class ShadowManager:
         config: ShadowConfig | None = None,
         invoke_fn: Callable[..., dict[str, Any]] | None = None,
         registry: Any | None = None,
+        cris_manager: Any | None = None,
+        region: str = "us-west-2",
     ) -> None:
         self.config = config or ShadowConfig()
         self._invoke_fn = invoke_fn
         self._registry = registry
+        self._cris_manager = cris_manager
+        self._region = region
         self._results: list[ShadowResult] = []
         self._lock = threading.Lock()
         self._executor = ThreadPoolExecutor(
@@ -100,15 +107,57 @@ class ShadowManager:
                     shadow_qb = shadow_m.quality_baseline
                 if primary_m:
                     primary_qb = primary_m.quality_baseline
+
+            # Extract prompt text for logging
+            prompt_text = ""
             try:
-                self._invoke_fn(
-                    modelId=self.config.shadow_model,
+                for msg in messages:
+                    if msg.get("role") == "user":
+                        for block in msg.get("content", []):
+                            if isinstance(block, dict) and "text" in block:
+                                prompt_text = block["text"][:80]
+                                break
+            except Exception:
+                pass
+
+            try:
+                # Resolve CRIS profile for the shadow model
+                shadow_model_id = self.config.shadow_model
+                if self._cris_manager and self._registry:
+                    shadow_m = self._registry.get(self.config.shadow_model)
+                    if shadow_m:
+                        shadow_model_id = self._cris_manager.select_profile(shadow_m, self._region)
+
+                resp = self._invoke_fn(
+                    modelId=shadow_model_id,
                     messages=messages,
                     **({"system": system} if system else {}),
                     **({"toolConfig": tool_config} if tool_config else {}),
                     **({"inferenceConfig": inference_config} if inference_config else {}),
                 )
                 elapsed = (time.monotonic() - t0) * 1000
+
+                # Extract response text
+                response_text = ""
+                try:
+                    for block in resp.get("output", {}).get("message", {}).get("content", []):
+                        if isinstance(block, dict) and "text" in block:
+                            response_text = block["text"][:150]
+                            break
+                except Exception:
+                    pass
+
+                # Estimate cost
+                usage = resp.get("usage", {})
+                cost = 0.0
+                if self._registry:
+                    shadow_m = self._registry.get(self.config.shadow_model)
+                    if shadow_m:
+                        cost = shadow_m.pricing.estimate_cost(
+                            usage.get("inputTokens", 0),
+                            usage.get("outputTokens", 0),
+                        )
+
                 result = ShadowResult(
                     shadow_model=self.config.shadow_model,
                     primary_model=primary_model,
@@ -117,6 +166,9 @@ class ShadowManager:
                     timestamp=time.time(),
                     shadow_quality_baseline=shadow_qb,
                     primary_quality_baseline=primary_qb,
+                    prompt=prompt_text,
+                    response_text=response_text,
+                    cost=cost,
                 )
             except Exception as exc:
                 elapsed = (time.monotonic() - t0) * 1000

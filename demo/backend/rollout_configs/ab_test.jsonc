@@ -1,0 +1,19 @@
+{
+  "ab_test": {
+    "name": "sonnet-vs-haiku",
+    // Same user always gets the same variant (deterministic hash)
+    "sticky": true,
+    "variants": {
+      "control": {
+        // Current production model — higher quality, higher cost
+        "model": "anthropic.claude-sonnet-4-6",
+        "weight": 0.5
+      },
+      "treatment": {
+        // Challenger model — lower cost, faster latency
+        "model": "anthropic.claude-haiku-4-5-20251001-v1:0",
+        "weight": 0.5
+      }
+    }
+  }
+}

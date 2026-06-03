@@ -171,6 +171,12 @@ class CanaryManager:
     def stats(self) -> dict[str, Any]:
         canary = list(self._canary_records)
         baseline = list(self._baseline_records)
+        # Calculate P95 latency for canary
+        canary_latencies = sorted(r.latency_ms for r in canary if r.success)
+        canary_p95 = 0.0
+        if canary_latencies:
+            p95_idx = int(len(canary_latencies) * 0.95)
+            canary_p95 = canary_latencies[min(p95_idx, len(canary_latencies) - 1)]
         return {
             "active": self.is_active,
             "rolled_back": self._rolled_back,
@@ -183,4 +189,6 @@ class CanaryManager:
                 sum(1 for r in canary if not r.success) / len(canary)
                 if canary else 0.0
             ),
+            "canary_p95_latency_ms": round(canary_p95, 0),
+            "max_latency_threshold_ms": self.config.auto_rollback.max_latency_p95_ms,
         }

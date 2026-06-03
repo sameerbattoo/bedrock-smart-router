@@ -181,6 +181,9 @@ class BedrockRouter:
         self._shadow = ShadowManager(
             config=config.shadow,
             invoke_fn=None,  # Set after bedrock client is created
+            registry=self._registry,
+            cris_manager=self._cris,
+            region=config.region,
         )
 
         # Budget enforcement (optional — only active when rules are defined)
@@ -993,11 +996,23 @@ class BedrockRouter:
             override = self._registry.get(canary_id)
             if is_canary and override:
                 # Canary model is used regardless of tier filtering
-                # (same as preferred_model — the operator explicitly chose it)
                 primary = override
             else:
-                primary = result.selected_model
+                # Baseline: use the configured baseline model, not the strategy pick
+                baseline_model = self._registry.get(self._canary.config.baseline_model)
+                if baseline_model:
+                    primary = baseline_model
+                else:
+                    primary = result.selected_model
                 is_canary = False
+        elif self._canary.is_promoted:
+            # Canary was promoted — use the canary model as the new primary
+            promoted_model = self._registry.get(self._canary.config.canary_model)
+            result = strategy.select(available, analysis)
+            if promoted_model:
+                primary = promoted_model
+            else:
+                primary = result.selected_model
         else:
             result = strategy.select(available, analysis)
             primary = result.selected_model

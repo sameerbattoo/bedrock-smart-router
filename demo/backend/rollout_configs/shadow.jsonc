@@ -1,0 +1,10 @@
+{
+  // Primary model — serves the actual response to the user
+  "strategy": "balanced",
+  "shadow": {
+    // Mirror traffic to this model in background — user never sees this response
+    "shadow_model": "amazon.nova-pro-v1:0",
+    // 30% of requests are mirrored for offline quality comparison
+    "sample_rate": 0.3
+  }
+}

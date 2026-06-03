@@ -1,0 +1,20 @@
+{
+  "canary": {
+    // Current production model — receives most traffic
+    "baseline": "anthropic.claude-sonnet-4-6",
+    // New model being evaluated — faster and cheaper alternative
+    "canary_model": "anthropic.claude-haiku-4-5-20251001-v1:0",
+    // 20% of requests go to the canary
+    "canary_percentage": 20,
+    "auto_rollback": {
+      // Roll back if error rate > 10% or P95 latency > 10 seconds
+      "max_error_rate": 0.10,
+      "max_latency_p95_ms": 10000
+    },
+    "auto_promote": {
+      // Promote to production after 10 successful requests with < 5% errors
+      "min_requests": 10,
+      "max_error_rate": 0.05
+    }
+  }
+}
