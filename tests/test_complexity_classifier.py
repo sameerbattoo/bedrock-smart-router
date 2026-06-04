@@ -265,9 +265,10 @@ class TestMLComplexityClassifier:
 
     def test_low_confidence_guard(self):
         """Low-confidence complex/reasoning predictions default to simple."""
-        # This short ambiguous text gets near-uniform probabilities
+        # This ambiguous text gets classified as complex with < 50% confidence,
+        # triggering the low-confidence guard that defaults to "simple"
         label, conf = self.clf.classify_request(
-            [{"role": "user", "content": [{"text": "You are is flying and what dates?"}]}]
+            [{"role": "user", "content": [{"text": "the thing about it is"}]}]
         )
         assert label == "simple"
 

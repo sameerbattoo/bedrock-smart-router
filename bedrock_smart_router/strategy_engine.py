@@ -195,10 +195,18 @@ def _quality_score(
     Uses the model's quality_baseline from the catalog (Artificial
     Analysis Intelligence Index), normalized to 0-1 scale.
     Penalises models with high error rates from historical metrics.
+    Models with quality_baseline=0 (no benchmark data) are penalized
+    to prevent unknown-quality models from winning over proven ones.
     """
     # Normalize from AA Intelligence Index (0-60) to 0-1 scale
     # Max observed score is ~60 (GPT-5.5 xhigh)
     score = model.quality_baseline / 60.0
+
+    # Penalize unknown quality: models with no benchmark data get a
+    # negative score (-0.1) so they only win if cost+latency are overwhelmingly better.
+    # This prevents cheap, unbenchmarked models from routing over proven ones.
+    if model.quality_baseline <= 0:
+        score = -0.1
 
     # Penalise for high error rates if we have metrics
     if metrics is not None and metrics.sample_count > 0 and metrics.error_rate > 0:

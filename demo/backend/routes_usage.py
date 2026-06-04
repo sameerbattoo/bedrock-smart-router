@@ -210,6 +210,10 @@ async def simulate_usage(
                 try:
                     result = await ctx["future"]
 
+                    if result.get("error"):
+                        yield f"event: request_error\ndata: {json.dumps({'user_id': eid, 'error': result['response_text'][:100]})}\n\n"
+                        continue
+
                     downgraded = result.get("strategy_used") == "cost-optimized" and strategy != "cost-optimized"
                     if downgraded and not entity_was_downgraded[eid]:
                         entity_was_downgraded[eid] = True
@@ -283,15 +287,29 @@ def _run_request(prompt: str, metadata: dict, strategy: str, classifier: str) ->
     """Execute a single request through the router. Budget enforcement is automatic."""
     _smart_router._cache.invalidate()
 
-    response = _smart_router.converse(
-        messages=[{"role": "user", "content": [{"text": prompt}]}],
-        routing=RoutingConfig(
-            strategy=strategy,
-            metadata=metadata,
-            classifier=classifier,
-        ),
-        inferenceConfig={"maxTokens": 100},
-    )
+    try:
+        response = _smart_router.converse(
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            routing=RoutingConfig(
+                strategy=strategy,
+                metadata=metadata,
+                classifier=classifier,
+            ),
+            inferenceConfig={"maxTokens": 100},
+        )
+    except BudgetExceededError:
+        raise  # Re-raise for the caller to handle
+    except Exception as e:
+        # Return a structured error dict so the caller doesn't crash
+        return {
+            "display_model": "—",
+            "complexity": "—",
+            "strategy_used": strategy,
+            "cost": 0,
+            "latency_ms": 0,
+            "response_text": f"[ERROR] {type(e).__name__}: {str(e)[:100]}",
+            "error": True,
+        }
 
     d = response["routing_decision"]
     usage = response.get("usage", {})

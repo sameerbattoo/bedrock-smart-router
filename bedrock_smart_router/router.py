@@ -16,6 +16,7 @@ import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace as dataclass_replace
 from typing import Any, Callable
 
 import boto3
@@ -74,6 +75,129 @@ def _build_metrics_store(
             auto_create_table=cfg.auto_create_table,
         )
     return InMemoryMetricsStore(max_records_per_model=cfg.max_records_per_model)
+
+
+class _CompletionsNamespace:
+    """Implements router.chat.completions.create(...) — OpenAI SDK drop-in.
+
+    Supports the same parameters as openai.chat.completions.create():
+    messages, model, max_tokens, temperature, top_p, stop, tools,
+    tool_choice, stream, n, response_format, etc.
+    """
+
+    def __init__(self, router: "BedrockRouter") -> None:
+        self._router = router
+
+    def create(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        max_tokens: int | None = None,
+        max_completion_tokens: int | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        stop: list[str] | str | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict | None = None,
+        parallel_tool_calls: bool | None = None,
+        response_format: dict | None = None,
+        stream: bool = False,
+        stream_options: dict | None = None,
+        n: int | None = None,
+        frequency_penalty: float | None = None,
+        presence_penalty: float | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
+        seed: int | None = None,
+        user: str | None = None,
+        metadata: dict | None = None,
+        store: bool | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        # Smart Router extras
+        routing: Any | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Create a chat completion with smart routing.
+
+        Drop-in for ``openai.chat.completions.create()``. The router selects
+        the best model based on prompt complexity, or uses the specified model.
+
+        Parameters match the OpenAI Chat Completions API specification.
+        Additional ``routing`` parameter accepts a ``RoutingConfig`` for
+        overriding strategy, weights, or preferred model.
+
+        Returns a Chat Completions response dict (same schema as OpenAI).
+        """
+        # Resolve max_tokens (OpenAI deprecated max_tokens in favor of max_completion_tokens)
+        effective_max_tokens = max_completion_tokens or max_tokens
+
+        return self._router.chat_completions(
+            messages=messages,
+            model=model,
+            max_tokens=effective_max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stop=stop,
+            tools=tools,
+            routing=routing,
+            **kwargs,
+        )
+
+
+class _ModelsNamespace:
+    """Implements router.models.list() — lists available models."""
+
+    def __init__(self, router: "BedrockRouter") -> None:
+        self._router = router
+
+    def list(self) -> dict[str, Any]:
+        """List all models available through the router.
+
+        Returns a dict matching the OpenAI models.list() response format.
+        """
+        models = self._router._registry.all_models
+        data = []
+        for m in models:
+            data.append({
+                "id": m.model_id,
+                "object": "model",
+                "owned_by": m.family,
+                "created": 0,
+            })
+        return {"object": "list", "data": data}
+
+    def retrieve(self, model_id: str) -> dict[str, Any] | None:
+        """Retrieve details for a specific model."""
+        m = self._router._registry.get(model_id)
+        if not m:
+            return None
+        return {
+            "id": m.model_id,
+            "object": "model",
+            "owned_by": m.family,
+            "created": 0,
+            "capabilities": {
+                "tool_use": m.capabilities.tool_use,
+                "vision": m.capabilities.vision,
+                "streaming": m.capabilities.streaming,
+                "extended_thinking": m.capabilities.extended_thinking,
+            },
+            "api_support": m.api_support,
+            "tier": m.tier.value,
+            "pricing": {
+                "input_per_1k": m.pricing.input_per_1k,
+                "output_per_1k": m.pricing.output_per_1k,
+            },
+        }
+
+
+class _ChatNamespace:
+    """Namespace for router.chat.completions"""
+
+    def __init__(self, router: "BedrockRouter") -> None:
+        self.completions = _CompletionsNamespace(router)
 
 
 class BedrockRouter:
@@ -227,8 +351,30 @@ class BedrockRouter:
         client_kwargs: dict[str, Any] = {}
         if resolved_boto_config is not None:
             client_kwargs["config"] = resolved_boto_config
+
+        # Set Bedrock API key if provided (for both bedrock-runtime and mantle)
+        if config.api_key:
+            import os
+            os.environ.setdefault("AWS_BEARER_TOKEN_BEDROCK", config.api_key)
+
         self._bedrock = session.client("bedrock-runtime", **client_kwargs)
         self._shadow._invoke_fn = self._bedrock.converse
+
+        # Mantle client (Chat Completions / Responses API)
+        self._mantle = None
+        if config.enable_mantle:
+            try:
+                from bedrock_smart_router.mantle_client import MantleClient
+                self._mantle = MantleClient(
+                    region=config.region,
+                    api_key=config.api_key,
+                    session=session,
+                    timeout=config.mantle_timeout,
+                )
+            except ImportError:
+                logger.warning("MantleClient unavailable (missing 'requests' package) — Mantle-only models will be unreachable")
+            except Exception as e:
+                logger.warning("Failed to initialize MantleClient: %s", e)
 
         # OpenTelemetry (optional)
         self._otel = OTelIntegration(
@@ -236,12 +382,16 @@ class BedrockRouter:
             service_name=config.observability.otel_service_name,
         )
 
-        self._last_decision: RoutingDecision | None = None
+        self._last_decision_local = threading.local()
 
         # Bounded thread pool for background work (metrics, observability, OTEL)
         self._bg_executor = ThreadPoolExecutor(
             max_workers=4, thread_name_prefix="bsr-bg",
         )
+
+        # OpenAI-compatible namespace: router.chat.completions.create(...)
+        self.chat = _ChatNamespace(self)
+        self.models = _ModelsNamespace(self)
 
     @classmethod
     def create(
@@ -457,17 +607,7 @@ class BedrockRouter:
         # and use as preferred_model (so the router respects the user's choice)
         boto3_model = kwargs.pop("modelId", None) or kwargs.pop("model_id", None)
         if boto3_model and not routing.preferred_model:
-            routing = RoutingConfig(
-                preset=routing.preset, strategy=routing.strategy, weights=routing.weights,
-                preferred_model=boto3_model, preferred_family=routing.preferred_family,
-                required_capabilities=routing.required_capabilities,
-                min_context_window=routing.min_context_window,
-                exclude_models=routing.exclude_models,
-                max_cost_per_request=routing.max_cost_per_request,
-                tags=routing.tags, metadata=routing.metadata,
-                fallback_enabled=routing.fallback_enabled,
-                explain=routing.explain, classifier=routing.classifier,
-            )
+            routing = dataclass_replace(routing, preferred_model=boto3_model)
         # Also handle camelCase inference_config from boto3 users
         if "inferenceConfig" in kwargs and inference_config is None:
             inference_config = kwargs.pop("inferenceConfig")
@@ -495,7 +635,7 @@ class BedrockRouter:
                 cache_hit=True,
                 guardrail_checked=guardrail_checked,
             )
-            self._last_decision = decision
+            self._last_decision_local.value = decision
             cached["routing_decision"] = decision
             self._observability.emit(
                 decision, cache_hit=True,
@@ -614,7 +754,7 @@ class BedrockRouter:
             perf_config=response.get("performanceConfig", {}),
             guardrail_trace=response.get("trace", {}).get("guardrail", {}),
         )
-        self._last_decision = decision
+        self._last_decision_local.value = decision
         response["routing_decision"] = decision
 
         # ── Step 10: Record metrics (background) ────────────────
@@ -664,6 +804,83 @@ class BedrockRouter:
 
         return response
 
+    def chat_completions(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        stop: list[str] | str | None = None,
+        routing: RoutingConfig | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Route and invoke via Chat Completions API format.
+
+        Accepts OpenAI Chat Completions format. The router selects the best model,
+        then either:
+        - Calls Mantle directly (if model supports chat_completions natively)
+        - Translates to Converse and calls bedrock-runtime (if model is Converse-only)
+
+        Returns a standard Chat Completions response dict with routing_decision attached.
+
+        Parameters
+        ----------
+        messages : list[dict]
+            Chat Completions messages (role + content).
+        model : str, optional
+            Preferred model ID (bypasses routing if set).
+        tools : list[dict], optional
+            OpenAI function tool definitions.
+        max_tokens : int, optional
+            Maximum output tokens.
+        temperature : float, optional
+            Sampling temperature.
+        routing : RoutingConfig, optional
+            Routing overrides (strategy, preset, etc.)
+        """
+        from bedrock_smart_router.format_translator import (
+            chat_completions_to_converse,
+            converse_response_to_chat_completions,
+        )
+
+        routing = resolve_preset(routing or RoutingConfig())
+        if model and not routing.preferred_model:
+            routing = dataclass_replace(routing, preferred_model=model)
+
+        # Translate CC → Converse for analysis and routing
+        converse_params = chat_completions_to_converse(
+            messages=messages,
+            tools=tools,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stop=[stop] if isinstance(stop, str) else stop,
+        )
+
+        # Use the Converse path for routing (classification, model selection)
+        converse_response = self.converse(
+            messages=converse_params["messages"],
+            system=converse_params.get("system"),
+            tool_config=converse_params.get("tool_config"),
+            inference_config=converse_params.get("inference_config"),
+            routing=routing,
+            **kwargs,
+        )
+
+        # Translate response back to Chat Completions format
+        decision = converse_response.pop("routing_decision", None)
+        cc_response = converse_response_to_chat_completions(
+            converse_response,
+            model=decision.selected_model if decision else "",
+        )
+        if decision:
+            cc_response["routing_decision"] = decision
+
+        return cc_response
+
     def converse_stream(
         self,
         *,
@@ -693,17 +910,7 @@ class BedrockRouter:
         # Boto3 drop-in compatibility: extract modelId/model_id from kwargs
         boto3_model = kwargs.pop("modelId", None) or kwargs.pop("model_id", None)
         if boto3_model and not routing.preferred_model:
-            routing = RoutingConfig(
-                preset=routing.preset, strategy=routing.strategy, weights=routing.weights,
-                preferred_model=boto3_model, preferred_family=routing.preferred_family,
-                required_capabilities=routing.required_capabilities,
-                min_context_window=routing.min_context_window,
-                exclude_models=routing.exclude_models,
-                max_cost_per_request=routing.max_cost_per_request,
-                tags=routing.tags, metadata=routing.metadata,
-                fallback_enabled=routing.fallback_enabled,
-                explain=routing.explain, classifier=routing.classifier,
-            )
+            routing = dataclass_replace(routing, preferred_model=boto3_model)
         if "inferenceConfig" in kwargs and inference_config is None:
             inference_config = kwargs.pop("inferenceConfig")
         if "toolConfig" in kwargs and tool_config is None:
@@ -837,7 +1044,7 @@ class BedrockRouter:
             guardrail_trace=stream_guardrail_trace,
             ttft_ms=ttft_ms,
         )
-        self._last_decision = decision
+        self._last_decision_local.value = decision
 
         input_tokens = usage.get("inputTokens", analysis.estimated_input_tokens)
         output_tokens = usage.get("outputTokens", analysis.estimated_output_tokens)
@@ -929,6 +1136,15 @@ class BedrockRouter:
         # Filter out models that don't support guardrails when guardrailConfig is passed
         if requires_guardrail:
             candidates = [c for c in candidates if c.guardrail_compatible]
+        # Filter out Mantle-only models not available in the configured region.
+        # Mantle has no CRIS — it only serves models in the specific regional endpoint.
+        if self._mantle:
+            router_region = self._config.region
+            candidates = [
+                c for c in candidates
+                if "converse" in c.api_support  # Converse models handle their own region routing via CRIS
+                or any(r.get("name") == router_region for r in c.regions)  # Mantle-only: must exist in our region
+            ]
         candidates = self._context_validator.filter_by_context(candidates, messages, system)
         if not candidates:
             self._raise_no_models_error(analysis=analysis, routing=routing, messages=messages, system=system)
@@ -1196,7 +1412,19 @@ class BedrockRouter:
         request_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Invoke Bedrock Converse API with retries."""
+        """Invoke Bedrock Converse API with retries, or Mantle if model requires it."""
+        # Check if this model needs to go through Mantle
+        model = self._registry.get(model_id)
+        if model and "converse" not in model.api_support and self._mantle:
+            # Model is Mantle-only — translate and call Chat Completions
+            return self._invoke_via_mantle(
+                model_id=model_id,
+                messages=messages,
+                system=system,
+                tool_config=tool_config,
+                inference_config=inference_config,
+            )
+
         call_kwargs: dict[str, Any] = {
             "modelId": model_id,
             "messages": messages,
@@ -1213,6 +1441,51 @@ class BedrockRouter:
             call_kwargs["requestMetadata"] = request_metadata
         call_kwargs.update(kwargs)
         return self._retry_handler.execute(self._bedrock.converse, **call_kwargs)
+
+    def _invoke_via_mantle(
+        self,
+        *,
+        model_id: str,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None = None,
+        tool_config: dict[str, Any] | None = None,
+        inference_config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Invoke a Mantle-only model by translating Converse → Chat Completions.
+
+        Converts the Converse-format request to Chat Completions format,
+        calls the bedrock-mantle endpoint, and translates the response back.
+        """
+        from bedrock_smart_router.format_translator import (
+            converse_to_chat_completions,
+            chat_completions_response_to_converse,
+        )
+
+        # Translate Converse → Chat Completions body
+        cc_body = converse_to_chat_completions(
+            messages=messages,
+            system=system,
+            tool_config=tool_config,
+            inference_config=inference_config,
+        )
+
+        # Resolve the Mantle model ID (strip geo prefix and version suffix)
+        from bedrock_smart_router.model_registry import base_model_id
+        mantle_model_id = base_model_id(model_id)
+        # Strip version suffixes that Mantle doesn't use
+        import re
+        mantle_model_id = re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
+        mantle_model_id = re.sub(r"-v\d+:\d+$", "", mantle_model_id)
+        mantle_model_id = re.sub(r"-\d+:\d+$", "", mantle_model_id)
+
+        # Call Mantle
+        cc_response = self._mantle.chat_completions(
+            model=mantle_model_id,
+            **cc_body,
+        )
+
+        # Translate response back to Converse format
+        return chat_completions_response_to_converse(cc_response)
 
     @staticmethod
     def _extract_output_text(response: dict[str, Any]) -> str:
@@ -1322,6 +1595,7 @@ class BedrockRouter:
                     "bytes": payload_bytes,
                     "complexity_boost": payload_boost,
                 } if payload_bytes > 0 else None,
+                "tool_boost_applied": analysis.tool_boost_applied,
             }
             if floor_applied:
                 explain["floor_reason"] = "System prompt complexity floor upgraded classification"
@@ -1354,6 +1628,7 @@ class BedrockRouter:
                     "bytes": payload_bytes,
                     "complexity_boost": payload_boost,
                 } if payload_bytes > 0 else None,
+                "tool_boost_applied": analysis.tool_boost_applied,
             }
 
     @staticmethod
@@ -1503,7 +1778,7 @@ class BedrockRouter:
         )
 
     def last_routing_decision(self) -> RoutingDecision | None:
-        return self._last_decision
+        return getattr(self._last_decision_local, "value", None)
 
     # ── Accessors ───────────────────────────────────────────────
 

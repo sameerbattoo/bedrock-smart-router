@@ -64,7 +64,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 10.1
+      "quality_baseline": 10.1,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -209,7 +213,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 31.1
+      "quality_baseline": 31.1,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "qwen.qwen3-235b-a22b-2507-v1:0",
@@ -271,7 +278,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 25
+      "quality_baseline": 25,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "moonshotai.kimi-k2.5",
@@ -337,7 +348,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 37.3
+      "quality_baseline": 37.3,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "openai.gpt-oss-120b-1:0",
@@ -411,7 +426,12 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 33.3
+      "quality_baseline": 33.3,
+      "api_support": [
+        "converse",
+        "chat_completions",
+        "responses"
+      ]
     },
     {
       "model_id": "qwen.qwen3-next-80b-a3b",
@@ -477,7 +497,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 20.1
+      "quality_baseline": 20.1,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "deepseek.v3.2",
@@ -543,7 +566,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 32.1
+      "quality_baseline": 32.1,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "nvidia.nemotron-nano-3-30b",
@@ -609,7 +636,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.2
+      "quality_baseline": 13.2,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "anthropic.claude-sonnet-4-6",
@@ -755,7 +786,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 44.4
+      "quality_baseline": 44.4,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "minimax.minimax-m2",
@@ -821,7 +855,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 36.1
+      "quality_baseline": 36.1,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "zai.glm-4.7-flash",
@@ -895,7 +933,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 22.1
+      "quality_baseline": 22.1,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "amazon.nova-pro-v1:0",
@@ -1010,7 +1052,10 @@
         "optimized"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.5
+      "quality_baseline": 13.5,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "amazon.nova-2-lite-v1:0",
@@ -1140,7 +1185,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 12.7
+      "quality_baseline": 12.7,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "minimax.minimax-m2.5",
@@ -1214,7 +1262,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 41.9
+      "quality_baseline": 41.9,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "google.gemma-3-12b-it",
@@ -1280,7 +1332,11 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 8.8
+      "quality_baseline": 8.8,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "moonshot.kimi-k2-thinking",
@@ -1318,10 +1374,10 @@
       "tier": "reasoning",
       "display_name": "Kimi K2 Thinking",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": false,
         "streaming": true,
-        "streaming_tool_use": false,
+        "streaming_tool_use": true,
         "document_support": false,
         "extended_thinking": true,
         "prompt_caching": false
@@ -1338,7 +1394,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 40.9
+      "quality_baseline": 40.9,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.mistral-large-3-675b-instruct",
@@ -1396,7 +1455,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 22.8
+      "quality_baseline": 22.8,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "mistral.devstral-2-123b",
@@ -1470,7 +1533,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 22
+      "quality_baseline": 22,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "minimax.minimax-m2.1",
@@ -1544,7 +1611,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 39.4
+      "quality_baseline": 39.4,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "nvidia.nemotron-super-3-120b",
@@ -1618,7 +1689,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 36
+      "quality_baseline": 36,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "qwen.qwen3-32b-v1:0",
@@ -1692,7 +1767,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.5
+      "quality_baseline": 14.5,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "mistral.ministral-3-14b-instruct",
@@ -1758,7 +1837,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 16
+      "quality_baseline": 16,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-6-v1",
@@ -1902,7 +1985,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 46.5
+      "quality_baseline": 46.5,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "nvidia.nemotron-nano-9b-v2",
@@ -1968,7 +2054,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.2
+      "quality_baseline": 13.2,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "mistral.ministral-3-8b-instruct",
@@ -2034,7 +2124,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.8
+      "quality_baseline": 14.8,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "zai.glm-5",
@@ -2100,7 +2194,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 40.6
+      "quality_baseline": 40.6,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "openai.gpt-oss-20b-1:0",
@@ -2174,7 +2272,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 24.5
+      "quality_baseline": 24.5,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "google.gemma-3-4b-it",
@@ -2240,7 +2342,11 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 6.3
+      "quality_baseline": 6.3,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-8",
@@ -2385,7 +2491,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 51.8
+      "quality_baseline": 51.8,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-7",
@@ -2530,7 +2639,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 51.8
+      "quality_baseline": 51.8,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "google.gemma-3-27b-it",
@@ -2596,7 +2708,11 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 10.3
+      "quality_baseline": 10.3,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -2741,7 +2857,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 37.1
+      "quality_baseline": 37.1,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "qwen.qwen3-vl-235b-a22b",
@@ -2807,7 +2926,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 17
+      "quality_baseline": 17,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "zai.glm-4.7",
@@ -2873,7 +2995,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 34.2
+      "quality_baseline": 34.2,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "writer.palmyra-vision-7b",
@@ -2915,7 +3041,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 0.0
+      "quality_baseline": 0.0,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-1-20250805-v1:0",
@@ -2963,7 +3093,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 36
+      "quality_baseline": 36,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "qwen.qwen3-coder-480b-a35b-v1:0",
@@ -3021,7 +3154,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 24.8
+      "quality_baseline": 24.8,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.magistral-small-2509",
@@ -3087,7 +3223,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18.2
+      "quality_baseline": 18.2,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "deepseek.v3-v1:0",
@@ -3145,7 +3285,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 28.1
+      "quality_baseline": 28.1,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.ministral-3-3b-instruct",
@@ -3211,7 +3354,11 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 11.2
+      "quality_baseline": 11.2,
+      "api_support": [
+        "converse",
+        "chat_completions"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-5-20251101-v1:0",
@@ -3353,7 +3500,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 43.1
+      "quality_baseline": 43.1,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "qwen.qwen3-coder-30b-a3b-v1:0",
@@ -3427,7 +3577,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 20
+      "quality_baseline": 20,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "amazon.nova-lite-v1:0",
@@ -3549,7 +3702,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 12.7
+      "quality_baseline": 12.7,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "amazon.nova-micro-v1:0",
@@ -3657,7 +3813,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 10.3
+      "quality_baseline": 10.3,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "deepseek.r1-v1:0",
@@ -3705,7 +3864,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18.8
+      "quality_baseline": 18.8,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "meta.llama3-8b-instruct-v1:0",
@@ -3755,7 +3917,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 6.4
+      "quality_baseline": 6.4,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "meta.llama3-70b-instruct-v1:0",
@@ -3805,7 +3970,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 8.9
+      "quality_baseline": 8.9,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "meta.llama3-1-8b-instruct-v1:0",
@@ -3854,7 +4022,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 11.8
+      "quality_baseline": 11.8,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "meta.llama3-1-70b-instruct-v1:0",
@@ -3904,7 +4075,10 @@
         "optimized"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 12.5
+      "quality_baseline": 12.5,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "meta.llama3-3-70b-instruct-v1:0",
@@ -3953,7 +4127,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.5
+      "quality_baseline": 14.5,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "meta.llama4-scout-17b-instruct-v1:0",
@@ -4007,7 +4184,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.5
+      "quality_baseline": 13.5,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "meta.llama4-maverick-17b-instruct-v1:0",
@@ -4061,7 +4241,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18.4
+      "quality_baseline": 18.4,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.mistral-7b-instruct-v0:2",
@@ -4127,7 +4310,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 7.4
+      "quality_baseline": 7.4,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.mixtral-8x7b-instruct-v0:1",
@@ -4193,7 +4379,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 7.7
+      "quality_baseline": 7.7,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.mistral-large-2402-v1:0",
@@ -4259,7 +4448,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 9.9
+      "quality_baseline": 9.9,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.mistral-large-2407-v1:0",
@@ -4293,7 +4485,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 9.9
+      "quality_baseline": 9.9,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "mistral.pixtral-large-2502-v1:0",
@@ -4365,7 +4560,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14
+      "quality_baseline": 14,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "writer.palmyra-x4-v1:0",
@@ -4419,7 +4617,10 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 0.0
+      "quality_baseline": 0.0,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "writer.palmyra-x5-v1:0",
@@ -4473,7 +4674,962 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 0.0
+      "quality_baseline": 0.0,
+      "api_support": [
+        "converse"
+      ]
+    },
+    {
+      "model_id": "deepseek.v3.1",
+      "family": "deepseek",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "V3.1",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.000555,
+        "output_per_1k": 0.00167,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 28.1,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "mistral.voxtral-mini-3b-2507",
+      "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "micro",
+      "display_name": "Voxtral Mini 3B 2507",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 4e-05,
+        "output_per_1k": 4e-05,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 0.0,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "mistral.voxtral-small-24b-2507",
+      "family": "mistral",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "lite",
+      "display_name": "Voxtral Small 24B 2507",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 0.0001,
+        "output_per_1k": 0.0003,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 18,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "moonshotai.kimi-k2-thinking",
+      "family": "moonshot",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "reasoning",
+      "display_name": "Kimi K2 Thinking",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 262144,
+      "max_output_tokens": 262144,
+      "pricing": {
+        "input_per_1k": 0.00073,
+        "output_per_1k": 0.00303,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 40.9,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "openai.gpt-5.4",
+      "family": "openai",
+      "regions": [
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "GPT 5.4",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.0025,
+        "output_per_1k": 0.015,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 35.4,
+      "api_support": [
+        "responses"
+      ]
+    },
+    {
+      "model_id": "openai.gpt-5.5",
+      "family": "openai",
+      "regions": [
+        {
+          "name": "us-east-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "GPT 5.5",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.005,
+        "output_per_1k": 0.03,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 40.9,
+      "api_support": [
+        "responses"
+      ]
+    },
+    {
+      "model_id": "openai.gpt-oss-safeguard-120b",
+      "family": "openai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "GPT OSS Safeguard 120B",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 0.00015,
+        "output_per_1k": 0.0006,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 33.3,
+      "api_support": [
+        "chat_completions",
+        "responses"
+      ]
+    },
+    {
+      "model_id": "openai.gpt-oss-safeguard-20b",
+      "family": "openai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "lite",
+      "display_name": "GPT OSS Safeguard 20B",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 7e-05,
+        "output_per_1k": 0.0002,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 24.5,
+      "api_support": [
+        "chat_completions",
+        "responses"
+      ]
+    },
+    {
+      "model_id": "qwen.qwen3-coder-30b-a3b-instruct",
+      "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "lite",
+      "display_name": "Qwen3 Coder 30B A3B Instruct",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.00019,
+        "output_per_1k": 0.000839,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 20,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "qwen.qwen3-coder-480b-a35b-instruct",
+      "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "Qwen3 Coder 480B A35B Instruct",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.0003,
+        "output_per_1k": 0.0018,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 24.8,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "qwen.qwen3-coder-next",
+      "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "Qwen3 Coder Next",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 262144,
+      "max_output_tokens": 8192,
+      "pricing": {
+        "input_per_1k": 0.0005,
+        "output_per_1k": 0.0012,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 28.3,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "qwen.qwen3-next-80b-a3b-instruct",
+      "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "Qwen3 Next 80B A3B Instruct",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.0005,
+        "output_per_1k": 0.002,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 20.1,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "qwen.qwen3-vl-235b-a22b-instruct",
+      "family": "qwen",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "Qwen3 VL 235B A22B Instruct",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.00045,
+        "output_per_1k": 0.0018,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 17,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "zai.glm-4.6",
+      "family": "zai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "direct": true
+        },
+        {
+          "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "eu-north-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-1",
+          "direct": true
+        },
+        {
+          "name": "eu-west-2",
+          "direct": true
+        },
+        {
+          "name": "sa-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "GLM 4.6",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 16384,
+      "pricing": {
+        "input_per_1k": 0.0006,
+        "output_per_1k": 0.0022,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 30.2,
+      "api_support": [
+        "chat_completions"
+      ]
     }
   ]
 }

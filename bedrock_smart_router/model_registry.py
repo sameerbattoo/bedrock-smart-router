@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -15,6 +16,10 @@ from bedrock_smart_router.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Pre-compiled regex for stripping version suffixes from model IDs
+# Matches: -20251001-v1:0, -v1:0, -1:0
+_VERSION_SUFFIX_RE = re.compile(r"(-\d{8}-v\d+:\d+|-v\d+:\d+|-\d+:\d+)$")
 
 # Path to the bundled JSON catalog shipped with the package
 _DEFAULT_CATALOG_PATH = Path(__file__).parent / "data" / "models.json"
@@ -67,6 +72,7 @@ def _model_from_dict(d: dict[str, Any]) -> BedrockModel:
         supported_latency_modes=d.get("supported_latency_modes", ["standard"]),
         guardrail_compatible=d.get("guardrail_compatible", True),
         quality_baseline=d.get("quality_baseline", 0.0),
+        api_support=d.get("api_support", ["converse"]),
     )
 
 
@@ -131,12 +137,22 @@ class ModelRegistry:
         catalog_path: Path | str | None = None,
     ) -> None:
         self._models: dict[str, BedrockModel] = {}
+        self._stripped_index: dict[str, str] = {}  # stripped_id → canonical model_id
         if models is not None:
             source = models
         else:
             source = load_catalog(catalog_path)
         for m in source:
             self._models[m.model_id] = m
+        self._rebuild_stripped_index()
+
+    def _rebuild_stripped_index(self) -> None:
+        """Build a reverse lookup from version-stripped IDs to canonical model_ids."""
+        self._stripped_index.clear()
+        for model_id in self._models:
+            stripped = _VERSION_SUFFIX_RE.sub("", model_id)
+            if stripped != model_id:
+                self._stripped_index[stripped] = model_id
 
     def load_overlay(self, path: Path | str) -> int:
         """Merge an additional JSON catalog on top of the current one.
@@ -147,6 +163,7 @@ class ModelRegistry:
         overlay = load_catalog(path)
         for m in overlay:
             self._models[m.model_id] = m
+        self._rebuild_stripped_index()
         logger.info("Overlay loaded %d models from %s", len(overlay), path)
         return len(overlay)
 
@@ -159,6 +176,13 @@ class ModelRegistry:
             base = base_model_id(model_id)
             if base != model_id:
                 model = self._models.get(base)
+        if model is None:
+            # Try matching via stripped version index (O(1) lookup)
+            # e.g., "openai.gpt-oss-120b" → finds "openai.gpt-oss-120b-1:0"
+            lookup = base_model_id(model_id)
+            canonical = self._stripped_index.get(lookup)
+            if canonical:
+                model = self._models.get(canonical)
         return model
 
     def list_models(
@@ -205,6 +229,7 @@ class ModelRegistry:
         exclude_patterns: list[str] | None = None,
         family: str | None = None,
         prefer_global: bool = False,
+        api_surface: str | None = None,
     ) -> list[BedrockModel]:
         """Return models that meet the given requirements.
 
@@ -213,6 +238,15 @@ class ModelRegistry:
         variant is returned per base model.  Set *prefer_global* to
         ``True`` to prefer the cheaper global variant; otherwise the
         regional variant is kept.
+
+        Parameters
+        ----------
+        api_surface : str, optional
+            Filter models by API surface compatibility. A model is eligible if
+            it supports this API directly OR can be reached via translation:
+            - "converse": models with "converse" OR "chat_completions" in api_support
+            - "chat_completions": models with "chat_completions" OR "converse" in api_support
+            - None: no filtering (default, backward compatible)
         """
         import fnmatch
 
@@ -251,6 +285,21 @@ class ModelRegistry:
                         break
                 if skip:
                     continue
+            # API surface filter: model must be reachable (directly or via translation)
+            # "responses"-only models are excluded unless api_surface="responses"
+            if api_surface:
+                model_apis = set(m.api_support)
+                if api_surface == "converse":
+                    # Reachable via converse (native) or chat_completions (translated)
+                    if not (model_apis & {"converse", "chat_completions"}):
+                        continue
+                elif api_surface == "chat_completions":
+                    # Reachable via chat_completions (native) or converse (translated)
+                    if not (model_apis & {"converse", "chat_completions"}):
+                        continue
+                elif api_surface == "responses":
+                    if "responses" not in model_apis:
+                        continue
             raw.append(m)
 
         # Deduplicate geography variants: keep one entry per base model.

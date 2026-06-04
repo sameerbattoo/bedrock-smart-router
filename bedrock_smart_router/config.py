@@ -217,6 +217,11 @@ class RouterConfig:
     boto_config: dict[str, Any] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    # Mantle endpoint (Chat Completions / Responses API)
+    enable_mantle: bool = True  # Allow routing to Mantle-only models
+    api_key: str | None = None  # Bedrock API key (for both bedrock-runtime and mantle)
+    mantle_timeout: float = 60.0  # Mantle request timeout in seconds
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RouterConfig:
         """Build a ``RouterConfig`` from a plain dict (e.g. YAML).
@@ -265,12 +270,21 @@ class RouterConfig:
             catalog_path=data.get("catalog_path"),
             boto_config=data.get("boto_config"),
             metadata=data.get("metadata", {}),
+            enable_mantle=data.get("enable_mantle", True),
+            api_key=data.get("api_key"),
+            mantle_timeout=data.get("mantle_timeout", 60.0),
         )
 
 
 def _build_sub(cls: type, data: dict[str, Any]) -> Any:
     """Instantiate a dataclass from a dict, ignoring unknown keys."""
+    import logging as _log
     known = {f for f in cls.__dataclass_fields__}
+    unknown = set(data.keys()) - known
+    if unknown:
+        _log.getLogger("bedrock_smart_router.config").warning(
+            "Unknown config keys for %s (ignored): %s", cls.__name__, sorted(unknown)
+        )
     return cls(**{k: v for k, v in data.items() if k in known})
 
 

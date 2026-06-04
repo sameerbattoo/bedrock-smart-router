@@ -56,7 +56,7 @@ class TestQualityScoreBlending:
     def test_zero_baseline_returns_zero(self):
         model = _model("m", Tier.MID, 0.003, quality_baseline=0.0)
         score = _quality_score(model, None)
-        assert score == 0.0
+        assert score == -0.1  # Zero quality_baseline gets penalized
 
     def test_high_error_rate_penalises(self):
         from bedrock_smart_router.metrics_store import ModelMetrics

@@ -356,6 +356,82 @@ def discover_profiles(bedrock_client: Any) -> dict[str, list[str]]:
     return result
 
 
+# ── Step 2b: Discover Mantle models ─────────────────────────────────
+
+MANTLE_CACHE_PATH = Path(__file__).parent / "_mantle_models.json"
+
+
+def discover_mantle_models(region: str) -> set[str]:
+    """Discover models available on the bedrock-mantle endpoint.
+
+    Scans multiple regions to get full availability. Returns a set of model IDs
+    available via Chat Completions / Responses API, and also builds a
+    model → regions mapping for the catalog.
+    """
+    logger.info("Step 2b: Discovering Mantle models (bedrock-mantle endpoint)...")
+
+    if requests is None:
+        logger.warning("  'requests' package not available, skipping Mantle discovery")
+        return set()
+
+    from botocore.auth import SigV4Auth
+    from botocore.awsrequest import AWSRequest
+
+    # Scan all regions where Mantle is available
+    MANTLE_REGIONS = [
+        "us-east-1", "us-east-2", "us-west-2",
+        "eu-central-1", "eu-west-1", "eu-west-2", "eu-north-1", "eu-south-1",
+        "ap-south-1", "ap-southeast-2", "ap-southeast-3", "ap-northeast-1",
+        "sa-east-1",
+    ]
+
+    all_model_ids: set[str] = set()
+    # model_id → set of regions
+    model_regions: dict[str, set[str]] = {}
+
+    def _scan_mantle_region(r: str) -> tuple[str, set[str], str | None]:
+        try:
+            sess = boto3.Session(region_name=r)
+            creds = sess.get_credentials().get_frozen_credentials()
+            url = f"https://bedrock-mantle.{r}.api.aws/v1/models"
+            req = AWSRequest(method="GET", url=url, headers={"Content-Type": "application/json"})
+            SigV4Auth(creds, "bedrock", r).add_auth(req)
+            resp = requests.get(url, headers=dict(req.headers), timeout=10)
+            if resp.status_code != 200:
+                return r, set(), f"HTTP {resp.status_code}"
+            data = resp.json()
+            ids = set(m.get("id", "") for m in data.get("data", []) if m.get("id"))
+            return r, ids, None
+        except Exception as e:
+            return r, set(), str(e)[:60]
+
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {executor.submit(_scan_mantle_region, r): r for r in MANTLE_REGIONS}
+        for future in as_completed(futures):
+            r, ids, err = future.result()
+            if err:
+                logger.debug(f"  Mantle {r}: error - {err}")
+                continue
+            logger.debug(f"  Mantle {r}: {len(ids)} models")
+            all_model_ids.update(ids)
+            for mid in ids:
+                model_regions.setdefault(mid, set()).add(r)
+
+    # Cache for offline use
+    MANTLE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    cache_data = {mid: sorted(regions) for mid, regions in model_regions.items()}
+    with open(MANTLE_CACHE_PATH, "w") as f:
+        json.dump(cache_data, f, indent=2)
+
+    logger.info(f"  Found {len(all_model_ids)} models across {len(MANTLE_REGIONS)} Mantle regions")
+    logger.info(f"  Saved to {MANTLE_CACHE_PATH.name}")
+
+    # Store the regions mapping on the function for later use
+    discover_mantle_models._model_regions = model_regions
+
+    return all_model_ids
+
+
 # ── Step 3: Fetch token limits from LiteLLM ─────────────────────────
 
 LITELLM_URL = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
@@ -641,6 +717,115 @@ def _probe_priority_tier(client: Any, model_id: str) -> list[str]:
         return ["standard"]
 
 
+def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, region: str) -> bool:
+    """Test if model supports the Chat Completions API on bedrock-mantle.
+
+    First checks if the model appears in the Mantle /v1/models list.
+    If yes, sends a minimal Chat Completions request to confirm.
+    """
+    if not mantle_models:
+        return False
+
+    # Normalize model_id for Mantle lookup (strip version suffixes)
+    base_id = strip_geo_prefix(model_id)
+    candidates = [
+        base_id,
+        re.sub(r"-\d+:\d+$", "", base_id),
+        re.sub(r"-v\d+:\d+$", "", base_id),
+    ]
+    # Find matching Mantle model ID
+    mantle_id = None
+    for candidate in candidates:
+        if candidate in mantle_models:
+            mantle_id = candidate
+            break
+    if not mantle_id:
+        return False
+
+    # Probe with a real request
+    try:
+        from botocore.auth import SigV4Auth
+        from botocore.awsrequest import AWSRequest
+
+        session = boto3.Session(region_name=region)
+        credentials = session.get_credentials().get_frozen_credentials()
+
+        url = f"https://bedrock-mantle.{region}.api.aws/v1/chat/completions"
+        payload = json.dumps({
+            "model": mantle_id,
+            "messages": [{"role": "user", "content": "hi"}],
+            "max_tokens": 5,
+        })
+        request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
+        SigV4Auth(credentials, "bedrock", region).add_auth(request)
+
+        resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
+        if resp.status_code == 200:
+            return True
+        # 400 with "does not support" = model exists but doesn't support this API
+        if resp.status_code == 400:
+            err = resp.json().get("error", {}).get("message", "")
+            if "does not support" in err:
+                return False
+            # Other 400 = validation issue, model likely supports it
+            return True
+        return False
+    except Exception:
+        return False
+
+
+def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str) -> bool:
+    """Test if model supports the Responses API on bedrock-mantle.
+
+    Sends a minimal Responses API request to confirm support.
+    """
+    if not mantle_models:
+        return False
+
+    base_id = strip_geo_prefix(model_id)
+    candidates = [
+        base_id,
+        re.sub(r"-\d+:\d+$", "", base_id),
+        re.sub(r"-v\d+:\d+$", "", base_id),
+    ]
+    mantle_id = None
+    for candidate in candidates:
+        if candidate in mantle_models:
+            mantle_id = candidate
+            break
+    if not mantle_id:
+        return False
+
+    try:
+        from botocore.auth import SigV4Auth
+        from botocore.awsrequest import AWSRequest
+
+        session = boto3.Session(region_name=region)
+        credentials = session.get_credentials().get_frozen_credentials()
+
+        url = f"https://bedrock-mantle.{region}.api.aws/v1/responses"
+        payload = json.dumps({
+            "model": mantle_id,
+            "input": "hi",
+            "store": False,
+            "max_output_tokens": 5,
+        })
+        request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
+        SigV4Auth(credentials, "bedrock", region).add_auth(request)
+
+        resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
+        if resp.status_code == 200:
+            return True
+        if resp.status_code == 400:
+            err = resp.json().get("error", {}).get("message", "")
+            if "does not support" in err:
+                return False
+            return True
+        return False
+    except Exception:
+        return False
+
+
 def _probe_guardrail_compatible(client: Any, model_id: str) -> bool:
     """Test if model supports Bedrock Guardrails.
 
@@ -687,11 +872,12 @@ def _probe_guardrail_compatible(client: Any, model_id: str) -> bool:
         return True
 
 
-def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = False) -> dict[str, Any]:
+def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = False,
+                       mantle_models: set[str] | None = None, region: str = "us-west-2") -> dict[str, Any]:
     """Probe a model's capabilities via test API calls.
 
     Returns dict with: converse_supported, tool_use, streaming_tool_use,
-    extended_thinking, prompt_caching, supported_tiers.
+    extended_thinking, prompt_caching, supported_tiers, api_support.
     """
     if skip_probes:
         return {
@@ -702,11 +888,27 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
             "prompt_caching": None,
             "supported_tiers": [],
             "guardrail_compatible": True,  # Safe default
+            "api_support": None,  # Will be derived later if possible
         }
 
     # First check Converse API support
     converse_ok = _probe_converse_support(bedrock_runtime, model_id)
-    if not converse_ok:
+
+    # Build api_support list
+    api_support = []
+    if converse_ok:
+        api_support.append("converse")
+
+    # Probe Mantle APIs (Chat Completions + Responses)
+    if mantle_models:
+        if _probe_mantle_chat_completions(mantle_models, model_id, region):
+            api_support.append("chat_completions")
+            time.sleep(0.3)
+        if _probe_mantle_responses(mantle_models, model_id, region):
+            api_support.append("responses")
+            time.sleep(0.3)
+
+    if not converse_ok and not api_support:
         return {
             "converse_supported": False,
             "tool_use": False,
@@ -715,36 +917,44 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
             "prompt_caching": None,
             "supported_tiers": [],
             "guardrail_compatible": False,
+            "api_support": api_support or ["converse"],
         }
 
-    time.sleep(0.3)
-    tool_use = _probe_tool_use(bedrock_runtime, model_id)
-    time.sleep(0.3)
+    # Converse-specific probes (only if Converse API is supported)
+    tool_use = False
+    streaming_tool_use = False
+    extended_thinking = False
+    supported_tiers: list[str] = []
+    guardrail_compatible = True
 
-    # Only probe streaming tools if tool_use is supported
-    if tool_use:
-        streaming_tool_use = _probe_streaming_tool_use(bedrock_runtime, model_id)
+    if converse_ok:
         time.sleep(0.3)
-    else:
-        streaming_tool_use = False
+        tool_use = _probe_tool_use(bedrock_runtime, model_id)
+        time.sleep(0.3)
 
-    extended_thinking = _probe_extended_thinking(bedrock_runtime, model_id)
-    time.sleep(0.3)
+        # Only probe streaming tools if tool_use is supported
+        if tool_use:
+            streaming_tool_use = _probe_streaming_tool_use(bedrock_runtime, model_id)
+            time.sleep(0.3)
 
-    supported_tiers = _probe_priority_tier(bedrock_runtime, model_id)
-    time.sleep(0.3)
+        extended_thinking = _probe_extended_thinking(bedrock_runtime, model_id)
+        time.sleep(0.3)
 
-    guardrail_compatible = _probe_guardrail_compatible(bedrock_runtime, model_id)
-    time.sleep(0.3)
+        supported_tiers = _probe_priority_tier(bedrock_runtime, model_id)
+        time.sleep(0.3)
+
+        guardrail_compatible = _probe_guardrail_compatible(bedrock_runtime, model_id)
+        time.sleep(0.3)
 
     return {
-        "converse_supported": True,
+        "converse_supported": converse_ok,
         "tool_use": tool_use,
         "streaming_tool_use": streaming_tool_use,
         "extended_thinking": extended_thinking,
         "prompt_caching": None,  # Derived from LiteLLM cache pricing
         "supported_tiers": supported_tiers,
         "guardrail_compatible": guardrail_compatible,
+        "api_support": api_support or ["converse"],
     }
 
 
@@ -978,6 +1188,26 @@ def match_quality_baseline(bedrock_name: str, model_id: str, aa_models: list[dic
 
 # ── Step 6: Build catalog ───────────────────────────────────────────
 
+def _derive_api_support(base_id: str, model_id: str, caps: dict, mantle_models: set[str] | None) -> list[str]:
+    """Derive api_support when probes were skipped, using Mantle model list.
+    
+    NOTE: Without probes, we can only confirm 'converse' (from ListFoundationModels)
+    and mark models as *potentially* on Mantle. We do NOT assume chat_completions
+    support without a real probe — the model may only support Messages or Responses API.
+    """
+    api_support = []
+
+    # Converse: if we got here, the model passed the converse filter in discover_models
+    if caps.get("converse_supported") is not False:
+        api_support.append("converse")
+
+    # We intentionally do NOT add chat_completions here without a probe.
+    # Models on Mantle may support Messages API (Anthropic) or Responses API (OpenAI)
+    # but not Chat Completions. Only the probe can confirm.
+
+    return api_support or ["converse"]
+
+
 def build_catalog(
     models: list[dict],
     profiles: dict[str, list[str]],
@@ -986,6 +1216,7 @@ def build_catalog(
     litellm_data: dict[str, dict],
     existing_catalog: dict | None = None,
     region: str = "us-west-2",
+    mantle_models: set[str] | None = None,
 ) -> list[dict]:
     """Assemble the final catalog entries."""
     logger.info("Step 6: Building catalog...")
@@ -1161,11 +1392,174 @@ def build_catalog(
             "supported_latency_modes": supported_tiers,
             "guardrail_compatible": caps.get("guardrail_compatible", True),
             "quality_baseline": quality_baseline,
+            "api_support": caps.get("api_support") or _derive_api_support(base_id, model_id, caps, mantle_models),
         }
 
         catalog.append(entry)
 
     logger.info(f"  Built catalog with {len(catalog)} entries")
+    return catalog
+
+
+# ── Step 6b: Add Mantle-only models ─────────────────────────────────
+
+def add_mantle_only_models(
+    catalog: list[dict],
+    mantle_models: set[str],
+    litellm_data: dict[str, dict],
+    aa_models: list[dict],
+    existing_catalog: dict | None = None,
+    region: str = "us-west-2",
+) -> list[dict]:
+    """Add models that exist only on Mantle (not in bedrock-runtime) to the catalog.
+
+    These models (e.g., GPT-5.4, GPT-5.5, Qwen3-Coder-Next) are only accessible
+    via the bedrock-mantle endpoint and don't appear in ListFoundationModels.
+    """
+    if not mantle_models:
+        return catalog
+
+    # Find models already in catalog (normalize IDs for comparison)
+    existing_ids = set()
+    existing_by_base: dict[str, dict] = {}  # base_id → catalog entry
+    for m in catalog:
+        mid = m["model_id"]
+        existing_ids.add(mid)
+        base = re.sub(r"-\d{8}-v\d+:\d+$", "", mid)  # Strip date-version like -20251001-v1:0
+        base = re.sub(r"-v\d+:\d+$", "", base)  # Strip version like -v1:0
+        base = re.sub(r"-\d+:\d+$", "", base)  # Strip version like -1:0
+        existing_ids.add(base)
+        existing_by_base[base] = m
+
+    # Find Mantle-only models
+    mantle_only = [mid for mid in sorted(mantle_models) if mid not in existing_ids]
+
+    if not mantle_only:
+        logger.info("Step 6b: No Mantle-only models to add")
+        return catalog
+
+    logger.info(f"Step 6b: Processing {len(mantle_only)} Mantle-only models...")
+
+    # Load existing catalog for fallback values
+    existing_by_id: dict[str, dict] = {}
+    if existing_catalog:
+        for m in existing_catalog.get("models", []):
+            existing_by_id[m["model_id"]] = m
+
+    # Skip versioned duplicates (e.g., keep openai.gpt-5.4, skip openai.gpt-5.4-2026-03-05)
+    # unless the base version isn't present
+    base_versions: dict[str, str] = {}
+    for mid in mantle_only:
+        # Detect date-versioned models (e.g., openai.gpt-5.4-2026-03-05)
+        date_match = re.search(r"-(\d{4}-\d{2}-\d{2})$", mid)
+        if date_match:
+            base = mid[:date_match.start()]
+            if base in mantle_only or base in existing_ids:
+                continue  # Skip, base version exists
+        base_versions[mid] = mid
+
+    for mantle_id in base_versions.values():
+        # Check if this is actually a variant of an existing catalog model
+        # e.g., "anthropic.claude-haiku-4-5" matches "anthropic.claude-haiku-4-5-20251001-v1:0"
+        base_for_match = re.sub(r"-\d{8}(-v\d+)?$", "", mantle_id)
+        existing_entry = existing_by_base.get(mantle_id) or existing_by_base.get(base_for_match)
+        if existing_entry:
+            # Model already in catalog — just update its api_support
+            current_apis = existing_entry.get("api_support", ["converse"])
+            if "chat_completions" not in current_apis:
+                # Only add chat_completions if the probe confirmed it works
+                # (don't add blindly — the probe in Step 4 handles this for probed models)
+                pass
+            logger.debug(f"    Skipped {mantle_id} (already in catalog as {existing_entry['model_id']})")
+            continue
+
+        family = detect_family(mantle_id)
+
+        # Determine api_support — these are Mantle-only
+        api_support = ["chat_completions"]
+
+        # OpenAI proprietary models (non-OSS) only support Responses API
+        if "openai" in mantle_id.lower() and "oss" not in mantle_id.lower():
+            api_support = ["responses"]
+        elif "gpt-oss" in mantle_id.lower():
+            api_support = ["chat_completions", "responses"]
+        # Safeguard models are utility, not for general use
+        elif "safeguard" in mantle_id.lower():
+            continue
+
+        # Derive display name from model_id
+        # e.g., "openai.gpt-5.4" → "GPT-5.4", "qwen.qwen3-coder-next" → "Qwen3 Coder Next"
+        raw_name = mantle_id.split(".", 1)[-1] if "." in mantle_id else mantle_id
+        # Preserve version numbers (don't split on dots within the model name)
+        # Convert hyphens to spaces for title casing, but keep version dots
+        display_name = raw_name.replace("-", " ").replace("_", " ")
+        # Title case each word but preserve uppercase acronyms like "GPT", "VL"
+        words = display_name.split()
+        display_name = " ".join(
+            w.upper() if w.lower() in ("gpt", "vl", "glm", "oss") else w.title()
+            for w in words
+        )
+
+        # Try to get quality/pricing from existing catalog or AA
+        existing = existing_by_id.get(mantle_id, {})
+        quality_baseline, aa_pricing = match_quality_baseline(display_name, mantle_id, aa_models)
+
+        # LiteLLM pricing lookup
+        litellm_entry = litellm_data.get(mantle_id) or litellm_data.get(f"bedrock/{mantle_id}") or {}
+        if litellm_entry.get("input_cost_per_token"):
+            pricing = {
+                "input_per_1k": round(litellm_entry["input_cost_per_token"] * 1000, 6),
+                "output_per_1k": round((litellm_entry.get("output_cost_per_token") or 0) * 1000, 6),
+                "cache_read_per_1k": 0.0,
+                "cache_write_per_1k": 0.0,
+            }
+        elif aa_pricing:
+            pricing = {"input_per_1k": aa_pricing["input_per_1k"], "output_per_1k": aa_pricing["output_per_1k"],
+                       "cache_read_per_1k": 0.0, "cache_write_per_1k": 0.0}
+        elif existing and existing.get("pricing", {}).get("input_per_1k", 0) > 0:
+            pricing = existing["pricing"]
+        else:
+            pricing = {"input_per_1k": 0.0, "output_per_1k": 0.0, "cache_read_per_1k": 0.0, "cache_write_per_1k": 0.0}
+
+        # Context window
+        max_input = litellm_entry.get("max_input_tokens") or existing.get("max_input_tokens") or 128000
+        max_output = litellm_entry.get("max_output_tokens") or existing.get("max_output_tokens") or 16384
+
+        # Tier
+        tier = existing.get("tier") or derive_tier(quality_baseline, mantle_id, display_name, pricing.get("input_per_1k", 0))
+
+        # Get region availability from Mantle scan
+        mantle_region_map = getattr(discover_mantle_models, '_model_regions', {})
+        model_mantle_regions = mantle_region_map.get(mantle_id, {region})
+
+        entry = {
+            "model_id": mantle_id,
+            "family": family,
+            "regions": [{"name": r, "direct": True} for r in sorted(model_mantle_regions)],
+            "tier": tier,
+            "display_name": display_name,
+            "capabilities": {
+                "tool_use": True,  # Mantle models generally support tool_use via Chat Completions
+                "vision": False,
+                "streaming": True,
+                "streaming_tool_use": True,
+                "document_support": False,
+                "extended_thinking": False,
+                "prompt_caching": False,
+            },
+            "max_input_tokens": max_input,
+            "max_output_tokens": max_output,
+            "pricing": pricing,
+            "supported_latency_modes": [],
+            "guardrail_compatible": False,  # Mantle-only models don't use Bedrock guardrails
+            "quality_baseline": quality_baseline,
+            "api_support": api_support,
+        }
+
+        catalog.append(entry)
+        logger.info(f"    Added: {mantle_id} (api_support={api_support}, tier={tier})")
+
+    logger.info(f"  Catalog now has {len(catalog)} entries")
     return catalog
 
 
@@ -1193,6 +1587,9 @@ def main():
     # Step 2: Discover CRIS profiles (multi-region scan)
     profiles = discover_profiles(bedrock)
 
+    # Step 2b: Discover Mantle models (bedrock-mantle endpoint)
+    mantle_models = discover_mantle_models(args.region)
+
     # Step 3: Fetch token limits from LiteLLM
     litellm_data = fetch_litellm_data()
 
@@ -1214,7 +1611,8 @@ def main():
 
         # Probe in parallel (5 models at a time)
         def _probe_one(model_id: str) -> tuple[str, dict]:
-            return model_id, probe_capabilities(bedrock_runtime, model_id, skip_probes=False)
+            return model_id, probe_capabilities(bedrock_runtime, model_id, skip_probes=False,
+                                                mantle_models=mantle_models, region=args.region)
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = {executor.submit(_probe_one, mid): mid for mid in models_to_probe}
@@ -1243,7 +1641,10 @@ def main():
             existing_catalog = json.load(f)
 
     # Step 6: Build catalog
-    catalog = build_catalog(models, profiles, capabilities, aa_models, litellm_data, existing_catalog, region=args.region)
+    catalog = build_catalog(models, profiles, capabilities, aa_models, litellm_data, existing_catalog, region=args.region, mantle_models=mantle_models)
+
+    # Step 6b: Add Mantle-only models (not discovered via ListFoundationModels)
+    catalog = add_mantle_only_models(catalog, mantle_models, litellm_data, aa_models, existing_catalog, region=args.region)
 
     # Output
     output_data = {"models": catalog}

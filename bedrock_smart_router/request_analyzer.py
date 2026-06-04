@@ -226,6 +226,19 @@ class RequestAnalyzer:
         has_images = self._has_images(messages)
         has_documents = self._has_documents(messages)
         requires_tool = tool_config is not None or _count_matches(scoring_text_lower, TOOL_USE_SIGNALS) > 1
+
+        # ── Step 2b: Tool presence boost ────────────────────────
+        # If tools are explicitly provided via tool_config, ensure minimum
+        # complexity of "moderate" — tool-calling requires a capable model.
+        tool_boost_applied = False
+        if tool_config and tool_config.get("tools"):
+            complexity_order = {"simple": 0, "moderate": 1, "complex": 2, "reasoning": 3}
+            current_level = complexity_order.get(label, 1)
+            if current_level < 1:  # < moderate
+                complexity = Complexity.MODERATE
+                composite = max(composite, 0.20)
+                tool_boost_applied = True
+
         est_input = _estimate_tokens(full_text)
 
         # Add estimated tokens for multimodal content
@@ -263,6 +276,7 @@ class RequestAnalyzer:
             is_multi_turn=len(messages) > 2,
             conversation_turn_count=len([m for m in messages if m.get("role") == "user"]),
             content_sensitivity="low",
+            tool_boost_applied=tool_boost_applied,
         )
 
     # ── Internal helpers ────────────────────────────────────────

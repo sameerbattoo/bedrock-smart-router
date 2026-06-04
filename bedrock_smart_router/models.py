@@ -139,6 +139,7 @@ class BedrockModel:
     distilled_from: str | None = None
     distilled_quality_delta: float = 0.0
     quality_baseline: float = 0.0  # AA Intelligence Index score (0-60 scale)
+    api_support: list[str] = field(default_factory=lambda: ["converse"])  # "converse", "chat_completions", "responses"
 
     @property
     def is_cris_available(self) -> bool:
@@ -180,6 +181,7 @@ class RequestAnalysis:
     conversation_turn_count: int = 0
     language: str = "en"
     content_sensitivity: str = "low"
+    tool_boost_applied: bool = False  # True when tool_config presence boosted complexity to moderate
 
 
 @dataclass

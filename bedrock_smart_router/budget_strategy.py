@@ -86,6 +86,7 @@ class BudgetTracker:
         self._store = store
         self._pending: list[Any] = []  # SpendRecords waiting to be flushed
         self._pending_lock = threading.Lock()
+        self._shutdown_event = threading.Event()
 
         # Load existing spend from store on init
         if self._store is not None:
@@ -97,6 +98,15 @@ class BudgetTracker:
                 target=self._sync_loop, daemon=True, name="budget-sync"
             )
             self._sync_thread.start()
+
+    def close(self) -> None:
+        """Shut down the background sync thread and flush pending records."""
+        self._shutdown_event.set()
+        if hasattr(self, "_sync_thread") and self._sync_thread.is_alive():
+            self._sync_thread.join(timeout=5.0)
+        # Final flush
+        if self._store and self._pending:
+            self._flush_pending()
 
     def _hydrate_from_store(self) -> None:
         """Load recent spend from the persistent store into memory.
@@ -138,8 +148,10 @@ class BudgetTracker:
     def _sync_loop(self) -> None:
         """Background thread: flush pending records and cleanup old data."""
         last_cleanup = time.time()
-        while True:
-            time.sleep(self._sync_interval)
+        while not self._shutdown_event.is_set():
+            self._shutdown_event.wait(timeout=self._sync_interval)
+            if self._shutdown_event.is_set():
+                break
             self._flush_pending()
             # Periodic cleanup (every cleanup_interval)
             if time.time() - last_cleanup >= self._cleanup_interval:
