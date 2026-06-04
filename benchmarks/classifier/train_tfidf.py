@@ -83,16 +83,34 @@ for gen_file in sorted(GENERATED_DIR.glob("*.json")):
 print(f"2. Generated data: {gen_count} samples")
 
 # ═══════════════════════════════════════════════════════════════
-# 3. DevQuasar LLM Router dataset (15K, binary)
+# 3. DevQuasar LLM Router dataset (15K, binary → mapped to 4-class)
+#    DevQuasar's "complex" is really our moderate+complex mix.
+#    Use heuristics to split: explain/discuss → moderate, design/implement → complex
 # ═══════════════════════════════════════════════════════════════
 devquasar_path = INDUSTRY_DIR / "devquasar_router.json"
 if devquasar_path.exists():
     with open(devquasar_path) as f:
         dq_data = json.load(f)
+    complex_indicators = [
+        "design", "implement", "architect", "build a system", "optimize",
+        "distributed", "scalab", "algorithm", "data structure", "prove",
+        "derive", "formal", "trade-off", "microservice",
+    ]
     for d in dq_data:
-        texts.append(d["text"])
-        labels.append(d["label"])  # already 'simple' or 'complex'
-    print(f"3. DevQuasar router: {len(dq_data)} samples")
+        text = d["text"]
+        if d["label"] == "simple":
+            texts.append(text)
+            labels.append("simple")
+        else:
+            # Split DevQuasar's "complex" into moderate vs complex
+            text_lower = text.lower()
+            if any(kw in text_lower for kw in complex_indicators) or len(text) > 300:
+                texts.append(text)
+                labels.append("complex")
+            else:
+                texts.append(text)
+                labels.append("moderate")
+    print(f"3. DevQuasar router: {len(dq_data)} samples (remapped binary → 3-class)")
 
 # ═══════════════════════════════════════════════════════════════
 # 4. Deita complexity dataset — SKIPPED (z-scores don't align with our taxonomy)
@@ -184,7 +202,79 @@ if claude_path.exists():
     print(f"5c. Claude reasoning (math only, system+user): {claude_count} samples")
 
 # ═══════════════════════════════════════════════════════════════
-# 5d-5f: Additional datasets — DISABLED (diluted accuracy from 80% to 67%)
+# 5d. Easy2Hard-Bench (NeurIPS 2024) — difficulty-scored prompts
+# ═══════════════════════════════════════════════════════════════
+easy2hard_path = INDUSTRY_DIR / "easy2hard_bench.json"
+if easy2hard_path.exists():
+    with open(easy2hard_path) as f:
+        e2h_data = json.load(f)
+    for d in e2h_data:
+        texts.append(d["text"])
+        labels.append(d["label"])
+    print(f"5d. Easy2Hard-Bench: {len(e2h_data)} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5e. LeetCode — coding problems with Easy/Medium/Hard labels
+# ═══════════════════════════════════════════════════════════════
+leetcode_path = INDUSTRY_DIR / "leetcode.json"
+if leetcode_path.exists():
+    with open(leetcode_path) as f:
+        lc_data = json.load(f)
+    for d in lc_data:
+        texts.append(d["text"])
+        labels.append(d["label"])
+    print(f"5e. LeetCode: {len(lc_data)} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5f. MT-Bench — multi-turn evaluation prompts (complex)
+# ═══════════════════════════════════════════════════════════════
+mt_bench_path = INDUSTRY_DIR / "mt_bench.json"
+if mt_bench_path.exists():
+    with open(mt_bench_path) as f:
+        mt_data = json.load(f)
+    for d in mt_data:
+        texts.append(d["text"])
+        labels.append(d["label"])
+    print(f"5f. MT-Bench: {len(mt_data)} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5g. IFEval — instruction-following with constraints
+# ═══════════════════════════════════════════════════════════════
+ifeval_path = INDUSTRY_DIR / "ifeval.json"
+if ifeval_path.exists():
+    with open(ifeval_path) as f:
+        if_data = json.load(f)
+    for d in if_data:
+        texts.append(d["text"])
+        labels.append(d["label"])
+    print(f"5g. IFEval: {len(if_data)} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5h. OpenOrca subset — system + user prompts
+# ═══════════════════════════════════════════════════════════════
+orca_path = INDUSTRY_DIR / "openorca_subset.json"
+if orca_path.exists():
+    with open(orca_path) as f:
+        orca_data = json.load(f)
+    for d in orca_data:
+        texts.append(d["text"])
+        labels.append(d["label"])
+    print(f"5h. OpenOrca subset: {len(orca_data)} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5i. Big Bench Hard — tasks that are hard for LLMs
+# ═══════════════════════════════════════════════════════════════
+bbh_path = INDUSTRY_DIR / "bbh.json"
+if bbh_path.exists():
+    with open(bbh_path) as f:
+        bbh_data = json.load(f)
+    for d in bbh_data:
+        texts.append(d["text"])
+        labels.append(d["label"])
+    print(f"5i. Big Bench Hard: {len(bbh_data)} samples")
+
+# ═══════════════════════════════════════════════════════════════
+# 5d-5f (old): Additional datasets — DISABLED (diluted accuracy from 80% to 67%)
 # The Alpaca, EricLu, and Claude full datasets have label definitions
 # that conflict with our taxonomy. Keeping the cleaner 35K dataset.
 # ═══════════════════════════════════════════════════════════════
@@ -267,6 +357,13 @@ from collections import Counter
 print(f"\nTotal samples: {len(texts)}")
 print(f"Label distribution: {dict(Counter(labels))}")
 
+# ═══════════════════════════════════════════════════════════════
+# 8. Balance: Use class_weight='balanced' in LogisticRegression
+#    instead of data-level undersampling, which loses useful signal.
+# ═══════════════════════════════════════════════════════════════
+print(f"\nTotal samples: {len(texts)}")
+print(f"Label distribution: {dict(Counter(labels))}")
+
 # Split
 X_train, X_test, y_train, y_test = train_test_split(
     texts, labels, test_size=0.15, random_state=42, stratify=labels
@@ -276,7 +373,7 @@ print(f"Train: {len(X_train)}, Test: {len(X_test)}")
 # Build pipeline
 pipeline = Pipeline([
     ("tfidf", TfidfVectorizer(
-        max_features=20000,
+        max_features=25000,
         ngram_range=(1, 3),
         min_df=2,
         max_df=0.95,
@@ -321,7 +418,7 @@ model_data = {
     "intercept": clf.intercept_.tolist(),
     "classes": clf.classes_.tolist(),
     "tfidf_params": {
-        "max_features": 20000,
+        "max_features": 25000,
         "ngram_range": [1, 3],
         "sublinear_tf": True,
     },
