@@ -250,6 +250,20 @@ if ifeval_path.exists():
     print(f"5g. IFEval: {len(if_data)} samples")
 
 # ═══════════════════════════════════════════════════════════════
+# 5g2. Curated moderate prompts (targeted boundary samples)
+# ═══════════════════════════════════════════════════════════════
+curated_mod_path = INDUSTRY_DIR / "curated_moderate.json"
+if curated_mod_path.exists():
+    with open(curated_mod_path) as f:
+        cm_data = json.load(f)
+    # Repeat 5x to give these high-quality boundary samples more weight
+    for _ in range(5):
+        for d in cm_data:
+            texts.append(d["text"])
+            labels.append(d["label"])
+    print(f"5g2. Curated moderate: {len(cm_data)} × 5 = {len(cm_data) * 5} samples")
+
+# ═══════════════════════════════════════════════════════════════
 # 5h. OpenOrca subset — system + user prompts
 # ═══════════════════════════════════════════════════════════════
 orca_path = INDUSTRY_DIR / "openorca_subset.json"

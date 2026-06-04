@@ -1,0 +1,477 @@
+[
+  {
+    "text": "Write a Python function to reverse a linked list",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python function to check if a string is a palindrome",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to find the nth Fibonacci number using dynamic programming",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python script that reads a CSV file and calculates the average of a column",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a bash script to find all files larger than 100MB",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python decorator with retry logic and exponential backoff",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to merge two sorted arrays in O(n) time",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a recursive function to flatten a nested dictionary",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python context manager for database transactions",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to validate an email address using regex",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a binary search implementation that handles duplicates",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python generator that yields prime numbers",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a debounce function in JavaScript",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python function to parse and validate JSON web tokens",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a rate limiter class using the token bucket algorithm",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to detect a cycle in a linked list",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python class for a thread-safe singleton",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to find all permutations of a string",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a basic LRU cache implementation",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to serialize and deserialize a binary tree",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python function to compute the Levenshtein distance between two strings",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to find the longest common subsequence of two strings",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a simple event emitter class in Python",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a function to balance parentheses in an expression",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Python script to scrape titles from a webpage using BeautifulSoup",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain how OAuth 2.0 authentication works",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the difference between SQL and NoSQL databases",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "How does garbage collection work in Java?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the CAP theorem and its implications for distributed databases",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What is the difference between processes and threads?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain how HTTPS/TLS handshake works",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "How does consistent hashing work?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the difference between optimistic and pessimistic locking",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What are the SOLID principles in object-oriented design?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain how a B-tree index works in a database",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "How does the Python GIL work and what are its implications?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the difference between REST and GraphQL",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What is eventual consistency and when would you choose it?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain how virtual memory and paging work",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "How does a bloom filter work and when would you use one?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the difference between symmetric and asymmetric encryption",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What is the difference between TCP and UDP?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain how container orchestration works in Kubernetes",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "How does a load balancer decide where to route requests?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the observer pattern with a practical example",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Compare React and Vue.js for building web applications",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What are the pros and cons of microservices vs monolith architecture?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Compare PostgreSQL and MongoDB for an e-commerce application",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What are the trade-offs between DynamoDB and Aurora for session storage?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Compare AWS Lambda vs ECS Fargate for running batch jobs",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What are the advantages of TypeScript over JavaScript?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Compare Docker Compose and Kubernetes for local development",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Analyze the time complexity of quicksort vs mergesort",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "What are the trade-offs between gRPC and REST for inter-service communication?",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Compare relational databases vs graph databases for social network data",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Summarize the main principles of object-oriented programming",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the key differences between agile and waterfall methodologies",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Summarize how MapReduce works with a word count example",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the reactor pattern and how Node.js uses it",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Describe the publish-subscribe pattern and give three use cases",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain CQRS and event sourcing with a practical example",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Summarize how DNS resolution works from browser to IP address",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain the circuit breaker pattern for microservices",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Describe how a message queue like Kafka handles backpressure",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Explain blue-green deployments vs canary releases",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a technical blog post outline about migrating from REST to GraphQL",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a README template for an open-source Python library",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a code review checklist for pull requests",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Draft an architecture decision record for choosing PostgreSQL over DynamoDB",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a runbook for responding to a database failover",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a technical interview question set for a mid-level Python developer",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write API documentation for a user registration endpoint",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Draft a post-mortem template for production incidents",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a migration plan for moving from Python 2 to Python 3",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a troubleshooting guide for common Docker networking issues",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a SQL query to find the second highest salary in each department",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a SQL query with window functions to calculate running totals",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a pandas script to clean a dataset with missing values and duplicates",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a SQL query to find users who made purchases in consecutive months",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a query to calculate month-over-month revenue growth",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a SQL query to find the top 3 products by revenue per category",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a pivot table in pandas from a long-format dataframe",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a SQL query to detect gaps in sequential IDs",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a query to calculate customer lifetime value from transaction data",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a pandas pipeline to join three dataframes and aggregate results",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Dockerfile for a Python Flask application with multi-stage build",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a GitHub Actions workflow for running tests and linting on PRs",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Terraform module for an S3 bucket with versioning and encryption",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Configure nginx as a reverse proxy with SSL termination",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a Kubernetes deployment YAML with health checks and resource limits",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a CloudFormation template for a VPC with public and private subnets",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write a docker-compose.yml for a app with Redis, PostgreSQL, and a web server",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Configure a basic Prometheus alerting rule for high error rates",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Write an Ansible playbook to install and configure nginx on Ubuntu",
+    "label": "moderate",
+    "source": "curated_moderate"
+  },
+  {
+    "text": "Create a Makefile with build, test, lint, and deploy targets",
+    "label": "moderate",
+    "source": "curated_moderate"
+  }
+]
