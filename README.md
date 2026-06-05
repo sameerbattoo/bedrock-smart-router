@@ -2,9 +2,11 @@
 
 Intelligent model routing for Amazon Bedrock. A lightweight Python SDK that sits between your application and Bedrock, automatically selecting the optimal model for each request based on cost, latency, quality, and task complexity.
 
+The Smart Router unifies both Bedrock platforms — **bedrock-runtime** (Converse API) and **bedrock-mantle** (Chat Completions API) — into a single routing layer with **68 models**. It provides drop-in interfaces for both `boto3.client.converse()` and `openai.chat.completions.create()`, transparently routing to the correct backend regardless of which API surface you use.
+
 Unlike generic LLM gateways (LiteLLM, Portkey, OpenRouter) that treat Bedrock as just another provider, the Bedrock Smart Router is purpose-built for Bedrock and understands CRIS profiles, latency optimization, prompt caching, guardrails, application inference profiles, and model distillation.
 
-Unlike Bedrock's native prompt router, which only routes within a single model family, the Smart Router routes across all families (Anthropic, Amazon Nova, Meta, Mistral) with custom strategies and historical quality data.
+Unlike Bedrock's native prompt router, which only routes within a single model family, the Smart Router routes across all families (Anthropic, Amazon Nova, Meta, Mistral, OpenAI, DeepSeek, Qwen, NVIDIA, and more) with custom strategies and historical quality data.
 
 ## Table of Contents
 
@@ -17,6 +19,7 @@ Unlike Bedrock's native prompt router, which only routes within a single model f
 - [Multimodal Routing: Images and Documents](#multimodal-routing-images-and-documents)
 - [Boto Client Configuration](#boto-client-configuration)
 - [Strands Agents SDK Integration](#strands-agents-sdk-integration)
+- [Unified API Surface: Converse + Chat Completions](#unified-api-surface-converse--chat-completions)
 - [Caching: Exact-Match, Semantic, and Auto-Extracting](#caching-exact-match-semantic-and-auto-extracting)
 - [Architecture](#architecture)
 - [How Routing Strategies Work](#how-routing-strategies-work)
@@ -35,6 +38,10 @@ Unlike Bedrock's native prompt router, which only routes within a single model f
 **100% Bedrock Converse API Coverage**
 
 The Smart Router is a true drop-in replacement for `bedrock-runtime.converse()` and `converse_stream()`. Every Bedrock Converse parameter is supported — either as a first-class parameter or via `**kwargs` passthrough. This includes `additionalModelRequestFields` (model-specific params like `top_k`, extended thinking), `guardrailConfig`, `performanceConfig`, `outputConfig`, `promptVariables`, and `requestMetadata`. Every response field is captured in the routing decision: token usage, prompt cache metrics, stop reason, server-side latency, service tier, cache details, performance config, and guardrail trace. Nothing is lost by using the router instead of calling Bedrock directly.
+
+**OpenAI Chat Completions API Drop-in**
+
+The router also exposes an OpenAI-compatible `router.chat.completions.create(...)` interface — a drop-in replacement for `openai.chat.completions.create()`. This unifies the Bedrock (`bedrock-runtime`) and Mantle (`bedrock-mantle`) platforms into a single 68-model pool. Users calling either API surface get transparent access to all models regardless of which backend they live on, with automatic format translation.
 
 **Routing Strategies**
 - Cost-optimized, latency-optimized, quality-optimized, and balanced (weighted composite)
@@ -142,6 +149,7 @@ from bedrock_smart_router import BedrockRouter
 # All defaults — balanced strategy, in-memory metrics
 router = BedrockRouter.create()
 
+# Converse API (boto3 drop-in)
 response = router.converse(
     messages=[{"role": "user", "content": [{"text": "Explain VPCs in AWS"}]}],
 )
@@ -151,6 +159,15 @@ print(response["routing_decision"].selected_model)
 
 print(response["routing_decision"].actual_cost)
 # e.g. 0.000012
+
+# Chat Completions API (OpenAI SDK drop-in)
+response = router.chat.completions.create(
+    messages=[{"role": "user", "content": "Explain VPCs in AWS"}],
+    max_tokens=500,
+)
+
+print(response["choices"][0]["message"]["content"])
+print(response["model"])  # Selected model
 ```
 
 ### Configuration via Dict / YAML
@@ -1076,6 +1093,151 @@ agent = Agent(model=model)
 ```
 
 See [`examples/25_strands_integration.py`](examples/25_strands_integration.py) for the full set of examples.
+
+## Unified API Surface: Converse + Chat Completions
+
+The Smart Router unifies two Amazon Bedrock platforms — **bedrock-runtime** (Converse API) and **bedrock-mantle** (Chat Completions API) — into a single routing layer. Users get transparent access to **68 models** across both platforms regardless of which API surface they call from.
+
+### The Problem
+
+Amazon Bedrock exposes models through two separate endpoints:
+
+| Endpoint | API Format | Models | Authentication |
+|----------|-----------|--------|----------------|
+| `bedrock-runtime` | Converse API (boto3) | Claude, Nova, Meta, Mistral, DeepSeek, etc. | SigV4 (IAM) or API key |
+| `bedrock-mantle` | Chat Completions (OpenAI-compatible) | GPT-OSS, DeepSeek, Qwen, Mistral, NVIDIA, MiniMax, etc. | SigV4 or API key |
+
+Some models are on both platforms. Some are exclusively on one. Users must know which endpoint to call for which model, manage two different auth patterns, and handle two response formats.
+
+### How the Smart Router Solves This
+
+The router exposes **both API surfaces** on a single `BedrockRouter` object. Internally, it routes to the correct backend based on the selected model's capabilities:
+
+```
+User calls router.converse(...)           User calls router.chat.completions.create(...)
+         │                                              │
+         ▼                                              ▼
+   ┌─────────────────────────────────────────────────────────┐
+   │              BedrockRouter (unified)                     │
+   │                                                         │
+   │  1. Classify complexity                                 │
+   │  2. Select optimal model (from ALL 68 models)           │
+   │  3. Dispatch to correct backend:                        │
+   │     • Model supports Converse? → bedrock-runtime        │
+   │     • Model is Mantle-only? → bedrock-mantle            │
+   │  4. Translate format if needed (transparent)            │
+   └─────────────────────────────────────────────────────────┘
+         │                           │
+         ▼                           ▼
+   bedrock-runtime              bedrock-mantle
+   (Converse API)               (Chat Completions)
+```
+
+### Usage: Converse API (boto3 drop-in)
+
+```python
+from bedrock_smart_router import BedrockRouter
+
+router = BedrockRouter.create({"region": "us-west-2"})
+
+# Same interface as boto3's bedrock-runtime.converse()
+response = router.converse(
+    messages=[{"role": "user", "content": [{"text": "Explain Kubernetes"}]}],
+    inferenceConfig={"maxTokens": 500},
+)
+
+# If the router selects a Mantle-only model (e.g., DeepSeek V3.1),
+# it transparently translates Converse → Chat Completions under the hood.
+# The response is always in Converse format — the user doesn't know or care.
+```
+
+### Usage: Chat Completions API (OpenAI SDK drop-in)
+
+```python
+from bedrock_smart_router import BedrockRouter
+
+router = BedrockRouter.create({"region": "us-west-2"})
+
+# Same interface as OpenAI's client.chat.completions.create()
+response = router.chat.completions.create(
+    messages=[{"role": "user", "content": "Explain Kubernetes"}],
+    max_tokens=500,
+)
+
+print(response["choices"][0]["message"]["content"])
+print(response["model"])  # Shows which model was selected
+
+# If the router selects a Converse-only model (e.g., Claude, Nova),
+# it transparently translates Chat Completions → Converse under the hood.
+# The response is always in Chat Completions format.
+```
+
+### Models API
+
+```python
+# List all available models (like OpenAI's client.models.list())
+models = router.models.list()
+
+# Get details for a specific model
+model = router.models.retrieve("openai.gpt-oss-120b")
+print(model["api_support"])  # ["converse", "chat_completions", "responses"]
+print(model["tier"])         # "mid"
+```
+
+### How Backend Dispatch Works
+
+For models available on **both** platforms (26 models), the router prefers `bedrock-runtime` (Converse) because it supports CRIS (Cross-Region Inference) for higher availability and data residency. Mantle has no CRIS equivalent.
+
+For models that are **Mantle-only** (9 models), the router automatically translates the format and calls the Mantle endpoint. This is transparent — the user's code doesn't change.
+
+| Model Category | Count | Backend Used | Notes |
+|----------------|-------|-------------|-------|
+| Converse-only (Claude, Nova, Meta) | 33 | bedrock-runtime | Full CRIS, guardrails support |
+| Both platforms (Mistral, Qwen, NVIDIA, etc.) | 26 | bedrock-runtime (preferred) | CRIS advantage |
+| Mantle-only (DeepSeek V3.1, Voxtral, GLM-4.6, etc.) | 9 | bedrock-mantle | Auto-translated |
+
+### Authentication
+
+Both endpoints are supported with a single configuration:
+
+```python
+# SigV4 (default) — uses your existing AWS credentials (IAM role, env vars, ~/.aws/config)
+router = BedrockRouter.create({"region": "us-west-2"})
+
+# Bedrock API key — works for both bedrock-runtime and bedrock-mantle
+router = BedrockRouter.create({
+    "region": "us-west-2",
+    "api_key": "brk_xxxx...",
+})
+```
+
+### Format Translation
+
+The router handles bidirectional translation between Converse and Chat Completions formats:
+
+| Feature | Converse → CC | CC → Converse |
+|---------|:---:|:---:|
+| Text messages | ✅ | ✅ |
+| System prompts | ✅ | ✅ |
+| Tool use / function calling | ✅ | ✅ |
+| Tool results (parallel) | ✅ | ✅ |
+| Images (base64) | ✅ | ✅ |
+| Streaming | ✅ | ✅ |
+| Inference parameters | ✅ | ✅ |
+
+Translation is lossless for the common case. The only features that don't translate are Converse-specific `reasoningContent` blocks (stripped in CC output) and Responses API-specific features like `previous_response_id` (stateful chaining).
+
+### Responses API (Planned)
+
+The OpenAI Responses API — a newer, stateful API surface used by GPT-5.4 and GPT-5.5 — is planned for future support. Currently, these two models are in the catalog but not routable (they require the Responses API which operates differently from the stateless Converse/Chat Completions pattern).
+
+Key Responses API features under evaluation:
+- Server-side conversation state (`previous_response_id`)
+- Built-in tools (web_search, code_interpreter, file_search)
+- Background/async processing
+- MCP server connections
+
+For users who need GPT-5.4/5.5 today, the Mantle endpoint can be called directly or through the OpenAI Agents SDK pointed at `https://bedrock-mantle.<region>.api.aws/v1`.
 
 ## Caching: Exact-Match, Semantic, and Auto-Extracting
 
