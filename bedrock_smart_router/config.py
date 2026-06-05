@@ -180,7 +180,7 @@ class RouterConfig:
     observability, fallback, circuit breaker, retry) are nested.
     """
 
-    region: str = "us-west-2"
+    region: str = ""  # Empty = auto-detect from boto3 session (AWS_DEFAULT_REGION, ~/.aws/config)
     strategy: str = "balanced"
     weights: dict[str, float] = field(
         default_factory=lambda: {"cost": 0.4, "latency": 0.3, "quality": 0.3}
@@ -242,7 +242,7 @@ class RouterConfig:
             })
         """
         return cls(
-            region=data.get("region", "us-west-2"),
+            region=data.get("region", ""),
             strategy=data.get("strategy", "balanced"),
             weights=data.get("weights", {"cost": 0.4, "latency": 0.3, "quality": 0.3}),
             cache=_build_sub(CacheConfig, data.get("cache", {})),

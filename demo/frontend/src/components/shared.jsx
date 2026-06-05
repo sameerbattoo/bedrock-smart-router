@@ -204,8 +204,8 @@ export function ExplainPopup({ explanation, onClose }) {
                     </div>
                   ))}
                 </div>
-                {/* Score Breakdown — shows when low-confidence override or floor applied or payload upgraded */}
-                {(cx.floor_applied || cx.low_confidence_override || (payload && cx.user_message_classification !== cx.classification)) && (
+                {/* Score Breakdown — shows when low-confidence override or floor applied or payload upgraded or tool boost */}
+                {(cx.floor_applied || cx.low_confidence_override || cx.tool_boost_applied || (payload && cx.user_message_classification !== cx.classification)) && (
                   <div className="mt-3">
                     <div className="text-[9px] text-gray-500 mb-1">Score Breakdown:</div>
                     <div className="flex items-center gap-4 text-[10px] flex-wrap">
@@ -216,12 +216,14 @@ export function ExplainPopup({ explanation, onClose }) {
                         <span className="text-gray-400">User Message: <span className="font-mono text-white capitalize">{cx.user_message_classification}</span></span>
                       )}
                       {cx.floor_applied && <span className="text-gray-400">System Prompt Floor: <span className="font-mono text-white capitalize">{cx.classification}</span></span>}
-                      {!cx.floor_applied && payload && cx.user_message_classification !== cx.classification && (
+                      {cx.tool_boost_applied && !cx.floor_applied && <span className="text-gray-400">Tool Presence: <span className="font-mono text-white capitalize">Simple → Moderate</span></span>}
+                      {!cx.floor_applied && !cx.tool_boost_applied && payload && cx.user_message_classification !== cx.classification && (
                         <span className="text-gray-400">Payload Boost: <span className="font-mono text-white capitalize">{cx.user_message_classification} → {cx.classification}</span></span>
                       )}
                       <span className="text-gray-400">&rarr; Final: <span className="font-mono font-bold text-white capitalize">{cx.classification}</span></span>
                       {cx.low_confidence_override && <span className="text-[9px] bg-yellow-900/40 text-yellow-300 px-1.5 py-0.5 rounded font-medium">⚠ Low confidence guard</span>}
                       {cx.floor_applied && <span className="text-[9px] bg-orange-900/40 text-orange-300 px-1.5 py-0.5 rounded font-medium">⬆ Floor applied</span>}
+                      {cx.tool_boost_applied && <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded font-medium">🔧 Tool boost</span>}
                     </div>
                   </div>
                 )}
@@ -352,7 +354,7 @@ export function AccuracyPopup({ score, reasoning, side, position, onClose }) {
           <span className={`text-lg font-bold ${score >= 8 ? 'text-green-400' : score >= 6 ? 'text-yellow-400' : 'text-red-400'}`}>{score}/10</span>
         </div>
         <p className="text-xs text-gray-400 leading-relaxed">{reasoning || 'No reasoning provided.'}</p>
-        <div className="text-[9px] text-gray-600 mt-2">Scored by Claude Opus 4.7</div>
+        <div className="text-[9px] text-gray-600 mt-2">Scored by LLM Judge</div>
       </div>
     </>
   )

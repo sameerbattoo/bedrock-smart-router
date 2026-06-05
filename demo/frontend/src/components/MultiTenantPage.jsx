@@ -74,7 +74,7 @@ export default function MultiTenantPage({ onRun }) {
   const [isManual, setIsManual] = useState(false)
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [classifier, setClassifier] = useState('heuristic')
+  const [classifier, setClassifier] = useState('ml')
   const [results, setResults] = useState({})
   const [scores, setScores] = useState({})
   const [explainPopup, setExplainPopup] = useState(null)

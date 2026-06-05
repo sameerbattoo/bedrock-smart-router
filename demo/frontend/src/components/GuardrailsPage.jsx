@@ -196,7 +196,7 @@ export default function GuardrailsPage({ onRun }) {
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [baselineModel, setBaselineModel] = useState('sonnet')
   const [strategy, setStrategy] = useState('balanced')
-  const [classifier, setClassifier] = useState('heuristic')
+  const [classifier, setClassifier] = useState('ml')
   const [explainPopup, setExplainPopup] = useState(null)
   const abortRef = useRef(null)
 
@@ -471,7 +471,7 @@ export default function GuardrailsPage({ onRun }) {
                 {['haiku', 'sonnet', 'opus', 'nova'].map(m => (
                   <button key={m} onClick={() => setBaselineModel(m)}
                     className={`text-[10px] px-2 py-1 rounded-md font-medium transition-all capitalize ${baselineModel === m ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300 border border-gray-800/50'}`}>
-                    {m === 'haiku' ? 'Haiku 4.5' : m === 'sonnet' ? 'Sonnet 4.6' : m === 'opus' ? 'Opus 4.7' : 'Nova Pro'}
+                    {m === 'haiku' ? 'Haiku 4.5' : m === 'sonnet' ? 'Sonnet 4.6' : m === 'opus' ? 'Opus 4.8' : 'Nova Pro'}
                   </button>
                 ))}
               </div>

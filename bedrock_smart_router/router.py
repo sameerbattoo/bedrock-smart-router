@@ -211,7 +211,13 @@ class BedrockRouter:
         callbacks: list[Callable[[RoutingEvent], None]] | None = None,
     ) -> None:
         self._config = config
-        session = boto_session or boto3.Session(region_name=config.region)
+        # Resolve region: explicit config > boto3 default region > fallback
+        resolved_region = config.region
+        if not resolved_region:
+            resolved_region = boto3.Session().region_name or "us-east-1"
+            config = dataclass_replace(config, region=resolved_region)
+            self._config = config
+        session = boto_session or boto3.Session(region_name=resolved_region)
 
         # Resolve botocore Config: explicit param > config dict > None
         resolved_boto_config = boto_config

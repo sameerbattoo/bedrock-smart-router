@@ -8,7 +8,7 @@ export default function StrandsPage({ history, setHistory, onRun, restoreState, 
   const [options, setOptions] = useState({ baseline_models: [], router_strategies: [] })
   const [baselineModel, setBaselineModel] = useState('sonnet')
   const [routerStrategy, setRouterStrategy] = useState('quality-optimized')
-  const [classifier, setClassifier] = useState('heuristic')
+  const [classifier, setClassifier] = useState('ml')
   const [preferredModel, setPreferredModel] = useState('')
   const [preferredSearch, setPreferredSearch] = useState('')
   const [showPreferredDropdown, setShowPreferredDropdown] = useState(false)

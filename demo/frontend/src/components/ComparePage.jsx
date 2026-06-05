@@ -28,7 +28,7 @@ export default function ComparePage({ history, setHistory, restoreState, onRun, 
   const [file, setFile] = useState(null)
   const [baselineModel, setBaselineModel] = useState('sonnet')
   const [routerStrategy, setRouterStrategy] = useState('balanced')
-  const [classifier, setClassifier] = useState('heuristic')
+  const [classifier, setClassifier] = useState('ml')
   const [preferredModel, setPreferredModel] = useState('')
   const [preferredSearch, setPreferredSearch] = useState('')
   const [showPreferredDropdown, setShowPreferredDropdown] = useState(false)

@@ -427,7 +427,7 @@ class TestQualityPenalty:
             display_name="Test", quality_baseline=0.0,
         )
         score = _quality_score(model, None)
-        assert score == -0.1
+        assert score == -1.0  # Zero quality_baseline gets strong penalty
 
     def test_nonzero_quality_gets_positive_score(self):
         model = BedrockModel(

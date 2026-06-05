@@ -9,6 +9,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
  */
 
 let pipeline = null
+let cachedTranscriber = null  // Module-level cache — survives component unmounts
 
 export const useSpeechToText = (options = {}) => {
   const {
@@ -49,6 +50,13 @@ export const useSpeechToText = (options = {}) => {
   const initializeModel = useCallback(async () => {
     if (transcriberRef.current) return
 
+    // Check module-level cache first (persists across page navigation)
+    if (cachedTranscriber) {
+      transcriberRef.current = cachedTranscriber
+      setModelProgress(100)
+      return
+    }
+
     try {
       setIsModelLoading(true)
       setError(null)
@@ -70,6 +78,8 @@ export const useSpeechToText = (options = {}) => {
           },
         }
       )
+      // Cache at module level so it survives component unmount/remount
+      cachedTranscriber = transcriberRef.current
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load speech recognition model'
       setError(errorMessage)
@@ -115,7 +125,19 @@ export const useSpeechToText = (options = {}) => {
       })
 
       const text = result.text.trim()
-      if (text) {
+      // Filter out Whisper hallucinations on blank/silent audio
+      const HALLUCINATION_PATTERNS = [
+        /^\[.*\]$/,            // [BLANK_AUDIO], [dramatic music], [silence], etc.
+        /^\(.*\)$/,            // (dramatic music), (silence), etc.
+        /^♪.*♪$/,             // ♪ music ♪
+        /^\.+$/,               // Just dots "..."
+        /^thank you\.?$/i,     // Common hallucination on silence
+        /^thanks for watching\.?$/i,
+        /^you$/i,
+        /^bye\.?$/i,
+      ]
+      const isHallucination = !text || HALLUCINATION_PATTERNS.some(p => p.test(text))
+      if (text && !isHallucination) {
         setTranscript(prev => {
           const newTranscript = prev ? `${prev} ${text}` : text
           if (onTranscript) onTranscript(newTranscript)

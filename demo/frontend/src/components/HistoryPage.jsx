@@ -83,7 +83,7 @@ export default function HistoryPage({ history, setHistory, onNavigate }) {
         {filtered.length === 0 ? (
           <div className="text-center text-gray-600 mt-20">
             <div className="text-3xl mb-3">📋</div>
-            <div className="text-sm">No history entries{useCaseFilter !== 'all' || timeFilter !== 'all' ? ' matching filters' : ''}</div>
+            <div className="text-sm">No comparison entries{useCaseFilter !== 'all' || timeFilter !== 'all' ? ' matching filters' : ''}</div>
           </div>
         ) : (
           <div className="space-y-2">

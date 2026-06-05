@@ -203,10 +203,11 @@ def _quality_score(
     score = model.quality_baseline / 60.0
 
     # Penalize unknown quality: models with no benchmark data get a
-    # negative score (-0.1) so they only win if cost+latency are overwhelmingly better.
-    # This prevents cheap, unbenchmarked models from routing over proven ones.
+    # strong negative score (-1.0) so they only win as a last resort.
+    # With balanced weights (0.3 quality), this translates to -0.3 on composite,
+    # ensuring any model with proven quality (even minimal) ranks above.
     if model.quality_baseline <= 0:
-        score = -0.1
+        score = -1.0
 
     # Penalise for high error rates if we have metrics
     if metrics is not None and metrics.sample_count > 0 and metrics.error_rate > 0:

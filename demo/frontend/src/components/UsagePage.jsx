@@ -76,7 +76,7 @@ export default function UsagePage({ onRun }) {
   const [scope, setScope] = useState('user')
   const [selectedUsers, setSelectedUsers] = useState(['alice', 'bob', 'charlie'])
   const [strategy, setStrategy] = useState('quality-optimized')
-  const [classifier, setClassifier] = useState('heuristic')
+  const [classifier, setClassifier] = useState('ml')
   const [complexity, setComplexity] = useState('mixed')
   const [requestsPerUser, setRequestsPerUser] = useState(20)
   const [speed, setSpeed] = useState('normal')

@@ -91,7 +91,7 @@ export default function AnalyticsPanel({ history }) {
           </div>
           {/* Latency Improvement card */}
           <div className="bg-gray-900/60 border border-gray-800/60 rounded-xl p-3 text-center hover:border-gray-600 hover:shadow-lg hover:shadow-gray-900/30 hover:-translate-y-1.5 transition-all duration-200">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avg Latency</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Latency Savings</div>
             <div className={`${expanded ? 'text-3xl' : 'text-xl'} font-bold ${Number(avgLatencyImprovement) > 0 ? 'text-green-400' : Number(avgLatencyImprovement) < 0 ? 'text-red-400' : 'text-gray-300'}`}>{avgLatencyImprovement !== '—' ? `${avgLatencyImprovement}%` : '—'}</div>
             {expanded && validCount > 0 && (() => { const totalSavedMs = validRuns.reduce((s,h) => s + ((h.baseline_latency||0) - (h.router_latency||0)), 0); return totalSavedMs > 0 ? <div className="text-sm text-green-300 mt-0.5">Saved {(totalSavedMs/1000).toFixed(1)}s for {validCount} runs</div> : null })()}
             <div className={`flex justify-center gap-3 mt-1.5 ${expanded ? 'text-xs' : 'text-[9px]'}`}>
@@ -101,11 +101,11 @@ export default function AnalyticsPanel({ history }) {
           </div>
           {/* Accuracy card */}
           <div className="bg-gray-900/60 border border-gray-800/60 rounded-xl p-3 text-center hover:border-gray-600 hover:shadow-lg hover:shadow-gray-900/30 hover:-translate-y-1.5 transition-all duration-200">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avg Accuracy</div>
-            <div className={`${expanded ? 'text-3xl' : 'text-xl'} font-bold ${Number(avgAccuracyDelta) > 0 ? 'text-green-400' : Number(avgAccuracyDelta) < 0 ? 'text-red-400' : 'text-orange-400'}`}>{avgAccuracyDelta !== '—' ? `${Number(avgAccuracyDelta) >= 0 ? '+' : ''}${avgAccuracyDelta}` : '—'}</div>
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Router Accuracy</div>
+            <div className={`${expanded ? 'text-3xl' : 'text-xl'} font-bold text-orange-400`}>{avgRouterScore !== '—' ? `${avgRouterScore}/10` : '—'}</div>
             <div className={`flex justify-center gap-3 mt-1.5 ${expanded ? 'text-xs' : 'text-[9px]'}`}>
               <span className="text-blue-400">{expanded ? 'Baseline' : 'B'}: {avgBaselineScore}/10</span>
-              <span className="text-orange-400">{expanded ? 'Smart Router' : 'R'}: {avgRouterScore}/10</span>
+              <span className="text-gray-500">Δ {Number(avgAccuracyDelta) >= 0 ? '+' : ''}{avgAccuracyDelta}</span>
             </div>
           </div>
         </div>

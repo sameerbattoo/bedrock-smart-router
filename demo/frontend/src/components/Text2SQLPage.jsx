@@ -41,7 +41,7 @@ export default function Text2SQLPage({ onRun }) {
   const [showSystemPrompt, setShowSystemPrompt] = useState(false)
   const [systemPromptText, setSystemPromptText] = useState('')
   const [strategy, setStrategy] = useState('quality-optimized')
-  const [classifier, setClassifier] = useState('heuristic')
+  const [classifier, setClassifier] = useState('ml')
   const [lastOriginalQuestion, setLastOriginalQuestion] = useState(null)
 
   useEffect(() => {

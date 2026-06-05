@@ -1422,6 +1422,11 @@ def add_mantle_only_models(
     # Find models already in catalog (normalize IDs for comparison)
     existing_ids = set()
     existing_by_base: dict[str, dict] = {}  # base_id → catalog entry
+    # Provider prefix aliases (Mantle and Bedrock sometimes use different prefixes for the same provider)
+    _PROVIDER_ALIASES = {
+        "moonshotai": "moonshot",
+        "moonshot": "moonshotai",
+    }
     for m in catalog:
         mid = m["model_id"]
         existing_ids.add(mid)
@@ -1430,6 +1435,12 @@ def add_mantle_only_models(
         base = re.sub(r"-\d+:\d+$", "", base)  # Strip version like -1:0
         existing_ids.add(base)
         existing_by_base[base] = m
+        # Also index by aliased provider prefix
+        prefix = base.split(".")[0] if "." in base else ""
+        if prefix in _PROVIDER_ALIASES:
+            aliased = _PROVIDER_ALIASES[prefix] + "." + ".".join(base.split(".")[1:])
+            existing_by_base[aliased] = m
+            existing_ids.add(aliased)
 
     # Find Mantle-only models
     mantle_only = [mid for mid in sorted(mantle_models) if mid not in existing_ids]
@@ -1461,16 +1472,23 @@ def add_mantle_only_models(
     for mantle_id in base_versions.values():
         # Check if this is actually a variant of an existing catalog model
         # e.g., "anthropic.claude-haiku-4-5" matches "anthropic.claude-haiku-4-5-20251001-v1:0"
+        # Also handles: provider aliases (moonshotai↔moonshot) and suffix differences (-instruct)
         base_for_match = re.sub(r"-\d{8}(-v\d+)?$", "", mantle_id)
-        existing_entry = existing_by_base.get(mantle_id) or existing_by_base.get(base_for_match)
+        # Try matching with and without -instruct suffix
+        base_no_instruct = re.sub(r"-instruct$", "", base_for_match)
+        existing_entry = (
+            existing_by_base.get(mantle_id)
+            or existing_by_base.get(base_for_match)
+            or existing_by_base.get(base_no_instruct)
+        )
         if existing_entry:
-            # Model already in catalog — just update its api_support
+            # Model already in catalog — update its api_support with Mantle capability
             current_apis = existing_entry.get("api_support", ["converse"])
             if "chat_completions" not in current_apis:
-                # Only add chat_completions if the probe confirmed it works
-                # (don't add blindly — the probe in Step 4 handles this for probed models)
-                pass
-            logger.debug(f"    Skipped {mantle_id} (already in catalog as {existing_entry['model_id']})")
+                existing_entry["api_support"] = current_apis + ["chat_completions"]
+                logger.info(f"    Updated {existing_entry['model_id']} → added chat_completions (matched from {mantle_id})")
+            else:
+                logger.debug(f"    Skipped {mantle_id} (already in catalog as {existing_entry['model_id']})")
             continue
 
         family = detect_family(mantle_id)

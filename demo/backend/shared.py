@@ -23,13 +23,13 @@ from bedrock_smart_router import BedrockRouter, RoutingConfig
 
 REGION = "us-west-2"
 BASELINE_MODEL = "global.anthropic.claude-sonnet-4-6"
-JUDGE_MODEL = "global.anthropic.claude-opus-4-7"
+JUDGE_MODEL = "global.anthropic.claude-opus-4-8"
 BASELINE_PRICING = {"input": 3.0, "output": 15.0}
 
 BASELINE_MODELS = {
     "haiku": {"model_id": "global.anthropic.claude-haiku-4-5-20251001-v1:0", "label": "Haiku 4.5"},
     "sonnet": {"model_id": "global.anthropic.claude-sonnet-4-6", "label": "Sonnet 4.6"},
-    "opus": {"model_id": "global.anthropic.claude-opus-4-7", "label": "Opus 4.7"},
+    "opus": {"model_id": "global.anthropic.claude-opus-4-8", "label": "Opus 4.8"},
     "nova-pro": {"model_id": "us.amazon.nova-pro-v1:0", "label": "Nova Pro"},
 }
 
