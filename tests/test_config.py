@@ -6,7 +6,7 @@ from bedrock_smart_router.config import MetricsConfig, RouterConfig, RoutingConf
 class TestRouterConfig:
     def test_defaults(self):
         cfg = RouterConfig()
-        assert cfg.region == "us-west-2"
+        assert cfg.region == ""  # Empty = auto-detect from boto3 session
         assert cfg.strategy == "balanced"
         assert cfg.fallback.enabled is True
         assert cfg.circuit_breaker.failure_threshold == 5
@@ -92,7 +92,7 @@ class TestRouterCreate:
         # We can't actually call create() without mocking boto3,
         # but we can verify config resolution
         cfg = RouterConfig.from_dict({})
-        assert cfg.region == "us-west-2"
+        assert cfg.region == ""  # Empty = auto-detect from boto3 session
         assert cfg.strategy == "balanced"
         assert cfg.metrics.backend == "memory"
 

@@ -148,7 +148,7 @@ class EUOnlyStrategy(RoutingStrategy):
     def filter_candidates(self, candidates, analysis, context):
         eu_models = [
             c for c in candidates
-            if any(p.startswith("eu.") for p in c.cris_profiles)
+            if any("eu" in r.get("cris_profiles", []) for r in c.regions)
         ]
         if eu_models:
             return eu_models, {"region_filter": "eu-only"}

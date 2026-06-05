@@ -29,7 +29,8 @@ class CRISConfig:
     enabled: bool = True
     preferred_geography: str | None = None  # "us" | "eu" | "global" | None
     allow_global: bool = True
-    blocked_prefixes: list[str] | None = None  # Prefixes to never use (e.g., ["global", "us"])
+    blocked_prefixes: list[str] | None = None  # Prefixes to never use (e.g., ["global", "eu"])
+    allowed_prefixes: list[str] | None = None  # If set, ONLY these prefixes are permitted (allowlist)
 
 
 class CRISManager:
@@ -59,6 +60,17 @@ class CRISManager:
                 return model.model_id
 
         blocked = set(self.config.blocked_prefixes or [])
+        allowed = set(self.config.allowed_prefixes) if self.config.allowed_prefixes else None
+
+        def _is_prefix_allowed(prefix: str) -> bool:
+            """Check if a prefix passes both allowlist and blocklist."""
+            if prefix in blocked:
+                return False
+            if allowed is not None and prefix not in allowed:
+                return False
+            if prefix == "global" and not self.config.allow_global:
+                return False
+            return True
 
         # Find the region entry for the user's region
         region_entry = None
@@ -70,11 +82,11 @@ class CRISManager:
         # If no entry for this region, model may not be available here
         if not region_entry:
             pref = self.config.preferred_geography
-            if pref and pref not in blocked:
+            if pref and _is_prefix_allowed(pref):
                 for r in model.regions:
                     if pref in r.get("cris_profiles", []):
                         return f"{pref}.{model.model_id}"
-            if self.config.allow_global and "global" not in blocked:
+            if _is_prefix_allowed("global"):
                 for r in model.regions:
                     if "global" in r.get("cris_profiles", []):
                         return f"global.{model.model_id}"
@@ -85,10 +97,10 @@ class CRISManager:
         if not cris_prefixes:
             return model.model_id
 
-        # Filter out blocked prefixes
-        available_prefixes = [p for p in cris_prefixes if p not in blocked]
+        # Filter to allowed prefixes
+        available_prefixes = [p for p in cris_prefixes if _is_prefix_allowed(p)]
         if not available_prefixes:
-            # All CRIS prefixes are blocked — use direct invocation
+            # All CRIS prefixes are blocked/not allowed — use direct invocation
             return model.model_id
 
         pref = self.config.preferred_geography
@@ -97,8 +109,8 @@ class CRISManager:
         if pref and pref in available_prefixes:
             return f"{pref}.{model.model_id}"
 
-        # 2. Global
-        if self.config.allow_global and "global" in available_prefixes:
+        # 2. Global (if allowed)
+        if "global" in available_prefixes:
             return f"global.{model.model_id}"
 
         # 3. Any available prefix

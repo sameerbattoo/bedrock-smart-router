@@ -1897,7 +1897,7 @@ All configuration is driven through a single `RouterConfig` object, constructabl
 | `cache` | `enabled`, `backend`, `ttl_seconds`, `max_entries`, `redis_url`, `key_prefix` | enabled, memory, 3600s, 10K |
 | `metrics` | `backend` (`memory`/`dynamodb`), `table_name`, `ttl_hours` | memory |
 | `observability` | `log_decisions` | true |
-| `cris` | `enabled`, `preferred_geography`, `allow_global` | enabled, no pref |
+| `cris` | `enabled`, `preferred_geography`, `allow_global`, `blocked_prefixes`, `allowed_prefixes` | enabled, no pref, global allowed |
 | `inference_tier` | `allow_optimized`, `optimized_for_complex` | all enabled |
 | `guardrails` | `pre_route`, `post_route` with `guardrail_id` and `action_on_block` | disabled |
 | `aip` | `enabled`, `auto_create`, `tag_keys` | disabled |

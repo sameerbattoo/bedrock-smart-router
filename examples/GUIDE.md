@@ -550,10 +550,9 @@ Your boto3 client connects to ONE region, but the CRIS profile controls where in
 | *(no prefix)* | Configured region only | Single-region locked |
 
 ```yaml
-# EU-only — GDPR, data never leaves Europe
+# EU-only — GDPR, data stays in Europe (hard enforcement)
 cris:
-  preferred_geography: eu
-  allow_global: false
+  allowed_prefixes: [eu]  # ONLY eu.* profiles permitted
 
 # US preferred, global fallback for capacity
 cris:
