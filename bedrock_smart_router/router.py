@@ -590,6 +590,33 @@ class BedrockRouter:
 
         return messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved
 
+    def _normalize_request_params(
+        self,
+        routing: RoutingConfig | None,
+        inference_config: dict[str, Any] | None,
+        tool_config: dict[str, Any] | None,
+        kwargs: dict[str, Any],
+    ) -> tuple[RoutingConfig, dict[str, Any] | None, dict[str, Any] | None]:
+        """Normalize request parameters for boto3 drop-in compatibility.
+
+        Handles:
+        - modelId/model_id kwargs → routing.preferred_model
+        - inferenceConfig/toolConfig camelCase kwargs → explicit params
+
+        Returns (routing, inference_config, tool_config) with kwargs mutated in-place.
+        """
+        routing = resolve_preset(routing or RoutingConfig())
+
+        boto3_model = kwargs.pop("modelId", None) or kwargs.pop("model_id", None)
+        if boto3_model and not routing.preferred_model:
+            routing = dataclass_replace(routing, preferred_model=boto3_model)
+        if "inferenceConfig" in kwargs and inference_config is None:
+            inference_config = kwargs.pop("inferenceConfig")
+        if "toolConfig" in kwargs and tool_config is None:
+            tool_config = kwargs.pop("toolConfig")
+
+        return routing, inference_config, tool_config
+
     def converse(
         self,
         *,
@@ -601,18 +628,9 @@ class BedrockRouter:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Route and invoke a Bedrock Converse call."""
-        routing = resolve_preset(routing or RoutingConfig())
-
-        # Boto3 drop-in compatibility: extract modelId/model_id from kwargs
-        # and use as preferred_model (so the router respects the user's choice)
-        boto3_model = kwargs.pop("modelId", None) or kwargs.pop("model_id", None)
-        if boto3_model and not routing.preferred_model:
-            routing = dataclass_replace(routing, preferred_model=boto3_model)
-        # Also handle camelCase inference_config from boto3 users
-        if "inferenceConfig" in kwargs and inference_config is None:
-            inference_config = kwargs.pop("inferenceConfig")
-        if "toolConfig" in kwargs and tool_config is None:
-            tool_config = kwargs.pop("toolConfig")
+        routing, inference_config, tool_config = self._normalize_request_params(
+            routing, inference_config, tool_config, kwargs,
+        )
 
         # ── Pre-invoke pipeline (guardrail → analyze → resolve) ─
         messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved = \
@@ -905,16 +923,9 @@ class BedrockRouter:
                 elif "routing_decision" in event:
                     print(f"\\nModel: {event['routing_decision'].selected_model}")
         """
-        routing = resolve_preset(routing or RoutingConfig())
-
-        # Boto3 drop-in compatibility: extract modelId/model_id from kwargs
-        boto3_model = kwargs.pop("modelId", None) or kwargs.pop("model_id", None)
-        if boto3_model and not routing.preferred_model:
-            routing = dataclass_replace(routing, preferred_model=boto3_model)
-        if "inferenceConfig" in kwargs and inference_config is None:
-            inference_config = kwargs.pop("inferenceConfig")
-        if "toolConfig" in kwargs and tool_config is None:
-            tool_config = kwargs.pop("toolConfig")
+        routing, inference_config, tool_config = self._normalize_request_params(
+            routing, inference_config, tool_config, kwargs,
+        )
 
         # ── Pre-invoke pipeline (guardrail → analyze → resolve) ─
         messages, strategy_name, weights, t_start, guardrail_checked, analysis, resolved = \

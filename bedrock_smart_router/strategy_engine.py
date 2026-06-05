@@ -496,6 +496,65 @@ class RoutingStrategy(ABC):
         return others[:5]  # Top 5 fallbacks
 
 
+# ── Shared scoring loop for built-in strategies ─────────────────────
+
+def _score_and_select(
+    candidates: list[BedrockModel],
+    analysis: RequestAnalysis,
+    metrics_store: Any | None,
+    composite_fn: Any,
+    strategy: RoutingStrategy,
+) -> StrategyResult:
+    """Shared scoring loop used by all built-in strategies.
+
+    Computes cost/latency/quality scores for each candidate and applies
+    the strategy-specific composite function to determine the best model.
+
+    Args:
+        candidates: Eligible models to score.
+        analysis: The analyzed request.
+        metrics_store: Optional metrics backend for real latency data.
+        composite_fn: Callable(cost, latency, quality, model, analysis) → float
+        strategy: The strategy instance (for fallback chain building).
+    """
+    all_metrics: dict = {}
+    if metrics_store is not None:
+        all_metrics = metrics_store.get_all_metrics(window_seconds=3600)
+
+    min_cost = _min_cost_for_candidates(candidates, analysis)
+
+    # Find fastest latency among candidates with real data
+    fastest_latency_ms = None
+    for m in candidates:
+        mm = all_metrics.get(m.model_id)
+        if mm and mm.sample_count >= _MIN_LATENCY_SAMPLES:
+            if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
+                fastest_latency_ms = mm.avg_latency_ms
+
+    scores: dict[str, dict[str, float]] = {}
+    for m in candidates:
+        mm = all_metrics.get(m.model_id)
+        cs = _cost_score(m, analysis, min_cost)
+        ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
+        qs = _quality_score(m, mm)
+
+        composite = composite_fn(cs, ls, qs, m, analysis)
+
+        scores[m.model_id] = {
+            "cost": round(cs, 4),
+            "latency": round(ls, 4),
+            "quality": round(qs, 4),
+            "composite": round(composite, 4),
+        }
+
+    best = max(candidates, key=lambda m: scores[m.model_id]["composite"])
+    return StrategyResult(
+        selected_model=best,
+        scores=scores,
+        fallback_chain=strategy._build_fallback_chain(best, candidates, scores),
+    )
+
+
 # ── Cost-Optimized Strategy ─────────────────────────────────────────
 
 class CostOptimizedStrategy(RoutingStrategy):
@@ -518,38 +577,10 @@ class CostOptimizedStrategy(RoutingStrategy):
         candidates: list[BedrockModel],
         analysis: RequestAnalysis,
     ) -> StrategyResult:
-        all_metrics = {}
-        if self._metrics is not None:
-            all_metrics = self._metrics.get_all_metrics(window_seconds=3600)
-
-        min_cost = _min_cost_for_candidates(candidates, analysis)
-        fastest_latency_ms = None
-        for m in candidates:
-            mm = all_metrics.get(m.model_id)
-            if mm and mm.sample_count >= _MIN_LATENCY_SAMPLES:
-                if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
-                    fastest_latency_ms = mm.avg_latency_ms
-
-        scores: dict[str, dict[str, float]] = {}
-
-        for m in candidates:
-            mm = all_metrics.get(m.model_id)
-            cs = _cost_score(m, analysis, min_cost)
-            ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
-            qs = _quality_score(m, mm)
-
-            scores[m.model_id] = {
-                "cost": round(cs, 4),
-                "latency": round(ls, 4),
-                "quality": round(qs, 4),
-                "composite": round(cs, 4),  # Cost is the only factor
-            }
-
-        best = max(candidates, key=lambda m: scores[m.model_id]["composite"])
-        return StrategyResult(
-            selected_model=best,
-            scores=scores,
-            fallback_chain=self._build_fallback_chain(best, candidates, scores),
+        return _score_and_select(
+            candidates, analysis, self._metrics,
+            composite_fn=lambda cs, ls, qs, m, analysis: cs,
+            strategy=self,
         )
 
 
@@ -579,38 +610,10 @@ class LatencyOptimizedStrategy(RoutingStrategy):
         candidates: list[BedrockModel],
         analysis: RequestAnalysis,
     ) -> StrategyResult:
-        all_metrics = {}
-        if self._metrics is not None:
-            all_metrics = self._metrics.get_all_metrics(window_seconds=3600)
-
-        min_cost = _min_cost_for_candidates(candidates, analysis)
-        fastest_latency_ms = None
-        for m in candidates:
-            mm = all_metrics.get(m.model_id)
-            if mm and mm.sample_count >= _MIN_LATENCY_SAMPLES:
-                if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
-                    fastest_latency_ms = mm.avg_latency_ms
-
-        scores: dict[str, dict[str, float]] = {}
-
-        for m in candidates:
-            mm = all_metrics.get(m.model_id)
-            cs = _cost_score(m, analysis, min_cost)
-            ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
-            qs = _quality_score(m, mm)
-
-            scores[m.model_id] = {
-                "cost": round(cs, 4),
-                "latency": round(ls, 4),
-                "quality": round(qs, 4),
-                "composite": round(ls, 4),  # Latency is the only factor
-            }
-
-        best = max(candidates, key=lambda m: scores[m.model_id]["composite"])
-        return StrategyResult(
-            selected_model=best,
-            scores=scores,
-            fallback_chain=self._build_fallback_chain(best, candidates, scores),
+        return _score_and_select(
+            candidates, analysis, self._metrics,
+            composite_fn=lambda cs, ls, qs, m, analysis: ls,
+            strategy=self,
         )
 
 
@@ -653,49 +656,16 @@ class BalancedStrategy(RoutingStrategy):
         candidates: list[BedrockModel],
         analysis: RequestAnalysis,
     ) -> StrategyResult:
-        all_metrics = {}
-        if self._metrics is not None:
-            all_metrics = self._metrics.get_all_metrics(window_seconds=3600)
-
-        min_cost = _min_cost_for_candidates(candidates, analysis)
-
-        # Find fastest latency among candidates with real data (for ratio scoring)
-        fastest_latency_ms = None
-        for m in candidates:
-            mm = all_metrics.get(m.model_id)
-            if mm and mm.sample_count >= _MIN_LATENCY_SAMPLES:
-                if fastest_latency_ms is None or mm.avg_latency_ms < fastest_latency_ms:
-                    fastest_latency_ms = mm.avg_latency_ms
-
-        scores: dict[str, dict[str, float]] = {}
-
-        for m in candidates:
-            mm = all_metrics.get(m.model_id)
-            cs = _cost_score(m, analysis, min_cost)
-            ls = _latency_score_ratio(m, mm, analysis, fastest_latency_ms)
-            qs = _quality_score(m, mm)
-
+        def _balanced_composite(cs, ls, qs, m, analysis):
+            # Slight boost for prompt-caching models in multi-turn conversations
             if m.capabilities.prompt_caching and analysis.is_multi_turn:
                 cs = min(1.0, cs + 0.05)
+            return self.cost_weight * cs + self.latency_weight * ls + self.quality_weight * qs
 
-            composite = (
-                self.cost_weight * cs
-                + self.latency_weight * ls
-                + self.quality_weight * qs
-            )
-
-            scores[m.model_id] = {
-                "cost": round(cs, 4),
-                "latency": round(ls, 4),
-                "quality": round(qs, 4),
-                "composite": round(composite, 4),
-            }
-
-        best = max(candidates, key=lambda m: scores[m.model_id]["composite"])
-        return StrategyResult(
-            selected_model=best,
-            scores=scores,
-            fallback_chain=self._build_fallback_chain(best, candidates, scores),
+        return _score_and_select(
+            candidates, analysis, self._metrics,
+            composite_fn=_balanced_composite,
+            strategy=self,
         )
 
 
