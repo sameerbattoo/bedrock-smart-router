@@ -223,6 +223,7 @@ class RoutingDecision:
     metadata: dict[str, Any] = field(default_factory=dict)
     routing_decision_ms: float | None = None  # Time spent on routing logic before API call
     explanation: dict[str, Any] | None = None  # Detailed explanation (when explain=True)
+    api_backend: str = "converse"  # "converse" (bedrock-runtime) or "mantle" (chat_completions)
 
     @property
     def total_input_tokens(self) -> int:

@@ -118,7 +118,7 @@ class _CompletionsNamespace:
         # Smart Router extras
         routing: Any | None = None,
         **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> "dict[str, Any] | _ChatCompletionStream":
         """Create a chat completion with smart routing.
 
         Drop-in for ``openai.chat.completions.create()``. The router selects
@@ -128,10 +128,26 @@ class _CompletionsNamespace:
         Additional ``routing`` parameter accepts a ``RoutingConfig`` for
         overriding strategy, weights, or preferred model.
 
+        When ``stream=True``, returns a generator yielding OpenAI-style
+        streaming chunks (``chat.completion.chunk`` objects).
+
         Returns a Chat Completions response dict (same schema as OpenAI).
         """
         # Resolve max_tokens (OpenAI deprecated max_tokens in favor of max_completion_tokens)
         effective_max_tokens = max_completion_tokens or max_tokens
+
+        if stream:
+            return self._router.chat_completions_stream(
+                messages=messages,
+                model=model,
+                max_tokens=effective_max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                stop=stop,
+                tools=tools,
+                routing=routing,
+                **kwargs,
+            )
 
         return self._router.chat_completions(
             messages=messages,
@@ -152,10 +168,11 @@ class _ModelsNamespace:
     def __init__(self, router: "BedrockRouter") -> None:
         self._router = router
 
-    def list(self) -> dict[str, Any]:
+    def list(self) -> "_DotDict":
         """List all models available through the router.
 
-        Returns a dict matching the OpenAI models.list() response format.
+        Returns an object matching the OpenAI models.list() response format.
+        Supports both attribute and dict access.
         """
         models = self._router._registry.all_models
         data = []
@@ -166,14 +183,14 @@ class _ModelsNamespace:
                 "owned_by": m.family,
                 "created": 0,
             })
-        return {"object": "list", "data": data}
+        return _DotDict({"object": "list", "data": data})
 
-    def retrieve(self, model_id: str) -> dict[str, Any] | None:
+    def retrieve(self, model_id: str) -> "_DotDict | None":
         """Retrieve details for a specific model."""
         m = self._router._registry.get(model_id)
         if not m:
             return None
-        return {
+        return _DotDict({
             "id": m.model_id,
             "object": "model",
             "owned_by": m.family,
@@ -190,7 +207,7 @@ class _ModelsNamespace:
                 "input_per_1k": m.pricing.input_per_1k,
                 "output_per_1k": m.pricing.output_per_1k,
             },
-        }
+        })
 
 
 class _ChatNamespace:
@@ -198,6 +215,99 @@ class _ChatNamespace:
 
     def __init__(self, router: "BedrockRouter") -> None:
         self.completions = _CompletionsNamespace(router)
+
+
+class _DotDict(dict):
+    """Dict subclass that supports attribute access (dot notation).
+
+    Enables OpenAI SDK-style access: response.choices[0].message.content
+    while remaining a regular dict: response["choices"][0]["message"]["content"]
+
+    Matches OpenAI SDK behavior: accessing a missing attribute returns None
+    (e.g., message.tool_calls is None when no tool calls are present).
+
+    Also awaitable, so both sync and async patterns work:
+        response = client.chat.completions.create(...)        # sync
+        response = await client.chat.completions.create(...)  # async
+    """
+
+    def __getattr__(self, key: str) -> Any:
+        # Dunder/private attributes should not fall through to dict lookup
+        if key.startswith("_"):
+            raise AttributeError(f"'DotDict' has no attribute '{key}'")
+        value = self.get(key)  # returns None for missing keys (matches OpenAI SDK)
+        if isinstance(value, dict) and not isinstance(value, _DotDict):
+            return _DotDict(value)
+        if isinstance(value, list):
+            return [_DotDict(v) if isinstance(v, dict) else v for v in value]
+        return value
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        self[key] = value
+
+    def __await__(self):
+        return self._await_impl().__await__()
+
+    async def _await_impl(self):
+        return self
+
+
+class _ChatCompletionStream:
+    """Wrapper that makes a streaming generator behave like OpenAI's Stream object.
+
+    Supports BOTH synchronous and asynchronous iteration patterns:
+
+    Sync (OpenAI SDK sync client):
+        stream = client.chat.completions.create(stream=True, ...)
+        for chunk in stream:
+            print(chunk.choices[0].delta.content or "", end="")
+
+    Async (OpenAI SDK async client):
+        stream = await client.chat.completions.create(stream=True, ...)
+        async for chunk in stream:
+            print(chunk.choices[0].delta.content or "", end="")
+    """
+
+    def __init__(self, generator):
+        self._generator = generator
+        self._items: list | None = None  # Lazily materialized for async access
+
+    # Sync iteration
+    def __iter__(self):
+        return self._generator
+
+    def __next__(self):
+        return next(self._generator)
+
+    # Async iteration (async for chunk in stream)
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self._generator)
+        except StopIteration:
+            raise StopAsyncIteration
+
+    # Make it awaitable (stream = await client.chat.completions.create(stream=True))
+    def __await__(self):
+        return self._await_impl().__await__()
+
+    async def _await_impl(self):
+        return self
+
+    # Context manager support
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        pass
 
 
 class BedrockRouter:
@@ -448,6 +558,7 @@ class BedrockRouter:
         perf_config: dict[str, Any] | None = None,
         guardrail_trace: dict[str, Any] | None = None,
         ttft_ms: float | None = None,
+        api_backend: str = "converse",
     ) -> RoutingDecision:
         """Build a RoutingDecision from invocation results.
 
@@ -512,6 +623,7 @@ class BedrockRouter:
             },
             routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
             explanation=resolved.get("explanation"),
+            api_backend=api_backend,
         )
 
     def _prepare_call_args(
@@ -760,6 +872,7 @@ class BedrockRouter:
 
         # ── Step 9: Build routing decision ──────────────────────
         usage = response.get("usage", {})
+        api_backend = response.pop("_api_backend", "converse")
         decision = self._build_decision(
             used_model=used_model,
             resolved=resolved,
@@ -777,6 +890,7 @@ class BedrockRouter:
             actual_service_tier=response.get("serviceTier", {}).get("type", ""),
             perf_config=response.get("performanceConfig", {}),
             guardrail_trace=response.get("trace", {}).get("guardrail", {}),
+            api_backend=api_backend,
         )
         self._last_decision_local.value = decision
         response["routing_decision"] = decision
@@ -884,11 +998,41 @@ class BedrockRouter:
             stop=[stop] if isinstance(stop, str) else stop,
         )
 
+        # Auto-infer toolConfig when messages contain tool content but tools weren't passed.
+        # This handles the case where users follow OpenAI SDK patterns (tools only on first call)
+        # but Bedrock Converse requires toolConfig whenever toolUse/toolResult blocks are present.
+        tool_config = converse_params.get("tool_config")
+        if not tool_config:
+            has_tool_content = any(
+                msg.get("role") == "tool" or
+                (msg.get("role") == "assistant" and msg.get("tool_calls"))
+                for msg in messages
+            )
+            if has_tool_content:
+                # Extract tool definitions from assistant's tool_calls in the history
+                inferred_tools = []
+                seen_names = set()
+                for msg in messages:
+                    for tc in msg.get("tool_calls", []):
+                        fn = tc.get("function", {})
+                        name = fn.get("name", "")
+                        if name and name not in seen_names:
+                            seen_names.add(name)
+                            inferred_tools.append({
+                                "toolSpec": {
+                                    "name": name,
+                                    "description": f"Tool: {name}",
+                                    "inputSchema": {"json": {"type": "object"}},
+                                }
+                            })
+                if inferred_tools:
+                    tool_config = {"tools": inferred_tools}
+
         # Use the Converse path for routing (classification, model selection)
         converse_response = self.converse(
             messages=converse_params["messages"],
             system=converse_params.get("system"),
-            tool_config=converse_params.get("tool_config"),
+            tool_config=tool_config,
             inference_config=converse_params.get("inference_config"),
             routing=routing,
             **kwargs,
@@ -903,7 +1047,317 @@ class BedrockRouter:
         if decision:
             cc_response["routing_decision"] = decision
 
-        return cc_response
+        return _DotDict(cc_response)
+
+    def chat_completions_stream(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        stop: list[str] | str | None = None,
+        routing: RoutingConfig | None = None,
+        **kwargs: Any,
+    ) -> "_ChatCompletionStream":
+        """Route and invoke via Chat Completions streaming.
+
+        Returns a ``_ChatCompletionStream`` that yields OpenAI-style streaming
+        chunks (``chat.completion.chunk`` objects with ``delta`` instead of ``message``).
+
+        If the selected model is Mantle-only, streams directly from Mantle's
+        /v1/chat/completions endpoint. Otherwise, uses converse_stream() and
+        translates Converse stream events into OpenAI streaming chunks.
+        """
+        from bedrock_smart_router.format_translator import chat_completions_to_converse
+
+        routing = resolve_preset(routing or RoutingConfig())
+        if model and not routing.preferred_model:
+            routing = dataclass_replace(routing, preferred_model=model)
+
+        # Translate messages for analysis/routing
+        converse_params = chat_completions_to_converse(
+            messages=messages,
+            tools=tools,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stop=[stop] if isinstance(stop, str) else stop,
+        )
+
+        # Auto-infer toolConfig
+        tool_config = converse_params.get("tool_config")
+        if not tool_config:
+            has_tool_content = any(
+                msg.get("role") == "tool" or
+                (msg.get("role") == "assistant" and msg.get("tool_calls"))
+                for msg in messages
+            )
+            if has_tool_content:
+                inferred_tools = []
+                seen_names = set()
+                for msg in messages:
+                    for tc in msg.get("tool_calls", []):
+                        fn = tc.get("function", {})
+                        name = fn.get("name", "")
+                        if name and name not in seen_names:
+                            seen_names.add(name)
+                            inferred_tools.append({
+                                "toolSpec": {
+                                    "name": name,
+                                    "description": f"Tool: {name}",
+                                    "inputSchema": {"json": {"type": "object"}},
+                                }
+                            })
+                if inferred_tools:
+                    tool_config = {"tools": inferred_tools}
+
+        # Run the pre-invoke pipeline to select the model
+        msgs, strategy_name, weights, t_start, guardrail_checked, analysis, resolved = \
+            self._pre_invoke_pipeline(
+                messages=converse_params["messages"],
+                system=converse_params.get("system"),
+                tool_config=tool_config,
+                routing=routing,
+                requires_streaming_tool_use=bool(tool_config),
+                **kwargs,
+            )
+
+        primary = resolved["primary"]
+
+        # Check if the selected model should go through Mantle streaming
+        if "converse" not in primary.api_support and self._mantle:
+            # Mantle streaming path
+            return _ChatCompletionStream(
+                self._stream_via_mantle(
+                    model=primary,
+                    messages=messages,
+                    tools=tools,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stop=stop,
+                    resolved=resolved,
+                    analysis=analysis,
+                    strategy_name=strategy_name,
+                    guardrail_checked=guardrail_checked,
+                    t_start=t_start,
+                )
+            )
+
+        # Converse streaming path — translate converse_stream events to CC chunks
+        return _ChatCompletionStream(
+            self._stream_via_converse(
+                messages=converse_params["messages"],
+                system=converse_params.get("system"),
+                tool_config=tool_config,
+                inference_config=converse_params.get("inference_config"),
+                routing=routing,
+                **kwargs,
+            )
+        )
+
+    def _stream_via_mantle(
+        self,
+        *,
+        model: "BedrockModel",
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None,
+        max_tokens: int | None,
+        temperature: float | None,
+        top_p: float | None,
+        stop: list[str] | str | None,
+        resolved: dict[str, Any],
+        analysis: Any,
+        strategy_name: str,
+        guardrail_checked: bool,
+        t_start: float,
+    ) -> "Generator[_DotDict, None, None]":
+        """Stream from Mantle and yield OpenAI-style chunks."""
+        import re
+        import uuid
+        from bedrock_smart_router.model_registry import base_model_id
+
+        # Resolve Mantle model ID
+        mantle_model_id = base_model_id(model.model_id)
+        mantle_model_id = re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
+        mantle_model_id = re.sub(r"-v\d+:\d+$", "", mantle_model_id)
+        mantle_model_id = re.sub(r"-\d+:\d+$", "", mantle_model_id)
+
+        stream_kwargs: dict[str, Any] = {}
+        if max_tokens is not None:
+            stream_kwargs["max_tokens"] = max_tokens
+        if temperature is not None:
+            stream_kwargs["temperature"] = temperature
+        if top_p is not None:
+            stream_kwargs["top_p"] = top_p
+        if stop is not None:
+            stream_kwargs["stop"] = [stop] if isinstance(stop, str) else stop
+        if tools is not None:
+            stream_kwargs["tools"] = tools
+
+        t_routing_done = time.monotonic()
+
+        # Stream from Mantle — chunks are already in OpenAI format
+        for chunk in self._mantle.chat_completions_stream(
+            model=mantle_model_id,
+            messages=messages,
+            **stream_kwargs,
+        ):
+            yield _DotDict(chunk)
+
+        # After stream completes, yield a final routing_decision chunk
+        elapsed_ms = (time.monotonic() - t_start) * 1000
+        decision = RoutingDecision(
+            selected_model=model.model_id,
+            strategy_used=strategy_name,
+            complexity_detected=analysis.complexity.value,
+            complexity_score=analysis.complexity_score,
+            candidates_evaluated=resolved["candidates_evaluated"],
+            estimated_cost=model.pricing.estimate_cost(
+                analysis.estimated_input_tokens,
+                analysis.estimated_output_tokens,
+            ),
+            latency_ms=round(elapsed_ms, 1),
+            guardrail_checked=guardrail_checked,
+            api_backend="mantle",
+            routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
+        )
+        self._last_decision_local.value = decision
+        yield _DotDict({"routing_decision": decision})
+
+    def _stream_via_converse(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None = None,
+        tool_config: dict[str, Any] | None = None,
+        inference_config: dict[str, Any] | None = None,
+        routing: RoutingConfig | None = None,
+        **kwargs: Any,
+    ) -> "Generator[_DotDict, None, None]":
+        """Use converse_stream and translate events to OpenAI streaming chunks."""
+        import uuid
+
+        chunk_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
+        model_name = ""
+        index = 0
+
+        for event in self.converse_stream(
+            messages=messages,
+            system=system,
+            tool_config=tool_config,
+            inference_config=inference_config,
+            routing=routing,
+            **kwargs,
+        ):
+            # Pass through the final routing_decision event
+            if "routing_decision" in event:
+                decision = event["routing_decision"]
+                model_name = decision.selected_model
+                yield _DotDict({"routing_decision": decision})
+                continue
+
+            # Translate Converse stream events → OpenAI streaming chunks
+            if "contentBlockStart" in event:
+                block = event["contentBlockStart"]
+                start_block = block.get("start", {})
+                if "toolUse" in start_block:
+                    # Tool call start
+                    tu = start_block["toolUse"]
+                    yield _DotDict({
+                        "id": chunk_id,
+                        "object": "chat.completion.chunk",
+                        "model": model_name,
+                        "choices": [{
+                            "index": 0,
+                            "delta": {
+                                "tool_calls": [{
+                                    "index": index,
+                                    "id": tu.get("toolUseId", ""),
+                                    "type": "function",
+                                    "function": {
+                                        "name": tu.get("name", ""),
+                                        "arguments": "",
+                                    },
+                                }],
+                            },
+                            "finish_reason": None,
+                        }],
+                    })
+
+            elif "contentBlockDelta" in event:
+                delta = event["contentBlockDelta"].get("delta", {})
+                if "text" in delta:
+                    yield _DotDict({
+                        "id": chunk_id,
+                        "object": "chat.completion.chunk",
+                        "model": model_name,
+                        "choices": [{
+                            "index": 0,
+                            "delta": {"content": delta["text"]},
+                            "finish_reason": None,
+                        }],
+                    })
+                elif "toolUse" in delta:
+                    yield _DotDict({
+                        "id": chunk_id,
+                        "object": "chat.completion.chunk",
+                        "model": model_name,
+                        "choices": [{
+                            "index": 0,
+                            "delta": {
+                                "tool_calls": [{
+                                    "index": index,
+                                    "function": {
+                                        "arguments": delta["toolUse"].get("input", ""),
+                                    },
+                                }],
+                            },
+                            "finish_reason": None,
+                        }],
+                    })
+
+            elif "contentBlockStop" in event:
+                index += 1
+
+            elif "messageStop" in event:
+                stop_reason = event["messageStop"].get("stopReason", "end_turn")
+                finish_map = {
+                    "end_turn": "stop",
+                    "max_tokens": "length",
+                    "tool_use": "tool_calls",
+                    "stop_sequence": "stop",
+                }
+                yield _DotDict({
+                    "id": chunk_id,
+                    "object": "chat.completion.chunk",
+                    "model": model_name,
+                    "choices": [{
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": finish_map.get(stop_reason, "stop"),
+                    }],
+                })
+
+            elif "metadata" in event:
+                # Usage info — emit as final chunk with usage
+                meta = event["metadata"]
+                usage = meta.get("usage", {})
+                if usage:
+                    yield _DotDict({
+                        "id": chunk_id,
+                        "object": "chat.completion.chunk",
+                        "model": model_name,
+                        "choices": [],
+                        "usage": {
+                            "prompt_tokens": usage.get("inputTokens", 0),
+                            "completion_tokens": usage.get("outputTokens", 0),
+                            "total_tokens": usage.get("inputTokens", 0) + usage.get("outputTokens", 0),
+                        },
+                    })
 
     def converse_stream(
         self,
@@ -1434,13 +1888,15 @@ class BedrockRouter:
         model = self._registry.get(model_id)
         if model and "converse" not in model.api_support and self._mantle:
             # Model is Mantle-only — translate and call Chat Completions
-            return self._invoke_via_mantle(
+            resp = self._invoke_via_mantle(
                 model_id=model_id,
                 messages=messages,
                 system=system,
                 tool_config=tool_config,
                 inference_config=inference_config,
             )
+            resp["_api_backend"] = "mantle"
+            return resp
 
         call_kwargs: dict[str, Any] = {
             "modelId": model_id,
