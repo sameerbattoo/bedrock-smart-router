@@ -310,6 +310,56 @@ class _ChatCompletionStream:
         pass
 
 
+class _ConverseStream:
+    """Wrapper for converse_stream that supports both sync and async iteration.
+
+    Sync:
+        for event in router.converse_stream(messages=[...]):
+            ...
+
+    Async:
+        stream = await router.converse_stream(messages=[...])
+        async for event in stream:
+            ...
+    """
+
+    def __init__(self, generator):
+        self._generator = generator
+
+    def __iter__(self):
+        return self._generator
+
+    def __next__(self):
+        return next(self._generator)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self._generator)
+        except StopIteration:
+            raise StopAsyncIteration
+
+    def __await__(self):
+        return self._await_impl().__await__()
+
+    async def _await_impl(self):
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        pass
+
+
 class BedrockRouter:
     """Intelligent routing layer for Amazon Bedrock."""
 
@@ -1375,14 +1425,34 @@ class BedrockRouter:
         decision is attached to a final ``routing_decision`` event
         after the stream completes.
 
-        Usage::
+        Supports both sync and async iteration::
 
+            # Sync
             for event in router.converse_stream(messages=[...]):
                 if "contentBlockDelta" in event:
                     print(event["contentBlockDelta"]["delta"]["text"], end="")
-                elif "routing_decision" in event:
-                    print(f"\\nModel: {event['routing_decision'].selected_model}")
+
+            # Async
+            stream = await router.converse_stream(messages=[...])
+            async for event in stream:
+                ...
         """
+        return _ConverseStream(self._converse_stream_generator(
+            messages=messages, system=system, tool_config=tool_config,
+            inference_config=inference_config, routing=routing, **kwargs,
+        ))
+
+    def _converse_stream_generator(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None = None,
+        tool_config: dict[str, Any] | None = None,
+        inference_config: dict[str, Any] | None = None,
+        routing: RoutingConfig | None = None,
+        **kwargs: Any,
+    ):
+        """Internal generator for converse_stream."""
         routing, inference_config, tool_config = self._normalize_request_params(
             routing, inference_config, tool_config, kwargs,
         )
