@@ -417,13 +417,20 @@ class HeuristicClassifier(ComplexityClassifier):
         scores = self._score_dimensions(text_lower, last_user_text, messages, tool_config)
         composite = self._compute_composite(scores)
 
-        # Apply system prompt floor (keyword-based, not classify-based)
+        # Apply system prompt floor (keyword-based, not classify-based).
+        # Guard: don't let the system prompt floor push a complex classification
+        # into reasoning — reasoning should only be triggered by the user message
+        # itself, not by role-assignment text in the system prompt.
         if system:
             from bedrock_smart_router.request_analyzer import _extract_text
+            from bedrock_smart_router.complexity_classifier import FLOOR_MAX_LEVEL
             system_text = _extract_text(system)
             if system_text:
                 system_floor = self._compute_system_floor(system_text.lower())
-                composite = max(composite, system_floor)
+                # Cap the floor so it cannot push into reasoning tier
+                max_floor_threshold = self.thresholds.complex_max - 0.001
+                capped_floor = min(system_floor, max_floor_threshold)
+                composite = max(composite, capped_floor)
 
         # Classify
         reasoning_count = _count_matches(text_lower, REASONING_MARKERS)

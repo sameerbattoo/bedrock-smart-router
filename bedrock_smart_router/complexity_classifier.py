@@ -45,6 +45,15 @@ LEVEL_TO_LABEL: dict[int, str] = {0: "simple", 1: "moderate", 2: "complex", 3: "
 DEFAULT_FLOOR_CONFIDENCE_THRESHOLD = 0.7
 DEFAULT_FLOOR_DAMPENING = 0.8
 
+# Maximum complexity level the system prompt floor is allowed to push to.
+# The system prompt floor can upgrade simple→moderate or moderate→complex,
+# but CANNOT push into reasoning. Reasoning-tier classification should only
+# be triggered by the user message content itself, not by role-assignment
+# text in system prompts. ML models give noisy predictions on short system
+# prompts (e.g., "You are a security architect" → reasoning at 76% confidence),
+# so we cap the floor's reach at complex.
+FLOOR_MAX_LEVEL = 2  # complex
+
 
 class ComplexityClassifier(ABC):
     """Abstract base class for complexity classifiers.
@@ -227,8 +236,12 @@ class ComplexityClassifier(ABC):
             and floor_level >= 1
             and floor_conf > self._floor_confidence_threshold
         ):
-            # Floor is higher with high confidence — apply it but cap at +1 level
-            capped_level = min(floor_level, user_level + 1)
+            # Floor is higher with high confidence — apply it but cap at +1 level.
+            # Also cap at FLOOR_MAX_LEVEL: system prompt floor cannot push into
+            # reasoning tier (see FLOOR_MAX_LEVEL comment for rationale).
+            if user_level >= FLOOR_MAX_LEVEL:
+                return user_label, user_conf
+            capped_level = min(floor_level, user_level + 1, FLOOR_MAX_LEVEL)
             return LEVEL_TO_LABEL[capped_level], user_conf * self._floor_dampening
 
         return user_label, user_conf
