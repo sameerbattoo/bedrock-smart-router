@@ -4914,7 +4914,7 @@
           "direct": true
         }
       ],
-      "tier": "mid",
+      "tier": "heavy",
       "display_name": "GPT 5.4",
       "capabilities": {
         "tool_use": true,
@@ -4949,7 +4949,7 @@
           "direct": true
         }
       ],
-      "tier": "mid",
+      "tier": "reasoning",
       "display_name": "GPT 5.5",
       "capabilities": {
         "tool_use": true,

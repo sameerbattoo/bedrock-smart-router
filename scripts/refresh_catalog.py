@@ -99,11 +99,14 @@ def _get_model_size_b(model_id: str, display_name: str) -> int:
 
 
 def derive_tier(quality_baseline: float, model_id: str, display_name: str = "",
-                price_in: float = 0, caps: dict | None = None) -> str:
+                price_in: float = 0, caps: dict | None = None,
+                api_support: list[str] | None = None,
+                price_out: float = 0, max_input: int = 0, max_output: int = 0) -> str:
     """Derive tier from multiple signals: name, size, price, quality, capabilities.
 
     Rules (in priority order):
     1. Reasoning: quality >= 50 OR name contains reasoning indicators
+    1b. Responses-only frontier models (multi-signal scoring)
     2. Heavy: expensive (>= $4/M input) + full capabilities (cache + thinking)
     3. Micro: name says micro/nano OR (small model + cheap + low quality)
     4. Lite: name says lite/haiku/scout/mini OR small model (<=14B) + cheap
@@ -111,6 +114,7 @@ def derive_tier(quality_baseline: float, model_id: str, display_name: str = "",
     6. Default: lite
     """
     caps = caps or {}
+    api_support = api_support or []
     name = display_name.lower()
     name_tokens = name.replace("-", " ").replace("_", " ").split()
     model_size = _get_model_size_b(model_id, display_name)
@@ -122,6 +126,35 @@ def derive_tier(quality_baseline: float, model_id: str, display_name: str = "",
         return "reasoning"
     if any(s in name_tokens for s in _REASONING_NAME_SIGNALS):
         return "reasoning"
+
+    # Rule 1b: Responses-only models — frontier models behind newest API.
+    # These lack cache/thinking flags (Responses API handles state differently).
+    # Use a composite score from pricing, quality, and capacity signals.
+    if api_support == ["responses"]:
+        score = 0
+        if price_in >= 0.004:
+            score += 3   # Very expensive input
+        elif price_in >= 0.002:
+            score += 2   # Expensive input
+        if price_out >= 0.02:
+            score += 2   # Very expensive output
+        elif price_out >= 0.01:
+            score += 1   # Expensive output
+        if quality_baseline >= 38:
+            score += 2   # High benchmark score
+        elif quality_baseline >= 30:
+            score += 1   # Moderate benchmark score
+        if max_input >= 128000:
+            score += 1   # Large context window
+        if max_output >= 16384:
+            score += 1   # Large output capacity
+
+        if score >= 8:
+            return "reasoning"
+        if score >= 5:
+            return "heavy"
+        # Responses-only is at minimum mid (frontier API exclusivity)
+        return "mid"
 
     # Rule 2: Heavy — expensive + full capabilities
     if price_in >= 0.004 and has_cache and has_thinking:
@@ -1359,6 +1392,7 @@ def build_catalog(
             }
 
         # Determine tier (needs pricing and capabilities computed first)
+        api_support = caps.get("api_support") or _derive_api_support(base_id, model_id, caps, mantle_models)
         if existing and "tier" in existing:
             tier = existing["tier"]
         else:
@@ -1369,6 +1403,10 @@ def build_catalog(
                     "prompt_caching": prompt_caching,
                     "extended_thinking": extended_thinking,
                 },
+                api_support=api_support,
+                price_out=pricing.get("output_per_1k", 0),
+                max_input=max_input,
+                max_output=max_output,
             )
 
         entry = {
@@ -1392,7 +1430,7 @@ def build_catalog(
             "supported_latency_modes": supported_tiers,
             "guardrail_compatible": caps.get("guardrail_compatible", True),
             "quality_baseline": quality_baseline,
-            "api_support": caps.get("api_support") or _derive_api_support(base_id, model_id, caps, mantle_models),
+            "api_support": api_support,
         }
 
         catalog.append(entry)
@@ -1544,7 +1582,14 @@ def add_mantle_only_models(
         max_output = litellm_entry.get("max_output_tokens") or existing.get("max_output_tokens") or 16384
 
         # Tier
-        tier = existing.get("tier") or derive_tier(quality_baseline, mantle_id, display_name, pricing.get("input_per_1k", 0))
+        tier = existing.get("tier") or derive_tier(
+            quality_baseline, mantle_id, display_name,
+            price_in=pricing.get("input_per_1k", 0),
+            api_support=api_support,
+            price_out=pricing.get("output_per_1k", 0),
+            max_input=max_input,
+            max_output=max_output,
+        )
 
         # Get region availability from Mantle scan
         mantle_region_map = getattr(discover_mantle_models, '_model_regions', {})
