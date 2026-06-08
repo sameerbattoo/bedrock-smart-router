@@ -807,13 +807,16 @@ def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, regio
         return False
 
 
-def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str) -> bool:
+def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str) -> str | None:
     """Test if model supports the Responses API on bedrock-mantle.
 
     Sends a minimal Responses API request to confirm support.
+    Tries both /v1/responses and /openai/v1/responses paths.
+
+    Returns the working path (e.g., "/v1/responses") or None if not supported.
     """
     if not mantle_models:
-        return False
+        return None
 
     base_id = strip_geo_prefix(model_id)
     candidates = [
@@ -827,7 +830,7 @@ def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str)
             mantle_id = candidate
             break
     if not mantle_id:
-        return False
+        return None
 
     try:
         from botocore.auth import SigV4Auth
@@ -836,27 +839,110 @@ def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str)
         session = boto3.Session(region_name=region)
         credentials = session.get_credentials().get_frozen_credentials()
 
-        url = f"https://bedrock-mantle.{region}.api.aws/v1/responses"
-        payload = json.dumps({
-            "model": mantle_id,
-            "input": "hi",
-            "store": False,
-            "max_output_tokens": 5,
-        })
-        request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
-        SigV4Auth(credentials, "bedrock", region).add_auth(request)
+        # Try both URL paths: /v1/responses (standard) and /openai/v1/responses (GPT-5.x)
+        # GPT-5.x models use /openai/v1/responses, others use /v1/responses
+        if "gpt-5" in mantle_id.lower():
+            paths = ["/openai/v1/responses", "/v1/responses"]
+        else:
+            paths = ["/v1/responses", "/openai/v1/responses"]
 
-        resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
-        if resp.status_code == 200:
-            return True
-        if resp.status_code == 400:
-            err = resp.json().get("error", {}).get("message", "")
-            if "does not support" in err:
-                return False
-            return True
-        return False
+        for path in paths:
+            url = f"https://bedrock-mantle.{region}.api.aws{path}"
+            payload = json.dumps({
+                "model": mantle_id,
+                "input": "hi",
+                "store": False,
+                "max_output_tokens": 5,
+            })
+            request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
+            SigV4Auth(credentials, "bedrock", region).add_auth(request)
+
+            resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
+            if resp.status_code == 200:
+                return path
+            if resp.status_code == 400:
+                err = resp.json().get("error", {}).get("message", "")
+                if "does not support" in err:
+                    continue  # Try next path
+                return path  # Other 400 = model is reachable
+        return None
     except Exception:
-        return False
+        return None
+
+
+def _probe_responses_regions(model_id: str, regions: set[str]) -> set[str]:
+    """Probe /v1/responses (or /openai/v1/responses) in each region to confirm availability.
+
+    For Responses-only models, the /v1/models list may include regions where
+    only Chat Completions is available. This function sends a minimal Responses
+    request to each region and returns only the regions where it succeeds.
+
+    Note: Some OpenAI models (GPT-5.4, GPT-5.5) use /openai/v1/responses
+    instead of /v1/responses. We try both paths.
+
+    Parameters
+    ----------
+    model_id : str
+        The Mantle model ID (e.g., 'openai.gpt-5.4').
+    regions : set[str]
+        Candidate regions from /v1/models scan.
+
+    Returns
+    -------
+    set[str]
+        Regions where Responses API actually works for this model.
+    """
+    from botocore.auth import SigV4Auth
+    from botocore.awsrequest import AWSRequest
+
+    confirmed: set[str] = set()
+
+    # Determine which URL paths to try based on model ID
+    # GPT-5.x models use /openai/v1/responses, others use /v1/responses
+    if "gpt-5" in model_id.lower():
+        paths = ["/openai/v1/responses", "/v1/responses"]
+    else:
+        paths = ["/v1/responses", "/openai/v1/responses"]
+
+    def _probe_region(r: str) -> tuple[str, bool]:
+        try:
+            sess = boto3.Session(region_name=r)
+            creds = sess.get_credentials().get_frozen_credentials()
+
+            for path in paths:
+                url = f"https://bedrock-mantle.{r}.api.aws{path}"
+                payload = json.dumps({
+                    "model": model_id,
+                    "input": "hi",
+                    "store": False,
+                    "max_output_tokens": 5,
+                })
+                req = AWSRequest(method="POST", url=url, data=payload,
+                                headers={"Content-Type": "application/json"})
+                SigV4Auth(creds, "bedrock", r).add_auth(req)
+                resp = requests.post(url, data=payload, headers=dict(req.headers), timeout=15)
+                if resp.status_code == 200:
+                    return r, True
+                if resp.status_code == 400:
+                    err = resp.json().get("error", {}).get("message", "")
+                    if "does not support" in err:
+                        continue  # Try next path
+                    # Other 400 (e.g., validation) means model is reachable
+                    return r, True
+            return r, False
+        except Exception:
+            return r, False
+
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {executor.submit(_probe_region, r): r for r in regions}
+        for future in as_completed(futures):
+            r, success = future.result()
+            if success:
+                confirmed.add(r)
+            else:
+                logger.debug(f"    {model_id}: Responses API NOT available in {r}")
+
+    return confirmed
 
 
 def _probe_guardrail_compatible(client: Any, model_id: str) -> bool:
@@ -933,11 +1019,13 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
         api_support.append("converse")
 
     # Probe Mantle APIs (Chat Completions + Responses)
+    responses_path: str | None = None
     if mantle_models:
         if _probe_mantle_chat_completions(mantle_models, model_id, region):
             api_support.append("chat_completions")
             time.sleep(0.3)
-        if _probe_mantle_responses(mantle_models, model_id, region):
+        responses_path = _probe_mantle_responses(mantle_models, model_id, region)
+        if responses_path:
             api_support.append("responses")
             time.sleep(0.3)
 
@@ -988,6 +1076,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
         "supported_tiers": supported_tiers,
         "guardrail_compatible": guardrail_compatible,
         "api_support": api_support or ["converse"],
+        "responses_path": responses_path,
     }
 
 
@@ -1433,6 +1522,13 @@ def build_catalog(
             "api_support": api_support,
         }
 
+        # Add responses_path if the model supports Responses API
+        responses_path = caps.get("responses_path")
+        if not responses_path and existing:
+            responses_path = existing.get("responses_path")
+        if responses_path:
+            entry["responses_path"] = responses_path
+
         catalog.append(entry)
 
     logger.info(f"  Built catalog with {len(catalog)} entries")
@@ -1561,7 +1657,7 @@ def add_mantle_only_models(
         quality_baseline, aa_pricing = match_quality_baseline(display_name, mantle_id, aa_models)
 
         # LiteLLM pricing lookup
-        litellm_entry = litellm_data.get(mantle_id) or litellm_data.get(f"bedrock/{mantle_id}") or {}
+        litellm_entry = litellm_data.get(mantle_id) or litellm_data.get(f"bedrock/{mantle_id}") or litellm_data.get(f"bedrock_mantle/{mantle_id}") or {}
         if litellm_entry.get("input_cost_per_token"):
             pricing = {
                 "input_per_1k": round(litellm_entry["input_cost_per_token"] * 1000, 6),
@@ -1595,6 +1691,17 @@ def add_mantle_only_models(
         mantle_region_map = getattr(discover_mantle_models, '_model_regions', {})
         model_mantle_regions = mantle_region_map.get(mantle_id, {region})
 
+        # For Responses-only models, probe /v1/responses in each region to
+        # confirm actual availability. The /v1/models list includes all models
+        # known to Mantle but doesn't guarantee Responses API support per-region.
+        if api_support == ["responses"] and len(model_mantle_regions) > 1:
+            confirmed_regions = _probe_responses_regions(mantle_id, model_mantle_regions)
+            if confirmed_regions:
+                model_mantle_regions = confirmed_regions
+                logger.info(f"    {mantle_id}: Responses API confirmed in {sorted(confirmed_regions)}")
+            else:
+                logger.warning(f"    {mantle_id}: Responses API not confirmed in any region, keeping /v1/models list")
+
         entry = {
             "model_id": mantle_id,
             "family": family,
@@ -1618,6 +1725,17 @@ def add_mantle_only_models(
             "quality_baseline": quality_baseline,
             "api_support": api_support,
         }
+
+        # Add responses_path for models that support Responses API
+        if "responses" in api_support:
+            # Determine path: GPT-5.x uses /openai/v1/responses, others use /v1/responses
+            if "gpt-5" in mantle_id.lower():
+                entry["responses_path"] = "/openai/v1/responses"
+            else:
+                entry["responses_path"] = "/v1/responses"
+            # Override from existing catalog if available (previously probed)
+            if existing and existing.get("responses_path"):
+                entry["responses_path"] = existing["responses_path"]
 
         catalog.append(entry)
         logger.info(f"    Added: {mantle_id} (api_support={api_support}, tier={tier})")

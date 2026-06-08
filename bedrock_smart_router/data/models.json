@@ -431,7 +431,8 @@
         "converse",
         "chat_completions",
         "responses"
-      ]
+      ],
+      "responses_path": "/v1/responses"
     },
     {
       "model_id": "qwen.qwen3-next-80b-a3b",
@@ -2278,7 +2279,8 @@
         "converse",
         "chat_completions",
         "responses"
-      ]
+      ],
+      "responses_path": "/v1/responses"
     },
     {
       "model_id": "google.gemma-3-4b-it",
@@ -4925,7 +4927,7 @@
         "extended_thinking": false,
         "prompt_caching": false
       },
-      "max_input_tokens": 128000,
+      "max_input_tokens": 272000,
       "max_output_tokens": 16384,
       "pricing": {
         "input_per_1k": 0.0025,
@@ -4938,7 +4940,8 @@
       "quality_baseline": 35.4,
       "api_support": [
         "responses"
-      ]
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "openai.gpt-5.5",
@@ -4960,7 +4963,7 @@
         "extended_thinking": false,
         "prompt_caching": false
       },
-      "max_input_tokens": 128000,
+      "max_input_tokens": 272000,
       "max_output_tokens": 16384,
       "pricing": {
         "input_per_1k": 0.005,
@@ -4973,7 +4976,8 @@
       "quality_baseline": 40.9,
       "api_support": [
         "responses"
-      ]
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "openai.gpt-oss-safeguard-120b",
@@ -5049,7 +5053,8 @@
       "api_support": [
         "chat_completions",
         "responses"
-      ]
+      ],
+      "responses_path": "/v1/responses"
     },
     {
       "model_id": "openai.gpt-oss-safeguard-20b",
@@ -5125,7 +5130,8 @@
       "api_support": [
         "chat_completions",
         "responses"
-      ]
+      ],
+      "responses_path": "/v1/responses"
     },
     {
       "model_id": "qwen.qwen3-coder-next",
