@@ -169,6 +169,17 @@ export function ExplainPopup({ explanation, onClose }) {
           </div>
         )}
 
+        {/* Tier expansion notice */}
+        {explanation.tier_expanded_to && (
+          <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700/40 rounded-lg flex items-center gap-2">
+            <span className="text-blue-400 text-sm">⬆</span>
+            <div>
+              <div className="text-xs text-blue-300 font-medium">Tier expanded</div>
+              <div className="text-[10px] text-blue-400/80">No eligible models at target tier (<span className="font-medium text-blue-300">{explanation.original_max_tier}</span>). Expanded upward to <span className="font-medium text-blue-300">{explanation.tier_expanded_to}</span> tier.</div>
+            </div>
+          </div>
+        )}
+
         {/* Step 1 */}
         <div className="mb-5">
           <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">Step 1: Complexity Classification</div>

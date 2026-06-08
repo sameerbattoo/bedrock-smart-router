@@ -670,6 +670,7 @@ class BedrockRouter:
             metadata={
                 **({"ab_variant": ab_variant} if ab_variant else {}),
                 **({"is_canary": is_canary} if is_canary else {}),
+                **({"tier_expanded_to": resolved.get("tier_expanded_to")} if resolved.get("tier_expanded_to") else {}),
             },
             routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
             explanation=resolved.get("explanation"),
@@ -1679,6 +1680,8 @@ class BedrockRouter:
             messages=messages, system=system,
         )
 
+        tier_expanded_to: str | None = None  # Track if tier expansion was triggered
+
         if not candidates and max_tier is not None and strategy_name in builtin_strategies:
             # Expand upward tier-by-tier until we find candidates
             current_max_idx = _TIER_LIST.index(max_tier)
@@ -1692,6 +1695,7 @@ class BedrockRouter:
                     messages=messages, system=system,
                 )
                 if candidates:
+                    tier_expanded_to = expanded_max.value
                     logger.info(
                         "No models at tier %s–%s for complexity=%s; expanded to tier %s (%d candidates)",
                         min_tier.value if min_tier else "any", max_tier.value,
@@ -1879,6 +1883,9 @@ class BedrockRouter:
                 "candidates_evaluated": len(available),
                 "reason": " ".join(reason_parts),
             }
+            if tier_expanded_to:
+                explanation["tier_expanded_to"] = tier_expanded_to
+                explanation["original_max_tier"] = max_tier.value if max_tier else None
 
         return {
             "primary": primary,
@@ -1892,6 +1899,7 @@ class BedrockRouter:
             "ab_variant": ab_variant,
             "is_canary": is_canary,
             "explanation": explanation,
+            "tier_expanded_to": tier_expanded_to,
         }
 
     def _record_async(
