@@ -1662,31 +1662,43 @@ class BedrockRouter:
         else:
             min_tier = None
             max_tier = None
-        candidates = self._registry.eligible_models(
-            min_tier=min_tier,
-            max_tier=max_tier,
-            requires_vision=analysis.requires_vision,
-            requires_document_support=analysis.requires_document_support,
-            requires_tool_use=analysis.requires_tool_use,
+
+        # Tier expansion: if no candidates at the target tier range, progressively
+        # expand upward (+1 tier at a time) until we find models or hit reasoning (max).
+        # This ensures a response is returned rather than raising NoModelsMatchError
+        # when all models in the target tier are unavailable due to region/capability
+        # filtering. We only expand upward (never downward) to maintain quality.
+        from bedrock_smart_router.models import Tier as _Tier
+        _TIER_LIST = list(_Tier)
+
+        candidates = self._get_filtered_candidates(
+            min_tier=min_tier, max_tier=max_tier,
+            analysis=analysis, routing=routing,
             requires_streaming_tool_use=requires_streaming_tool_use,
-            min_context=routing.min_context_window,
-            exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
-            family=routing.preferred_family,
-            prefer_global=self._config.cris.allow_global,
+            requires_guardrail=requires_guardrail,
+            messages=messages, system=system,
         )
-        # Filter out models that don't support guardrails when guardrailConfig is passed
-        if requires_guardrail:
-            candidates = [c for c in candidates if c.guardrail_compatible]
-        # Filter out Mantle-only models not available in the configured region.
-        # Mantle has no CRIS — it only serves models in the specific regional endpoint.
-        if self._mantle:
-            router_region = self._config.region
-            candidates = [
-                c for c in candidates
-                if "converse" in c.api_support  # Converse models handle their own region routing via CRIS
-                or any(r.get("name") == router_region for r in c.regions)  # Mantle-only: must exist in our region
-            ]
-        candidates = self._context_validator.filter_by_context(candidates, messages, system)
+
+        if not candidates and max_tier is not None and strategy_name in builtin_strategies:
+            # Expand upward tier-by-tier until we find candidates
+            current_max_idx = _TIER_LIST.index(max_tier)
+            for expand_idx in range(current_max_idx + 1, len(_TIER_LIST)):
+                expanded_max = _TIER_LIST[expand_idx]
+                candidates = self._get_filtered_candidates(
+                    min_tier=min_tier, max_tier=expanded_max,
+                    analysis=analysis, routing=routing,
+                    requires_streaming_tool_use=requires_streaming_tool_use,
+                    requires_guardrail=requires_guardrail,
+                    messages=messages, system=system,
+                )
+                if candidates:
+                    logger.info(
+                        "No models at tier %s–%s for complexity=%s; expanded to tier %s (%d candidates)",
+                        min_tier.value if min_tier else "any", max_tier.value,
+                        analysis.complexity.value, expanded_max.value, len(candidates),
+                    )
+                    break
+
         if not candidates:
             self._raise_no_models_error(analysis=analysis, routing=routing, messages=messages, system=system)
 
@@ -2208,6 +2220,49 @@ class BedrockRouter:
             else:
                 cleaned.append(msg)
         return cleaned
+
+    def _get_filtered_candidates(
+        self,
+        *,
+        min_tier: Any | None,
+        max_tier: Any | None,
+        analysis: Any,
+        routing: "RoutingConfig",
+        requires_streaming_tool_use: bool,
+        requires_guardrail: bool,
+        messages: list[dict[str, Any]],
+        system: list[dict[str, Any]] | None,
+    ) -> list["BedrockModel"]:
+        """Get eligible candidates with all filters applied.
+
+        Shared logic for tier-based candidate retrieval, region filtering,
+        guardrail compatibility, and context window validation.
+        """
+        candidates = self._registry.eligible_models(
+            min_tier=min_tier,
+            max_tier=max_tier,
+            requires_vision=analysis.requires_vision,
+            requires_document_support=analysis.requires_document_support,
+            requires_tool_use=analysis.requires_tool_use,
+            requires_streaming_tool_use=requires_streaming_tool_use,
+            min_context=routing.min_context_window,
+            exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
+            family=routing.preferred_family,
+            prefer_global=self._config.cris.allow_global,
+        )
+        # Filter out models that don't support guardrails when guardrailConfig is passed
+        if requires_guardrail:
+            candidates = [c for c in candidates if c.guardrail_compatible]
+        # Filter out Mantle-only models not available in the configured region
+        if self._mantle:
+            router_region = self._config.region
+            candidates = [
+                c for c in candidates
+                if "converse" in c.api_support
+                or any(r.get("name") == router_region for r in c.regions)
+            ]
+        candidates = self._context_validator.filter_by_context(candidates, messages, system)
+        return candidates
 
     def _raise_no_models_error(
         self,
