@@ -282,32 +282,15 @@ class MLComplexityClassifier(ComplexityClassifier):
             for label, prob in zip(self._classes, probabilities)  # type: ignore
         }
 
-    def classify_request(
-        self,
-        messages: list[dict],
-        system: list[dict] | None = None,
-        tool_config: dict | None = None,
+    def _post_classify_guard(
+        self, label: str, confidence: float,
     ) -> tuple[str, float]:
-        """Classify a full Bedrock Converse request.
+        """ML-specific low-confidence guard.
 
-        Extends the base class pipeline with an ML-specific low-confidence
-        guard: if the model predicts complex/reasoning with < 50% confidence,
-        it defaults to "simple" to avoid over-classifying ambiguous inputs.
+        If the model predicts complex/reasoning but with < 50% confidence
+        (near-uniform distribution), default to "simple" to avoid
+        over-classifying ambiguous inputs.
         """
-        # 1. Extract and classify the LAST USER MESSAGE (primary signal)
-        last_user_text = self.extract_last_user_text(messages)
-        if last_user_text:
-            user_label, user_conf = self.classify(last_user_text)
-        else:
-            # No text in user messages — fall back to full context
-            full_text = self.assemble_full_context(messages, system, tool_config)
-            return self.classify(full_text)
-
-        # 1b. ML-specific: Low-confidence guard
-        # If the model predicts complex/reasoning but with low confidence
-        # (near-uniform distribution), default to "simple".
-        if user_conf < self.MIN_CONFIDENCE_THRESHOLD and user_label in ("complex", "reasoning"):
-            user_label = "simple"
-
-        # 2. Apply system prompt floor (shared logic from base class)
-        return self._apply_floor(user_label, user_conf, system, tool_config)
+        if confidence < self.MIN_CONFIDENCE_THRESHOLD and label in ("complex", "reasoning"):
+            return "simple", confidence
+        return label, confidence

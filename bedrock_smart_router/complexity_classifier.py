@@ -153,8 +153,9 @@ class ComplexityClassifier(ABC):
 
         1. Extract the LAST USER MESSAGE (primary signal)
         2. Classify it using the subclass's ``classify()`` method
-        3. Apply system prompt floor (only upgrades, never downgrades)
-        4. Return the final (label, confidence)
+        3. Apply post-classify guard (hook for subclass-specific logic)
+        4. Apply system prompt floor (only upgrades, never downgrades)
+        5. Return the final (label, confidence)
 
         The system prompt + tools establish a complexity FLOOR — they can
         upgrade the classification but never downgrade it. This prevents
@@ -184,8 +185,52 @@ class ComplexityClassifier(ABC):
             full_text = self.assemble_full_context(messages, system, tool_config)
             return self.classify(full_text)
 
-        # 2. Apply system prompt floor
+        # 2. Post-classify guard (subclasses can override for custom logic)
+        user_label, user_conf = self._post_classify_guard(user_label, user_conf)
+
+        # 3. Apply system prompt floor
         return self._apply_floor(user_label, user_conf, system, tool_config)
+
+    def _post_classify_guard(
+        self, label: str, confidence: float,
+    ) -> tuple[str, float]:
+        """Hook for subclass-specific post-classification guards.
+
+        Called after ``classify()`` but before ``_apply_floor()``.
+        Override in subclasses to add custom logic (e.g., low-confidence
+        fallback). Default implementation is a no-op pass-through.
+
+        Parameters
+        ----------
+        label : str
+            Classification label from ``classify()``.
+        confidence : float
+            Classification confidence from ``classify()``.
+
+        Returns
+        -------
+        tuple[str, float]
+            Possibly adjusted (label, confidence).
+        """
+        return label, confidence
+
+    def classify_batch(self, texts: list[str]) -> list[tuple[str, float]]:
+        """Classify a batch of text prompts.
+
+        Default implementation iterates over ``classify()``. Subclasses
+        can override for optimized batch inference.
+
+        Parameters
+        ----------
+        texts : list[str]
+            List of prompt texts to classify.
+
+        Returns
+        -------
+        list[tuple[str, float]]
+            List of (label, confidence) tuples for each input text.
+        """
+        return [self.classify(text) for text in texts]
 
     def _apply_floor(
         self,
