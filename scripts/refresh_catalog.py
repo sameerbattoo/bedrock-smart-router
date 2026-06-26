@@ -47,8 +47,9 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-# Suppress noisy urllib3 connection pool warnings
+# Suppress noisy urllib3 connection pool warnings and botocore credential logs
 logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
+logging.getLogger("botocore.credentials").setLevel(logging.WARNING)
 
 CATALOG_PATH = Path(__file__).parent.parent / "bedrock_smart_router" / "data" / "models.json"
 
@@ -75,6 +76,7 @@ FAMILY_PATTERNS = {
     "moonshot": "moonshot",
     "qwen": "qwen",
     "twelvelabs": "twelvelabs",
+    "xai": "xai",
 }
 
 # ── Tier derivation from multiple signals ───────────────────────────
@@ -750,6 +752,37 @@ def _probe_priority_tier(client: Any, model_id: str) -> list[str]:
         return ["standard"]
 
 
+def _probe_service_tiers(client: Any, model_id: str) -> list[str]:
+    """Probe which service tiers (Standard/Flex/Priority) a model supports.
+
+    Sends a converse request with serviceTier={"type": "flex"} and
+    serviceTier={"type": "priority"} to check support. All models
+    support "standard" by default.
+
+    Returns a list like ["standard", "flex", "priority"].
+    """
+    supported = ["standard"]
+
+    for tier_type in ["flex", "priority"]:
+        try:
+            client.converse(
+                modelId=model_id,
+                messages=[{"role": "user", "content": [{"text": "hi"}]}],
+                inferenceConfig={"maxTokens": 5},
+                serviceTier={"type": tier_type},
+            )
+            supported.append(tier_type)
+        except ClientError as e:
+            msg = str(e).lower()
+            if "throttl" in msg:
+                supported.append(tier_type)  # Throttled = model accepted the param
+            # ValidationException about serviceTier = not supported, skip
+        except Exception:
+            pass
+
+    return supported
+
+
 def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, region: str) -> bool:
     """Test if model supports the Chat Completions API on bedrock-mantle.
 
@@ -1067,6 +1100,9 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
         guardrail_compatible = _probe_guardrail_compatible(bedrock_runtime, model_id)
         time.sleep(0.3)
 
+        service_tiers = _probe_service_tiers(bedrock_runtime, model_id)
+        time.sleep(0.3)
+
     return {
         "converse_supported": converse_ok,
         "tool_use": tool_use,
@@ -1077,6 +1113,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
         "guardrail_compatible": guardrail_compatible,
         "api_support": api_support or ["converse"],
         "responses_path": responses_path,
+        "supported_service_tiers": service_tiers if converse_ok else ["standard"],
     }
 
 
@@ -1100,6 +1137,12 @@ AA_CREATOR_MAP = {
     "moonshotai": "Kimi",
     "moonshot": "Kimi",
     "qwen": "Alibaba",
+    "xai": "xAI",
+}
+
+# Some AA entries have creator=None but can be matched by name prefix
+AA_NAME_PREFIX_FALLBACK = {
+    "xai": "Grok",
 }
 
 
@@ -1253,6 +1296,18 @@ def match_quality_baseline(bedrock_name: str, model_id: str, aa_models: list[dic
 
     # Filter by creator
     creator_models = [m for m in aa_models if m["creator"] == creator]
+
+    # Fallback: for providers where AA has creator=None (e.g., xAI/Grok),
+    # match by name prefix instead
+    if not creator_models:
+        prefix = model_id.split(".")[0].lower()
+        name_prefix = AA_NAME_PREFIX_FALLBACK.get(prefix)
+        if name_prefix:
+            creator_models = [
+                m for m in aa_models
+                if m.get("creator") is None and m["name"].startswith(name_prefix)
+            ]
+
     if not creator_models:
         return 0.0, {}
 
@@ -1522,6 +1577,12 @@ def build_catalog(
             "api_support": api_support,
         }
 
+        # Add supported_service_tiers only if model supports flex/priority
+        # (all models support standard by default, so we only store extras)
+        service_tiers = caps.get("supported_service_tiers", ["standard"])
+        if len(service_tiers) > 1:
+            entry["supported_service_tiers"] = [t for t in service_tiers if t != "standard"]
+
         # Add responses_path if the model supports Responses API
         responses_path = caps.get("responses_path")
         if not responses_path and existing:
@@ -1658,6 +1719,12 @@ def add_mantle_only_models(
 
         # LiteLLM pricing lookup
         litellm_entry = litellm_data.get(mantle_id) or litellm_data.get(f"bedrock/{mantle_id}") or litellm_data.get(f"bedrock_mantle/{mantle_id}") or {}
+        # Try provider-specific prefixes (e.g., xai/grok-4.3 for xai.grok-4.3)
+        if not litellm_entry.get("input_cost_per_token"):
+            family_prefix = mantle_id.split(".", 1)[0] if "." in mantle_id else ""
+            model_name = mantle_id.split(".", 1)[1] if "." in mantle_id else mantle_id
+            if family_prefix:
+                litellm_entry = litellm_data.get(f"{family_prefix}/{model_name}") or litellm_entry
         if litellm_entry.get("input_cost_per_token"):
             pricing = {
                 "input_per_1k": round(litellm_entry["input_cost_per_token"] * 1000, 6),
