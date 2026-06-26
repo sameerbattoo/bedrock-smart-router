@@ -64,11 +64,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 10.1,
+      "quality_baseline": 4.6,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -79,12 +85,6 @@
           "cris_profiles": [
             "global",
             "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
           ]
         },
         {
@@ -213,7 +213,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 31,
+      "quality_baseline": 23.7,
       "api_support": [
         "converse"
       ]
@@ -278,11 +278,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 25,
+      "quality_baseline": 18.2,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "moonshotai.kimi-k2.5",
@@ -348,11 +354,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 37.3,
+      "quality_baseline": 29.4,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "openai.gpt-oss-120b-1:0",
@@ -426,11 +438,15 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 33.3,
+      "quality_baseline": 23.8,
       "api_support": [
         "converse",
         "chat_completions",
         "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ],
       "responses_path": "/v1/responses"
     },
@@ -498,10 +514,154 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 20.1,
+      "quality_baseline": 13.7,
       "api_support": [
         "converse",
         "chat_completions"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ]
+    },
+    {
+      "model_id": "anthropic.claude-fable-5",
+      "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
+      "tier": "reasoning",
+      "display_name": "Claude Fable 5",
+      "capabilities": {
+        "tool_use": false,
+        "vision": true,
+        "streaming": true,
+        "streaming_tool_use": false,
+        "document_support": true,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 128000,
+      "pricing": {
+        "input_per_1k": 0.01,
+        "output_per_1k": 0.05,
+        "cache_read_per_1k": 0.001,
+        "cache_write_per_1k": 0.0125
+      },
+      "supported_latency_modes": [
+        "standard"
+      ],
+      "guardrail_compatible": true,
+      "quality_baseline": 59.9,
+      "api_support": [
+        "converse"
       ]
     },
     {
@@ -568,11 +728,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 32.1,
+      "quality_baseline": 24.7,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "nvidia.nemotron-nano-3-30b",
@@ -638,11 +804,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.2,
+      "quality_baseline": 7.4,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-sonnet-4-6",
@@ -653,12 +825,6 @@
           "cris_profiles": [
             "global",
             "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
           ]
         },
         {
@@ -788,7 +954,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 44.4,
+      "quality_baseline": 35.9,
       "api_support": [
         "converse"
       ]
@@ -857,11 +1023,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 36.1,
+      "quality_baseline": 28.3,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "zai.glm-4.7-flash",
@@ -935,11 +1107,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 22.1,
+      "quality_baseline": 15.5,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "amazon.nova-pro-v1:0",
@@ -947,12 +1125,6 @@
       "regions": [
         {
           "name": "ap-northeast-1",
-          "cris_profiles": [
-            "apac"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
           "cris_profiles": [
             "apac"
           ]
@@ -1054,9 +1226,13 @@
         "optimized"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.5,
+      "quality_baseline": 7.7,
       "api_support": [
         "converse"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ]
     },
     {
@@ -1068,12 +1244,6 @@
           "cris_profiles": [
             "global",
             "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
           ]
         },
         {
@@ -1187,9 +1357,13 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 12.7,
+      "quality_baseline": 6.9,
       "api_support": [
         "converse"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ]
     },
     {
@@ -1264,11 +1438,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 41.9,
+      "quality_baseline": 33.7,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "google.gemma-3-12b-it",
@@ -1334,11 +1514,17 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 8.8,
+      "quality_baseline": 3.4,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "moonshot.kimi-k2-thinking",
@@ -1396,9 +1582,13 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 40.9,
+      "quality_baseline": 32.7,
       "api_support": [
         "converse"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ]
     },
     {
@@ -1457,11 +1647,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 22.8,
+      "quality_baseline": 15.9,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "mistral.devstral-2-123b",
@@ -1535,11 +1731,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 22,
+      "quality_baseline": 19.2,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "minimax.minimax-m2.1",
@@ -1613,11 +1815,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 39.4,
+      "quality_baseline": 31.4,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "nvidia.nemotron-super-3-120b",
@@ -1691,11 +1899,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 36,
+      "quality_baseline": 25.4,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "qwen.qwen3-32b-v1:0",
@@ -1769,11 +1983,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.5,
+      "quality_baseline": 8.6,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "mistral.ministral-3-14b-instruct",
@@ -1839,11 +2059,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 16,
+      "quality_baseline": 11.1,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-opus-4-6-v1",
@@ -1851,12 +2077,6 @@
       "regions": [
         {
           "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
           "cris_profiles": [
             "global"
           ]
@@ -1987,7 +2207,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 46.5,
+      "quality_baseline": 37.8,
       "api_support": [
         "converse"
       ]
@@ -2056,11 +2276,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.2,
+      "quality_baseline": 7.4,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "mistral.ministral-3-8b-instruct",
@@ -2126,11 +2352,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.8,
+      "quality_baseline": 9,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "zai.glm-5",
@@ -2196,11 +2428,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 40.6,
+      "quality_baseline": 32.4,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "openai.gpt-oss-20b-1:0",
@@ -2274,11 +2512,15 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 24.5,
+      "quality_baseline": 14.9,
       "api_support": [
         "converse",
         "chat_completions",
         "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ],
       "responses_path": "/v1/responses"
     },
@@ -2346,11 +2588,17 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 6.3,
+      "quality_baseline": 1.1,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-opus-4-8",
@@ -2361,12 +2609,6 @@
           "cris_profiles": [
             "global",
             "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
           ]
         },
         {
@@ -2495,10 +2737,12 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 61.4,
+      "quality_baseline": 55.7,
       "api_support": [
-        "converse"
-      ]
+        "converse",
+        "responses"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-opus-4-7",
@@ -2509,12 +2753,6 @@
           "cris_profiles": [
             "global",
             "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
           ]
         },
         {
@@ -2643,10 +2881,12 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 51.8,
+      "quality_baseline": 42.7,
       "api_support": [
-        "converse"
-      ]
+        "converse",
+        "responses"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "google.gemma-3-27b-it",
@@ -2712,11 +2952,17 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 10.3,
+      "quality_baseline": 4.8,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -2727,12 +2973,6 @@
           "cris_profiles": [
             "global",
             "jp"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "global"
           ]
         },
         {
@@ -2861,7 +3101,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 37.1,
+      "quality_baseline": 29.3,
       "api_support": [
         "converse"
       ]
@@ -2930,10 +3170,14 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 17,
+      "quality_baseline": 10.9,
       "api_support": [
         "converse",
         "chat_completions"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ]
     },
     {
@@ -3000,11 +3244,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 34.2,
+      "quality_baseline": 26.6,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "writer.palmyra-vision-7b",
@@ -3049,8 +3299,14 @@
       "quality_baseline": 0.0,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-opus-4-1-20250805-v1:0",
@@ -3098,7 +3354,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 36,
+      "quality_baseline": 28.2,
       "api_support": [
         "converse"
       ]
@@ -3159,10 +3415,14 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 24.8,
+      "quality_baseline": 18,
       "api_support": [
         "converse",
         "chat_completions"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ]
     },
     {
@@ -3229,11 +3489,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18.2,
+      "quality_baseline": 11.9,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "deepseek.v3-v1:0",
@@ -3291,9 +3557,13 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 28.1,
+      "quality_baseline": 21,
       "api_support": [
         "converse"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ]
     },
     {
@@ -3360,11 +3630,17 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 11.2,
+      "quality_baseline": 6.8,
       "api_support": [
         "converse",
-        "chat_completions"
-      ]
+        "chat_completions",
+        "responses"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
+      ],
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "anthropic.claude-opus-4-5-20251101-v1:0",
@@ -3372,12 +3648,6 @@
       "regions": [
         {
           "name": "ap-northeast-1",
-          "cris_profiles": [
-            "global"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
           "cris_profiles": [
             "global"
           ]
@@ -3506,7 +3776,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 43.1,
+      "quality_baseline": 34.7,
       "api_support": [
         "converse"
       ]
@@ -3583,10 +3853,14 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 20,
+      "quality_baseline": 13.6,
       "api_support": [
         "converse",
         "chat_completions"
+      ],
+      "supported_service_tiers": [
+        "flex",
+        "priority"
       ]
     },
     {
@@ -3599,12 +3873,6 @@
             "apac"
           ],
           "direct": true
-        },
-        {
-          "name": "ap-northeast-2",
-          "cris_profiles": [
-            "apac"
-          ]
         },
         {
           "name": "ap-south-1",
@@ -3671,7 +3939,8 @@
           "name": "us-east-2",
           "cris_profiles": [
             "us"
-          ]
+          ],
+          "direct": true
         },
         {
           "name": "us-west-1",
@@ -3683,7 +3952,8 @@
           "name": "us-west-2",
           "cris_profiles": [
             "us"
-          ]
+          ],
+          "direct": true
         }
       ],
       "tier": "lite",
@@ -3709,7 +3979,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 12.7,
+      "quality_baseline": 6.9,
       "api_support": [
         "converse"
       ]
@@ -3720,12 +3990,6 @@
       "regions": [
         {
           "name": "ap-northeast-1",
-          "cris_profiles": [
-            "apac"
-          ]
-        },
-        {
-          "name": "ap-northeast-2",
           "cris_profiles": [
             "apac"
           ]
@@ -3820,7 +4084,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 10.3,
+      "quality_baseline": 4.7,
       "api_support": [
         "converse"
       ]
@@ -3871,7 +4135,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18.8,
+      "quality_baseline": 12.6,
       "api_support": [
         "converse"
       ]
@@ -3924,7 +4188,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 6.4,
+      "quality_baseline": 1.2,
       "api_support": [
         "converse"
       ]
@@ -3977,7 +4241,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 8.9,
+      "quality_baseline": 3.5,
       "api_support": [
         "converse"
       ]
@@ -4029,7 +4293,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 11.8,
+      "quality_baseline": 6.1,
       "api_support": [
         "converse"
       ]
@@ -4082,7 +4346,7 @@
         "optimized"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 12.5,
+      "quality_baseline": 6.8,
       "api_support": [
         "converse"
       ]
@@ -4134,7 +4398,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.5,
+      "quality_baseline": 8.6,
       "api_support": [
         "converse"
       ]
@@ -4191,7 +4455,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.5,
+      "quality_baseline": 10,
       "api_support": [
         "converse"
       ]
@@ -4248,7 +4512,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18.4,
+      "quality_baseline": 14.3,
       "api_support": [
         "converse"
       ]
@@ -4317,7 +4581,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 7.4,
+      "quality_baseline": 2.1,
       "api_support": [
         "converse"
       ]
@@ -4386,7 +4650,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 7.7,
+      "quality_baseline": 2.4,
       "api_support": [
         "converse"
       ]
@@ -4455,7 +4719,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 9.9,
+      "quality_baseline": 4.4,
       "api_support": [
         "converse"
       ]
@@ -4492,7 +4756,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 9.9,
+      "quality_baseline": 4.4,
       "api_support": [
         "converse"
       ]
@@ -4567,7 +4831,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14,
+      "quality_baseline": 8.1,
       "api_support": [
         "converse"
       ]
@@ -4748,7 +5012,148 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 28.1,
+      "quality_baseline": 21,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "google.gemma-4-26b-a4b",
+      "family": "google",
+      "regions": [
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "lite",
+      "display_name": "Gemma 4 26B A4B",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 256000,
+      "max_output_tokens": 256000,
+      "pricing": {
+        "input_per_1k": 0.00013,
+        "output_per_1k": 0.0004,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 20.1,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "google.gemma-4-31b",
+      "family": "google",
+      "regions": [
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "lite",
+      "display_name": "Gemma 4 31B",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 256000,
+      "max_output_tokens": 256000,
+      "pricing": {
+        "input_per_1k": 0.00014,
+        "output_per_1k": 0.0004,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 24.8,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "google.gemma-4-e2b",
+      "family": "google",
+      "regions": [
+        {
+          "name": "eu-central-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "micro",
+      "display_name": "Gemma 4 E2B",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 128000,
+      "max_output_tokens": 128000,
+      "pricing": {
+        "input_per_1k": 4e-05,
+        "output_per_1k": 8e-05,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 6.4,
       "api_support": [
         "chat_completions"
       ]
@@ -4898,7 +5303,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 18,
+      "quality_baseline": 11.8,
       "api_support": [
         "chat_completions"
       ]
@@ -4907,6 +5312,10 @@
       "model_id": "openai.gpt-5.4",
       "family": "openai",
       "regions": [
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
         {
           "name": "us-east-2",
           "direct": true
@@ -4928,16 +5337,16 @@
         "prompt_caching": false
       },
       "max_input_tokens": 272000,
-      "max_output_tokens": 16384,
+      "max_output_tokens": 128000,
       "pricing": {
-        "input_per_1k": 0.0025,
-        "output_per_1k": 0.015,
+        "input_per_1k": 0.00275,
+        "output_per_1k": 0.0165,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 35.4,
+      "quality_baseline": 27.7,
       "api_support": [
         "responses"
       ],
@@ -4947,6 +5356,10 @@
       "model_id": "openai.gpt-5.5",
       "family": "openai",
       "regions": [
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
         {
           "name": "us-east-2",
           "direct": true
@@ -4964,16 +5377,16 @@
         "prompt_caching": false
       },
       "max_input_tokens": 272000,
-      "max_output_tokens": 16384,
+      "max_output_tokens": 128000,
       "pricing": {
-        "input_per_1k": 0.005,
-        "output_per_1k": 0.03,
+        "input_per_1k": 0.0055,
+        "output_per_1k": 0.033,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 40.9,
+      "quality_baseline": 35.4,
       "api_support": [
         "responses"
       ],
@@ -5049,7 +5462,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 33.3,
+      "quality_baseline": 23.8,
       "api_support": [
         "chat_completions",
         "responses"
@@ -5126,7 +5539,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 24.5,
+      "quality_baseline": 14.9,
       "api_support": [
         "chat_completions",
         "responses"
@@ -5203,7 +5616,50 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 28.3,
+      "quality_baseline": 21.2,
+      "api_support": [
+        "chat_completions"
+      ]
+    },
+    {
+      "model_id": "xai.grok-4.3",
+      "family": "unknown",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
+          "direct": true
+        },
+        {
+          "name": "us-west-2",
+          "direct": true
+        }
+      ],
+      "tier": "mid",
+      "display_name": "Grok 4.3",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 1000000,
+      "pricing": {
+        "input_per_1k": 0.00125,
+        "output_per_1k": 0.0025,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 24.8,
       "api_support": [
         "chat_completions"
       ]
@@ -5268,8 +5724,8 @@
         "extended_thinking": false,
         "prompt_caching": false
       },
-      "max_input_tokens": 128000,
-      "max_output_tokens": 16384,
+      "max_input_tokens": 200000,
+      "max_output_tokens": 128000,
       "pricing": {
         "input_per_1k": 0.0006,
         "output_per_1k": 0.0022,
@@ -5278,7 +5734,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 30.2,
+      "quality_baseline": 23,
       "api_support": [
         "chat_completions"
       ]

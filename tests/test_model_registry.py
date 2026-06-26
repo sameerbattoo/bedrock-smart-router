@@ -102,7 +102,7 @@ class TestJsonCatalog:
     def test_loads_from_bundled_json(self):
         """Default registry loads from data/models.json."""
         reg = ModelRegistry()
-        assert len(reg) == 68  # one entry per model (includes Mantle-only, deduped)
+        assert len(reg) == 73  # one entry per model (includes Mantle-only, deduped)
 
     def test_loads_from_custom_path(self, tmp_path):
         """Registry can load from a user-provided JSON file."""
