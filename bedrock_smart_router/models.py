@@ -140,6 +140,8 @@ class BedrockModel:
     distilled_quality_delta: float = 0.0
     quality_baseline: float = 0.0  # AA Intelligence Index score (0-60 scale)
     api_support: list[str] = field(default_factory=lambda: ["converse"])  # "converse", "chat_completions", "responses"
+    supported_service_tiers: list[str] = field(default_factory=list)  # ["flex", "priority"] — empty means standard only
+    responses_path: str | None = None  # URL path for Responses API (e.g., "/v1/responses" or "/openai/v1/responses")
 
     @property
     def is_cris_available(self) -> bool:

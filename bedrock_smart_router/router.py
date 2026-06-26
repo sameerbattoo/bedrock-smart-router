@@ -1672,12 +1672,16 @@ class BedrockRouter:
         from bedrock_smart_router.models import Tier as _Tier
         _TIER_LIST = list(_Tier)
 
+        # Extract service tier requirement from routing config
+        required_service_tier = routing.service_tier
+
         candidates = self._get_filtered_candidates(
             min_tier=min_tier, max_tier=max_tier,
             analysis=analysis, routing=routing,
             requires_streaming_tool_use=requires_streaming_tool_use,
             requires_guardrail=requires_guardrail,
             messages=messages, system=system,
+            required_service_tier=required_service_tier,
         )
 
         tier_expanded_to: str | None = None  # Track if tier expansion was triggered
@@ -1693,6 +1697,7 @@ class BedrockRouter:
                     requires_streaming_tool_use=requires_streaming_tool_use,
                     requires_guardrail=requires_guardrail,
                     messages=messages, system=system,
+                    required_service_tier=required_service_tier,
                 )
                 if candidates:
                     tier_expanded_to = expanded_max.value
@@ -2240,11 +2245,13 @@ class BedrockRouter:
         requires_guardrail: bool,
         messages: list[dict[str, Any]],
         system: list[dict[str, Any]] | None,
+        required_service_tier: str | None = None,
     ) -> list["BedrockModel"]:
         """Get eligible candidates with all filters applied.
 
         Shared logic for tier-based candidate retrieval, region filtering,
-        guardrail compatibility, and context window validation.
+        guardrail compatibility, service tier compatibility, and context
+        window validation.
         """
         candidates = self._registry.eligible_models(
             min_tier=min_tier,
@@ -2261,6 +2268,12 @@ class BedrockRouter:
         # Filter out models that don't support guardrails when guardrailConfig is passed
         if requires_guardrail:
             candidates = [c for c in candidates if c.guardrail_compatible]
+        # Filter by service tier: only keep models that support the requested tier
+        if required_service_tier and required_service_tier != "standard":
+            candidates = [
+                c for c in candidates
+                if required_service_tier in c.supported_service_tiers
+            ]
         # Filter out Mantle-only models not available in the configured region
         if self._mantle:
             router_region = self._config.region

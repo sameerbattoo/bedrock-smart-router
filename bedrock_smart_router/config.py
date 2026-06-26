@@ -62,6 +62,7 @@ class RoutingConfig:
     fallback_enabled: bool | None = None
     explain: bool = False  # Include detailed explanation in RoutingDecision
     classifier: str | None = None  # Per-request override: "heuristic" | "ml" (None = use router default)
+    service_tier: str | None = None  # "flex" | "priority" — filters to models supporting this tier
 
 
 # ── Named presets ───────────────────────────────────────────────────

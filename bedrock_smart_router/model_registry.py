@@ -73,6 +73,8 @@ def _model_from_dict(d: dict[str, Any]) -> BedrockModel:
         guardrail_compatible=d.get("guardrail_compatible", True),
         quality_baseline=d.get("quality_baseline", 0.0),
         api_support=d.get("api_support", ["converse"]),
+        supported_service_tiers=d.get("supported_service_tiers", []),
+        responses_path=d.get("responses_path"),
     )
 
 
