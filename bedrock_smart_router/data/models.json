@@ -5421,10 +5421,8 @@
       "guardrail_compatible": false,
       "quality_baseline": 23.8,
       "api_support": [
-        "chat_completions",
-        "responses"
-      ],
-      "responses_path": "/v1/responses"
+        "chat_completions"
+      ]
     },
     {
       "model_id": "openai.gpt-oss-safeguard-20b",
@@ -5498,10 +5496,8 @@
       "guardrail_compatible": false,
       "quality_baseline": 14.9,
       "api_support": [
-        "chat_completions",
-        "responses"
-      ],
-      "responses_path": "/v1/responses"
+        "chat_completions"
+      ]
     },
     {
       "model_id": "qwen.qwen3-coder-next",
