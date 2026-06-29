@@ -885,7 +885,7 @@ def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str)
                 "model": mantle_id,
                 "input": "hi",
                 "store": False,
-                "max_output_tokens": 5,
+                "max_output_tokens": 16,  # Minimum required by /openai/v1/responses
             })
             request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
             SigV4Auth(credentials, "bedrock", region).add_auth(request)
@@ -893,11 +893,16 @@ def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str)
             resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
             if resp.status_code == 200:
                 return path
+            # Only a 200 confirms support. Any 400 (including validation errors)
+            # is NOT a confirmation — the model may not support this API at all.
+            # "does not support" is an explicit rejection; other 400s are ambiguous.
             if resp.status_code == 400:
                 err = resp.json().get("error", {}).get("message", "")
                 if "does not support" in err:
-                    continue  # Try next path
-                return path  # Other 400 = model is reachable
+                    continue  # Explicit rejection — try next path
+                # Other 400 errors (validation, missing params, etc.) are ambiguous.
+                # Do NOT assume support — continue to next path.
+                continue
         return None
     except Exception:
         return None
@@ -948,7 +953,7 @@ def _probe_responses_regions(model_id: str, regions: set[str]) -> set[str]:
                     "model": model_id,
                     "input": "hi",
                     "store": False,
-                    "max_output_tokens": 5,
+                    "max_output_tokens": 16,  # Minimum required by /openai/v1/responses
                 })
                 req = AWSRequest(method="POST", url=url, data=payload,
                                 headers={"Content-Type": "application/json"})
@@ -960,8 +965,8 @@ def _probe_responses_regions(model_id: str, regions: set[str]) -> set[str]:
                     err = resp.json().get("error", {}).get("message", "")
                     if "does not support" in err:
                         continue  # Try next path
-                    # Other 400 (e.g., validation) means model is reachable
-                    return r, True
+                    # Other 400s are ambiguous — don't confirm support
+                    continue
             return r, False
         except Exception:
             return r, False

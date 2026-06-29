@@ -67,8 +67,7 @@
       "quality_baseline": 4.6,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -85,6 +84,12 @@
           "cris_profiles": [
             "global",
             "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
           ]
         },
         {
@@ -111,13 +116,6 @@
           "cris_profiles": [
             "au",
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -281,8 +279,7 @@
       "quality_baseline": 18.2,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -357,8 +354,7 @@
       "quality_baseline": 29.4,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -535,6 +531,12 @@
           ]
         },
         {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
           "name": "ap-northeast-3",
           "cris_profiles": [
             "global"
@@ -557,13 +559,6 @@
           "cris_profiles": [
             "au",
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -731,8 +726,7 @@
       "quality_baseline": 24.7,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -807,8 +801,7 @@
       "quality_baseline": 7.4,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -825,6 +818,12 @@
           "cris_profiles": [
             "global",
             "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
           ]
         },
         {
@@ -851,13 +850,6 @@
           "cris_profiles": [
             "au",
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -1026,8 +1018,7 @@
       "quality_baseline": 28.3,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1110,8 +1101,7 @@
       "quality_baseline": 15.5,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1125,6 +1115,12 @@
       "regions": [
         {
           "name": "ap-northeast-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
           "cris_profiles": [
             "apac"
           ]
@@ -1247,6 +1243,12 @@
           ]
         },
         {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
           "name": "ap-south-1",
           "cris_profiles": [
             "global"
@@ -1262,13 +1264,6 @@
           "name": "ap-southeast-2",
           "cris_profiles": [
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -1441,8 +1436,7 @@
       "quality_baseline": 33.7,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1517,8 +1511,7 @@
       "quality_baseline": 3.4,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1650,8 +1643,7 @@
       "quality_baseline": 15.9,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1734,8 +1726,7 @@
       "quality_baseline": 19.2,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1818,8 +1809,7 @@
       "quality_baseline": 31.4,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1902,8 +1892,7 @@
       "quality_baseline": 25.4,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1986,8 +1975,7 @@
       "quality_baseline": 8.6,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -2062,8 +2050,7 @@
       "quality_baseline": 11.1,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -2077,6 +2064,12 @@
       "regions": [
         {
           "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
           "cris_profiles": [
             "global"
           ]
@@ -2104,13 +2097,6 @@
           "cris_profiles": [
             "au",
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -2279,8 +2265,7 @@
       "quality_baseline": 7.4,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -2355,8 +2340,7 @@
       "quality_baseline": 9,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -2431,8 +2415,7 @@
       "quality_baseline": 32.4,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -2591,8 +2574,7 @@
       "quality_baseline": 1.1,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -2609,6 +2591,12 @@
           "cris_profiles": [
             "global",
             "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
           ]
         },
         {
@@ -2635,13 +2623,6 @@
           "cris_profiles": [
             "au",
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -2739,8 +2720,7 @@
       "guardrail_compatible": true,
       "quality_baseline": 55.7,
       "api_support": [
-        "converse",
-        "responses"
+        "converse"
       ],
       "responses_path": "/openai/v1/responses"
     },
@@ -2753,6 +2733,12 @@
           "cris_profiles": [
             "global",
             "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
           ]
         },
         {
@@ -2779,13 +2765,6 @@
           "cris_profiles": [
             "au",
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -2883,8 +2862,7 @@
       "guardrail_compatible": true,
       "quality_baseline": 42.7,
       "api_support": [
-        "converse",
-        "responses"
+        "converse"
       ],
       "responses_path": "/openai/v1/responses"
     },
@@ -2955,8 +2933,7 @@
       "quality_baseline": 4.8,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -2973,6 +2950,12 @@
           "cris_profiles": [
             "global",
             "jp"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
           ]
         },
         {
@@ -2999,13 +2982,6 @@
           "cris_profiles": [
             "au",
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -3247,8 +3223,7 @@
       "quality_baseline": 26.6,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -3299,8 +3274,7 @@
       "quality_baseline": 0.0,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -3492,8 +3466,7 @@
       "quality_baseline": 11.9,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -3633,8 +3606,7 @@
       "quality_baseline": 6.8,
       "api_support": [
         "converse",
-        "chat_completions",
-        "responses"
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -3648,6 +3620,12 @@
       "regions": [
         {
           "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
           "cris_profiles": [
             "global"
           ]
@@ -3674,13 +3652,6 @@
           "name": "ap-southeast-2",
           "cris_profiles": [
             "global"
-          ]
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "global",
-            "us"
           ]
         },
         {
@@ -3875,6 +3846,12 @@
           "direct": true
         },
         {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
           "name": "ap-south-1",
           "cris_profiles": [
             "apac"
@@ -3892,12 +3869,6 @@
             "apac"
           ],
           "direct": true
-        },
-        {
-          "name": "ca-central-1",
-          "cris_profiles": [
-            "ca"
-          ]
         },
         {
           "name": "eu-central-1",
@@ -3990,6 +3961,12 @@
       "regions": [
         {
           "name": "ap-northeast-1",
+          "cris_profiles": [
+            "apac"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
           "cris_profiles": [
             "apac"
           ]
@@ -4149,10 +4126,6 @@
           "direct": true
         },
         {
-          "name": "ca-central-1",
-          "direct": true
-        },
-        {
           "name": "eu-west-2",
           "direct": true
         },
@@ -4199,10 +4172,6 @@
       "regions": [
         {
           "name": "ap-south-1",
-          "direct": true
-        },
-        {
-          "name": "ca-central-1",
           "direct": true
         },
         {
@@ -4530,10 +4499,6 @@
           "direct": true
         },
         {
-          "name": "ca-central-1",
-          "direct": true
-        },
-        {
           "name": "eu-west-1",
           "direct": true
         },
@@ -4599,10 +4564,6 @@
           "direct": true
         },
         {
-          "name": "ca-central-1",
-          "direct": true
-        },
-        {
           "name": "eu-west-1",
           "direct": true
         },
@@ -4665,10 +4626,6 @@
         },
         {
           "name": "ap-southeast-2",
-          "direct": true
-        },
-        {
-          "name": "ca-central-1",
           "direct": true
         },
         {
@@ -5623,7 +5580,7 @@
     },
     {
       "model_id": "xai.grok-4.3",
-      "family": "unknown",
+      "family": "xai",
       "regions": [
         {
           "name": "us-east-1",
