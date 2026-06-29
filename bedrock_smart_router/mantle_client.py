@@ -199,14 +199,23 @@ class MantleClient:
         model: str,
         input: str | list[dict[str, Any]],
         *,
-        store: bool = False,
+        path: str = "/v1/responses",
+        store: bool = True,
         max_output_tokens: int | None = None,
         temperature: float | None = None,
         tools: list[dict] | None = None,
         previous_response_id: str | None = None,
+        stream: bool = False,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Send a Responses API request (synchronous).
+
+        Args:
+            model: Model ID on Mantle.
+            input: Prompt text or structured input.
+            path: URL path (some models use /openai/v1/responses).
+            store: Whether to store for stateful continuation (default True).
+            stream: Whether to stream the response.
 
         Returns the full response dict in OpenAI Responses format.
         """
@@ -223,9 +232,46 @@ class MantleClient:
             payload["tools"] = tools
         if previous_response_id is not None:
             payload["previous_response_id"] = previous_response_id
+        if stream:
+            payload["stream"] = True
         payload.update(kwargs)
 
-        return self._request("POST", "/v1/responses", payload)
+        return self._request("POST", path, payload)
+
+    def responses_stream(
+        self,
+        model: str,
+        input: str | list[dict[str, Any]],
+        *,
+        path: str = "/v1/responses",
+        store: bool = True,
+        max_output_tokens: int | None = None,
+        temperature: float | None = None,
+        tools: list[dict] | None = None,
+        previous_response_id: str | None = None,
+        **kwargs: Any,
+    ) -> Generator[dict[str, Any], None, None]:
+        """Send a streaming Responses API request.
+
+        Yields SSE event dicts (OpenAI Responses streaming format).
+        """
+        payload: dict[str, Any] = {
+            "model": model,
+            "input": input,
+            "store": store,
+            "stream": True,
+        }
+        if max_output_tokens is not None:
+            payload["max_output_tokens"] = max_output_tokens
+        if temperature is not None:
+            payload["temperature"] = temperature
+        if tools is not None:
+            payload["tools"] = tools
+        if previous_response_id is not None:
+            payload["previous_response_id"] = previous_response_id
+        payload.update(kwargs)
+
+        yield from self._request_stream("POST", path, payload)
 
     # ── Internal HTTP methods ───────────────────────────────────────
 

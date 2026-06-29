@@ -217,6 +217,81 @@ class _ChatNamespace:
         self.completions = _CompletionsNamespace(router)
 
 
+# Response ID separator for encoding model_id into the response ID
+_RESPONSE_ID_SEP = "::"
+
+
+class _ResponsesNamespace:
+    """Implements router.responses.create(...) — OpenAI Responses API drop-in.
+
+    Routes requests to the best Responses-capable model on Mantle.
+    Supports stateful continuation via previous_response_id with automatic
+    sticky routing (model_id encoded in response ID).
+
+    Usage::
+
+        # First call — router picks the model
+        r1 = router.responses.create(input="Design a system")
+
+        # Follow-up — automatically routes to same model (stateful)
+        r2 = router.responses.create(
+            input="Add caching to it",
+            previous_response_id=r1.id,
+        )
+    """
+
+    def __init__(self, router: "BedrockRouter") -> None:
+        self._router = router
+
+    def create(
+        self,
+        *,
+        input: "str | list[dict[str, Any]]",
+        model: str | None = None,
+        instructions: str | None = None,
+        max_output_tokens: int | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        tools: list[dict] | None = None,
+        tool_choice: str | dict | None = None,
+        parallel_tool_calls: bool | None = None,
+        store: bool = True,
+        stream: bool = False,
+        previous_response_id: str | None = None,
+        reasoning_effort: str | None = None,
+        metadata: dict | None = None,
+        # Smart Router extras
+        routing: Any | None = None,
+        **kwargs: Any,
+    ) -> "_DotDict":
+        """Create a response with smart routing.
+
+        Drop-in for ``openai.responses.create()``. The router selects the
+        best Responses-capable model, or uses the specified/sticky model.
+
+        When ``previous_response_id`` is provided, the router extracts the
+        model from the encoded ID and routes to the same model (stateful).
+
+        Returns a Responses API response dict with routing_decision attached.
+        """
+        return self._router._responses_create(
+            input=input,
+            model=model,
+            instructions=instructions,
+            max_output_tokens=max_output_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            tools=tools,
+            tool_choice=tool_choice,
+            store=store,
+            stream=stream,
+            previous_response_id=previous_response_id,
+            reasoning_effort=reasoning_effort,
+            routing=routing,
+            **kwargs,
+        )
+
+
 class _DotDict(dict):
     """Dict subclass that supports attribute access (dot notation).
 
@@ -558,6 +633,7 @@ class BedrockRouter:
         # OpenAI-compatible namespace: router.chat.completions.create(...)
         self.chat = _ChatNamespace(self)
         self.models = _ModelsNamespace(self)
+        self.responses = _ResponsesNamespace(self)
 
     @classmethod
     def create(
@@ -1409,6 +1485,243 @@ class BedrockRouter:
                             "total_tokens": usage.get("inputTokens", 0) + usage.get("outputTokens", 0),
                         },
                     })
+
+    def _responses_create(
+        self,
+        *,
+        input: "str | list[dict[str, Any]]",
+        model: str | None = None,
+        instructions: str | None = None,
+        max_output_tokens: int | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict | None = None,
+        store: bool = True,
+        stream: bool = False,
+        previous_response_id: str | None = None,
+        reasoning_effort: str | None = None,
+        routing: RoutingConfig | None = None,
+        **kwargs: Any,
+    ) -> "_DotDict":
+        """Internal implementation for router.responses.create().
+
+        Selects the best Responses-capable model, calls Mantle, and returns
+        a response with the model_id encoded in the response ID for sticky routing.
+
+        Routing rules:
+        - If previous_response_id has encoded model (id::model), use that model (sticky)
+        - If model= is specified, use it directly
+        - Otherwise, classify and route among responses-capable models
+        """
+        import re
+        import time as _time
+        from bedrock_smart_router.model_registry import base_model_id as _base_model_id
+
+        if not self._mantle:
+            raise RuntimeError(
+                "Responses API requires Mantle client. Ensure enable_mantle=True in config."
+            )
+
+        routing = resolve_preset(routing or RoutingConfig())
+        t_start = _time.monotonic()
+
+        # ── Sticky routing: decode model from previous_response_id ──
+        real_previous_id: str | None = None
+        sticky_model: str | None = None
+
+        if previous_response_id:
+            if _RESPONSE_ID_SEP in previous_response_id:
+                real_previous_id, sticky_model = previous_response_id.rsplit(_RESPONSE_ID_SEP, 1)
+            else:
+                # Raw ID without model encoding — user must pass model=
+                real_previous_id = previous_response_id
+
+        # ── Determine which model to use ──
+        selected_model: "BedrockModel | None" = None
+
+        if sticky_model:
+            # Stateful continuation — must go to same model
+            selected_model = self._registry.get(sticky_model)
+            if not selected_model:
+                raise ValueError(
+                    f"Model '{sticky_model}' from previous_response_id not found in catalog"
+                )
+        elif model:
+            # User explicitly specified a model
+            if model and not routing.preferred_model:
+                routing = dataclass_replace(routing, preferred_model=model)
+            selected_model = self._registry.get(model)
+
+        if not selected_model:
+            # Route: classify and pick best responses-capable model
+            # Extract text for classification
+            if isinstance(input, str):
+                classify_text = input
+            else:
+                # Structured input — extract text parts
+                parts = []
+                for item in input:
+                    if isinstance(item, dict):
+                        content = item.get("content", "")
+                        if isinstance(content, str):
+                            parts.append(content)
+                        elif isinstance(content, list):
+                            for c in content:
+                                if isinstance(c, dict) and c.get("type") == "text":
+                                    parts.append(c.get("text", ""))
+                    elif isinstance(item, str):
+                        parts.append(item)
+                classify_text = " ".join(parts)
+
+            # Build messages for analysis
+            messages = [{"role": "user", "content": [{"text": classify_text}]}]
+            system = [{"text": instructions}] if instructions else None
+
+            # Analyse complexity
+            analysis = self._analyzer.analyze(
+                messages, system, None,
+                classifier_override=routing.classifier,
+            )
+
+            # Get eligible responses-capable models
+            from bedrock_smart_router.models import Tier as _Tier
+            _TIER_LIST = list(_Tier)
+
+            strategy_name = routing.strategy or self._config.strategy
+            builtin_strategies = {"cost-optimized", "latency-optimized", "balanced", "quality-optimized"}
+            if strategy_name in builtin_strategies:
+                min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
+                max_tier = COMPLEXITY_MAX_TIER.get(analysis.complexity.value)
+            else:
+                min_tier = None
+                max_tier = None
+
+            # Filter to responses-capable models only
+            candidates = self._registry.eligible_models(
+                min_tier=min_tier,
+                max_tier=max_tier,
+                requires_tool_use=bool(tools),
+                min_context=routing.min_context_window,
+                exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
+                family=routing.preferred_family,
+                prefer_global=self._config.cris.allow_global,
+                api_surface="responses",
+            )
+
+            # Tier expansion for responses models
+            if not candidates and max_tier is not None:
+                current_max_idx = _TIER_LIST.index(max_tier)
+                for expand_idx in range(current_max_idx + 1, len(_TIER_LIST)):
+                    expanded_max = _TIER_LIST[expand_idx]
+                    candidates = self._registry.eligible_models(
+                        min_tier=min_tier,
+                        max_tier=expanded_max,
+                        requires_tool_use=bool(tools),
+                        min_context=routing.min_context_window,
+                        exclude_patterns=routing.exclude_models or self._config.excluded_models or None,
+                        family=routing.preferred_family,
+                        prefer_global=self._config.cris.allow_global,
+                        api_surface="responses",
+                    )
+                    if candidates:
+                        break
+
+            # Region filter: only models available in our region
+            router_region = self._config.region
+            candidates = [
+                c for c in candidates
+                if any(r.get("name") == router_region for r in c.regions)
+            ]
+
+            if not candidates:
+                raise NoModelsMatchError(
+                    "No eligible Responses API models found.",
+                    constraints={"api_surface": "responses", "region": router_region},
+                )
+
+            # Score and select
+            weights = routing.weights or self._config.weights
+            strategy = resolve_strategy(strategy_name, weights=weights, metrics_store=self._metrics_store)
+            available = [c for c in candidates if self._circuit_breakers.is_available(c.model_id)]
+            if not available:
+                available = candidates
+
+            result = strategy.select(available, analysis)
+            selected_model = result.selected_model
+
+        # ── Resolve Mantle model ID and path ──
+        # Strip version suffixes for Mantle
+        mantle_model_id = _base_model_id(selected_model.model_id)
+        mantle_model_id = re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
+        mantle_model_id = re.sub(r"-v\d+:\d+$", "", mantle_model_id)
+        mantle_model_id = re.sub(r"-\d+:\d+$", "", mantle_model_id)
+
+        # Get the responses_path from model catalog
+        responses_path = selected_model.responses_path or "/v1/responses"
+
+        # ── Build kwargs for Mantle ──
+        mantle_kwargs: dict[str, Any] = {}
+        if instructions is not None:
+            mantle_kwargs["instructions"] = instructions
+        if max_output_tokens is not None:
+            mantle_kwargs["max_output_tokens"] = max_output_tokens
+        if temperature is not None:
+            mantle_kwargs["temperature"] = temperature
+        if top_p is not None:
+            mantle_kwargs["top_p"] = top_p
+        if tools is not None:
+            mantle_kwargs["tools"] = tools
+        if tool_choice is not None:
+            mantle_kwargs["tool_choice"] = tool_choice
+        if reasoning_effort is not None:
+            mantle_kwargs["reasoning"] = {"effort": reasoning_effort}
+        mantle_kwargs.update(kwargs)
+
+        # ── Call Mantle ──
+        try:
+            response = self._mantle.responses(
+                model=mantle_model_id,
+                input=input,
+                path=responses_path,
+                store=store,
+                previous_response_id=real_previous_id,
+                **mantle_kwargs,
+            )
+            self._circuit_breakers.record_success(selected_model.model_id)
+        except Exception as exc:
+            self._circuit_breakers.record_failure(selected_model.model_id)
+            raise
+
+        elapsed_ms = (_time.monotonic() - t_start) * 1000
+
+        # ── Encode model_id into response ID for sticky routing ──
+        raw_id = response.get("id", "")
+        if raw_id and _RESPONSE_ID_SEP not in raw_id:
+            response["id"] = f"{raw_id}{_RESPONSE_ID_SEP}{selected_model.model_id}"
+
+        # ── Build routing decision ──
+        usage = response.get("usage", {})
+        input_toks = usage.get("input_tokens", 0) if isinstance(usage, dict) else 0
+        output_toks = usage.get("output_tokens", 0) if isinstance(usage, dict) else 0
+        decision = RoutingDecision(
+            selected_model=selected_model.model_id,
+            strategy_used=routing.strategy or self._config.strategy,
+            complexity_detected="n/a" if sticky_model else "routed",
+            complexity_score=0.0,
+            candidates_evaluated=1 if sticky_model else 0,
+            estimated_cost=0.0,
+            actual_cost=selected_model.pricing.estimate_cost(input_toks, output_toks),
+            latency_ms=round(elapsed_ms, 1),
+            input_tokens=input_toks,
+            output_tokens=output_toks,
+            api_backend="mantle",
+            metadata={"responses_path": responses_path},
+        )
+        self._last_decision_local.value = decision
+        response["routing_decision"] = decision
+
+        return _DotDict(response)
 
     def converse_stream(
         self,
