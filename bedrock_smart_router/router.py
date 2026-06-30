@@ -1525,6 +1525,9 @@ class BedrockRouter:
 
         routing = resolve_preset(routing or RoutingConfig())
         t_start = _time.monotonic()
+        # Default strategy for Responses API is quality-optimized (stateful sessions
+        # benefit from a capable model upfront to handle escalating complexity)
+        strategy_name = routing.strategy or "quality-optimized"
 
         # ── Sticky routing: decode model from previous_response_id ──
         real_previous_id: str | None = None
@@ -1588,11 +1591,19 @@ class BedrockRouter:
             from bedrock_smart_router.models import Tier as _Tier
             _TIER_LIST = list(_Tier)
 
-            strategy_name = routing.strategy or self._config.strategy
             builtin_strategies = {"cost-optimized", "latency-optimized", "balanced", "quality-optimized"}
             if strategy_name in builtin_strategies:
                 min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
                 max_tier = COMPLEXITY_MAX_TIER.get(analysis.complexity.value)
+                # For Responses API: minimum tier is 'mid' regardless of complexity.
+                # Stateful sessions tend to escalate in complexity, and switching
+                # models mid-conversation isn't possible. Starting with a capable
+                # model (mid+) prevents underpowering complex follow-up turns.
+                from bedrock_smart_router.models import Tier as _TierEnum
+                if min_tier and list(_TierEnum).index(min_tier) < list(_TierEnum).index(_TierEnum.MID):
+                    min_tier = _TierEnum.MID
+                if max_tier and list(_TierEnum).index(max_tier) < list(_TierEnum).index(_TierEnum.MID):
+                    max_tier = None  # Remove max cap — let it pick from mid+
             else:
                 min_tier = None
                 max_tier = None
@@ -1706,7 +1717,7 @@ class BedrockRouter:
         output_toks = usage.get("output_tokens", 0) if isinstance(usage, dict) else 0
         decision = RoutingDecision(
             selected_model=selected_model.model_id,
-            strategy_used=routing.strategy or self._config.strategy,
+            strategy_used=strategy_name if not sticky_model else "sticky",
             complexity_detected="n/a" if sticky_model else "routed",
             complexity_score=0.0,
             candidates_evaluated=1 if sticky_model else 0,
