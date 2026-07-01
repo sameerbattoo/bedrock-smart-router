@@ -1593,17 +1593,14 @@ class BedrockRouter:
 
             builtin_strategies = {"cost-optimized", "latency-optimized", "balanced", "quality-optimized"}
             if strategy_name in builtin_strategies:
-                min_tier = COMPLEXITY_MIN_TIER.get(analysis.complexity.value)
-                max_tier = COMPLEXITY_MAX_TIER.get(analysis.complexity.value)
-                # For Responses API: minimum tier is 'mid' regardless of complexity.
-                # Stateful sessions tend to escalate in complexity, and switching
-                # models mid-conversation isn't possible. Starting with a capable
-                # model (mid+) prevents underpowering complex follow-up turns.
-                from bedrock_smart_router.models import Tier as _TierEnum
-                if min_tier and list(_TierEnum).index(min_tier) < list(_TierEnum).index(_TierEnum.MID):
-                    min_tier = _TierEnum.MID
-                if max_tier and list(_TierEnum).index(max_tier) < list(_TierEnum).index(_TierEnum.MID):
-                    max_tier = None  # Remove max cap — let it pick from mid+
+                # For Responses API: skip complexity-based tier caps entirely.
+                # With only a handful of responses-capable models and quality-optimized
+                # as default, tier caps create paradoxes (simple gets heavy model but
+                # moderate is capped at mid). The quality strategy handles selection
+                # correctly without tier constraints. The min=mid ensures we don't
+                # pick lite/micro models that might underpower complex follow-ups.
+                min_tier = _Tier.MID
+                max_tier = None  # No upper cap — let quality strategy pick freely
             else:
                 min_tier = None
                 max_tier = None
