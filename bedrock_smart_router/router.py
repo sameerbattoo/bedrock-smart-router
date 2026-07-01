@@ -1687,6 +1687,7 @@ class BedrockRouter:
         mantle_kwargs.update(kwargs)
 
         # ── Call Mantle ──
+        t_routing_done = _time.monotonic()  # Routing logic complete, about to call Mantle
         try:
             response = self._mantle.responses(
                 model=mantle_model_id,
@@ -1724,6 +1725,7 @@ class BedrockRouter:
             input_tokens=input_toks,
             output_tokens=output_toks,
             api_backend="mantle",
+            routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
             metadata={"responses_path": responses_path},
         )
         self._last_decision_local.value = decision
