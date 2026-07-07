@@ -924,6 +924,14 @@ class BedrockRouter:
             if i > 0 and not self._circuit_breakers.is_available(model.model_id):
                 continue
 
+            # Skip responses-only models (can't be invoked via converse or chat_completions)
+            if model.api_support == ["responses"]:
+                logger.debug(
+                    "Converse: skipping model %s — responses-only",
+                    model.model_id,
+                )
+                continue
+
             model_cris = self._cris.select_profile(model, self._config.region) if i > 0 else resolved["cris_profile"]
             model_tier = self._tier_selector.select_tier(model, analysis) if i > 0 else resolved["inference_tier"]
             invoke_model_id = self._aip.get_model_id_for_tenant(
@@ -1797,10 +1805,89 @@ class BedrockRouter:
         stream = None
         used_cris = resolved["cris_profile"]
         used_tier = resolved["inference_tier"]
+        mantle_stream = False  # Track if stream came from Mantle (different event format)
 
         for i, model in enumerate(models_to_try):
             if i > 0 and not self._circuit_breakers.is_available(model.model_id):
                 continue
+
+            # Mantle-only models: stream via Mantle and translate to converse events
+            if "converse" not in model.api_support:
+                if not self._mantle:
+                    logger.debug(
+                        "Stream: skipping model %s — no converse support and Mantle not configured",
+                        model.model_id,
+                    )
+                    continue
+                # "responses"-only models can't be used via chat_completions streaming
+                if "chat_completions" not in model.api_support:
+                    logger.debug(
+                        "Stream: skipping model %s — responses-only, not streamable via Mantle",
+                        model.model_id,
+                    )
+                    continue
+
+                try:
+                    import re as _re
+                    from bedrock_smart_router.model_registry import base_model_id as _base_model_id
+                    from bedrock_smart_router.format_translator import converse_to_chat_completions
+
+                    mantle_model_id = _base_model_id(model.model_id)
+                    mantle_model_id = _re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
+                    mantle_model_id = _re.sub(r"-v\d+:\d+$", "", mantle_model_id)
+                    mantle_model_id = _re.sub(r"-\d+:\d+$", "", mantle_model_id)
+
+                    # Translate converse request to chat completions format
+                    cc_body = converse_to_chat_completions(
+                        messages=messages,
+                        system=system,
+                        tool_config=tool_config,
+                        inference_config=inference_config,
+                    )
+
+                    logger.debug(
+                        "Stream call (Mantle): model=%s, mantle_id=%s",
+                        model.model_id, mantle_model_id,
+                    )
+
+                    # Get the stream generator — note: it's lazy, errors happen on iteration
+                    mantle_gen = self._mantle.chat_completions_stream(
+                        model=mantle_model_id,
+                        **cc_body,
+                    )
+                    # Force the first chunk to verify connectivity
+                    first_chunk = next(mantle_gen)
+
+                    # Re-assemble: yield first_chunk then the rest
+                    import itertools
+                    stream = itertools.chain([first_chunk], mantle_gen)
+                    mantle_stream = True
+                    self._circuit_breakers.record_success(model.model_id)
+                    used_model = model
+                    used_cris = model.model_id
+                    used_tier = "standard"
+                    break
+                except StopIteration:
+                    # Empty stream — treat as success with no content
+                    stream = iter([])
+                    mantle_stream = True
+                    self._circuit_breakers.record_success(model.model_id)
+                    used_model = model
+                    used_cris = model.model_id
+                    used_tier = "standard"
+                    break
+                except Exception as exc:
+                    last_error = exc
+                    is_throttle = RetryHandler.is_throttle(exc)
+                    self._circuit_breakers.record_failure(
+                        model.model_id, is_throttle=is_throttle,
+                    )
+                    logger.warning(
+                        "Stream: model %s (Mantle) failed (%s), trying fallback %d/%d. Error: %s",
+                        model.model_id, RetryHandler.get_error_code(exc),
+                        i + 1, len(models_to_try), str(exc)[:500],
+                    )
+                    continue
 
             model_cris = self._cris.select_profile(model, self._config.region) if i > 0 else resolved["cris_profile"]
             model_tier = self._tier_selector.select_tier(model, analysis) if i > 0 else resolved["inference_tier"]
@@ -1871,22 +1958,80 @@ class BedrockRouter:
         ttft_ms: float | None = None
         t_stream_start = time.monotonic()
 
-        for event in stream:
-            # Capture TTFT on first content delta
-            if ttft_ms is None and "contentBlockDelta" in event:
-                ttft_ms = (time.monotonic() - t_stream_start) * 1000
-            # Capture stop reason from messageStop event
-            if "messageStop" in event:
-                stream_stop_reason = event["messageStop"].get("stopReason", "")
-            # Capture usage, metrics, serviceTier from metadata event
-            if "metadata" in event:
-                meta = event["metadata"]
-                usage = meta.get("usage", {})
-                stream_metrics = meta.get("metrics", {})
-                stream_service_tier = meta.get("serviceTier", {}).get("type", "")
-                stream_perf_config = meta.get("performanceConfig", {})
-                stream_guardrail_trace = meta.get("trace", {}).get("guardrail", {})
-            yield event
+        if mantle_stream:
+            # Mantle stream yields OpenAI-format chunks — translate to converse events
+            for chunk in stream:
+                # OpenAI chunk format: {"choices": [{"delta": {"content": "..."}}]}
+                choices = chunk.get("choices", [])
+                if not choices:
+                    # Final chunk with usage info
+                    chunk_usage = chunk.get("usage")
+                    if chunk_usage:
+                        usage = {
+                            "inputTokens": chunk_usage.get("prompt_tokens", 0),
+                            "outputTokens": chunk_usage.get("completion_tokens", 0),
+                        }
+                        yield {"metadata": {"usage": usage}}
+                    continue
+
+                choice = choices[0]
+                delta = choice.get("delta", {})
+                finish_reason = choice.get("finish_reason")
+
+                # Text content
+                if "content" in delta and delta["content"]:
+                    if ttft_ms is None:
+                        ttft_ms = (time.monotonic() - t_stream_start) * 1000
+                    yield {"contentBlockDelta": {"delta": {"text": delta["content"]}}}
+
+                # Tool calls
+                elif "tool_calls" in delta:
+                    for tc in delta["tool_calls"]:
+                        func = tc.get("function", {})
+                        if tc.get("id"):
+                            # Tool use start
+                            yield {"contentBlockStart": {"start": {"toolUse": {
+                                "toolUseId": tc["id"],
+                                "name": func.get("name", ""),
+                            }}}}
+                        if func.get("arguments"):
+                            yield {"contentBlockDelta": {"delta": {"toolUse": {"input": func["arguments"]}}}}
+
+                # Finish
+                if finish_reason:
+                    reason_map = {
+                        "stop": "end_turn",
+                        "length": "max_tokens",
+                        "tool_calls": "tool_use",
+                    }
+                    stream_stop_reason = reason_map.get(finish_reason, "end_turn")
+                    yield {"messageStop": {"stopReason": stream_stop_reason}}
+
+                    # Check for usage in final chunk
+                    chunk_usage = chunk.get("usage")
+                    if chunk_usage:
+                        usage = {
+                            "inputTokens": chunk_usage.get("prompt_tokens", 0),
+                            "outputTokens": chunk_usage.get("completion_tokens", 0),
+                        }
+                        yield {"metadata": {"usage": usage}}
+        else:
+            for event in stream:
+                # Capture TTFT on first content delta
+                if ttft_ms is None and "contentBlockDelta" in event:
+                    ttft_ms = (time.monotonic() - t_stream_start) * 1000
+                # Capture stop reason from messageStop event
+                if "messageStop" in event:
+                    stream_stop_reason = event["messageStop"].get("stopReason", "")
+                # Capture usage, metrics, serviceTier from metadata event
+                if "metadata" in event:
+                    meta = event["metadata"]
+                    usage = meta.get("usage", {})
+                    stream_metrics = meta.get("metrics", {})
+                    stream_service_tier = meta.get("serviceTier", {}).get("type", "")
+                    stream_perf_config = meta.get("performanceConfig", {})
+                    stream_guardrail_trace = meta.get("trace", {}).get("guardrail", {})
+                yield event
 
         # Post-stream: build decision and record metrics
         elapsed_ms = (time.monotonic() - t_start) * 1000
