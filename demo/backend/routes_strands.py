@@ -259,7 +259,7 @@ def _get_or_create_session(session_id: str, agent_type: str,
         init_preset = STRATEGY_TO_PRESET.get(router_strategy)
         smart_model = SmartRouterModel(
             router=smart_router, routing_preset=init_preset, explain=True,
-            exclude_models=[".*thinking.*", ".*kimi.*thinking.*"],
+            exclude_models=[".*thinking.*", ".*kimi.*thinking.*", "amazon.nova-lite.*", "amazon.nova-micro.*"],
         )
         agent = Agent(
             model=smart_model, tools=tool_list, system_prompt=AWS_SYSTEM_PROMPT,
