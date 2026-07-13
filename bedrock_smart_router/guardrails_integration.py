@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Bedrock Guardrails integration.
 
 Provides pre-route and post-route guardrail checks using the

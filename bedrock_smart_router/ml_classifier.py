@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """ML-based prompt complexity classifier using TF-IDF + Logistic Regression.
 
 This module provides an optional ML classifier that uses a pre-trained TF-IDF

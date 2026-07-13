@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Train a Hybrid TF-IDF + Heuristic Features classifier for prompt complexity.
 
 This combines:

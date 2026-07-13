@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """FAISS vector store — fast in-process approximate nearest neighbor.
 
 Uses Facebook AI Similarity Search for sub-millisecond vector lookups.

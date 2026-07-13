@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Strands Agents SDK integration — use BedrockRouter as a Strands Model provider.
 
 Implements the ``strands.models.Model`` interface so that a Strands

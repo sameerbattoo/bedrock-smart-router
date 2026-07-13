@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 #!/usr/bin/env python3
 """Download 50 samples from each of 3 multimodal datasets:
 1. philschmid/ocr-invoice-data (invoice extraction)

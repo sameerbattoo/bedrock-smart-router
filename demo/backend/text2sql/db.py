@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """SQLite database wrapper for the Text2SQL demo.
 
 Creates and seeds an e-commerce database on startup.

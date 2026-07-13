@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Redis/Valkey vector store — shared vector search via FT commands.
 
 Uses raw FT.CREATE / FT.SEARCH execute_command calls for compatibility

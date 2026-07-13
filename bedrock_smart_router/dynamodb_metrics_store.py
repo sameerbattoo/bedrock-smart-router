@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """DynamoDB-backed metrics store.
 
 Persists per-request records to a DynamoDB table with a TTL attribute

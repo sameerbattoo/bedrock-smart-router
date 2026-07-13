@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """CRIS (Cross-Region Inference) profile manager.
 
 Selects the best cross-region inference profile for a model based on

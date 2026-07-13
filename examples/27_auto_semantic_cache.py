@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Auto-Extracting Semantic Cache — automatic intent + variable extraction.
 
 The standard semantic cache matches queries by embedding similarity, but

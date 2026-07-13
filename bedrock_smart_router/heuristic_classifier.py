@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Heuristic Complexity Classifier — 15-dimension keyword-based scoring.
 
 Zero-dependency, sub-millisecond complexity classification using weighted

@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """A/B testing — split traffic between models for production comparison.
 
 When active, the A/B splitter overrides the strategy engine and assigns

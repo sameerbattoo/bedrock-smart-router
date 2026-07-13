@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Pluggable persistent budget store backends.
 
 The BudgetTracker uses an in-memory deque for fast budget checks on

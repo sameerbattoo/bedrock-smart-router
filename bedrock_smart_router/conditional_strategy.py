@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Conditional routing — route based on request metadata.
 
 Evaluates a list of condition rules in order and applies the first

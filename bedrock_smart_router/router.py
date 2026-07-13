@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """BedrockRouter — the main entry point for the SDK.
 
 Drop-in routing layer that sits between your application and Amazon

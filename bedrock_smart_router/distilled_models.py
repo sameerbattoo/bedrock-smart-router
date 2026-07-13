@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Distilled model support for the model registry.
 
 Bedrock Model Distillation produces smaller, faster models from a

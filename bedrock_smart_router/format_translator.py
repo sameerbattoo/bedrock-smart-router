@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Bidirectional format translation between Bedrock Converse and OpenAI Chat Completions.
 
 Handles the conversion of messages, system prompts, tool configurations,

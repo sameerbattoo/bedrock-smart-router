@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """OpenTelemetry integration — traces and metrics for routing decisions.
 
 Provides spans wrapping each phase of the routing pipeline and OTEL

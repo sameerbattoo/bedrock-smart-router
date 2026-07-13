@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Historical metrics store — pluggable backend for routing decisions.
 
 Tracks per-model performance (latency, cost, error rate, quality) over

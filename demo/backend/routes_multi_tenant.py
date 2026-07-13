@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Use-case 4: Multi-Tenant Routing — same prompt, different routing per tenant.
 
 Demonstrates how a single router instance serves multiple tenants with

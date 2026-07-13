@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Example 19: Service Tier Routing (Flex / Priority)
 
 Amazon Bedrock offers multiple service tiers for inference:

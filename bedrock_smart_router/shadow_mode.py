@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Shadow mode — mirror production traffic to a secondary model.
 
 Sends a sampled copy of requests to a shadow model asynchronously.

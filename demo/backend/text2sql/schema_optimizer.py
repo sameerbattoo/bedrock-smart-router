@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Schema optimizer — compresses CREATE TABLE DDL for LLM token efficiency.
 
 Converts verbose DDL like:

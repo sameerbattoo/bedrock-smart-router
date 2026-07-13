@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Complexity Classifier — abstract base class for prompt complexity classification.
 
 The complexity classifier determines how "hard" a user's request is, which

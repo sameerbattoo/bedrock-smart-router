@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Strands First Agent — the 1st official Strands Agents SDK sample, adapted to use our smart router.
 
 Based on the official AWS Strands Agents "First Agent" quickstart sample:

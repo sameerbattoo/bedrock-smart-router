@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Circuit breaker — prevents cascading failures by temporarily
 blocking requests to models that are failing.
 

@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Tests for the semantic intent router.
 
 Uses mocked embeddings to test routing logic without calling Bedrock.

@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Orchestrator Agent — routes user queries to SQL and Chart agents.
 
 Single Strands agent with tools that delegate to sub-agents.

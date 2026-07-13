@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """OpenSearch Serverless vector store backend for semantic cache.
 
 Uses Amazon OpenSearch Serverless (AOSS) with k-NN vector search.

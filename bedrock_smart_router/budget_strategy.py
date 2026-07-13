@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Budget-constrained routing strategy.
 
 Enforces per-request cost ceilings and rolling budget windows

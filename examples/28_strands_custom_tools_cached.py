@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Strands Custom Tools with Smart Router + Semantic Cache.
 
 Adapted from the 2nd official Strands Agents SDK sample (Custom Tools):

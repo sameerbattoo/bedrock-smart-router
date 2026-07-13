@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Quality-optimized routing strategy.
 
 Routes to the model with the highest historical quality scores from

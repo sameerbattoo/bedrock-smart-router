@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Semantic Cache — cache responses by meaning, not exact text.
 
 Unlike the exact-match cache (which only hits on identical requests),

@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Semantic Router — route queries to specialized models by intent.
 
 Define routes with example utterances.  The router embeds the incoming

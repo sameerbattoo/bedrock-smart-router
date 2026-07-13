@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Use-case 7: Usage & Cost Tracking — per-user budget enforcement.
 
 Demonstrates the core library's integrated budget enforcement:

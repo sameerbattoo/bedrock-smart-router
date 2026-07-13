@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Chart Agent — generates visualizations using strands python_repl tool.
 
 Uses SmartRouterModel for code generation and python_repl for execution.

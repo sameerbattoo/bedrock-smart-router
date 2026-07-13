@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """SQL Agent — generates SQL from natural language and executes against SQLite.
 
 Uses SmartRouterModel for LLM calls and the local SQLite database.

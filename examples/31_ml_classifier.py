@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Example 31: ML-based complexity classifier.
 
 Demonstrates the optional ML classifier that provides more accurate

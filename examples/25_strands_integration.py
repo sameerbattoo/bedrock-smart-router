@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Strands Agents Integration — use the smart router as a Strands Model provider.
 
 Demonstrates:

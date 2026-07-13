@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Budget Enforcement & Inference Tier Pricing — control costs at every level.
 
 Demonstrates:

@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Tag-based routing strategy.
 
 Routes requests to specific models based on request tags.  Useful for

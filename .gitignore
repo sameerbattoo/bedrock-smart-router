@@ -49,3 +49,16 @@ scripts/_litellm_models.json
 
 # Large data files (exceed GitHub 100MB limit)
 benchmarks/data/industry_standard/text_datasets/trex/raw/re-nlg_0-10000.json
+
+# Third-party datasets — download via scripts, do not commit
+# These datasets have various licenses (some non-commercial) and should not be redistributed.
+# To regenerate: python benchmarks/data/download_scripts/download_routing_datasets.py
+benchmarks/data/industry_standard/*.json
+benchmarks/data/industry_standard/auxiliary/
+benchmarks/data/industry_standard/multimodal/
+benchmarks/data/industry_standard/pdfs/
+benchmarks/data/industry_standard/reasoning/
+benchmarks/data/industry_standard/text_datasets/
+
+# ONNX model (not used, references third-party sentence-transformers model)
+benchmarks/classifier/onnx_model/

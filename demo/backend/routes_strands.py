@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Use-case 3: Strands Agents — AWS Tech Assistant with MCP tools.
 
 Two agents side-by-side:

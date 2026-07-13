@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Use-case 2: Throttle Handling demo.
 
 Patches the shared bedrock_client at the botocore level so that both

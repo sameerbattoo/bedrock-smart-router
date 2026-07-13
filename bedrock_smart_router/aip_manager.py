@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Application Inference Profile (AIP) manager for multi-tenant cost tracking.
 
 Bedrock AIPs are logical wrappers around a model that allow per-tenant

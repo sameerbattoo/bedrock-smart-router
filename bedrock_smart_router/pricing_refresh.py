@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Dynamic pricing refresh from the AWS Pricing API.
 
 Optionally queries the AWS Pricing API (or Bedrock ListFoundationModels)

@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Canary deployments — gradually roll out a new model with auto-rollback.
 
 Sends a configurable percentage of traffic to a canary model while

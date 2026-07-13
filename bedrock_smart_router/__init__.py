@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Bedrock Smart Router — Intelligent model routing for Amazon Bedrock."""
 
 from bedrock_smart_router.router import BedrockRouter

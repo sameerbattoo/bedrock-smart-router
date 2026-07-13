@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 #!/usr/bin/env python3
 """Quick test: 1 simple + 1 medium + 1 complex prompt across key runners + judge.
 Runs: sonnet, haiku, nova-pro, router-default, router-quality

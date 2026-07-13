@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Tests for A/B testing."""
 
 from bedrock_smart_router.ab_testing import ABTestConfig, ABTestManager, ABVariant

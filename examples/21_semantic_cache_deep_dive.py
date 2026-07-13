@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Semantic Cache Deep Dive — vector stores, variables, and configuration.
 
 The semantic cache matches queries by meaning, not exact text.

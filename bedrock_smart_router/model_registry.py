@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Model registry — catalog of Bedrock models with capabilities and pricing."""
 
 from __future__ import annotations

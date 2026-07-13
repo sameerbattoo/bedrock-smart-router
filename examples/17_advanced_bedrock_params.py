@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Advanced Bedrock Parameters — passthrough via **kwargs.
 
 The router is a 100% drop-in replacement for bedrock-runtime.converse()

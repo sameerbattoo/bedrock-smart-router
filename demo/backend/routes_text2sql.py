@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Use-case 5: Text2SQL with Semantic Cache — chat-style agent.
 
 Single Strands agent that queries an e-commerce SQLite database,

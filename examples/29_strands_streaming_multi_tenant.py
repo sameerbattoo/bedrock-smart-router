@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Strands Streaming + Multi-Tenant Routing with Smart Router.
 
 Adapted from the official Strands Agents SDK streaming sample:

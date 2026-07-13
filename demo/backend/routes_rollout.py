@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Use-case 8: Safe Model Rollouts — A/B Testing, Canary, and Shadow Mode.
 
 Demonstrates the full safe rollout lifecycle:

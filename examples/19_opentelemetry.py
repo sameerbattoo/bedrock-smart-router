@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """OpenTelemetry Integration — distributed tracing and metrics.
 
 The router emits OTEL spans and metrics for every routing decision

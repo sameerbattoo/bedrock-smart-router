@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Integration test — runs against a REAL DynamoDB table in your AWS account.
 
 Run with:

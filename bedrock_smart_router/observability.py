@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Observability — structured logging, callbacks, and cost tracking.
 
 Every routing decision is emitted as a structured event that can be:

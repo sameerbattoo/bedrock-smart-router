@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Prompt cache advisor.
 
 Estimates the cost benefit of Bedrock's native prompt caching for a

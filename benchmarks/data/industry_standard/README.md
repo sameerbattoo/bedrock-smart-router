@@ -1,51 +1,65 @@
-# Built-in Datasets for Automatic Model Evaluation
+# Industry Standard Datasets
 
-This directory contains scripts to download, transform, and load industry-standard
-benchmark datasets into the `ModelEval-Datasets` DynamoDB table.
+This directory contains third-party datasets used for training and evaluating the
+prompt complexity classifier. **These datasets are NOT distributed with the project**
+due to varying licenses and large file sizes.
 
-These datasets appear as a "Built-in Benchmarks" section on the homepage. Users
-can preview them and adopt them into their own projects, choosing which models
-and judges to use. The prompts, variable sets, expected answers, and metrics
-are read-only (enforced in the frontend via `sourceDatasetId` check).
+## Downloading Datasets
 
-## Table Schema
-
-```
-PK: datasetId     (e.g. "trex")
-SK: evaluationKey  ("__meta__" for dataset metadata, "accuracy" / "robustness" for evals)
-```
-
-## Supported Datasets
-
-| Dataset | Task | Evaluations | Script |
-|---------|------|-------------|--------|
-| T-REx   | General text generation | Accuracy, Robustness | `trex/` |
-| BoolQ   | Question and answer | Accuracy, Robustness, Toxicity | `boolq/` |
-| NaturalQuestions | Question and answer (RAG) | Accuracy, Robustness, Toxicity | `natural_questions/` |
-| Women's Clothing Reviews | Text classification | Accuracy, Robustness | `womens_clothing/` |
-| XSum    | Text summarization | Accuracy, Robustness, Toxicity | `xsum/` |
-| RealToxicityPrompts | General text generation | Toxicity, Toxicity Challenging | `real_toxicity_prompts/` |
-| BOLD    | General text generation | Robustness, Toxicity | `bold/` |
-| TriviaQA | Question and answer | Accuracy, Robustness, Toxicity | `triviaqa/` |
-| WikiText-2 | General text generation | Robustness | `wikitext2/` |
-
-## Usage
+To download all datasets needed for classifier training:
 
 ```bash
-# 1. Download the T-REx sample dataset
-python backend/datasets/trex/download.py
+pip install datasets
 
-# 2. Transform to ModelEval format
-python backend/datasets/trex/transform.py
+# Download routing-specific datasets (Easy2Hard-Bench, LeetCode, MT-Bench, IFEval, etc.)
+python benchmarks/data/download_scripts/download_routing_datasets.py
 
-# 3. Load into DynamoDB (requires AWS credentials)
-python backend/datasets/trex/load_to_db.py --region us-west-2
+# Download additional reasoning datasets (GSM8K, GPQA, MBPP)
+python benchmarks/data/download_scripts/download_complex_reasoning.py
+
+# Download more data (MATH, ARC-Challenge, HumanEval, HellaSwag)
+python benchmarks/data/download_scripts/download_more_data.py
 ```
 
-## Adding a New Dataset
+After downloading, you can retrain the classifier:
 
-1. Create a new directory: `backend/datasets/<name>/`
-2. Add `download.py` — fetches the raw data
-3. Add `transform.py` — converts to our JSON format with `dataset`, `project`, `evaluations` keys
-4. Add `load_to_db.py` — writes to the Datasets table (can copy from trex/load_to_db.py)
-5. Run the three scripts in order
+```bash
+python benchmarks/classifier/train_tfidf.py
+```
+
+## Dataset Sources and Licenses
+
+The following datasets are used for training. Each has its own license terms
+which you must review and accept before downloading:
+
+| Dataset | HuggingFace ID | License | Used For |
+|---------|---------------|---------|----------|
+| DevQuasar LLM Router | `DevQuasar/llm-router-dataset` | Apache-2.0 | Binary simple/complex labels |
+| Easy2Hard-Bench | `furonghuang-lab/Easy2Hard-Bench` | MIT | Continuous difficulty scores |
+| LeetCode | `newfacade/LeetCodeDataset` | See source | Coding problem difficulty |
+| MT-Bench | `HuggingFaceH4/mt_bench_prompts` | Apache-2.0 | Multi-turn evaluation prompts |
+| IFEval | `google/IFEval` | Apache-2.0 | Instruction-following constraints |
+| OpenOrca (subset) | `Open-Orca/OpenOrca` | MIT | System + user prompt pairs |
+| Big Bench Hard | Google BIG-Bench | Apache-2.0 | Hard reasoning tasks |
+| GSM8K | `openai/gsm8k` | MIT | Multi-step math reasoning |
+| MATH | `lighteval/MATH` | MIT | Competition math |
+| ShareGPT (sample) | Community re-hosted | See source | Numeric difficulty scores |
+| WildChat | `allenai/WildChat` | See source | Real conversations with system prompts |
+| ARC-Challenge | `allenai/ai2_arc` | CC-BY-SA-4.0 | Science reasoning |
+| AlpacaEval | `tatsu-lab/alpaca_eval` | CC-BY-NC-4.0 | Instruction following |
+
+**Important:** Some datasets have non-commercial licenses (e.g., CC-BY-NC-4.0).
+Review each dataset's license on HuggingFace before use. The pre-trained
+`ml_classifier.json` shipped with the package contains only learned TF-IDF
+vocabulary weights and logistic regression coefficients — not the training data itself.
+
+## What Ships with the Package
+
+Only `bedrock_smart_router/data/ml_classifier.json` ships in the published package.
+This file contains:
+- A TF-IDF vocabulary (word → index mapping)
+- IDF weights (inverse document frequency values)
+- Logistic regression coefficients and intercepts
+- Class labels: `["simple", "moderate", "complex", "reasoning"]`
+
+No third-party training data is reproduced in the shipped classifier weights.

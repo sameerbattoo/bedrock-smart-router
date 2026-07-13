@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 #!/usr/bin/env python3
 """Download 50 samples each from complex reasoning datasets:
 1. GSM8K (multi-step math reasoning)

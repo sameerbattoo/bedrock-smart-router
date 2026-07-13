@@ -79,4 +79,4 @@ INTEGRATION_TEST=1 GUARDRAIL_ID=your-id pytest tests/test_guardrails_real_integr
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the Apache License, Version 2.0.

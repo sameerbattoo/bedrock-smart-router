@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Configuration loader for the Bedrock Smart Router.
 
 Everything can be driven from a single dict (or YAML file)::

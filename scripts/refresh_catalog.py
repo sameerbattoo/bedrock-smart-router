@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 #!/usr/bin/env python3
 """Auto-refresh the model catalog from AWS APIs + Artificial Analysis + LiteLLM.
 

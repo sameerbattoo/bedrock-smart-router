@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Intent extractor — auto-extract canonical intent and variables from queries.
 
 Uses a cheap Bedrock model (default: Nova Micro) to decompose a user

@@ -2168,6 +2168,26 @@ INTEGRATION_TEST=1 VALKEY_URL=rediss://... pytest tests/test_valkey_cache_integr
 python scripts/refresh_catalog.py --aa-cache scripts/_aa_models.json --skip-probes
 ```
 
+## AWS Services Required
+
+This project is built for Amazon Bedrock and integrates with several AWS services. The following describes which services are used and when:
+
+| AWS Service | Required? | When Used |
+|---|---|---|
+| **Amazon Bedrock** (bedrock-runtime) | **Yes** | Core functionality — all model inference goes through Bedrock |
+| **Amazon Bedrock** (bedrock) | Optional | Model catalog discovery via `ListFoundationModels` |
+| **Amazon Bedrock Guardrails** | Optional | Pre-route and post-route content filtering (`ApplyGuardrail` API) |
+| **Amazon DynamoDB** | Optional | Persistent metrics store and semantic cache response store backends |
+| **Amazon CloudWatch** | Optional | Publishing routing metrics (latency, cost, model usage) |
+| **Amazon S3** | Optional | Semantic cache response store backend |
+| **Amazon OpenSearch Serverless** | Optional | Vector store backend for semantic cache |
+| **Amazon ElastiCache** (Redis/Valkey) | Optional | Shared response cache and vector store for multi-instance deployments |
+| **AWS Pricing API** | Optional | Automated pricing validation via `scripts/refresh_catalog.py` |
+
+**Minimum requirement:** An AWS account with Amazon Bedrock model access enabled in at least one region. All other services are opt-in based on which features you configure.
+
+See [`docs/iam-permissions.md`](docs/iam-permissions.md) for the IAM policies required for each service integration.
+
 ## How It Compares
 
 | Feature | LiteLLM | OpenRouter | Portkey | Bedrock Native | **Smart Router** |
@@ -2195,4 +2215,4 @@ See [BEDROCK_SMART_ROUTER_DETAILED_DESIGN.md](BEDROCK_SMART_ROUTER_DETAILED_DESI
 
 ## License
 
-MIT
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.

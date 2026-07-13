@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """Semantic cache configuration for the Text2SQL demo.
 
 Uses the core library's SemanticCache directly with:

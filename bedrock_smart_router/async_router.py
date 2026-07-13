@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """AsyncBedrockRouter — async/await version of the router.
 
 Wraps the synchronous BedrockRouter and runs Bedrock calls in a
