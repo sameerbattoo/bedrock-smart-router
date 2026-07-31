@@ -7,7 +7,7 @@ Two agents side-by-side:
 - Baseline: Strands Agent with fixed Bedrock model (boto3)
 - Smart Router: Strands Agent with SmartRouterModel (auto-routing)
 
-Both share the same MCP tools (aws-docs, aws-diagram) and system prompt.
+Both share the same tools (aws-docs MCP + native diagram tools) and system prompt.
 Multi-turn conversation with per-turn metrics.
 """
 from __future__ import annotations
@@ -37,6 +37,7 @@ from shared import (
     compute_cost,
 )
 from bedrock_smart_router.strands_model import SmartRouterModel
+from diagram_tool import generate_diagram, get_diagram_examples, list_diagram_icons
 
 router = APIRouter()
 
@@ -80,7 +81,7 @@ Guidelines:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# MCP Client Factories
+# Tool Factories (MCP + native)
 # ══════════════════════════════════════════════════════════════════════
 
 def _create_aws_docs_client():
@@ -93,18 +94,9 @@ def _create_aws_docs_client():
     ), startup_timeout=120)
 
 
-def _create_aws_diagram_client():
-    return MCPClient(lambda: stdio_client(
-        StdioServerParameters(
-            command="uvx",
-            args=["awslabs.aws-diagram-mcp-server@1.0.23"],
-            env={
-                "FASTMCP_LOG_LEVEL": "ERROR",
-                "OUTPUT_DIR": str(DIAGRAM_DIR),
-            },
-            cwd=str(DIAGRAM_DIR),
-        )
-    ), startup_timeout=120)
+def _get_diagram_tools() -> list:
+    """Return native diagram tool functions (no MCP server needed)."""
+    return [generate_diagram, get_diagram_examples, list_diagram_icons]
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -228,22 +220,25 @@ def _get_or_create_session(session_id: str, agent_type: str,
     global _mcp_ready
     tool_list = []
 
-    # Try to load MCP tools — gracefully degrade if they fail
+    # AWS docs MCP tool — gracefully degrade if it fails to init.
+    # NOTE: We do NOT call client.start() here — the Agent constructor
+    # handles that via process_tools(). We catch failures at Agent init.
     docs_client = None
-    diagram_client = None
     try:
         docs_client = _create_aws_docs_client()
         tool_list.append(docs_client)
     except Exception as exc:
         import logging
         logging.getLogger(__name__).warning("AWS docs MCP client failed to init: %s", exc)
+        docs_client = None
 
+    # Native diagram tools (no MCP server needed — uses `diagrams` package directly)
     try:
-        diagram_client = _create_aws_diagram_client()
-        tool_list.append(diagram_client)
+        diagram_tools = _get_diagram_tools()
+        tool_list.extend(diagram_tools)
     except Exception as exc:
         import logging
-        logging.getLogger(__name__).warning("AWS diagram MCP client failed to init: %s", exc)
+        logging.getLogger(__name__).warning("Diagram tools failed to load: %s", exc)
 
     _mcp_ready = len(tool_list) > 0
 
@@ -256,8 +251,7 @@ def _get_or_create_session(session_id: str, agent_type: str,
         )
         session = {"id": session_id, "type": "baseline", "agent": agent,
                    "model_id": bl_config["model_id"], "smart_model": None,
-                   "docs_client": docs_client, "diagram_client": diagram_client,
-                   "tool_list": tool_list}
+                   "docs_client": docs_client, "tool_list": tool_list}
     else:
         init_preset = STRATEGY_TO_PRESET.get(router_strategy)
         smart_model = SmartRouterModel(
@@ -270,8 +264,7 @@ def _get_or_create_session(session_id: str, agent_type: str,
         )
         session = {"id": session_id, "type": "router", "agent": agent,
                    "model_id": None, "smart_model": smart_model,
-                   "docs_client": docs_client, "diagram_client": diagram_client,
-                   "tool_list": tool_list}
+                   "docs_client": docs_client, "tool_list": tool_list}
 
     _sessions[session_id] = session
     _session_locks[session_id] = threading.Lock()

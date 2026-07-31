@@ -109,7 +109,7 @@ else
   ok "uvx $(uvx --version 2>/dev/null || echo 'available')"
 fi
 
-# Graphviz (required for AWS diagram MCP server)
+# Graphviz (required for the `diagrams` Python package to render PNGs)
 if ! command -v dot &>/dev/null; then
   echo -e "  Installing graphviz (required for diagram generation)..."
   if command -v brew &>/dev/null; then
@@ -168,7 +168,6 @@ ok "Prerequisites ready"
 if command -v uvx &>/dev/null; then
   echo -e "  Pre-warming MCP server packages (first run downloads ~60s)..."
   uv tool install --force awslabs.aws-documentation-mcp-server --quiet 2>/dev/null || true
-  uv tool install --force awslabs.aws-diagram-mcp-server==1.0.23 --quiet 2>/dev/null || true
   ok "MCP server packages cached"
 fi
 

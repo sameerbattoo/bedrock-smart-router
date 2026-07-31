@@ -4,12 +4,15 @@ boto3>=1.35.0
 pydantic>=2.0
 python-multipart>=0.0.9
 
-# MCP protocol (client + server)
+# MCP protocol (client for aws-docs server)
 mcp>=1.0.0
 
 # Strands (AgentCore Gateway MCPClient)
 strands-agents>=1.26.0
 strands-agents-tools>=0.1.0
+
+# AWS architecture diagram generation (native tool, replaces deprecated aws-diagram-mcp-server)
+diagrams>=0.24.0
 
 # Semantic cache (FAISS + embeddings)
 faiss-cpu>=1.7.0
