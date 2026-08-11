@@ -1032,12 +1032,61 @@ def _probe_guardrail_compatible(client: Any, model_id: str) -> bool:
         return True
 
 
+def _probe_max_output_tokens(client: Any, model_id: str) -> int | None:
+    """Probe the maximum output token limit enforced by the Converse API.
+
+    Sends a request with an absurdly high maxTokens value (9,999,999).
+    If the model has a server-side cap, Bedrock returns a ValidationException
+    containing the actual limit: "exceeds the model limit of {N}".
+
+    This probe ONLY works for Converse-compatible models. The Chat Completions
+    and Responses APIs on bedrock-mantle do NOT enforce server-side maxTokens
+    validation — they accept any value and let the model run until it stops.
+
+    Returns:
+        int: The enforced max output token limit.
+        None: If the probe couldn't determine the limit (model accepted the
+              value, errored without revealing the limit, or was throttled).
+
+    Interpretation:
+        - A returned integer is the authoritative max_output_tokens for the model.
+        - None means fall back to LiteLLM / existing catalog / AWS docs values.
+    """
+    try:
+        client.converse(
+            modelId=model_id,
+            messages=[{"role": "user", "content": [{"text": "hi"}]}],
+            inferenceConfig={"maxTokens": 9999999},
+        )
+        # Model accepted 9999999 without error — no server-side cap
+        return None
+    except ClientError as e:
+        msg = str(e)
+        # Look for the standard pattern: "exceeds the model limit of {N}"
+        match = re.search(r"model limit of (\d+)", msg)
+        if match:
+            return int(match.group(1))
+        # Throttled — can't determine
+        if "throttl" in msg.lower():
+            return None
+        # Other validation errors that don't reveal the limit
+        return None
+    except Exception:
+        return None
+
+
 def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = False,
                        mantle_models: set[str] | None = None, region: str = "us-west-2") -> dict[str, Any]:
     """Probe a model's capabilities via test API calls.
 
     Returns dict with: converse_supported, tool_use, streaming_tool_use,
-    extended_thinking, prompt_caching, supported_tiers, api_support.
+    extended_thinking, prompt_caching, supported_tiers, api_support,
+    max_output_tokens_probed.
+
+    The max_output_tokens_probed field uses the Converse API's server-side
+    maxTokens validation: sending an absurdly high value triggers an error
+    that reveals the actual enforced limit. This only works for Converse-
+    compatible models; Chat Completions and Responses APIs don't validate.
     """
     if skip_probes:
         return {
@@ -1049,6 +1098,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
             "supported_tiers": [],
             "guardrail_compatible": True,  # Safe default
             "api_support": None,  # Will be derived later if possible
+            "max_output_tokens_probed": None,
         }
 
     # First check Converse API support
@@ -1111,6 +1161,10 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
         service_tiers = _probe_service_tiers(bedrock_runtime, model_id)
         time.sleep(0.3)
 
+        # Probe max output tokens (enforced server-side limit)
+        max_output_probed = _probe_max_output_tokens(bedrock_runtime, model_id)
+        time.sleep(0.3)
+
     return {
         "converse_supported": converse_ok,
         "tool_use": tool_use,
@@ -1122,6 +1176,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
         "api_support": api_support or ["converse"],
         "responses_path": responses_path,
         "supported_service_tiers": service_tiers if converse_ok else ["standard"],
+        "max_output_tokens_probed": max_output_probed if converse_ok else None,
     }
 
 
@@ -1503,7 +1558,8 @@ def build_catalog(
             or {}
         )
 
-        # Context window from LiteLLM > existing catalog > default
+        # Context window: LiteLLM > existing catalog > default
+        # (No reliable probe exists for max_input_tokens)
         if litellm_entry.get("max_input_tokens"):
             max_input = litellm_entry["max_input_tokens"]
         elif existing and existing.get("max_input_tokens", 0) > 0:
@@ -1511,7 +1567,15 @@ def build_catalog(
         else:
             max_input = 128000
 
-        if litellm_entry.get("max_output_tokens"):
+        # Max output tokens priority:
+        #   1. Probed value (Converse API server-enforced limit — authoritative)
+        #   2. LiteLLM (community-sourced, sometimes inaccurate)
+        #   3. Existing catalog (previous known-good value)
+        #   4. Default (4096)
+        max_output_probed = caps.get("max_output_tokens_probed")
+        if max_output_probed is not None:
+            max_output = max_output_probed
+        elif litellm_entry.get("max_output_tokens"):
             max_output = litellm_entry["max_output_tokens"]
         elif existing and existing.get("max_output_tokens", 0) > 0:
             max_output = existing["max_output_tokens"]
@@ -1748,9 +1812,10 @@ def add_mantle_only_models(
         else:
             pricing = {"input_per_1k": 0.0, "output_per_1k": 0.0, "cache_read_per_1k": 0.0, "cache_write_per_1k": 0.0}
 
-        # Context window
-        max_input = litellm_entry.get("max_input_tokens") or existing.get("max_input_tokens") or 128000
-        max_output = litellm_entry.get("max_output_tokens") or existing.get("max_output_tokens") or 16384
+        # Context window for Mantle-only models (no Converse probe available):
+        # Existing catalog > LiteLLM (existing may have manual corrections from AWS docs)
+        max_input = existing.get("max_input_tokens") or litellm_entry.get("max_input_tokens") or 128000
+        max_output = existing.get("max_output_tokens") or litellm_entry.get("max_output_tokens") or 16384
 
         # Tier
         tier = existing.get("tier") or derive_tier(
@@ -1884,6 +1949,9 @@ def main():
         # Report how many support Converse
         converse_ok = sum(1 for c in capabilities.values() if c.get("converse_supported") is not False)
         logger.info(f"  Converse API supported: {converse_ok}/{len(capabilities)}")
+        # Report max_output_tokens probes
+        output_probed = sum(1 for c in capabilities.values() if c.get("max_output_tokens_probed") is not None)
+        logger.info(f"  Max output tokens probed: {output_probed}/{len(capabilities)} (Converse server-enforced limits)")
     else:
         logger.info("Step 4: Skipping capability probes (--skip-probes)")
 

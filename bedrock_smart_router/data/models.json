@@ -53,7 +53,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 0.0002,
         "output_per_1k": 0.0006,
@@ -272,7 +272,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 262144,
-      "max_output_tokens": 131072,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.00022,
         "output_per_1k": 0.00088,
@@ -506,7 +506,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.00015,
         "output_per_1k": 0.0012,
@@ -795,7 +795,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 262144,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 6e-05,
         "output_per_1k": 0.00024,
@@ -950,7 +950,7 @@
         "prompt_caching": true
       },
       "max_input_tokens": 1000000,
-      "max_output_tokens": 64000,
+      "max_output_tokens": 128000,
       "pricing": {
         "input_per_1k": 0.0027,
         "output_per_1k": 0.0135,
@@ -1019,7 +1019,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 409600,
       "pricing": {
         "input_per_1k": 0.0003,
         "output_per_1k": 0.0012,
@@ -1102,7 +1102,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 200000,
-      "max_output_tokens": 128000,
+      "max_output_tokens": 202752,
       "pricing": {
         "input_per_1k": 7e-05,
         "output_per_1k": 0.0004,
@@ -1363,7 +1363,7 @@
         "prompt_caching": true
       },
       "max_input_tokens": 1000000,
-      "max_output_tokens": 64000,
+      "max_output_tokens": 65535,
       "pricing": {
         "input_per_1k": 0.0004725,
         "output_per_1k": 0.00433125,
@@ -1444,7 +1444,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 1000000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 196608,
       "pricing": {
         "input_per_1k": 0.0003,
         "output_per_1k": 0.0012,
@@ -1519,7 +1519,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 9e-05,
         "output_per_1k": 0.00029,
@@ -1577,16 +1577,16 @@
       "tier": "reasoning",
       "display_name": "Kimi K2 Thinking",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": false,
         "streaming": true,
-        "streaming_tool_use": false,
+        "streaming_tool_use": true,
         "document_support": false,
         "extended_thinking": true,
         "prompt_caching": false
       },
       "max_input_tokens": 256000,
-      "max_output_tokens": 16000,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.0006,
         "output_per_1k": 0.0025,
@@ -1651,7 +1651,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.0005,
         "output_per_1k": 0.0015,
@@ -1734,7 +1734,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 256000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.0004,
         "output_per_1k": 0.002,
@@ -1747,7 +1747,8 @@
       "guardrail_compatible": true,
       "quality_baseline": 19.2,
       "api_support": [
-        "converse"
+        "converse",
+        "chat_completions"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1816,7 +1817,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 196000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 196608,
       "pricing": {
         "input_per_1k": 0.0003,
         "output_per_1k": 0.0012,
@@ -1899,7 +1900,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 256000,
-      "max_output_tokens": 32768,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.00015,
         "output_per_1k": 0.00065,
@@ -1982,7 +1983,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 131072,
-      "max_output_tokens": 16384,
+      "max_output_tokens": 32768,
       "pricing": {
         "input_per_1k": 0.00015,
         "output_per_1k": 0.0006,
@@ -2057,7 +2058,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.0002,
         "output_per_1k": 0.0002,
@@ -2279,7 +2280,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 6e-05,
         "output_per_1k": 0.00023,
@@ -2354,7 +2355,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.00015,
         "output_per_1k": 0.00015,
@@ -2429,7 +2430,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 200000,
-      "max_output_tokens": 128000,
+      "max_output_tokens": 202752,
       "pricing": {
         "input_per_1k": 0.001,
         "output_per_1k": 0.0032,
@@ -2734,7 +2735,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 4e-05,
         "output_per_1k": 8e-05,
@@ -3107,7 +3108,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 0.00023,
         "output_per_1k": 0.00038,
@@ -3330,7 +3331,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.00053,
         "output_per_1k": 0.00266,
@@ -3404,7 +3405,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 200000,
-      "max_output_tokens": 128000,
+      "max_output_tokens": 202752,
       "pricing": {
         "input_per_1k": 0.0006,
         "output_per_1k": 0.0022,
@@ -3668,7 +3669,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 262000,
-      "max_output_tokens": 65536,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 0.00022,
         "output_per_1k": 0.0018,
@@ -3742,7 +3743,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 0.0005,
         "output_per_1k": 0.0015,
@@ -3809,7 +3810,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 163840,
-      "max_output_tokens": 81920,
+      "max_output_tokens": 163840,
       "pricing": {
         "input_per_1k": 0.00058,
         "output_per_1k": 0.00168,
@@ -3882,7 +3883,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.0001,
         "output_per_1k": 0.0001,
@@ -4110,7 +4111,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 262144,
-      "max_output_tokens": 131072,
+      "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.00015,
         "output_per_1k": 0.0006,
@@ -4404,7 +4405,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 4096,
+      "max_output_tokens": 32768,
       "pricing": {
         "input_per_1k": 0.00135,
         "output_per_1k": 0.0054,
@@ -4457,7 +4458,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 8192,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 2048,
       "pricing": {
         "input_per_1k": 0.0003,
         "output_per_1k": 0.0006,
@@ -4510,7 +4511,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 8192,
-      "max_output_tokens": 8192,
+      "max_output_tokens": 2048,
       "pricing": {
         "input_per_1k": 0.00265,
         "output_per_1k": 0.0035,
@@ -4562,7 +4563,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 2048,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00022,
         "output_per_1k": 0.00022,
@@ -4614,7 +4615,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 2048,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00072,
         "output_per_1k": 0.00072,
@@ -4667,7 +4668,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 4096,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00072,
         "output_per_1k": 0.00072,
@@ -4724,7 +4725,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 4096,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00017,
         "output_per_1k": 0.00066,
@@ -4781,7 +4782,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 4096,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00024,
         "output_per_1k": 0.00097,
@@ -4850,7 +4851,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 32000,
-      "max_output_tokens": 8191,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.00015,
         "output_per_1k": 0.0002,
@@ -4919,7 +4920,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 32000,
-      "max_output_tokens": 8191,
+      "max_output_tokens": 4096,
       "pricing": {
         "input_per_1k": 0.00045,
         "output_per_1k": 0.0007,
@@ -4988,7 +4989,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 32000,
-      "max_output_tokens": 8191,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.008,
         "output_per_1k": 0.024,
@@ -5025,7 +5026,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 8191,
+      "max_output_tokens": 8192,
       "pricing": {
         "input_per_1k": 0.003,
         "output_per_1k": 0.009,
@@ -5100,7 +5101,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 128000,
-      "max_output_tokens": 4096,
+      "max_output_tokens": 131072,
       "pricing": {
         "input_per_1k": 0.002,
         "output_per_1k": 0.006,
@@ -5594,6 +5595,10 @@
       "regions": [
         {
           "name": "us-east-1",
+          "direct": true
+        },
+        {
+          "name": "us-east-2",
           "direct": true
         },
         {
