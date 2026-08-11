@@ -82,7 +82,10 @@ def get_options():
 
     preferred = [{"id": "", "label": "Auto (router decides)"}]
     for m in seen.values():
-        preferred.append({"id": m.model_id, "label": m.display_name})
+        # Only show models reachable via Converse or Chat Completions API
+        # (Responses-only models like GPT-5.x can't be used as preferred targets)
+        if any(api in m.api_support for api in ("converse", "chat_completions")):
+            preferred.append({"id": m.model_id, "label": m.display_name})
 
     # Models available in the configured region (with their resolved profile IDs)
     from shared import REGION

@@ -1585,8 +1585,8 @@
         "extended_thinking": true,
         "prompt_caching": false
       },
-      "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_input_tokens": 256000,
+      "max_output_tokens": 16000,
       "pricing": {
         "input_per_1k": 0.0006,
         "output_per_1k": 0.0025,
