@@ -1902,6 +1902,19 @@ def main():
     # Step 6b: Add Mantle-only models (not discovered via ListFoundationModels)
     catalog = add_mantle_only_models(catalog, mantle_models, litellm_data, aa_models, existing_catalog, region=args.region)
 
+    # Step 6c: Remove utility/moderation models that shouldn't be routed to.
+    # These are specialized models (content classification, guardrails) that don't
+    # produce conversational responses and should never be selected by the router.
+    UTILITY_MODEL_PATTERNS = ["safeguard", "rerank", "embed"]
+    pre_filter_count = len(catalog)
+    catalog = [
+        m for m in catalog
+        if not any(pat in m["model_id"].lower() for pat in UTILITY_MODEL_PATTERNS)
+    ]
+    removed = pre_filter_count - len(catalog)
+    if removed:
+        logger.info(f"Step 6c: Removed {removed} utility/moderation models (safeguard, rerank, embed)")
+
     # Output
     output_data = {"models": catalog}
     output_json = json.dumps(output_data, indent=2) + "\n"

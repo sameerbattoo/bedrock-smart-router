@@ -359,6 +359,10 @@ def chat_completions_response_to_converse(cc_response: dict[str, Any]) -> dict[s
     text = message.get("content")
     if text:
         content_blocks.append({"text": text})
+    elif not text and message.get("reasoning"):
+        # Some models (e.g., gpt-oss-safeguard) put their response in 'reasoning'
+        # when content is null/empty. Use reasoning as fallback text.
+        content_blocks.append({"text": message["reasoning"]})
 
     # Tool calls
     for tc in message.get("tool_calls", []):

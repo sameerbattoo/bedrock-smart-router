@@ -64,7 +64,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 4.6,
+      "quality_baseline": 4.2,
       "api_support": [
         "converse",
         "chat_completions"
@@ -116,6 +116,13 @@
           "cris_profiles": [
             "au",
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -211,7 +218,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 23.7,
+      "quality_baseline": 24.1,
       "api_support": [
         "converse"
       ]
@@ -276,7 +283,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18.2,
+      "quality_baseline": 18.4,
       "api_support": [
         "converse",
         "chat_completions"
@@ -351,7 +358,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 29.4,
+      "quality_baseline": 30.1,
       "api_support": [
         "converse",
         "chat_completions"
@@ -434,7 +441,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 23.8,
+      "quality_baseline": 24.1,
       "api_support": [
         "converse",
         "chat_completions",
@@ -510,7 +517,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 13.7,
+      "quality_baseline": 13.8,
       "api_support": [
         "converse",
         "chat_completions"
@@ -557,42 +564,43 @@
         {
           "name": "ap-southeast-2",
           "cris_profiles": [
-            "au",
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
           "name": "eu-central-1",
           "cris_profiles": [
-            "eu",
             "global"
           ]
         },
         {
           "name": "eu-north-1",
           "cris_profiles": [
-            "eu",
             "global"
           ]
         },
         {
           "name": "eu-west-1",
           "cris_profiles": [
-            "eu",
             "global"
           ]
         },
         {
           "name": "eu-west-2",
           "cris_profiles": [
-            "eu",
             "global"
           ]
         },
         {
           "name": "eu-west-3",
           "cris_profiles": [
-            "eu",
             "global"
           ]
         },
@@ -654,7 +662,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 59.9,
+      "quality_baseline": 62.1,
       "api_support": [
         "converse"
       ]
@@ -723,7 +731,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 24.7,
+      "quality_baseline": 25.1,
       "api_support": [
         "converse",
         "chat_completions"
@@ -798,7 +806,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 7.4,
+      "quality_baseline": 7.2,
       "api_support": [
         "converse",
         "chat_completions"
@@ -850,6 +858,13 @@
           "cris_profiles": [
             "au",
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -946,7 +961,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 35.9,
+      "quality_baseline": 36.8,
       "api_support": [
         "converse"
       ]
@@ -1015,7 +1030,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 28.3,
+      "quality_baseline": 28.9,
       "api_support": [
         "converse",
         "chat_completions"
@@ -1098,7 +1113,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 15.5,
+      "quality_baseline": 15.6,
       "api_support": [
         "converse",
         "chat_completions"
@@ -1222,7 +1237,7 @@
         "optimized"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 7.7,
+      "quality_baseline": 7.5,
       "api_support": [
         "converse"
       ],
@@ -1264,6 +1279,13 @@
           "name": "ap-southeast-2",
           "cris_profiles": [
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -1352,7 +1374,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 6.9,
+      "quality_baseline": 6.7,
       "api_support": [
         "converse"
       ],
@@ -1433,7 +1455,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 33.7,
+      "quality_baseline": 34.5,
       "api_support": [
         "converse",
         "chat_completions"
@@ -1508,7 +1530,7 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 3.4,
+      "quality_baseline": 5.5,
       "api_support": [
         "converse",
         "chat_completions"
@@ -1555,10 +1577,10 @@
       "tier": "reasoning",
       "display_name": "Kimi K2 Thinking",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": false,
         "streaming": true,
-        "streaming_tool_use": true,
+        "streaming_tool_use": false,
         "document_support": false,
         "extended_thinking": true,
         "prompt_caching": false
@@ -1575,7 +1597,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 32.7,
+      "quality_baseline": 33.5,
       "api_support": [
         "converse"
       ],
@@ -1725,8 +1747,7 @@
       "guardrail_compatible": true,
       "quality_baseline": 19.2,
       "api_support": [
-        "converse",
-        "chat_completions"
+        "converse"
       ],
       "supported_service_tiers": [
         "flex",
@@ -1806,7 +1827,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 31.4,
+      "quality_baseline": 32.1,
       "api_support": [
         "converse",
         "chat_completions"
@@ -1889,7 +1910,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 25.4,
+      "quality_baseline": 25.7,
       "api_support": [
         "converse",
         "chat_completions"
@@ -1972,7 +1993,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 8.6,
+      "quality_baseline": 8.5,
       "api_support": [
         "converse",
         "chat_completions"
@@ -2047,7 +2068,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 11.1,
+      "quality_baseline": 11.2,
       "api_support": [
         "converse",
         "chat_completions"
@@ -2097,6 +2118,13 @@
           "cris_profiles": [
             "au",
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -2193,7 +2221,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 37.8,
+      "quality_baseline": 38.8,
       "api_support": [
         "converse"
       ]
@@ -2262,7 +2290,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 7.4,
+      "quality_baseline": 7.2,
       "api_support": [
         "converse",
         "chat_completions"
@@ -2412,7 +2440,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 32.4,
+      "quality_baseline": 33.2,
       "api_support": [
         "converse",
         "chat_completions"
@@ -2495,7 +2523,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.9,
+      "quality_baseline": 15.2,
       "api_support": [
         "converse",
         "chat_completions",
@@ -2506,6 +2534,152 @@
         "priority"
       ],
       "responses_path": "/v1/responses"
+    },
+    {
+      "model_id": "anthropic.claude-opus-5",
+      "family": "anthropic",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
+      ],
+      "tier": "reasoning",
+      "display_name": "Claude Opus 5",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": true,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 128000,
+      "pricing": {
+        "input_per_1k": 0.005,
+        "output_per_1k": 0.025,
+        "cache_read_per_1k": 0.0005,
+        "cache_write_per_1k": 0.00625
+      },
+      "supported_latency_modes": [
+        "standard"
+      ],
+      "guardrail_compatible": true,
+      "quality_baseline": 63.1,
+      "api_support": [
+        "converse"
+      ]
     },
     {
       "model_id": "google.gemma-3-4b-it",
@@ -2571,7 +2745,7 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 1.1,
+      "quality_baseline": 1,
       "api_support": [
         "converse",
         "chat_completions"
@@ -2623,6 +2797,13 @@
           "cris_profiles": [
             "au",
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -2718,7 +2899,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 55.7,
+      "quality_baseline": 57.3,
       "api_support": [
         "converse"
       ],
@@ -2765,6 +2946,13 @@
           "cris_profiles": [
             "au",
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -2860,7 +3048,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 42.7,
+      "quality_baseline": 43.9,
       "api_support": [
         "converse"
       ],
@@ -2930,7 +3118,7 @@
         "standard"
       ],
       "guardrail_compatible": false,
-      "quality_baseline": 4.8,
+      "quality_baseline": 7.4,
       "api_support": [
         "converse",
         "chat_completions"
@@ -2982,6 +3170,13 @@
           "cris_profiles": [
             "au",
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -3077,7 +3272,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 29.3,
+      "quality_baseline": 29.9,
       "api_support": [
         "converse"
       ]
@@ -3146,7 +3341,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 10.9,
+      "quality_baseline": 10.8,
       "api_support": [
         "converse",
         "chat_completions"
@@ -3220,7 +3415,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 26.6,
+      "quality_baseline": 27.1,
       "api_support": [
         "converse",
         "chat_completions"
@@ -3283,30 +3478,125 @@
       "responses_path": "/openai/v1/responses"
     },
     {
-      "model_id": "anthropic.claude-opus-4-1-20250805-v1:0",
+      "model_id": "anthropic.claude-sonnet-5",
       "family": "anthropic",
       "regions": [
         {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "au",
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "eu",
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
           "name": "us-east-1",
           "cris_profiles": [
+            "global",
             "us"
           ]
         },
         {
           "name": "us-east-2",
           "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
             "us"
           ]
         },
         {
           "name": "us-west-2",
           "cris_profiles": [
+            "global",
             "us"
           ]
         }
       ],
-      "tier": "heavy",
-      "display_name": "Claude Opus 4.1",
+      "tier": "mid",
+      "display_name": "Claude Sonnet 5",
       "capabilities": {
         "tool_use": true,
         "vision": true,
@@ -3316,19 +3606,19 @@
         "extended_thinking": true,
         "prompt_caching": true
       },
-      "max_input_tokens": 200000,
-      "max_output_tokens": 32000,
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 128000,
       "pricing": {
-        "input_per_1k": 0.015,
-        "output_per_1k": 0.075,
-        "cache_read_per_1k": 0.0015,
-        "cache_write_per_1k": 0.01875
+        "input_per_1k": 0.002,
+        "output_per_1k": 0.01,
+        "cache_read_per_1k": 0.0002,
+        "cache_write_per_1k": 0.0025
       },
       "supported_latency_modes": [
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 28.2,
+      "quality_baseline": 42.6,
       "api_support": [
         "converse"
       ]
@@ -3389,7 +3679,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 18,
+      "quality_baseline": 18.2,
       "api_support": [
         "converse",
         "chat_completions"
@@ -3463,7 +3753,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 11.9,
+      "quality_baseline": 11.5,
       "api_support": [
         "converse",
         "chat_completions"
@@ -3530,7 +3820,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 21,
+      "quality_baseline": 21.4,
       "api_support": [
         "converse"
       ],
@@ -3603,7 +3893,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 6.8,
+      "quality_baseline": 7.1,
       "api_support": [
         "converse",
         "chat_completions"
@@ -3652,6 +3942,13 @@
           "name": "ap-southeast-2",
           "cris_profiles": [
             "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
           ]
         },
         {
@@ -3747,7 +4044,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 34.7,
+      "quality_baseline": 35.6,
       "api_support": [
         "converse"
       ]
@@ -3871,6 +4168,12 @@
           "direct": true
         },
         {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "ca"
+          ]
+        },
+        {
           "name": "eu-central-1",
           "cris_profiles": [
             "eu"
@@ -3950,7 +4253,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 6.9,
+      "quality_baseline": 6.7,
       "api_support": [
         "converse"
       ]
@@ -4061,7 +4364,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 4.7,
+      "quality_baseline": 4.4,
       "api_support": [
         "converse"
       ]
@@ -4112,7 +4415,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 12.6,
+      "quality_baseline": 18.6,
       "api_support": [
         "converse"
       ]
@@ -4123,6 +4426,10 @@
       "regions": [
         {
           "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
           "direct": true
         },
         {
@@ -4161,7 +4468,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 1.2,
+      "quality_baseline": 1,
       "api_support": [
         "converse"
       ]
@@ -4172,6 +4479,10 @@
       "regions": [
         {
           "name": "ap-south-1",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
           "direct": true
         },
         {
@@ -4210,7 +4521,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 3.5,
+      "quality_baseline": 3.1,
       "api_support": [
         "converse"
       ]
@@ -4262,7 +4573,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 6.1,
+      "quality_baseline": 7.4,
       "api_support": [
         "converse"
       ]
@@ -4315,7 +4626,7 @@
         "optimized"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 6.8,
+      "quality_baseline": 6.5,
       "api_support": [
         "converse"
       ]
@@ -4367,7 +4678,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 8.6,
+      "quality_baseline": 9.3,
       "api_support": [
         "converse"
       ]
@@ -4424,7 +4735,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 10,
+      "quality_baseline": 10.3,
       "api_support": [
         "converse"
       ]
@@ -4481,7 +4792,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 14.3,
+      "quality_baseline": 14.5,
       "api_support": [
         "converse"
       ]
@@ -4496,6 +4807,10 @@
         },
         {
           "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
           "direct": true
         },
         {
@@ -4546,7 +4861,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 2.1,
+      "quality_baseline": 1.7,
       "api_support": [
         "converse"
       ]
@@ -4561,6 +4876,10 @@
         },
         {
           "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
           "direct": true
         },
         {
@@ -4611,7 +4930,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 2.4,
+      "quality_baseline": 2,
       "api_support": [
         "converse"
       ]
@@ -4626,6 +4945,10 @@
         },
         {
           "name": "ap-southeast-2",
+          "direct": true
+        },
+        {
+          "name": "ca-central-1",
           "direct": true
         },
         {
@@ -4676,7 +4999,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 4.4,
+      "quality_baseline": 4.1,
       "api_support": [
         "converse"
       ]
@@ -4713,7 +5036,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 4.4,
+      "quality_baseline": 4.1,
       "api_support": [
         "converse"
       ]
@@ -4788,7 +5111,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 8.1,
+      "quality_baseline": 8,
       "api_support": [
         "converse"
       ]
@@ -4962,14 +5285,14 @@
       "max_input_tokens": 128000,
       "max_output_tokens": 16384,
       "pricing": {
-        "input_per_1k": 0.000555,
-        "output_per_1k": 0.00167,
+        "input_per_1k": 0.00056,
+        "output_per_1k": 0.00168,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 21,
+      "quality_baseline": 21.4,
       "api_support": [
         "chat_completions"
       ]
@@ -5016,7 +5339,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 20.1,
+      "quality_baseline": 20.4,
       "api_support": [
         "chat_completions"
       ]
@@ -5063,7 +5386,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 24.8,
+      "quality_baseline": 22.3,
       "api_support": [
         "chat_completions"
       ]
@@ -5110,7 +5433,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 6.4,
+      "quality_baseline": 6.2,
       "api_support": [
         "chat_completions"
       ]
@@ -5274,10 +5597,6 @@
           "direct": true
         },
         {
-          "name": "us-east-2",
-          "direct": true
-        },
-        {
           "name": "us-west-2",
           "direct": true
         }
@@ -5303,7 +5622,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 27.7,
+      "quality_baseline": 28.3,
       "api_support": [
         "responses"
       ],
@@ -5343,48 +5662,16 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 35.4,
+      "quality_baseline": 35.8,
       "api_support": [
         "responses"
       ],
       "responses_path": "/openai/v1/responses"
     },
     {
-      "model_id": "openai.gpt-oss-safeguard-120b",
+      "model_id": "openai.gpt-5.6-luna",
       "family": "openai",
       "regions": [
-        {
-          "name": "ap-northeast-1",
-          "direct": true
-        },
-        {
-          "name": "ap-south-1",
-          "direct": true
-        },
-        {
-          "name": "ap-southeast-2",
-          "direct": true
-        },
-        {
-          "name": "eu-central-1",
-          "direct": true
-        },
-        {
-          "name": "eu-north-1",
-          "direct": true
-        },
-        {
-          "name": "eu-west-1",
-          "direct": true
-        },
-        {
-          "name": "eu-west-2",
-          "direct": true
-        },
-        {
-          "name": "sa-east-1",
-          "direct": true
-        },
         {
           "name": "us-east-1",
           "direct": true
@@ -5399,7 +5686,7 @@
         }
       ],
       "tier": "mid",
-      "display_name": "GPT OSS Safeguard 120B",
+      "display_name": "GPT 5.6 Luna",
       "capabilities": {
         "tool_use": true,
         "vision": false,
@@ -5409,59 +5696,66 @@
         "extended_thinking": false,
         "prompt_caching": false
       },
-      "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_input_tokens": 272000,
+      "max_output_tokens": 128000,
       "pricing": {
-        "input_per_1k": 0.00015,
-        "output_per_1k": 0.0006,
+        "input_per_1k": 0.00022,
+        "output_per_1k": 0.00132,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 23.8,
+      "quality_baseline": 26.8,
       "api_support": [
-        "chat_completions",
         "responses"
       ],
-      "responses_path": "/v1/responses"
+      "responses_path": "/openai/v1/responses"
     },
     {
-      "model_id": "openai.gpt-oss-safeguard-20b",
+      "model_id": "openai.gpt-5.6-sol",
       "family": "openai",
       "regions": [
         {
-          "name": "ap-northeast-1",
+          "name": "us-east-1",
           "direct": true
         },
         {
-          "name": "ap-south-1",
+          "name": "us-east-2",
           "direct": true
-        },
-        {
-          "name": "ap-southeast-2",
-          "direct": true
-        },
-        {
-          "name": "eu-central-1",
-          "direct": true
-        },
-        {
-          "name": "eu-north-1",
-          "direct": true
-        },
-        {
-          "name": "eu-west-1",
-          "direct": true
-        },
-        {
-          "name": "eu-west-2",
-          "direct": true
-        },
-        {
-          "name": "sa-east-1",
-          "direct": true
-        },
+        }
+      ],
+      "tier": "reasoning",
+      "display_name": "GPT 5.6 Sol",
+      "capabilities": {
+        "tool_use": true,
+        "vision": false,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": false,
+        "extended_thinking": false,
+        "prompt_caching": false
+      },
+      "max_input_tokens": 272000,
+      "max_output_tokens": 128000,
+      "pricing": {
+        "input_per_1k": 0.0055,
+        "output_per_1k": 0.033,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [],
+      "guardrail_compatible": false,
+      "quality_baseline": 41.9,
+      "api_support": [
+        "responses"
+      ],
+      "responses_path": "/openai/v1/responses"
+    },
+    {
+      "model_id": "openai.gpt-5.6-terra",
+      "family": "openai",
+      "regions": [
         {
           "name": "us-east-1",
           "direct": true
@@ -5475,8 +5769,8 @@
           "direct": true
         }
       ],
-      "tier": "lite",
-      "display_name": "GPT OSS Safeguard 20B",
+      "tier": "heavy",
+      "display_name": "GPT 5.6 Terra",
       "capabilities": {
         "tool_use": true,
         "vision": false,
@@ -5486,22 +5780,21 @@
         "extended_thinking": false,
         "prompt_caching": false
       },
-      "max_input_tokens": 128000,
-      "max_output_tokens": 8192,
+      "max_input_tokens": 272000,
+      "max_output_tokens": 128000,
       "pricing": {
-        "input_per_1k": 7e-05,
-        "output_per_1k": 0.0002,
+        "input_per_1k": 0.0022,
+        "output_per_1k": 0.0132,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 14.9,
+      "quality_baseline": 34.6,
       "api_support": [
-        "chat_completions",
         "responses"
       ],
-      "responses_path": "/v1/responses"
+      "responses_path": "/openai/v1/responses"
     },
     {
       "model_id": "qwen.qwen3-coder-next",
@@ -5573,7 +5866,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 21.2,
+      "quality_baseline": 21.3,
       "api_support": [
         "chat_completions"
       ]
@@ -5607,7 +5900,7 @@
         "prompt_caching": false
       },
       "max_input_tokens": 1000000,
-      "max_output_tokens": 1000000,
+      "max_output_tokens": 131000,
       "pricing": {
         "input_per_1k": 0.00125,
         "output_per_1k": 0.0025,
@@ -5616,7 +5909,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 24.8,
+      "quality_baseline": 0.0,
       "api_support": [
         "chat_completions"
       ]
@@ -5691,7 +5984,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 23,
+      "quality_baseline": 23.4,
       "api_support": [
         "chat_completions"
       ]
