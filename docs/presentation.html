@@ -59,7 +59,7 @@ h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; color: #f97316; }
 <!-- SLIDE 1: Problem Statement -->
 <div class="slide active" id="slide1">
 <h1>The <span class="gradient">Model Selection</span> Problem</h1>
-<p class="subtitle">Amazon Bedrock offers 65+ models across 8 families. Picking the right one for each request is a manual, static decision that leaves money and performance on the table.</p>
+<p class="subtitle">Amazon Bedrock offers <span style="color:#f97316;font-weight:600;"></span>70+ models</span> across 14 families. Picking the right one for each request is a manual, static decision that leaves money and performance on the table.</p>
 <div class="grid grid-3">
   <div class="card">
     <div class="icon">💸</div>
@@ -124,13 +124,13 @@ h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; color: #f97316; }
 <!-- SLIDE 3: What is Smart Router -->
 <div class="slide" id="slide3">
 <h1><span class="gradient">Bedrock Smart Router</span></h1>
-<p class="subtitle">A lightweight Python SDK that sits between your app and Bedrock. Drop-in replacement for <code>converse()</code> &amp; <code>converse_stream()</code> with support for Strands Agents SDK.</p>
+<p class="subtitle">A <span style="color:#f97316;font-weight:600;">lightweight Python SDK</span> that sits between your app and Bedrock. <span style="color:#f97316;font-weight:600;">Drop-in replacement</span> for <span style="color:#f97316;font-weight:600;">converse</span> &amp; <span style="color:#f97316;font-weight:600;">chat completion</span> API with support for <span style="color:#f97316;font-weight:600;">Strands Agents</span> SDK.</p>
 <div class="grid grid-2" style="gap:16px;">
   <div class="card highlight" style="padding:20px; display:flex; gap:14px; align-items:flex-start;">
     <div class="icon" style="margin:0; font-size:1.5rem;">🧠</div>
     <div>
       <h3 style="margin-bottom:4px;">Intelligent Complexity Detection</h3>
-      <p>15-dimension classifier analyzes each request in &lt;1ms. Routes simple tasks to cheap models, complex to powerful ones.</p>
+      <p>15-dimension static classifier or ML classifier analyzes each request in &lt;1ms. Routes simple tasks to cheap models, complex to powerful ones.</p>
       <div class="pill-row" style="margin-top:8px;">
         <span class="badge badge-green">Simple → Micro/Lite</span>
         <span class="badge badge-blue">Complex → Mid/Heavy</span>
@@ -185,7 +185,7 @@ h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; color: #f97316; }
 <p class="subtitle">The Smart Router analyzes each request's complexity in real-time and routes it to the optimal model — balancing cost, latency, and quality automatically with built-in resilience.</p>
 <div class="grid grid-3" style="margin-top:1.5rem; gap:20px;">
   <div class="card" style="padding:22px; display:flex; gap:14px; align-items:flex-start;">
-    <div style="font-size:1.3rem;"></div>
+    <div style="font-size:1.3rem;">💰</div>
     <div>
       <h3 style="margin-bottom:4px; font-size:0.9rem;">40-90% Cost Reduction</h3>
       <p>Simple requests auto-route to Nova Micro ($0.04/M) instead of Opus ($15/M). Same quality, massive savings.</p>
@@ -231,6 +231,7 @@ h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; color: #f97316; }
   <span class="badge badge-orange" style="font-size:0.8rem; padding:5px 14px;">Drop-in replacement — change 1 line of code</span>
   <span class="badge badge-green" style="font-size:0.8rem; padding:5px 14px;">Zero external dependencies (boto3 only)</span>
   <span class="badge badge-blue" style="font-size:0.8rem; padding:5px 14px;">Works with Strands Agents SDK</span>
+  <span class="badge badge-yellow" style="font-size:0.8rem; padding:5px 14px;">Cross-API model support — Converse can call Mantle Chat Completion models and vice versa</span>
 </div>
 </div>
 

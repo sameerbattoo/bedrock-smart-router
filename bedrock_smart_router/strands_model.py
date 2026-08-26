@@ -45,7 +45,7 @@ try:
     from strands.models import Model
     from strands.event_loop import streaming
     from strands.tools import convert_pydantic_to_tool_spec
-    from strands.types.content import ContentBlock, Messages, SystemContentBlock
+    from strands.types.content import Messages, SystemContentBlock
     from strands.types.streaming import StreamEvent
     from strands.types.tools import ToolChoice, ToolSpec
 except ImportError as _exc:

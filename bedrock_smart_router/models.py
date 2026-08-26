@@ -142,9 +142,38 @@ class BedrockModel:
     distilled_from: str | None = None
     distilled_quality_delta: float = 0.0
     quality_baseline: float = 0.0  # AA Intelligence Index score (0-60 scale)
-    api_support: list[str] = field(default_factory=lambda: ["converse"])  # "converse", "chat_completions", "responses"
+    # Per-API support map: {api: {"endpoint": "bedrock-runtime"|"bedrock-mantle",
+    #                            "path": "/openai/v1/..."}}. "converse" entries
+    # have no path (SDK-based). Absent API => not supported.
+    api_support: dict[str, dict[str, str]] = field(
+        default_factory=lambda: {"converse": {"endpoint": "bedrock-runtime"}}
+    )
     supported_service_tiers: list[str] = field(default_factory=list)  # ["flex", "priority"] — empty means standard only
-    responses_path: str | None = None  # URL path for Responses API (e.g., "/v1/responses" or "/openai/v1/responses")
+
+    # ── API-support accessors (read the api_support map) ────────────
+
+    def api_names(self) -> list[str]:
+        """List of API surfaces this model supports (e.g. ['converse', 'responses'])."""
+        return list(self.api_support.keys())
+
+    def supports(self, api: str) -> bool:
+        """True if this model supports the given API surface."""
+        return api in self.api_support
+
+    def endpoint_for(self, api: str) -> str | None:
+        """Endpoint ('bedrock-runtime'/'bedrock-mantle') for an API, or None."""
+        entry = self.api_support.get(api)
+        return entry.get("endpoint") if entry else None
+
+    def path_for(self, api: str) -> str | None:
+        """URL path for an API surface, or None (converse has no path)."""
+        entry = self.api_support.get(api)
+        return entry.get("path") if entry else None
+
+    @property
+    def responses_path(self) -> str | None:
+        """Back-compat: URL path for the Responses API (from the api_support map)."""
+        return self.path_for("responses")
 
     @property
     def is_cris_available(self) -> bool:

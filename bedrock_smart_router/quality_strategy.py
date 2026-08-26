@@ -15,7 +15,6 @@ it, the better it gets at picking the right model for your workload.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bedrock_smart_router.metrics_store import MetricsStore, ModelMetrics
 from bedrock_smart_router.models import BedrockModel, RequestAnalysis

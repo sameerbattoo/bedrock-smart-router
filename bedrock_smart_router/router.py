@@ -20,7 +20,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace as dataclass_replace
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
 import boto3
 
@@ -605,20 +605,27 @@ class BedrockRouter:
         self._shadow._invoke_fn = self._bedrock.converse
 
         # Mantle client (Chat Completions / Responses API)
-        self._mantle = None
+        self._oai_client = None
         if config.enable_mantle:
             try:
-                from bedrock_smart_router.mantle_client import MantleClient
-                self._mantle = MantleClient(
+                from bedrock_smart_router.openai_compat_client import (
+                    OpenAICompatClient,
+                    ENDPOINT_RUNTIME,
+                )
+                # Endpoint-agnostic client. Each call passes the endpoint/path
+                # resolved from the catalog; the default here (runtime) is only
+                # used when a call omits an explicit endpoint.
+                self._oai_client = OpenAICompatClient(
                     region=config.region,
+                    endpoint=ENDPOINT_RUNTIME,
                     api_key=config.api_key,
                     session=session,
                     timeout=config.mantle_timeout,
                 )
             except ImportError:
-                logger.warning("MantleClient unavailable (missing 'requests' package) — Mantle-only models will be unreachable")
+                logger.warning("OpenAICompatClient unavailable (missing 'requests' package) — OpenAI-compatible models will be unreachable")
             except Exception as e:
-                logger.warning("Failed to initialize MantleClient: %s", e)
+                logger.warning("Failed to initialize OpenAICompatClient: %s", e)
 
         # OpenTelemetry (optional)
         self._otel = OTelIntegration(
@@ -928,7 +935,7 @@ class BedrockRouter:
                 continue
 
             # Skip responses-only models (can't be invoked via converse or chat_completions)
-            if model.api_support == ["responses"]:
+            if model.api_names() == ["responses"]:
                 logger.debug(
                     "Converse: skipping model %s — responses-only",
                     model.model_id,
@@ -1266,7 +1273,7 @@ class BedrockRouter:
         primary = resolved["primary"]
 
         # Check if the selected model should go through Mantle streaming
-        if "converse" not in primary.api_support and self._mantle:
+        if "converse" not in primary.api_support and self._oai_client:
             # Mantle streaming path
             return _ChatCompletionStream(
                 self._stream_via_mantle(
@@ -1313,16 +1320,11 @@ class BedrockRouter:
         guardrail_checked: bool,
         t_start: float,
     ) -> "Generator[_DotDict, None, None]":
-        """Stream from Mantle and yield OpenAI-style chunks."""
-        import re
-        import uuid
-        from bedrock_smart_router.model_registry import base_model_id
-
-        # Resolve Mantle model ID
-        mantle_model_id = base_model_id(model.model_id)
-        mantle_model_id = re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
-        mantle_model_id = re.sub(r"-v\d+:\d+$", "", mantle_model_id)
-        mantle_model_id = re.sub(r"-\d+:\d+$", "", mantle_model_id)
+        """Stream Chat Completions (runtime or mantle) and yield OpenAI-style chunks."""
+        # Resolve endpoint, model ID, and path for chat_completions from the catalog.
+        cc_endpoint, mantle_model_id, cc_path = self._resolve_openai_compat_target(
+            model, model.model_id, "chat_completions"
+        )
 
         stream_kwargs: dict[str, Any] = {}
         if max_tokens is not None:
@@ -1338,9 +1340,11 @@ class BedrockRouter:
 
         t_routing_done = time.monotonic()
 
-        # Stream from Mantle — chunks are already in OpenAI format
-        for chunk in self._mantle.chat_completions_stream(
+        # Stream from the endpoint — chunks are already in OpenAI format
+        for chunk in self._oai_client.chat_completions_stream(
             model=mantle_model_id,
+            endpoint=cc_endpoint,
+            path=cc_path,
             messages=messages,
             **stream_kwargs,
         ):
@@ -1525,13 +1529,20 @@ class BedrockRouter:
         - If model= is specified, use it directly
         - Otherwise, classify and route among responses-capable models
         """
-        import re
         import time as _time
-        from bedrock_smart_router.model_registry import base_model_id as _base_model_id
 
-        if not self._mantle:
+        if not self._oai_client:
             raise RuntimeError(
-                "Responses API requires Mantle client. Ensure enable_mantle=True in config."
+                "Responses API requires the OpenAI-compatible client. "
+                "Ensure enable_mantle=True in config."
+            )
+
+        if stream:
+            # Streaming for the Responses API is not yet wired through routing.
+            # Fail loudly rather than silently returning a buffered response.
+            raise NotImplementedError(
+                "Streaming is not yet supported for responses.create(). "
+                "Call without stream=True, or use chat_completions_stream() for streaming."
             )
 
         routing = resolve_preset(routing or RoutingConfig())
@@ -1669,15 +1680,26 @@ class BedrockRouter:
             result = strategy.select(available, analysis)
             selected_model = result.selected_model
 
-        # ── Resolve Mantle model ID and path ──
-        # Strip version suffixes for Mantle
-        mantle_model_id = _base_model_id(selected_model.model_id)
-        mantle_model_id = re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
-        mantle_model_id = re.sub(r"-v\d+:\d+$", "", mantle_model_id)
-        mantle_model_id = re.sub(r"-\d+:\d+$", "", mantle_model_id)
-
-        # Get the responses_path from model catalog
-        responses_path = selected_model.responses_path or "/v1/responses"
+        # ── Resolve endpoint, model ID, and path for the Responses API ──
+        # Endpoint-aware: bedrock-runtime keeps the full/CRIS-prefixed model ID
+        # (e.g. us.xai.grok-4.6), bedrock-mantle uses the geo/suffix-stripped ID
+        # (e.g. openai.gpt-oss-120b). Preferred endpoint is runtime; mantle is
+        # the transitionary fallback.
+        responses_endpoint, mantle_model_id, resolved_resp_path = self._resolve_openai_compat_target(
+            selected_model, selected_model.model_id, "responses"
+        )
+        responses_endpoint = responses_endpoint or "bedrock-mantle"
+        # Pass the catalog path through unchanged (may be None); the client fills
+        # a per-endpoint default (runtime → /openai/v1/responses,
+        # mantle → /v1/responses). Only pin a mantle-shaped default when the
+        # resolved endpoint is actually mantle.
+        responses_path = resolved_resp_path
+        if responses_path is None:
+            responses_path = (
+                "/openai/v1/responses"
+                if responses_endpoint == "bedrock-runtime"
+                else "/v1/responses"
+            )
 
         # ── Build kwargs for Mantle ──
         mantle_kwargs: dict[str, Any] = {}
@@ -1700,16 +1722,17 @@ class BedrockRouter:
         # ── Call Mantle ──
         t_routing_done = _time.monotonic()  # Routing logic complete, about to call Mantle
         try:
-            response = self._mantle.responses(
+            response = self._oai_client.responses(
                 model=mantle_model_id,
                 input=input,
+                endpoint=responses_endpoint,
                 path=responses_path,
                 store=store,
                 previous_response_id=real_previous_id,
                 **mantle_kwargs,
             )
             self._circuit_breakers.record_success(selected_model.model_id)
-        except Exception as exc:
+        except Exception:
             self._circuit_breakers.record_failure(selected_model.model_id)
             raise
 
@@ -1735,9 +1758,9 @@ class BedrockRouter:
             latency_ms=round(elapsed_ms, 1),
             input_tokens=input_toks,
             output_tokens=output_toks,
-            api_backend="mantle",
+            api_backend=responses_endpoint,
             routing_decision_ms=round((t_routing_done - t_start) * 1000, 2),
-            metadata={"responses_path": responses_path},
+            metadata={"responses_endpoint": responses_endpoint, "responses_path": responses_path},
         )
         self._last_decision_local.value = decision
         response["routing_decision"] = decision
@@ -1816,7 +1839,7 @@ class BedrockRouter:
 
             # Mantle-only models: stream via Mantle and translate to converse events
             if "converse" not in model.api_support:
-                if not self._mantle:
+                if not self._oai_client:
                     logger.debug(
                         "Stream: skipping model %s — no converse support and Mantle not configured",
                         model.model_id,
@@ -1831,14 +1854,11 @@ class BedrockRouter:
                     continue
 
                 try:
-                    import re as _re
-                    from bedrock_smart_router.model_registry import base_model_id as _base_model_id
                     from bedrock_smart_router.format_translator import converse_to_chat_completions
 
-                    mantle_model_id = _base_model_id(model.model_id)
-                    mantle_model_id = _re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
-                    mantle_model_id = _re.sub(r"-v\d+:\d+$", "", mantle_model_id)
-                    mantle_model_id = _re.sub(r"-\d+:\d+$", "", mantle_model_id)
+                    cc_endpoint, mantle_model_id, cc_path = self._resolve_openai_compat_target(
+                        model, model.model_id, "chat_completions"
+                    )
 
                     # Translate converse request to chat completions format
                     cc_body = converse_to_chat_completions(
@@ -1849,13 +1869,15 @@ class BedrockRouter:
                     )
 
                     logger.debug(
-                        "Stream call (Mantle): model=%s, mantle_id=%s",
-                        model.model_id, mantle_model_id,
+                        "Stream call (%s): model=%s, resolved_id=%s",
+                        cc_endpoint, model.model_id, mantle_model_id,
                     )
 
                     # Get the stream generator — note: it's lazy, errors happen on iteration
-                    mantle_gen = self._mantle.chat_completions_stream(
+                    mantle_gen = self._oai_client.chat_completions_stream(
                         model=mantle_model_id,
+                        endpoint=cc_endpoint,
+                        path=cc_path,
                         **cc_body,
                     )
                     # Force the first chunk to verify connectivity
@@ -2342,7 +2364,7 @@ class BedrockRouter:
                 )
                 reason_parts.append(f"Estimated cost: ${est_cost:.6f}.")
             elif strategy_name == "balanced":
-                reason_parts.append(f"Balanced across cost/latency/quality.")
+                reason_parts.append("Balanced across cost/latency/quality.")
 
             explanation = {
                 "complexity": self._build_complexity_explanation(
@@ -2452,8 +2474,9 @@ class BedrockRouter:
         """Invoke Bedrock Converse API with retries, or Mantle if model requires it."""
         # Check if this model needs to go through Mantle
         model = self._registry.get(model_id)
-        if model and "converse" not in model.api_support and self._mantle:
-            # Model is Mantle-only — translate and call Chat Completions
+        if model and "converse" not in model.api_support and self._oai_client:
+            # Model has no Converse support — route via the OpenAI-compatible
+            # Chat Completions API (runtime or mantle per the catalog).
             resp = self._invoke_via_mantle(
                 model_id=model_id,
                 messages=messages,
@@ -2461,7 +2484,7 @@ class BedrockRouter:
                 tool_config=tool_config,
                 inference_config=inference_config,
             )
-            resp["_api_backend"] = "mantle"
+            resp["_api_backend"] = model.endpoint_for("chat_completions") or "bedrock-mantle"
             return resp
 
         call_kwargs: dict[str, Any] = {
@@ -2508,23 +2531,58 @@ class BedrockRouter:
             inference_config=inference_config,
         )
 
-        # Resolve the Mantle model ID (strip geo prefix and version suffix)
-        from bedrock_smart_router.model_registry import base_model_id
-        mantle_model_id = base_model_id(model_id)
-        # Strip version suffixes that Mantle doesn't use
-        import re
-        mantle_model_id = re.sub(r"-\d{8}-v\d+:\d+$", "", mantle_model_id)
-        mantle_model_id = re.sub(r"-v\d+:\d+$", "", mantle_model_id)
-        mantle_model_id = re.sub(r"-\d+:\d+$", "", mantle_model_id)
+        # Resolve the endpoint, model ID, and path for the chat_completions API.
+        model = self._registry.get(model_id)
+        endpoint, cc_model_id, cc_path = self._resolve_openai_compat_target(
+            model, model_id, "chat_completions"
+        )
 
-        # Call Mantle
-        cc_response = self._mantle.chat_completions(
-            model=mantle_model_id,
+        # Call the OpenAI-compatible endpoint (runtime or mantle)
+        cc_response = self._oai_client.chat_completions(
+            model=cc_model_id,
+            endpoint=endpoint,
+            path=cc_path,
             **cc_body,
         )
 
         # Translate response back to Converse format
         return chat_completions_response_to_converse(cc_response)
+
+    def _resolve_openai_compat_target(
+        self, model: Any, model_id: str, api: str,
+    ) -> tuple[str, str, str | None]:
+        """Resolve (endpoint, model_id, path) for an OpenAI-compatible API call.
+
+        - Endpoint + path come from the model's api_support map (catalog),
+          defaulting to bedrock-mantle when unknown.
+        - Model ID form is endpoint-specific: bedrock-runtime keeps the full
+          catalog model ID (including any ``-1:0`` version suffix), while
+          bedrock-mantle uses the geo-stripped, suffix-less ID.
+        """
+        import re
+        from bedrock_smart_router.model_registry import base_model_id
+
+        endpoint = (model.endpoint_for(api) if model else None) or "bedrock-mantle"
+        path = model.path_for(api) if model else None
+
+        if endpoint == "bedrock-runtime":
+            # Runtime uses the full catalog model ID. CRIS-only models
+            # (INFERENCE_PROFILE) reject the bare ID and require a geo prefix
+            # (e.g. us.xai.grok-4.6). select_profile returns the correctly
+            # prefixed profile ID for the configured region, or the bare ID
+            # for direct-access models.
+            if model is not None:
+                resolved_id = self._cris.select_profile(model, self._config.region)
+            else:
+                resolved_id = model_id
+        else:
+            # Mantle uses the geo-stripped, version-suffix-stripped ID.
+            resolved_id = base_model_id(model_id)
+            resolved_id = re.sub(r"-\d{8}-v\d+:\d+$", "", resolved_id)
+            resolved_id = re.sub(r"-v\d+:\d+$", "", resolved_id)
+            resolved_id = re.sub(r"-\d+:\d+$", "", resolved_id)
+
+        return endpoint, resolved_id, path
 
     @staticmethod
     def _extract_output_text(response: dict[str, Any]) -> str:
@@ -2746,7 +2804,7 @@ class BedrockRouter:
                 if required_service_tier in c.supported_service_tiers
             ]
         # Filter out Mantle-only models not available in the configured region
-        if self._mantle:
+        if self._oai_client:
             router_region = self._config.region
             candidates = [
                 c for c in candidates

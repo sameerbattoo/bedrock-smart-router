@@ -71,7 +71,7 @@ def mock_router():
         # Mock the Mantle client
         mock_mantle = MagicMock()
         mock_mantle.responses.return_value = _make_responses_response()
-        router._mantle = mock_mantle
+        router._oai_client = mock_mantle
 
         yield router, mock_mantle
 
@@ -89,7 +89,8 @@ class TestResponsesCreate:
 
         assert "routing_decision" in result
         assert result.routing_decision.selected_model == "openai.gpt-oss-120b-1:0"
-        assert result.routing_decision.api_backend == "mantle"
+        # gpt-oss-120b Responses is served on bedrock-mantle (runtime 404s today)
+        assert result.routing_decision.api_backend == "bedrock-mantle"
 
     def test_dot_notation_access(self, mock_router):
         router, mantle = mock_router
@@ -240,17 +241,17 @@ class TestResponsesErrors:
 
             from bedrock_smart_router import BedrockRouter
             router = BedrockRouter.create({"region": "us-west-2", "enable_mantle": False})
-            router._mantle = None
+            router._oai_client = None
 
-            with pytest.raises(RuntimeError, match="Mantle client"):
+            with pytest.raises(RuntimeError, match="OpenAI-compatible client"):
                 router.responses.create(input="Hello")
 
     def test_mantle_error_records_circuit_breaker(self, mock_router):
         router, mantle = mock_router
-        from bedrock_smart_router.mantle_client import MantleError
-        mantle.responses.side_effect = MantleError(503, "Service unavailable")
+        from bedrock_smart_router.openai_compat_client import OpenAICompatError
+        mantle.responses.side_effect = OpenAICompatError(503, "Service unavailable")
 
-        with pytest.raises(MantleError):
+        with pytest.raises(OpenAICompatError):
             router.responses.create(input="Hello", model="openai.gpt-oss-120b-1:0")
 
 

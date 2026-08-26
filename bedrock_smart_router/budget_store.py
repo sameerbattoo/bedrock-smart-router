@@ -148,7 +148,6 @@ class SQLiteBudgetStore(BudgetStore):
     """
 
     def __init__(self, path: str = "/tmp/bsr_budget.db") -> None:
-        import sqlite3
         import threading
 
         self._path = path

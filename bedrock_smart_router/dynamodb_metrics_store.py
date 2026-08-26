@@ -105,7 +105,6 @@ from bedrock_smart_router.metrics_store import (
     MetricsStore,
     ModelMetrics,
     RequestRecord,
-    _percentile,
     aggregate_metrics,
 )
 

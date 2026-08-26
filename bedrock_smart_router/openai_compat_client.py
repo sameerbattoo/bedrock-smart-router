@@ -1,7 +1,21 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""HTTP client for the bedrock-mantle endpoint (Chat Completions & Responses API).
+"""HTTP client for Bedrock's OpenAI-compatible APIs (Chat Completions & Responses).
+
+Talks to either Bedrock endpoint that exposes the OpenAI-compatible surface:
+
+- ``bedrock-runtime`` — ``https://bedrock-runtime.{region}.amazonaws.com``
+  (preferred; Chat Completions at ``/openai/v1/chat/completions``,
+  Responses at ``/openai/v1/responses``)
+- ``bedrock-mantle``  — ``https://bedrock-mantle.{region}.api.aws``
+  (transitionary; Chat Completions at ``/v1/chat/completions``,
+  Responses at ``/v1/responses`` or ``/openai/v1/responses`` per model)
+
+The endpoint and path for a given model+API come from the model catalog's
+``api_support`` map, so this client is endpoint-agnostic: the caller supplies
+the ``endpoint`` and ``path`` and this client handles auth, retries, and
+streaming identically for both hosts.
 
 Supports two authentication methods:
 - AWS SigV4 signing (default — uses boto3 credential chain)
@@ -9,27 +23,25 @@ Supports two authentication methods:
 
 Usage::
 
-    from bedrock_smart_router.mantle_client import MantleClient
+    from bedrock_smart_router.openai_compat_client import OpenAICompatClient
 
-    # SigV4 auth (default)
-    client = MantleClient(region="us-west-2")
+    # SigV4 auth (default), runtime endpoint
+    client = OpenAICompatClient(region="us-west-2", endpoint="bedrock-runtime")
 
-    # API key auth
-    client = MantleClient(region="us-west-2", api_key="brk_xxxx...")
-
-    # Chat Completions
+    # Chat Completions on runtime
     response = client.chat_completions(
-        model="openai.gpt-oss-120b",
+        model="openai.gpt-oss-120b-1:0",
         messages=[{"role": "user", "content": "Hello"}],
-        max_tokens=100,
+        path="/openai/v1/chat/completions",
     )
 
-    # Streaming
-    for event in client.chat_completions_stream(
+    # Responses on mantle (per-model path)
+    response = client.responses(
         model="openai.gpt-oss-120b",
-        messages=[{"role": "user", "content": "Tell me a story"}],
-    ):
-        print(event)
+        input="Hello",
+        endpoint="bedrock-mantle",
+        path="/v1/responses",
+    )
 """
 
 from __future__ import annotations
@@ -51,36 +63,62 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# Mantle-specific throttle/retry status codes
+# Throttle/retry status codes
 _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 _MAX_RETRIES = 3
 _BACKOFF_BASE = 0.5
 
+ENDPOINT_RUNTIME = "bedrock-runtime"
+ENDPOINT_MANTLE = "bedrock-mantle"
 
-class MantleError(Exception):
-    """Error from the bedrock-mantle endpoint."""
+# Default paths per endpoint (used when the caller does not pass an explicit path)
+_DEFAULT_CHAT_PATH = {
+    ENDPOINT_RUNTIME: "/openai/v1/chat/completions",
+    ENDPOINT_MANTLE: "/v1/chat/completions",
+}
+_DEFAULT_RESPONSES_PATH = {
+    ENDPOINT_RUNTIME: "/openai/v1/responses",
+    ENDPOINT_MANTLE: "/v1/responses",
+}
+
+
+def _base_url_for(endpoint: str, region: str) -> str:
+    """Return the base host URL for a given endpoint + region."""
+    if endpoint == ENDPOINT_RUNTIME:
+        return f"https://bedrock-runtime.{region}.amazonaws.com"
+    if endpoint == ENDPOINT_MANTLE:
+        return f"https://bedrock-mantle.{region}.api.aws"
+    raise ValueError(f"Unknown endpoint: {endpoint!r}")
+
+
+class OpenAICompatError(Exception):
+    """Error from a Bedrock OpenAI-compatible endpoint."""
 
     def __init__(self, status_code: int, message: str, error_type: str = ""):
         self.status_code = status_code
         self.error_type = error_type
-        super().__init__(f"Mantle {status_code}: {message}")
+        super().__init__(f"OpenAI-compat {status_code}: {message}")
 
 
-class MantleThrottleError(MantleError):
+class OpenAICompatThrottleError(OpenAICompatError):
     """Request was throttled (429)."""
     pass
 
 
-class MantleClient:
-    """HTTP client for the bedrock-mantle endpoint.
+class OpenAICompatClient:
+    """HTTP client for Bedrock's OpenAI-compatible APIs (runtime or mantle).
 
     Handles SigV4 signing or Bearer token auth, retries on throttle/5xx,
-    and provides both synchronous and streaming interfaces.
+    and provides both synchronous and streaming interfaces. The target
+    endpoint (bedrock-runtime vs bedrock-mantle) is chosen per instance
+    (via ``endpoint``) and can be overridden per call.
 
     Parameters
     ----------
     region : str
-        AWS region for the Mantle endpoint.
+        AWS region.
+    endpoint : str
+        Default endpoint: "bedrock-runtime" or "bedrock-mantle".
     api_key : str, optional
         Bedrock API key. If provided, uses Bearer token auth instead of SigV4.
     session : boto3.Session, optional
@@ -94,6 +132,7 @@ class MantleClient:
     def __init__(
         self,
         region: str = "us-west-2",
+        endpoint: str = ENDPOINT_MANTLE,
         api_key: str | None = None,
         session: Any = None,
         timeout: float = 60.0,
@@ -101,15 +140,15 @@ class MantleClient:
     ) -> None:
         if requests is None:
             raise ImportError(
-                "The 'requests' package is required for MantleClient. "
+                "The 'requests' package is required for OpenAICompatClient. "
                 "Install it with: pip install requests"
             )
 
         self._region = region
+        self._endpoint = endpoint
         self._api_key = api_key
         self._timeout = timeout
         self._max_retries = max_retries
-        self._base_url = f"https://bedrock-mantle.{region}.api.aws"
 
         # SigV4 credentials (only needed if no api_key)
         if not api_key:
@@ -121,6 +160,10 @@ class MantleClient:
     def region(self) -> str:
         return self._region
 
+    @property
+    def endpoint(self) -> str:
+        return self._endpoint
+
     # ── Chat Completions API ────────────────────────────────────────
 
     def chat_completions(
@@ -128,6 +171,8 @@ class MantleClient:
         model: str,
         messages: list[dict[str, Any]],
         *,
+        path: str | None = None,
+        endpoint: str | None = None,
         max_tokens: int | None = None,
         temperature: float | None = None,
         top_p: float | None = None,
@@ -140,6 +185,8 @@ class MantleClient:
 
         Returns the full response dict in OpenAI Chat Completions format.
         """
+        ep = endpoint or self._endpoint
+        req_path = path or _DEFAULT_CHAT_PATH[ep]
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -158,13 +205,15 @@ class MantleClient:
             payload["tool_choice"] = tool_choice
         payload.update(kwargs)
 
-        return self._request("POST", "/v1/chat/completions", payload)
+        return self._request("POST", req_path, payload, endpoint=ep)
 
     def chat_completions_stream(
         self,
         model: str,
         messages: list[dict[str, Any]],
         *,
+        path: str | None = None,
+        endpoint: str | None = None,
         max_tokens: int | None = None,
         temperature: float | None = None,
         top_p: float | None = None,
@@ -176,6 +225,8 @@ class MantleClient:
 
         Yields SSE event dicts (OpenAI streaming chunk format).
         """
+        ep = endpoint or self._endpoint
+        req_path = path or _DEFAULT_CHAT_PATH[ep]
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -193,16 +244,17 @@ class MantleClient:
             payload["tools"] = tools
         payload.update(kwargs)
 
-        yield from self._request_stream("POST", "/v1/chat/completions", payload)
+        yield from self._request_stream("POST", req_path, payload, endpoint=ep)
 
-    # ── Responses API (for future use with GPT-5.4/5.5) ────────────
+    # ── Responses API ───────────────────────────────────────────────
 
     def responses(
         self,
         model: str,
         input: str | list[dict[str, Any]],
         *,
-        path: str = "/v1/responses",
+        path: str | None = None,
+        endpoint: str | None = None,
         store: bool = True,
         max_output_tokens: int | None = None,
         temperature: float | None = None,
@@ -214,14 +266,18 @@ class MantleClient:
         """Send a Responses API request (synchronous).
 
         Args:
-            model: Model ID on Mantle.
+            model: Model ID on the target endpoint.
             input: Prompt text or structured input.
-            path: URL path (some models use /openai/v1/responses).
+            path: URL path. Defaults per endpoint; some models override
+                (e.g. mantle serves certain models at /openai/v1/responses).
+            endpoint: Override the instance endpoint for this call.
             store: Whether to store for stateful continuation (default True).
             stream: Whether to stream the response.
 
         Returns the full response dict in OpenAI Responses format.
         """
+        ep = endpoint or self._endpoint
+        req_path = path or _DEFAULT_RESPONSES_PATH[ep]
         payload: dict[str, Any] = {
             "model": model,
             "input": input,
@@ -239,14 +295,15 @@ class MantleClient:
             payload["stream"] = True
         payload.update(kwargs)
 
-        return self._request("POST", path, payload)
+        return self._request("POST", req_path, payload, endpoint=ep)
 
     def responses_stream(
         self,
         model: str,
         input: str | list[dict[str, Any]],
         *,
-        path: str = "/v1/responses",
+        path: str | None = None,
+        endpoint: str | None = None,
         store: bool = True,
         max_output_tokens: int | None = None,
         temperature: float | None = None,
@@ -258,6 +315,8 @@ class MantleClient:
 
         Yields SSE event dicts (OpenAI Responses streaming format).
         """
+        ep = endpoint or self._endpoint
+        req_path = path or _DEFAULT_RESPONSES_PATH[ep]
         payload: dict[str, Any] = {
             "model": model,
             "input": input,
@@ -274,13 +333,15 @@ class MantleClient:
             payload["previous_response_id"] = previous_response_id
         payload.update(kwargs)
 
-        yield from self._request_stream("POST", path, payload)
+        yield from self._request_stream("POST", req_path, payload, endpoint=ep)
 
     # ── Internal HTTP methods ───────────────────────────────────────
 
-    def _request(self, method: str, path: str, payload: dict) -> dict[str, Any]:
+    def _request(self, method: str, path: str, payload: dict,
+                 *, endpoint: str | None = None) -> dict[str, Any]:
         """Make an authenticated request with retries."""
-        url = f"{self._base_url}{path}"
+        ep = endpoint or self._endpoint
+        url = f"{_base_url_for(ep, self._region)}{path}"
         body = json.dumps(payload)
 
         for attempt in range(self._max_retries + 1):
@@ -294,12 +355,12 @@ class MantleClient:
                 if attempt < self._max_retries:
                     self._backoff(attempt)
                     continue
-                raise MantleError(408, "Request timed out")
+                raise OpenAICompatError(408, "Request timed out")
             except requests.exceptions.ConnectionError as e:
                 if attempt < self._max_retries:
                     self._backoff(attempt)
                     continue
-                raise MantleError(0, f"Connection failed: {e}")
+                raise OpenAICompatError(0, f"Connection failed: {e}")
 
             if resp.status_code == 200:
                 return resp.json()
@@ -316,25 +377,27 @@ class MantleClient:
             # Retry on throttle or server errors
             if resp.status_code in _RETRYABLE_STATUS_CODES and attempt < self._max_retries:
                 logger.warning(
-                    "Mantle %s %s returned %d (attempt %d/%d): %s",
-                    method, path, resp.status_code, attempt + 1, self._max_retries + 1, err_msg[:100],
+                    "%s %s %s returned %d (attempt %d/%d): %s",
+                    ep, method, path, resp.status_code, attempt + 1, self._max_retries + 1, err_msg[:100],
                 )
                 self._backoff(attempt)
                 continue
 
             # Non-retryable error
             if resp.status_code == 429:
-                raise MantleThrottleError(429, err_msg, err_type)
-            raise MantleError(resp.status_code, err_msg, err_type)
+                raise OpenAICompatThrottleError(429, err_msg, err_type)
+            raise OpenAICompatError(resp.status_code, err_msg, err_type)
 
         # Should not reach here, but just in case
-        raise MantleError(500, "Max retries exceeded")
+        raise OpenAICompatError(500, "Max retries exceeded")
 
     def _request_stream(
         self, method: str, path: str, payload: dict,
+        *, endpoint: str | None = None,
     ) -> Generator[dict[str, Any], None, None]:
         """Make a streaming authenticated request. Yields parsed SSE events."""
-        url = f"{self._base_url}{path}"
+        ep = endpoint or self._endpoint
+        url = f"{_base_url_for(ep, self._region)}{path}"
         body = json.dumps(payload)
         headers = self._build_headers(method, url, body)
 
@@ -349,7 +412,7 @@ class MantleClient:
                 err_msg = err_body.get("error", {}).get("message", resp.text[:200])
             except (json.JSONDecodeError, ValueError):
                 err_msg = resp.text[:200]
-            raise MantleError(resp.status_code, err_msg)
+            raise OpenAICompatError(resp.status_code, err_msg)
 
         # Parse SSE stream
         for line in resp.iter_lines(decode_unicode=True):
@@ -372,7 +435,8 @@ class MantleClient:
                 "Authorization": f"Bearer {self._api_key}",
             }
 
-        # SigV4 signing — resolve credentials fresh each time to handle rotation
+        # SigV4 signing — resolve credentials fresh each time to handle rotation.
+        # Service name is "bedrock" for both runtime and mantle endpoints.
         credentials = self._session.get_credentials().get_frozen_credentials()
         request = AWSRequest(
             method=method, url=url, data=body,

@@ -75,10 +75,57 @@ def _model_from_dict(d: dict[str, Any]) -> BedrockModel:
         supported_latency_modes=d.get("supported_latency_modes", ["standard"]),
         guardrail_compatible=d.get("guardrail_compatible", True),
         quality_baseline=d.get("quality_baseline", 0.0),
-        api_support=d.get("api_support", ["converse"]),
+        api_support=_normalize_api_support(
+            d.get("api_support", {"converse": {"endpoint": "bedrock-runtime"}}),
+            d.get("responses_path"),
+        ),
         supported_service_tiers=d.get("supported_service_tiers", []),
-        responses_path=d.get("responses_path"),
     )
+
+
+def _normalize_api_support(
+    api_support: Any, responses_path: str | None = None
+) -> dict[str, dict[str, str]]:
+    """Normalize api_support to the map form {api: {endpoint, path}}.
+
+    Accepts the new map form as-is. Adapts the legacy list form
+    (e.g. ``["converse", "responses"]`` + a top-level ``responses_path``)
+    into the map so old catalogs still load.
+    """
+    # New map form — validate inner entry shape so a malformed/partially
+    # migrated catalog fails at load time (clear error) rather than throwing
+    # deep inside endpoint_for/path_for at call time.
+    if isinstance(api_support, dict):
+        for api, entry in api_support.items():
+            if not isinstance(entry, dict):
+                raise ValueError(
+                    f"Invalid api_support entry for {api!r}: expected a "
+                    f"{{'endpoint': ..., 'path': ...}} object, got {type(entry).__name__}."
+                )
+            if "endpoint" not in entry:
+                raise ValueError(
+                    f"Invalid api_support entry for {api!r}: missing required 'endpoint' key."
+                )
+        return api_support
+
+    # Legacy list form — build a map with sensible endpoint/path defaults.
+    _RUNTIME = "bedrock-runtime"
+    _MANTLE = "bedrock-mantle"
+    result: dict[str, dict[str, str]] = {}
+    for api in api_support or []:
+        if api == "converse":
+            result["converse"] = {"endpoint": _RUNTIME}
+        elif api == "chat_completions":
+            # Legacy catalogs only ever served chat_completions via mantle.
+            result["chat_completions"] = {"endpoint": _MANTLE, "path": "/v1/chat/completions"}
+        elif api == "responses":
+            result["responses"] = {
+                "endpoint": _MANTLE,
+                "path": responses_path or "/v1/responses",
+            }
+        else:
+            result[api] = {"endpoint": _RUNTIME}
+    return result
 
 
 def load_catalog(path: Path | str | None = None) -> list[BedrockModel]:

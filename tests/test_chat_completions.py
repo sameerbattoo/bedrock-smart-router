@@ -35,7 +35,12 @@ from bedrock_smart_router.format_translator import (
     chat_completions_response_to_converse,
     converse_response_to_chat_completions,
 )
-from bedrock_smart_router.mantle_client import MantleClient, MantleError, MantleThrottleError
+from bedrock_smart_router.openai_compat_client import (
+    OpenAICompatClient,
+    OpenAICompatError,
+    OpenAICompatThrottleError,
+    _base_url_for,
+)
 from bedrock_smart_router.model_registry import ModelRegistry, base_model_id
 from bedrock_smart_router.models import (
     BedrockModel,
@@ -305,13 +310,19 @@ class TestModelRegistryVersionMatching:
         self.model = BedrockModel(
             model_id="openai.gpt-oss-120b-1:0",
             family="openai", tier=Tier.MID, display_name="GPT-OSS-120b",
-            api_support=["converse", "chat_completions"],
+            api_support={
+                "converse": {"endpoint": "bedrock-runtime"},
+                "chat_completions": {"endpoint": "bedrock-runtime", "path": "/openai/v1/chat/completions"},
+            },
             pricing=ModelPricing(input_per_1k=0.001, output_per_1k=0.002),
         )
         self.model_v = BedrockModel(
             model_id="qwen.qwen3-32b-v1:0",
             family="qwen", tier=Tier.LITE, display_name="Qwen3 32B",
-            api_support=["converse", "chat_completions"],
+            api_support={
+                "converse": {"endpoint": "bedrock-runtime"},
+                "chat_completions": {"endpoint": "bedrock-runtime", "path": "/openai/v1/chat/completions"},
+            },
             pricing=ModelPricing(input_per_1k=0.001, output_per_1k=0.002),
         )
         self.registry = ModelRegistry(models=[self.model, self.model_v])
@@ -342,7 +353,8 @@ class TestModelRegistryVersionMatching:
     def test_api_support_filter_responses_only(self):
         resp_model = BedrockModel(
             model_id="openai.gpt-5.4", family="openai", tier=Tier.MID,
-            display_name="GPT 5.4", api_support=["responses"],
+            display_name="GPT 5.4",
+            api_support={"responses": {"endpoint": "bedrock-mantle", "path": "/openai/v1/responses"}},
             pricing=ModelPricing(input_per_1k=0.003, output_per_1k=0.015),
         )
         reg = ModelRegistry(models=[self.model, resp_model])
@@ -355,25 +367,26 @@ class TestModelRegistryVersionMatching:
 # Mantle Client Tests
 # ═══════════════════════════════════════════════════════════════
 
-class TestMantleClient:
-    """Test MantleClient behavior with mocked HTTP."""
+class TestOpenAICompatClient:
+    """Test OpenAICompatClient behavior with mocked HTTP."""
 
     def test_init_with_api_key(self):
-        client = MantleClient(region="us-west-2", api_key="brk_test123")
+        client = OpenAICompatClient(region="us-west-2", api_key="brk_test123")
         assert client._api_key == "brk_test123"
         assert client._session is None  # No boto session needed with API key
 
     def test_init_with_sigv4(self):
-        client = MantleClient(region="us-east-1")
+        client = OpenAICompatClient(region="us-east-1")
         assert client._api_key is None
         assert client._session is not None
         assert client._region == "us-east-1"
 
-    def test_base_url(self):
-        client = MantleClient(region="eu-west-1", api_key="test")
-        assert client._base_url == "https://bedrock-mantle.eu-west-1.api.aws"
+    def test_base_url_per_endpoint(self):
+        # Base URL is now derived per endpoint/region at request time.
+        assert _base_url_for("bedrock-mantle", "eu-west-1") == "https://bedrock-mantle.eu-west-1.api.aws"
+        assert _base_url_for("bedrock-runtime", "eu-west-1") == "https://bedrock-runtime.eu-west-1.amazonaws.com"
 
-    @patch("bedrock_smart_router.mantle_client.requests")
+    @patch("bedrock_smart_router.openai_compat_client.requests")
     def test_chat_completions_success(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -383,7 +396,7 @@ class TestMantleClient:
         }
         mock_requests.request.return_value = mock_resp
 
-        client = MantleClient(region="us-west-2", api_key="brk_test")
+        client = OpenAICompatClient(region="us-west-2", api_key="brk_test")
         result = client.chat_completions(
             model="openai.gpt-oss-120b",
             messages=[{"role": "user", "content": "Hello"}],
@@ -391,25 +404,44 @@ class TestMantleClient:
         )
         assert result["choices"][0]["message"]["content"] == "Hi"
 
-    @patch("bedrock_smart_router.mantle_client.requests")
+    @patch("bedrock_smart_router.openai_compat_client.requests")
+    def test_endpoint_selects_host_and_path(self, mock_requests):
+        """A per-call endpoint+path targets the correct host/URL."""
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"choices": [{"message": {"content": "x"}, "finish_reason": "stop"}], "usage": {}}
+        mock_requests.request.return_value = mock_resp
+
+        client = OpenAICompatClient(region="us-east-1", api_key="brk_test", endpoint="bedrock-mantle")
+        # Override to runtime for this call
+        client.chat_completions(
+            model="openai.gpt-oss-120b-1:0",
+            messages=[{"role": "user", "content": "hi"}],
+            endpoint="bedrock-runtime",
+            path="/openai/v1/chat/completions",
+        )
+        url = mock_requests.request.call_args[0][1]
+        assert url == "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions"
+
+    @patch("bedrock_smart_router.openai_compat_client.requests")
     def test_chat_completions_throttle(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 429
         mock_resp.json.return_value = {"error": {"message": "Rate limited", "type": "rate_limit"}}
         mock_requests.request.return_value = mock_resp
 
-        client = MantleClient(region="us-west-2", api_key="brk_test", max_retries=0)
-        with pytest.raises(MantleThrottleError):
+        client = OpenAICompatClient(region="us-west-2", api_key="brk_test", max_retries=0)
+        with pytest.raises(OpenAICompatThrottleError):
             client.chat_completions(model="test", messages=[{"role": "user", "content": "hi"}])
 
-    @patch("bedrock_smart_router.mantle_client.requests")
+    @patch("bedrock_smart_router.openai_compat_client.requests")
     def test_bearer_auth_header(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {"choices": [{"message": {"content": "x"}, "finish_reason": "stop"}], "usage": {}}
         mock_requests.request.return_value = mock_resp
 
-        client = MantleClient(region="us-west-2", api_key="brk_mykey")
+        client = OpenAICompatClient(region="us-west-2", api_key="brk_mykey")
         client.chat_completions(model="m", messages=[{"role": "user", "content": "hi"}])
 
         call_kwargs = mock_requests.request.call_args
@@ -702,11 +734,14 @@ class TestEdgeCases:
         assert "raw" in msg["content"][0]["toolUse"]["input"]
 
     def test_api_support_default(self):
-        """Models without api_support field default to ['converse']."""
+        """Models without api_support field default to converse on bedrock-runtime."""
         model = BedrockModel(
             model_id="test.model", family="test", tier=Tier.MID, display_name="Test",
         )
-        assert model.api_support == ["converse"]
+        assert model.api_names() == ["converse"]
+        assert model.endpoint_for("converse") == "bedrock-runtime"
+        assert model.supports("converse")
+        assert not model.supports("responses")
 
     def test_dataclass_replace_routing_config(self):
         """RoutingConfig should work with dataclass_replace."""

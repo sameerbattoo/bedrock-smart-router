@@ -786,14 +786,165 @@ def _probe_service_tiers(client: Any, model_id: str) -> list[str]:
     return supported
 
 
-def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, region: str) -> bool:
-    """Test if model supports the Chat Completions API on bedrock-mantle.
+# ── Runtime endpoint probes (OpenAI-compatible APIs on bedrock-runtime) ──
+#
+# bedrock-runtime exposes the OpenAI-compatible Chat Completions and Responses
+# APIs under the /openai/v1/... paths. This is the PREFERRED endpoint — the
+# bedrock-mantle endpoint is transitionary and will eventually be retired.
+#
+# Path conventions:
+#   bedrock-runtime : /openai/v1/chat/completions , /openai/v1/responses
+#   bedrock-mantle  : /v1/chat/completions        , /openai/v1/responses (or /v1/responses)
+#
+# Some runtime models require a CRIS profile prefix (us./eu./global.) because
+# they don't support plain on-demand throughput. We detect that from the error
+# and retry with the region's available profile prefixes.
 
-    First checks if the model appears in the Mantle /v1/models list.
-    If yes, sends a minimal Chat Completions request to confirm.
+_ENDPOINT_RUNTIME = "bedrock-runtime"
+_ENDPOINT_MANTLE = "bedrock-mantle"
+
+_RUNTIME_CHAT_PATH = "/openai/v1/chat/completions"
+_RUNTIME_RESPONSES_PATH = "/openai/v1/responses"
+_MANTLE_CHAT_PATH = "/v1/chat/completions"
+
+
+def _runtime_candidate_ids(model_id: str, model_regions: dict | None, region: str) -> list[str]:
+    """Build the list of model IDs to try on bedrock-runtime.
+
+    Tries the plain ID first, then CRIS-profile-prefixed variants (us./eu./global.)
+    derived from the model's regional availability, since some runtime models
+    reject plain on-demand invocation.
+    """
+    base = strip_geo_prefix(model_id)
+    ids = [base]
+    # Collect profile prefixes available for this region (and common fallbacks)
+    prefixes: list[str] = []
+    if model_regions:
+        entry = model_regions.get(region) or {}
+        for p in entry.get("cris_profiles", []):
+            if p not in prefixes:
+                prefixes.append(p)
+    # Common geo prefixes as fallback ordering
+    for p in ("us", "eu", "global", "apac"):
+        if p not in prefixes:
+            prefixes.append(p)
+    for p in prefixes:
+        ids.append(f"{p}.{base}")
+    return ids
+
+
+def _probe_runtime_chat_completions(model_id: str, region: str,
+                                    model_regions: dict | None = None) -> bool:
+    """Test if a model supports Chat Completions on the bedrock-runtime endpoint.
+
+    Sends a minimal request to /openai/v1/chat/completions, retrying with CRIS
+    profile prefixes when the model rejects plain on-demand throughput.
+    Returns True only on a confirmed 200.
+    """
+    if requests is None:
+        return False
+    try:
+        from botocore.auth import SigV4Auth
+        from botocore.awsrequest import AWSRequest
+        session = boto3.Session(region_name=region)
+        creds = session.get_credentials().get_frozen_credentials()
+        url = f"https://bedrock-runtime.{region}.amazonaws.com{_RUNTIME_CHAT_PATH}"
+
+        for mid in _runtime_candidate_ids(model_id, model_regions, region):
+            # No token-limit param: models disagree on max_tokens vs
+            # max_completion_tokens, and it isn't needed to test route support.
+            payload = json.dumps({
+                "model": mid,
+                "messages": [{"role": "user", "content": "hi"}],
+            })
+            req = AWSRequest(method="POST", url=url, data=payload,
+                             headers={"Content-Type": "application/json"})
+            SigV4Auth(creds, "bedrock", region).add_auth(req)
+            resp = requests.post(url, data=payload, headers=dict(req.headers), timeout=20)
+            if resp.status_code == 200:
+                return True
+            try:
+                err = resp.json().get("error", {}).get("message", "")
+            except (json.JSONDecodeError, ValueError):
+                err = resp.text[:120]
+            # Needs a CRIS profile — keep trying prefixed IDs
+            if "on-demand throughput" in err:
+                continue
+            # A parameter-validation error ("Unsupported parameter: 'x'") means
+            # the model+route accepted the request far enough to validate params
+            # → API IS supported. This is unambiguous (it names a parameter),
+            # unlike a generic "not supported" which may reject the model itself.
+            if "unsupported parameter" in err.lower():
+                return True
+            # Definitive "not this model / not supported" — stop
+            if "invalid" in err.lower() or "does not support" in err.lower():
+                return False
+            # Ambiguous — try next candidate
+            continue
+        return False
+    except Exception:
+        return False
+
+
+def _probe_runtime_responses(model_id: str, region: str,
+                             model_regions: dict | None = None) -> bool:
+    """Test if a model supports the Responses API on the bedrock-runtime endpoint.
+
+    Sends a minimal request to /openai/v1/responses, retrying with CRIS profile
+    prefixes when the model rejects plain on-demand throughput.
+    Returns True only on a confirmed 200.
+    """
+    if requests is None:
+        return False
+    try:
+        from botocore.auth import SigV4Auth
+        from botocore.awsrequest import AWSRequest
+        session = boto3.Session(region_name=region)
+        creds = session.get_credentials().get_frozen_credentials()
+        url = f"https://bedrock-runtime.{region}.amazonaws.com{_RUNTIME_RESPONSES_PATH}"
+
+        for mid in _runtime_candidate_ids(model_id, model_regions, region):
+            payload = json.dumps({
+                "model": mid,
+                "input": "hi",
+                "store": False,
+                "max_output_tokens": 16,
+            })
+            req = AWSRequest(method="POST", url=url, data=payload,
+                             headers={"Content-Type": "application/json"})
+            SigV4Auth(creds, "bedrock", region).add_auth(req)
+            resp = requests.post(url, data=payload, headers=dict(req.headers), timeout=20)
+            if resp.status_code == 200:
+                return True
+            try:
+                err = resp.json().get("error", {}).get("message", "")
+            except (json.JSONDecodeError, ValueError):
+                err = resp.text[:120]
+            if "on-demand throughput" in err:
+                continue
+            # Parameter-validation error ("Unsupported parameter: 'x'") → the
+            # route accepted the request far enough to validate params → supported.
+            if "unsupported parameter" in err.lower():
+                return True
+            if "invalid" in err.lower() or "does not support" in err.lower():
+                return False
+            continue
+        return False
+    except Exception:
+        return False
+
+
+def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, region: str) -> str | None:
+    """Test if a model supports the Chat Completions API on bedrock-mantle.
+
+    Some models are served at the standard ``/v1/chat/completions`` route while
+    others (e.g. xai.grok-*) are served at ``/openai/v1/chat/completions``. This
+    tries both and returns the working path, or None if unsupported.
+
+    Returns the working path (e.g. "/v1/chat/completions") or None.
     """
     if not mantle_models:
-        return False
+        return None
 
     # Normalize model_id for Mantle lookup (strip version suffixes)
     base_id = strip_geo_prefix(model_id)
@@ -809,9 +960,8 @@ def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, regio
             mantle_id = candidate
             break
     if not mantle_id:
-        return False
+        return None
 
-    # Probe with a real request
     try:
         from botocore.auth import SigV4Auth
         from botocore.awsrequest import AWSRequest
@@ -819,28 +969,45 @@ def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, regio
         session = boto3.Session(region_name=region)
         credentials = session.get_credentials().get_frozen_credentials()
 
-        url = f"https://bedrock-mantle.{region}.api.aws/v1/chat/completions"
-        payload = json.dumps({
-            "model": mantle_id,
-            "messages": [{"role": "user", "content": "hi"}],
-            "max_tokens": 5,
-        })
-        request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
-        SigV4Auth(credentials, "bedrock", region).add_auth(request)
+        rejection_markers = (
+            "does not support",
+            "isn't supported",
+            "is not supported",
+            "not supported on this route",
+            "doesn't support this api",
+            "model identifier is invalid",
+            "doesn't exist",
+        )
 
-        resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
-        if resp.status_code == 200:
-            return True
-        # 400 with "does not support" = model exists but doesn't support this API
-        if resp.status_code == 400:
-            err = resp.json().get("error", {}).get("message", "")
-            if "does not support" in err:
-                return False
-            # Other 400 = validation issue, model likely supports it
-            return True
-        return False
+        # Standard route first, then the OpenAI-style route used by some models.
+        for path in ("/v1/chat/completions", "/openai/v1/chat/completions"):
+            url = f"https://bedrock-mantle.{region}.api.aws{path}"
+            payload = json.dumps({
+                "model": mantle_id,
+                "messages": [{"role": "user", "content": "hi"}],
+            })
+            request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
+            SigV4Auth(credentials, "bedrock", region).add_auth(request)
+
+            resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
+            if resp.status_code == 200:
+                return path
+            if resp.status_code in (400, 404):
+                err = resp.json().get("error", {}).get("message", "").lower()
+                # Parameter-validation error ("Unsupported parameter: 'x'") →
+                # the route accepted the request → supported at this path.
+                if "unsupported parameter" in err:
+                    return path
+                # Explicit route/model rejection → try the next path.
+                if any(marker in err for marker in rejection_markers):
+                    continue
+                # Other 400 = validation quirk → the route accepts this model.
+                if resp.status_code == 400:
+                    return path
+            # Any other status → try next path.
+        return None
     except Exception:
-        return False
+        return None
 
 
 def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str) -> str | None:
@@ -893,18 +1060,28 @@ def _probe_mantle_responses(mantle_models: set[str], model_id: str, region: str)
             request = AWSRequest(method="POST", url=url, data=payload, headers={"Content-Type": "application/json"})
             SigV4Auth(credentials, "bedrock", region).add_auth(request)
 
-            resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=15)
+            # Per-path try/except: a timeout or error on one route (e.g. the
+            # non-default /v1/responses can hang for some models) must not
+            # abort the whole probe — fall through to the next path.
+            try:
+                resp = requests.post(url, data=payload, headers=dict(request.headers), timeout=18)
+            except Exception:
+                continue
             if resp.status_code == 200:
                 return path
             # Only a 200 confirms support. Any 400 (including validation errors)
             # is NOT a confirmation — the model may not support this API at all.
             # "does not support" is an explicit rejection; other 400s are ambiguous.
             if resp.status_code == 400:
-                err = resp.json().get("error", {}).get("message", "")
-                if "does not support" in err:
-                    continue  # Explicit rejection — try next path
-                # Other 400 errors (validation, missing params, etc.) are ambiguous.
-                # Do NOT assume support — continue to next path.
+                try:
+                    err = resp.json().get("error", {}).get("message", "")
+                except (json.JSONDecodeError, ValueError):
+                    err = ""
+                # A parameter-validation error ("Unsupported parameter: 'x'")
+                # means the route accepted the model.
+                if "unsupported parameter" in err.lower():
+                    return path
+                # Otherwise ambiguous/explicit rejection — try the next path.
                 continue
         return None
     except Exception:
@@ -1076,7 +1253,9 @@ def _probe_max_output_tokens(client: Any, model_id: str) -> int | None:
 
 
 def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = False,
-                       mantle_models: set[str] | None = None, region: str = "us-west-2") -> dict[str, Any]:
+                       mantle_models: set[str] | None = None, region: str = "us-west-2",
+                       endpoint_preference: str = _ENDPOINT_RUNTIME,
+                       model_regions: dict | None = None) -> dict[str, Any]:
     """Probe a model's capabilities via test API calls.
 
     Returns dict with: converse_supported, tool_use, streaming_tool_use,
@@ -1101,24 +1280,63 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
             "max_output_tokens_probed": None,
         }
 
-    # First check Converse API support
+    # First check Converse API support (Converse is bedrock-runtime only)
     converse_ok = _probe_converse_support(bedrock_runtime, model_id)
 
-    # Build api_support list
-    api_support = []
+    # Build api_support as a per-API map: {api: {"endpoint": ..., "path": ...}}.
+    # For each OpenAI-compatible API we probe the PREFERRED endpoint first
+    # (default bedrock-runtime) and only fall back to the other if unsupported.
+    # We record only ONE endpoint per API (no duplication).
+    api_support: dict[str, dict[str, str]] = {}
     if converse_ok:
-        api_support.append("converse")
+        api_support["converse"] = {"endpoint": _ENDPOINT_RUNTIME}
 
-    # Probe Mantle APIs (Chat Completions + Responses)
-    responses_path: str | None = None
-    if mantle_models:
-        if _probe_mantle_chat_completions(mantle_models, model_id, region):
-            api_support.append("chat_completions")
+    prefer_runtime = endpoint_preference == _ENDPOINT_RUNTIME
+
+    # ── Chat Completions ──────────────────────────────────────────
+    cc_entry: dict[str, str] | None = None
+    if prefer_runtime:
+        if _probe_runtime_chat_completions(model_id, region, model_regions):
+            cc_entry = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_CHAT_PATH}
             time.sleep(0.3)
-        responses_path = _probe_mantle_responses(mantle_models, model_id, region)
-        if responses_path:
-            api_support.append("responses")
+        else:
+            mantle_cc_path = _probe_mantle_chat_completions(mantle_models, model_id, region) if mantle_models else None
+            if mantle_cc_path:
+                cc_entry = {"endpoint": _ENDPOINT_MANTLE, "path": mantle_cc_path}
+                time.sleep(0.3)
+    else:
+        mantle_cc_path = _probe_mantle_chat_completions(mantle_models, model_id, region) if mantle_models else None
+        if mantle_cc_path:
+            cc_entry = {"endpoint": _ENDPOINT_MANTLE, "path": mantle_cc_path}
             time.sleep(0.3)
+        elif _probe_runtime_chat_completions(model_id, region, model_regions):
+            cc_entry = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_CHAT_PATH}
+            time.sleep(0.3)
+    if cc_entry:
+        api_support["chat_completions"] = cc_entry
+
+    # ── Responses ─────────────────────────────────────────────────
+    resp_entry: dict[str, str] | None = None
+    if prefer_runtime:
+        if _probe_runtime_responses(model_id, region, model_regions):
+            resp_entry = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_RESPONSES_PATH}
+            time.sleep(0.3)
+        elif mantle_models:
+            mantle_path = _probe_mantle_responses(mantle_models, model_id, region)
+            if mantle_path:
+                resp_entry = {"endpoint": _ENDPOINT_MANTLE, "path": mantle_path}
+                time.sleep(0.3)
+    else:
+        if mantle_models:
+            mantle_path = _probe_mantle_responses(mantle_models, model_id, region)
+            if mantle_path:
+                resp_entry = {"endpoint": _ENDPOINT_MANTLE, "path": mantle_path}
+                time.sleep(0.3)
+        if resp_entry is None and _probe_runtime_responses(model_id, region, model_regions):
+            resp_entry = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_RESPONSES_PATH}
+            time.sleep(0.3)
+    if resp_entry:
+        api_support["responses"] = resp_entry
 
     if not converse_ok and not api_support:
         return {
@@ -1129,7 +1347,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
             "prompt_caching": None,
             "supported_tiers": [],
             "guardrail_compatible": False,
-            "api_support": api_support or ["converse"],
+            "api_support": api_support or {"converse": {"endpoint": _ENDPOINT_RUNTIME}},
         }
 
     # Converse-specific probes (only if Converse API is supported)
@@ -1173,8 +1391,7 @@ def probe_capabilities(bedrock_runtime: Any, model_id: str, skip_probes: bool = 
         "prompt_caching": None,  # Derived from LiteLLM cache pricing
         "supported_tiers": supported_tiers,
         "guardrail_compatible": guardrail_compatible,
-        "api_support": api_support or ["converse"],
-        "responses_path": responses_path,
+        "api_support": api_support or {"converse": {"endpoint": _ENDPOINT_RUNTIME}},
         "supported_service_tiers": service_tiers if converse_ok else ["standard"],
         "max_output_tokens_probed": max_output_probed if converse_ok else None,
     }
@@ -1428,24 +1645,26 @@ def match_quality_baseline(bedrock_name: str, model_id: str, aa_models: list[dic
 
 # ── Step 6: Build catalog ───────────────────────────────────────────
 
-def _derive_api_support(base_id: str, model_id: str, caps: dict, mantle_models: set[str] | None) -> list[str]:
-    """Derive api_support when probes were skipped, using Mantle model list.
-    
+def _derive_api_support(base_id: str, model_id: str, caps: dict, mantle_models: set[str] | None) -> dict[str, dict[str, str]]:
+    """Derive api_support map when probes were skipped, using Mantle model list.
+
+    Returns a map {api: {"endpoint": ..., "path": ...}}.
+
     NOTE: Without probes, we can only confirm 'converse' (from ListFoundationModels)
     and mark models as *potentially* on Mantle. We do NOT assume chat_completions
     support without a real probe — the model may only support Messages or Responses API.
     """
-    api_support = []
+    api_support: dict[str, dict[str, str]] = {}
 
     # Converse: if we got here, the model passed the converse filter in discover_models
     if caps.get("converse_supported") is not False:
-        api_support.append("converse")
+        api_support["converse"] = {"endpoint": _ENDPOINT_RUNTIME}
 
     # We intentionally do NOT add chat_completions here without a probe.
     # Models on Mantle may support Messages API (Anthropic) or Responses API (OpenAI)
     # but not Chat Completions. Only the probe can confirm.
 
-    return api_support or ["converse"]
+    return api_support or {"converse": {"endpoint": _ENDPOINT_RUNTIME}}
 
 
 def build_catalog(
@@ -1609,6 +1828,8 @@ def build_catalog(
 
         # Determine tier (needs pricing and capabilities computed first)
         api_support = caps.get("api_support") or _derive_api_support(base_id, model_id, caps, mantle_models)
+        # tier logic keys off the set of supported APIs (list of names)
+        api_names = list(api_support.keys()) if isinstance(api_support, dict) else list(api_support)
         if existing and "tier" in existing:
             tier = existing["tier"]
         else:
@@ -1619,7 +1840,7 @@ def build_catalog(
                     "prompt_caching": prompt_caching,
                     "extended_thinking": extended_thinking,
                 },
-                api_support=api_support,
+                api_support=api_names,
                 price_out=pricing.get("output_per_1k", 0),
                 max_input=max_input,
                 max_output=max_output,
@@ -1655,12 +1876,8 @@ def build_catalog(
         if len(service_tiers) > 1:
             entry["supported_service_tiers"] = [t for t in service_tiers if t != "standard"]
 
-        # Add responses_path if the model supports Responses API
-        responses_path = caps.get("responses_path")
-        if not responses_path and existing:
-            responses_path = existing.get("responses_path")
-        if responses_path:
-            entry["responses_path"] = responses_path
+        # NOTE: responses_path is no longer a top-level field — the endpoint and
+        # path for each API now live inside the api_support map.
 
         catalog.append(entry)
 
@@ -1677,6 +1894,7 @@ def add_mantle_only_models(
     aa_models: list[dict],
     existing_catalog: dict | None = None,
     region: str = "us-west-2",
+    endpoint_preference: str = _ENDPOINT_RUNTIME,
 ) -> list[dict]:
     """Add models that exist only on Mantle (not in bedrock-runtime) to the catalog.
 
@@ -1749,10 +1967,18 @@ def add_mantle_only_models(
             or existing_by_base.get(base_no_instruct)
         )
         if existing_entry:
-            # Model already in catalog — update its api_support with Mantle capability
-            current_apis = existing_entry.get("api_support", ["converse"])
+            # Model already in catalog — ensure chat_completions is present in its
+            # api_support map. Prefer runtime; fall back to mantle path.
+            current_apis = existing_entry.get("api_support")
+            if not isinstance(current_apis, dict):
+                # Normalize any legacy list into the map form
+                current_apis = {a: {"endpoint": _ENDPOINT_RUNTIME} for a in (current_apis or ["converse"])}
+                existing_entry["api_support"] = current_apis
             if "chat_completions" not in current_apis:
-                existing_entry["api_support"] = current_apis + ["chat_completions"]
+                if endpoint_preference == _ENDPOINT_RUNTIME and _probe_runtime_chat_completions(mantle_id, region, None):
+                    current_apis["chat_completions"] = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_CHAT_PATH}
+                else:
+                    current_apis["chat_completions"] = {"endpoint": _ENDPOINT_MANTLE, "path": _MANTLE_CHAT_PATH}
                 logger.info(f"    Updated {existing_entry['model_id']} → added chat_completions (matched from {mantle_id})")
             else:
                 logger.debug(f"    Skipped {mantle_id} (already in catalog as {existing_entry['model_id']})")
@@ -1760,17 +1986,70 @@ def add_mantle_only_models(
 
         family = detect_family(mantle_id)
 
-        # Determine api_support — these are Mantle-only
-        api_support = ["chat_completions"]
-
-        # OpenAI proprietary models (non-OSS) only support Responses API
-        if "openai" in mantle_id.lower() and "oss" not in mantle_id.lower():
-            api_support = ["responses"]
-        elif "gpt-oss" in mantle_id.lower():
-            api_support = ["chat_completions", "responses"]
-        # Safeguard models are utility, not for general use
-        elif "safeguard" in mantle_id.lower():
+        # Safeguard models are utility (content moderation), not for general use
+        if "safeguard" in mantle_id.lower():
             continue
+
+        # Probe BOTH API surfaces and let the probes decide — guessing support
+        # from the model name misses cases (e.g. xai.grok-4.3 supports Chat
+        # Completions AND Responses). The only name-based hint we keep: OpenAI
+        # proprietary (non-OSS) models are Responses-only per their model cards,
+        # so we skip the (always-failing) chat probe for them.
+        is_openai_proprietary = "openai" in mantle_id.lower() and "oss" not in mantle_id.lower()
+        wants_chat = not is_openai_proprietary
+        wants_responses = True
+
+        # Pick a region where this model actually exists (per the Mantle scan)
+        # to probe route support. Probing the default region gives false
+        # negatives for models not present there (e.g. gpt-5.5 is absent in
+        # us-west-2 but works in us-east-1/2).
+        _region_map = getattr(discover_mantle_models, '_model_regions', {})
+        _avail = _region_map.get(mantle_id, set())
+        probe_region = region
+        for _pref in ("us-east-1", "us-east-2", "us-west-2"):
+            if _pref in _avail:
+                probe_region = _pref
+                break
+        else:
+            if _avail:
+                probe_region = sorted(_avail)[0]
+
+        # Build the api_support map, preferring the runtime endpoint per API.
+        prefer_runtime = endpoint_preference == _ENDPOINT_RUNTIME
+        api_support: dict[str, dict[str, str]] = {}
+
+        if wants_chat:
+            mantle_cc_path = _probe_mantle_chat_completions(mantle_models, mantle_id, probe_region)
+            if prefer_runtime and _probe_runtime_chat_completions(mantle_id, probe_region, None):
+                api_support["chat_completions"] = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_CHAT_PATH}
+            elif mantle_cc_path:
+                # Confirm the model actually works on the mantle route, and record
+                # which path (some models use /openai/v1/chat/completions, e.g. xai).
+                api_support["chat_completions"] = {"endpoint": _ENDPOINT_MANTLE, "path": mantle_cc_path}
+            elif not prefer_runtime and _probe_runtime_chat_completions(mantle_id, probe_region, None):
+                # Mantle preferred but unsupported there — fall back to runtime.
+                api_support["chat_completions"] = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_CHAT_PATH}
+
+        if wants_responses:
+            if prefer_runtime and _probe_runtime_responses(mantle_id, probe_region, None):
+                api_support["responses"] = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_RESPONSES_PATH}
+            else:
+                # Confirm mantle actually serves Responses (GPT-5.x uses
+                # /openai/v1/responses, others /v1/responses).
+                mantle_resp_path = _probe_mantle_responses(mantle_models, mantle_id, probe_region)
+                if mantle_resp_path:
+                    api_support["responses"] = {"endpoint": _ENDPOINT_MANTLE, "path": mantle_resp_path}
+                elif not prefer_runtime and _probe_runtime_responses(mantle_id, probe_region, None):
+                    api_support["responses"] = {"endpoint": _ENDPOINT_RUNTIME, "path": _RUNTIME_RESPONSES_PATH}
+
+        # If no API surface was confirmed, skip this model entirely — it's
+        # listed in discovery but not actually reachable on any route.
+        if not api_support:
+            logger.info(f"    Skipped {mantle_id} — no working API route confirmed")
+            continue
+
+        # api_names for tier logic (list of supported API surface names)
+        api_names = list(api_support.keys())
 
         # Derive display name from model_id
         # e.g., "openai.gpt-5.4" → "GPT-5.4", "qwen.qwen3-coder-next" → "Qwen3 Coder Next"
@@ -1821,7 +2100,7 @@ def add_mantle_only_models(
         tier = existing.get("tier") or derive_tier(
             quality_baseline, mantle_id, display_name,
             price_in=pricing.get("input_per_1k", 0),
-            api_support=api_support,
+            api_support=api_names,
             price_out=pricing.get("output_per_1k", 0),
             max_input=max_input,
             max_output=max_output,
@@ -1834,7 +2113,7 @@ def add_mantle_only_models(
         # For Responses-only models, probe /v1/responses in each region to
         # confirm actual availability. The /v1/models list includes all models
         # known to Mantle but doesn't guarantee Responses API support per-region.
-        if api_support == ["responses"] and len(model_mantle_regions) > 1:
+        if api_names == ["responses"] and len(model_mantle_regions) > 1:
             confirmed_regions = _probe_responses_regions(mantle_id, model_mantle_regions)
             if confirmed_regions:
                 model_mantle_regions = confirmed_regions
@@ -1866,19 +2145,11 @@ def add_mantle_only_models(
             "api_support": api_support,
         }
 
-        # Add responses_path for models that support Responses API
-        if "responses" in api_support:
-            # Determine path: GPT-5.x uses /openai/v1/responses, others use /v1/responses
-            if "gpt-5" in mantle_id.lower():
-                entry["responses_path"] = "/openai/v1/responses"
-            else:
-                entry["responses_path"] = "/v1/responses"
-            # Override from existing catalog if available (previously probed)
-            if existing and existing.get("responses_path"):
-                entry["responses_path"] = existing["responses_path"]
+        # NOTE: endpoint + path per API now live inside the api_support map
+        # (no separate responses_path field).
 
         catalog.append(entry)
-        logger.info(f"    Added: {mantle_id} (api_support={api_support}, tier={tier})")
+        logger.info(f"    Added: {mantle_id} (api_support={api_names}, tier={tier})")
 
     logger.info(f"  Catalog now has {len(catalog)} entries")
     return catalog
@@ -1894,6 +2165,9 @@ def main():
     parser.add_argument("--aa-cache", default="", help="Path to cached AA models JSON (skip API call)")
     parser.add_argument("--skip-probes", action="store_true", help="Skip capability probing (tool_use, thinking, guardrails)")
     parser.add_argument("--output", default="", help="Output file (default: scripts/_models.json)")
+    parser.add_argument("--endpoint-preference", default="bedrock-runtime",
+                        choices=["bedrock-runtime", "bedrock-mantle"],
+                        help="Preferred endpoint for OpenAI-compatible APIs when a model is available on both (default: bedrock-runtime)")
     args = parser.parse_args()
 
     t_start = time.time()
@@ -1930,10 +2204,20 @@ def main():
             else:
                 models_to_probe.append(mid)
 
+        # Build a base_model_id → {region_name: {cris_profiles, direct}} lookup
+        # so runtime probes can construct CRIS-prefixed IDs when needed.
+        def _regions_lookup(base_id: str) -> dict:
+            entries = profiles.get(base_id) or profiles.get(strip_geo_prefix(base_id)) or []
+            return {e["name"]: e for e in entries}
+
         # Probe in parallel (5 models at a time)
         def _probe_one(model_id: str) -> tuple[str, dict]:
+            base_id = strip_geo_prefix(model_id)
+            model_regions = _regions_lookup(base_id)
             return model_id, probe_capabilities(bedrock_runtime, model_id, skip_probes=False,
-                                                mantle_models=mantle_models, region=args.region)
+                                                mantle_models=mantle_models, region=args.region,
+                                                endpoint_preference=args.endpoint_preference,
+                                                model_regions=model_regions)
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = {executor.submit(_probe_one, mid): mid for mid in models_to_probe}
@@ -1968,7 +2252,8 @@ def main():
     catalog = build_catalog(models, profiles, capabilities, aa_models, litellm_data, existing_catalog, region=args.region, mantle_models=mantle_models)
 
     # Step 6b: Add Mantle-only models (not discovered via ListFoundationModels)
-    catalog = add_mantle_only_models(catalog, mantle_models, litellm_data, aa_models, existing_catalog, region=args.region)
+    catalog = add_mantle_only_models(catalog, mantle_models, litellm_data, aa_models, existing_catalog,
+                                     region=args.region, endpoint_preference=args.endpoint_preference)
 
     # Step 6c: Remove utility/moderation models that shouldn't be routed to.
     # These are specialized models (content classification, guardrails) that don't

@@ -44,10 +44,10 @@
       "tier": "micro",
       "display_name": "NVIDIA Nemotron Nano 12B v2 VL BF16",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": true,
         "streaming": true,
-        "streaming_tool_use": false,
+        "streaming_tool_use": true,
         "document_support": true,
         "extended_thinking": true,
         "prompt_caching": false
@@ -65,15 +65,170 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 4.2,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
+      ]
+    },
+    {
+      "model_id": "openai.gpt-5.6-terra",
+      "family": "openai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global",
+            "in"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
       ],
-      "responses_path": "/openai/v1/responses"
+      "tier": "heavy",
+      "display_name": "GPT-5.6 Terra",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": true,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 131072,
+      "pricing": {
+        "input_per_1k": 0.0022,
+        "output_per_1k": 0.0132,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [
+        "standard"
+      ],
+      "guardrail_compatible": true,
+      "quality_baseline": 34.6,
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -219,9 +374,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 24.1,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "qwen.qwen3-235b-a22b-2507-v1:0",
@@ -284,15 +441,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 18.4,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "moonshotai.kimi-k2.5",
@@ -359,15 +520,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 30.1,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "openai.gpt-oss-120b-1:0",
@@ -442,16 +607,23 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 24.1,
-      "api_support": [
-        "converse",
-        "chat_completions",
-        "responses"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/v1/responses"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/v1/responses"
+      ]
     },
     {
       "model_id": "qwen.qwen3-next-80b-a3b",
@@ -518,10 +690,15 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 13.8,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -663,9 +840,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 62.1,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "deepseek.v3.2",
@@ -732,15 +911,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 25.1,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "nvidia.nemotron-nano-3-30b",
@@ -807,15 +990,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 7.2,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "anthropic.claude-sonnet-4-6",
@@ -962,9 +1149,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 36.8,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "minimax.minimax-m2",
@@ -1031,15 +1220,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 28.9,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "zai.glm-4.7-flash",
@@ -1114,15 +1307,169 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 15.6,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
+      ]
+    },
+    {
+      "model_id": "xai.grok-4.6",
+      "family": "xai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
       ],
-      "responses_path": "/openai/v1/responses"
+      "tier": "micro",
+      "display_name": "Grok 4.6",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": true,
+        "extended_thinking": true,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 500000,
+      "max_output_tokens": 524288,
+      "pricing": {
+        "input_per_1k": 0.0022,
+        "output_per_1k": 0.0066,
+        "cache_read_per_1k": 0.00055,
+        "cache_write_per_1k": 0
+      },
+      "supported_latency_modes": [
+        "standard"
+      ],
+      "guardrail_compatible": true,
+      "quality_baseline": 0.0,
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "amazon.nova-pro-v1:0",
@@ -1238,9 +1585,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 7.5,
-      "api_support": [
-        "converse"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -1375,9 +1724,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 6.7,
-      "api_support": [
-        "converse"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -1456,15 +1807,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 34.5,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "google.gemma-3-12b-it",
@@ -1531,15 +1886,19 @@
       ],
       "guardrail_compatible": false,
       "quality_baseline": 5.5,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "moonshot.kimi-k2-thinking",
@@ -1577,15 +1936,15 @@
       "tier": "reasoning",
       "display_name": "Kimi K2 Thinking",
       "capabilities": {
-        "tool_use": true,
+        "tool_use": false,
         "vision": false,
         "streaming": true,
-        "streaming_tool_use": true,
+        "streaming_tool_use": false,
         "document_support": false,
         "extended_thinking": true,
         "prompt_caching": false
       },
-      "max_input_tokens": 256000,
+      "max_input_tokens": 128000,
       "max_output_tokens": 262144,
       "pricing": {
         "input_per_1k": 0.0006,
@@ -1598,9 +1957,15 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 33.5,
-      "api_support": [
-        "converse"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -1663,15 +2028,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 15.9,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "mistral.devstral-2-123b",
@@ -1746,15 +2115,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 19.2,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "minimax.minimax-m2.1",
@@ -1829,15 +2202,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 32.1,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "nvidia.nemotron-super-3-120b",
@@ -1912,15 +2289,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 25.7,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "qwen.qwen3-32b-v1:0",
@@ -1995,15 +2376,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 8.5,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "mistral.ministral-3-14b-instruct",
@@ -2070,15 +2455,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 11.2,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-6-v1",
@@ -2223,9 +2612,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 38.8,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "nvidia.nemotron-nano-9b-v2",
@@ -2271,10 +2662,10 @@
       "tier": "micro",
       "display_name": "NVIDIA Nemotron Nano 9B v2",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": false,
         "streaming": true,
-        "streaming_tool_use": false,
+        "streaming_tool_use": true,
         "document_support": false,
         "extended_thinking": true,
         "prompt_caching": false
@@ -2292,15 +2683,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 7.2,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "mistral.ministral-3-8b-instruct",
@@ -2367,15 +2762,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 9,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "zai.glm-5",
@@ -2442,15 +2841,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 33.2,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "openai.gpt-oss-20b-1:0",
@@ -2525,16 +2928,23 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 15.2,
-      "api_support": [
-        "converse",
-        "chat_completions",
-        "responses"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/v1/responses"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/v1/responses"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-5",
@@ -2678,9 +3088,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 63.1,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "google.gemma-3-4b-it",
@@ -2747,15 +3159,19 @@
       ],
       "guardrail_compatible": false,
       "quality_baseline": 1,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-8",
@@ -2901,10 +3317,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 57.3,
-      "api_support": [
-        "converse"
-      ],
-      "responses_path": "/openai/v1/responses"
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "anthropic.claude-opus-4-7",
@@ -3050,10 +3467,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 43.9,
-      "api_support": [
-        "converse"
-      ],
-      "responses_path": "/openai/v1/responses"
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "google.gemma-3-27b-it",
@@ -3120,15 +3538,19 @@
       ],
       "guardrail_compatible": false,
       "quality_baseline": 7.4,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -3274,9 +3696,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 29.9,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "qwen.qwen3-vl-235b-a22b",
@@ -3343,10 +3767,15 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 10.8,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -3417,15 +3846,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 27.1,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "writer.palmyra-vision-7b",
@@ -3468,15 +3901,170 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 0.0,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
+      ]
+    },
+    {
+      "model_id": "openai.gpt-5.6-luna",
+      "family": "openai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global",
+            "in"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
       ],
-      "responses_path": "/openai/v1/responses"
+      "tier": "mid",
+      "display_name": "GPT-5.6 Luna",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": true,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 131072,
+      "pricing": {
+        "input_per_1k": 0.00022,
+        "output_per_1k": 0.00132,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [
+        "standard"
+      ],
+      "guardrail_compatible": true,
+      "quality_baseline": 26.8,
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "anthropic.claude-sonnet-5",
@@ -3620,9 +4208,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 42.6,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "qwen.qwen3-coder-480b-a35b-v1:0",
@@ -3681,10 +4271,15 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 18.2,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -3755,15 +4350,169 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 11.5,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
+      ]
+    },
+    {
+      "model_id": "openai.gpt-5.6-sol",
+      "family": "openai",
+      "regions": [
+        {
+          "name": "ap-northeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-northeast-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-south-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "ca-central-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "eu-central-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-north-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-2",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "eu-west-3",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "sa-east-1",
+          "cris_profiles": [
+            "global"
+          ]
+        },
+        {
+          "name": "us-east-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-east-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-1",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        },
+        {
+          "name": "us-west-2",
+          "cris_profiles": [
+            "global",
+            "us"
+          ]
+        }
       ],
-      "responses_path": "/openai/v1/responses"
+      "tier": "reasoning",
+      "display_name": "GPT-5.6 Sol",
+      "capabilities": {
+        "tool_use": true,
+        "vision": true,
+        "streaming": true,
+        "streaming_tool_use": true,
+        "document_support": true,
+        "extended_thinking": false,
+        "prompt_caching": true
+      },
+      "max_input_tokens": 1000000,
+      "max_output_tokens": 131072,
+      "pricing": {
+        "input_per_1k": 0.0055,
+        "output_per_1k": 0.033,
+        "cache_read_per_1k": 0.0,
+        "cache_write_per_1k": 0.0
+      },
+      "supported_latency_modes": [
+        "standard"
+      ],
+      "guardrail_compatible": true,
+      "quality_baseline": 41.9,
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "deepseek.v3-v1:0",
@@ -3822,9 +4571,15 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 21.4,
-      "api_support": [
-        "converse"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -3895,15 +4650,19 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 7.1,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
-      ],
-      "responses_path": "/openai/v1/responses"
+      ]
     },
     {
       "model_id": "anthropic.claude-opus-4-5-20251101-v1:0",
@@ -4046,9 +4805,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 35.6,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "qwen.qwen3-coder-30b-a3b-v1:0",
@@ -4123,10 +4884,15 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 13.6,
-      "api_support": [
-        "converse",
-        "chat_completions"
-      ],
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        },
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      },
       "supported_service_tiers": [
         "flex",
         "priority"
@@ -4255,9 +5021,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 6.7,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "amazon.nova-micro-v1:0",
@@ -4366,9 +5134,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 4.4,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "deepseek.r1-v1:0",
@@ -4417,9 +5187,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 18.6,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "meta.llama3-8b-instruct-v1:0",
@@ -4470,9 +5242,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 1,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "meta.llama3-70b-instruct-v1:0",
@@ -4523,9 +5297,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 3.1,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "meta.llama3-1-8b-instruct-v1:0",
@@ -4575,9 +5351,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 7.4,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "meta.llama3-1-70b-instruct-v1:0",
@@ -4628,9 +5406,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 6.5,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "meta.llama3-3-70b-instruct-v1:0",
@@ -4680,9 +5460,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 9.3,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "meta.llama4-scout-17b-instruct-v1:0",
@@ -4737,9 +5519,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 10.3,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "meta.llama4-maverick-17b-instruct-v1:0",
@@ -4794,9 +5578,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 14.5,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "mistral.mistral-7b-instruct-v0:2",
@@ -4863,9 +5649,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 1.7,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "mistral.mixtral-8x7b-instruct-v0:1",
@@ -4932,9 +5720,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 2,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "mistral.mistral-large-2402-v1:0",
@@ -5001,9 +5791,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 4.1,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "mistral.mistral-large-2407-v1:0",
@@ -5038,9 +5830,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 4.1,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "mistral.pixtral-large-2502-v1:0",
@@ -5113,9 +5907,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 8,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "writer.palmyra-x4-v1:0",
@@ -5170,9 +5966,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 0.0,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "writer.palmyra-x5-v1:0",
@@ -5227,9 +6025,11 @@
       ],
       "guardrail_compatible": true,
       "quality_baseline": 0.0,
-      "api_support": [
-        "converse"
-      ]
+      "api_support": {
+        "converse": {
+          "endpoint": "bedrock-runtime"
+        }
+      }
     },
     {
       "model_id": "deepseek.v3.1",
@@ -5294,9 +6094,12 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 21.4,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-mantle",
+          "path": "/v1/chat/completions"
+        }
+      }
     },
     {
       "model_id": "google.gemma-4-26b-a4b",
@@ -5341,9 +6144,16 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 20.4,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "google.gemma-4-31b",
@@ -5388,9 +6198,16 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 22.3,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "google.gemma-4-e2b",
@@ -5435,9 +6252,16 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 6.2,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "mistral.voxtral-mini-3b-2507",
@@ -5510,9 +6334,12 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 0.0,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      }
     },
     {
       "model_id": "mistral.voxtral-small-24b-2507",
@@ -5585,9 +6412,12 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 11.8,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      }
     },
     {
       "model_id": "openai.gpt-5.4",
@@ -5628,10 +6458,12 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 28.3,
-      "api_support": [
-        "responses"
-      ],
-      "responses_path": "/openai/v1/responses"
+      "api_support": {
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "openai.gpt-5.5",
@@ -5668,138 +6500,12 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 35.8,
-      "api_support": [
-        "responses"
-      ],
-      "responses_path": "/openai/v1/responses"
-    },
-    {
-      "model_id": "openai.gpt-5.6-luna",
-      "family": "openai",
-      "regions": [
-        {
-          "name": "us-east-1",
-          "direct": true
-        },
-        {
-          "name": "us-east-2",
-          "direct": true
-        },
-        {
-          "name": "us-west-2",
-          "direct": true
+      "api_support": {
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/responses"
         }
-      ],
-      "tier": "mid",
-      "display_name": "GPT 5.6 Luna",
-      "capabilities": {
-        "tool_use": true,
-        "vision": false,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": false,
-        "extended_thinking": false,
-        "prompt_caching": false
-      },
-      "max_input_tokens": 272000,
-      "max_output_tokens": 128000,
-      "pricing": {
-        "input_per_1k": 0.00022,
-        "output_per_1k": 0.00132,
-        "cache_read_per_1k": 0.0,
-        "cache_write_per_1k": 0.0
-      },
-      "supported_latency_modes": [],
-      "guardrail_compatible": false,
-      "quality_baseline": 26.8,
-      "api_support": [
-        "responses"
-      ],
-      "responses_path": "/openai/v1/responses"
-    },
-    {
-      "model_id": "openai.gpt-5.6-sol",
-      "family": "openai",
-      "regions": [
-        {
-          "name": "us-east-1",
-          "direct": true
-        },
-        {
-          "name": "us-east-2",
-          "direct": true
-        }
-      ],
-      "tier": "reasoning",
-      "display_name": "GPT 5.6 Sol",
-      "capabilities": {
-        "tool_use": true,
-        "vision": false,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": false,
-        "extended_thinking": false,
-        "prompt_caching": false
-      },
-      "max_input_tokens": 272000,
-      "max_output_tokens": 128000,
-      "pricing": {
-        "input_per_1k": 0.0055,
-        "output_per_1k": 0.033,
-        "cache_read_per_1k": 0.0,
-        "cache_write_per_1k": 0.0
-      },
-      "supported_latency_modes": [],
-      "guardrail_compatible": false,
-      "quality_baseline": 41.9,
-      "api_support": [
-        "responses"
-      ],
-      "responses_path": "/openai/v1/responses"
-    },
-    {
-      "model_id": "openai.gpt-5.6-terra",
-      "family": "openai",
-      "regions": [
-        {
-          "name": "us-east-1",
-          "direct": true
-        },
-        {
-          "name": "us-east-2",
-          "direct": true
-        },
-        {
-          "name": "us-west-2",
-          "direct": true
-        }
-      ],
-      "tier": "heavy",
-      "display_name": "GPT 5.6 Terra",
-      "capabilities": {
-        "tool_use": true,
-        "vision": false,
-        "streaming": true,
-        "streaming_tool_use": true,
-        "document_support": false,
-        "extended_thinking": false,
-        "prompt_caching": false
-      },
-      "max_input_tokens": 272000,
-      "max_output_tokens": 128000,
-      "pricing": {
-        "input_per_1k": 0.0022,
-        "output_per_1k": 0.0132,
-        "cache_read_per_1k": 0.0,
-        "cache_write_per_1k": 0.0
-      },
-      "supported_latency_modes": [],
-      "guardrail_compatible": false,
-      "quality_baseline": 34.6,
-      "api_support": [
-        "responses"
-      ],
-      "responses_path": "/openai/v1/responses"
+      }
     },
     {
       "model_id": "qwen.qwen3-coder-next",
@@ -5872,9 +6578,12 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 21.3,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-runtime",
+          "path": "/openai/v1/chat/completions"
+        }
+      }
     },
     {
       "model_id": "xai.grok-4.3",
@@ -5893,7 +6602,7 @@
           "direct": true
         }
       ],
-      "tier": "mid",
+      "tier": "micro",
       "display_name": "Grok 4.3",
       "capabilities": {
         "tool_use": true,
@@ -5904,8 +6613,8 @@
         "extended_thinking": false,
         "prompt_caching": false
       },
-      "max_input_tokens": 1000000,
-      "max_output_tokens": 131000,
+      "max_input_tokens": 131072,
+      "max_output_tokens": 16384,
       "pricing": {
         "input_per_1k": 0.00125,
         "output_per_1k": 0.0025,
@@ -5915,9 +6624,16 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 0.0,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/chat/completions"
+        },
+        "responses": {
+          "endpoint": "bedrock-mantle",
+          "path": "/openai/v1/responses"
+        }
+      }
     },
     {
       "model_id": "zai.glm-4.6",
@@ -5990,9 +6706,12 @@
       "supported_latency_modes": [],
       "guardrail_compatible": false,
       "quality_baseline": 23.4,
-      "api_support": [
-        "chat_completions"
-      ]
+      "api_support": {
+        "chat_completions": {
+          "endpoint": "bedrock-mantle",
+          "path": "/v1/chat/completions"
+        }
+      }
     }
   ]
 }

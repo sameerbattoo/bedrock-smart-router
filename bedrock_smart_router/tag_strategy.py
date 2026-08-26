@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import fnmatch
 import logging
-from typing import Any
 
 from bedrock_smart_router.models import BedrockModel, RequestAnalysis
 from bedrock_smart_router.strategy_engine import RoutingStrategy, StrategyResult

@@ -22,13 +22,8 @@ from typing import Any
 
 from bedrock_smart_router.models import (
     BedrockModel,
-    Complexity,
     RequestAnalysis,
     Tier,
-)
-from bedrock_smart_router.model_registry import (
-    COMPLEXITY_MIN_TIER,
-    ModelRegistry,
 )
 
 logger = logging.getLogger(__name__)

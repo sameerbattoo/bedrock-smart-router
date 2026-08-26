@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
 
 from bedrock_smart_router.model_registry import ModelRegistry
 from bedrock_smart_router.models import (

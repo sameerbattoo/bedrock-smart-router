@@ -23,10 +23,10 @@ import logging
 import threading
 import time
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from bedrock_smart_router.models import BedrockModel, RequestAnalysis, Tier
+from bedrock_smart_router.models import BedrockModel, RequestAnalysis
 from bedrock_smart_router.strategy_engine import (
     BalancedStrategy,
     RoutingStrategy,

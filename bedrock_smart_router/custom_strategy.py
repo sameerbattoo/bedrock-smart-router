@@ -106,8 +106,6 @@ Built-in dimensions (computed by base class — do NOT score these):
 
 from __future__ import annotations
 
-from typing import Any
-
 from bedrock_smart_router.strategy_engine import (
     BUILTIN_STRATEGIES,
     RoutingStrategy,

@@ -85,9 +85,13 @@ def streaming_callback(**kwargs):
 # The SmartRouterModel's update_config() switches routing per tenant
 # without recreating the agent.
 
+# max_tokens must be generous enough for the longest response in the demo
+# (the premium "Compare VPC peering vs Transit Gateway" query). Strands raises
+# MaxTokensReachedException if a response is truncated at the limit, so a tight
+# budget (e.g. 512) would abort the agent mid-answer.
 model = SmartRouterModel(
     router_config={"region": "us-west-2"},
-    max_tokens=512,
+    max_tokens=2048,
 )
 
 agent = Agent(

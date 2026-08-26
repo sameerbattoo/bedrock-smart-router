@@ -45,15 +45,11 @@ The model data is lazily loaded on first use to avoid startup overhead.
 from __future__ import annotations
 
 import json
-import math
-import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from bedrock_smart_router.complexity_classifier import (
     ComplexityClassifier,
-    COMPLEXITY_ORDER,
-    LEVEL_TO_LABEL,
     DEFAULT_FLOOR_CONFIDENCE_THRESHOLD,
     DEFAULT_FLOOR_DAMPENING,
 )

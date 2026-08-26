@@ -18,11 +18,10 @@ model, different CRIS profile — not a useful fallback).
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 from bedrock_smart_router.models import BedrockModel, Tier
-from bedrock_smart_router.model_registry import ModelRegistry, base_model_id
+from bedrock_smart_router.model_registry import ModelRegistry
 
 logger = logging.getLogger(__name__)
 

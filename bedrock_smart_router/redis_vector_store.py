@@ -134,7 +134,6 @@ class RedisVectorStore(VectorStore):
             out: list[SearchResult] = []
             i = 1
             while i < len(result):
-                _key = result[i]
                 i += 1
                 if i >= len(result):
                     break

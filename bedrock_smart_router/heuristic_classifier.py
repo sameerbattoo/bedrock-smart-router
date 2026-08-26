@@ -59,8 +59,6 @@ from typing import Any
 
 from bedrock_smart_router.complexity_classifier import (
     ComplexityClassifier,
-    COMPLEXITY_ORDER,
-    LEVEL_TO_LABEL,
     DEFAULT_FLOOR_CONFIDENCE_THRESHOLD,
     DEFAULT_FLOOR_DAMPENING,
 )
@@ -426,7 +424,6 @@ class HeuristicClassifier(ComplexityClassifier):
         # itself, not by role-assignment text in the system prompt.
         if system:
             from bedrock_smart_router.request_analyzer import _extract_text
-            from bedrock_smart_router.complexity_classifier import FLOOR_MAX_LEVEL
             system_text = _extract_text(system)
             if system_text:
                 system_floor = self._compute_system_floor(system_text.lower())
