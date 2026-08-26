@@ -824,114 +824,146 @@ def _runtime_candidate_ids(model_id: str, model_regions: dict | None, region: st
         for p in entry.get("cris_profiles", []):
             if p not in prefixes:
                 prefixes.append(p)
-    # Common geo prefixes as fallback ordering
-    for p in ("us", "eu", "global", "apac"):
+    # Common geo prefixes as fallback ordering. Try "us" before "global":
+    # the global CRIS profile is observed to be slower/timeout-prone for some
+    # models, while the regional "us." profile responds quickly.
+    for p in ("us", "eu", "apac", "global"):
         if p not in prefixes:
             prefixes.append(p)
+    # If the model's own region entry advertised "global" first, it may now be
+    # ordered ahead of "us" — normalize so "us" is tried before "global".
+    if "us" in prefixes and "global" in prefixes and prefixes.index("global") < prefixes.index("us"):
+        prefixes.remove("us")
+        prefixes.insert(prefixes.index("global"), "us")
     for p in prefixes:
         ids.append(f"{p}.{base}")
     return ids
 
 
-def _probe_runtime_chat_completions(model_id: str, region: str,
-                                    model_regions: dict | None = None) -> bool:
-    """Test if a model supports Chat Completions on the bedrock-runtime endpoint.
+# Fallback regions to try when the primary probe region can't confirm support
+# (e.g. a model is slow/unavailable in one region but fine in another). Ordered
+# by general availability/latency.
+_RUNTIME_FALLBACK_REGIONS = ("us-east-1", "us-east-2", "us-west-2")
 
-    Sends a minimal request to /openai/v1/chat/completions, retrying with CRIS
-    profile prefixes when the model rejects plain on-demand throughput.
-    Returns True only on a confirmed 200.
+
+def _runtime_probe_regions(region: str, model_regions: dict | None) -> list[str]:
+    """Ordered list of regions to attempt a runtime probe in.
+
+    Starts with the primary region, then adds regions where the model is known
+    to be available (from model_regions), then common fallbacks — so a transient
+    failure or region-specific slowness in one region doesn't yield a false
+    negative.
     """
+    ordered: list[str] = [region]
+    # Fast, high-availability US regions next (most models respond quickly here).
+    for r in _RUNTIME_FALLBACK_REGIONS:
+        if r not in ordered:
+            ordered.append(r)
+    # Then any other region the model is known to be available in.
+    if model_regions:
+        for r in model_regions.keys():
+            if r not in ordered:
+                ordered.append(r)
+    return ordered
+
+
+# Sentinel results from a single-region probe attempt.
+_PROBE_YES = "yes"          # confirmed supported (stop, success)
+_PROBE_NO = "no"            # definitively unsupported (stop, failure)
+_PROBE_UNKNOWN = "unknown"  # inconclusive (timeout/ambiguous) — try another region
+
+
+def _probe_runtime_once(url_path: str, model_id: str, region: str,
+                        model_regions: dict | None, payload_builder) -> str:
+    """Single-region runtime probe. Returns _PROBE_YES / _PROBE_NO / _PROBE_UNKNOWN."""
     if requests is None:
-        return False
+        return _PROBE_NO
     try:
         from botocore.auth import SigV4Auth
         from botocore.awsrequest import AWSRequest
-        session = boto3.Session(region_name=region)
-        creds = session.get_credentials().get_frozen_credentials()
-        url = f"https://bedrock-runtime.{region}.amazonaws.com{_RUNTIME_CHAT_PATH}"
-
+        creds = boto3.Session(region_name=region).get_credentials().get_frozen_credentials()
+        url = f"https://bedrock-runtime.{region}.amazonaws.com{url_path}"
+        saw_definitive_no = False
         for mid in _runtime_candidate_ids(model_id, model_regions, region):
-            # No token-limit param: models disagree on max_tokens vs
-            # max_completion_tokens, and it isn't needed to test route support.
-            payload = json.dumps({
-                "model": mid,
-                "messages": [{"role": "user", "content": "hi"}],
-            })
+            payload = json.dumps(payload_builder(mid))
             req = AWSRequest(method="POST", url=url, data=payload,
                              headers={"Content-Type": "application/json"})
             SigV4Auth(creds, "bedrock", region).add_auth(req)
-            resp = requests.post(url, data=payload, headers=dict(req.headers), timeout=20)
-            if resp.status_code == 200:
-                return True
             try:
-                err = resp.json().get("error", {}).get("message", "")
-            except (json.JSONDecodeError, ValueError):
-                err = resp.text[:120]
-            # Needs a CRIS profile — keep trying prefixed IDs
-            if "on-demand throughput" in err:
+                resp = requests.post(url, data=payload, headers=dict(req.headers), timeout=12)
+            except Exception:
+                # Timeout/connection error on this candidate — inconclusive,
+                # move on to the next candidate/region rather than blocking.
                 continue
-            # A parameter-validation error ("Unsupported parameter: 'x'") means
-            # the model+route accepted the request far enough to validate params
-            # → API IS supported. This is unambiguous (it names a parameter),
-            # unlike a generic "not supported" which may reject the model itself.
-            if "unsupported parameter" in err.lower():
-                return True
-            # Definitive "not this model / not supported" — stop
-            if "invalid" in err.lower() or "does not support" in err.lower():
-                return False
-            # Ambiguous — try next candidate
-            continue
-        return False
-    except Exception:
-        return False
-
-
-def _probe_runtime_responses(model_id: str, region: str,
-                             model_regions: dict | None = None) -> bool:
-    """Test if a model supports the Responses API on the bedrock-runtime endpoint.
-
-    Sends a minimal request to /openai/v1/responses, retrying with CRIS profile
-    prefixes when the model rejects plain on-demand throughput.
-    Returns True only on a confirmed 200.
-    """
-    if requests is None:
-        return False
-    try:
-        from botocore.auth import SigV4Auth
-        from botocore.awsrequest import AWSRequest
-        session = boto3.Session(region_name=region)
-        creds = session.get_credentials().get_frozen_credentials()
-        url = f"https://bedrock-runtime.{region}.amazonaws.com{_RUNTIME_RESPONSES_PATH}"
-
-        for mid in _runtime_candidate_ids(model_id, model_regions, region):
-            payload = json.dumps({
-                "model": mid,
-                "input": "hi",
-                "store": False,
-                "max_output_tokens": 16,
-            })
-            req = AWSRequest(method="POST", url=url, data=payload,
-                             headers={"Content-Type": "application/json"})
-            SigV4Auth(creds, "bedrock", region).add_auth(req)
-            resp = requests.post(url, data=payload, headers=dict(req.headers), timeout=20)
             if resp.status_code == 200:
-                return True
+                return _PROBE_YES
             try:
                 err = resp.json().get("error", {}).get("message", "")
             except (json.JSONDecodeError, ValueError):
                 err = resp.text[:120]
+            # Needs a CRIS profile — keep trying prefixed IDs.
             if "on-demand throughput" in err:
                 continue
             # Parameter-validation error ("Unsupported parameter: 'x'") → the
             # route accepted the request far enough to validate params → supported.
             if "unsupported parameter" in err.lower():
-                return True
-            if "invalid" in err.lower() or "does not support" in err.lower():
-                return False
+                return _PROBE_YES
+            # "Does not support this API" is a real per-model rejection → note it.
+            # But "invalid model identifier" usually just means a wrong-geo CRIS
+            # prefix (e.g. eu./apac. for a US-only model) — that's inconclusive,
+            # not proof the model lacks the API, so keep trying other candidates.
+            if "does not support" in err.lower():
+                saw_definitive_no = True
+                continue
+            # Ambiguous / wrong-prefix invalid id — try next candidate.
             continue
-        return False
+        return _PROBE_NO if saw_definitive_no else _PROBE_UNKNOWN
     except Exception:
-        return False
+        return _PROBE_UNKNOWN
+
+
+def _probe_runtime_chat_completions(model_id: str, region: str,
+                                    model_regions: dict | None = None) -> bool:
+    """Test if a model supports Chat Completions on bedrock-runtime.
+
+    Probes across multiple regions so a transient failure or region-specific
+    slowness doesn't yield a false negative. Returns True on a confirmed 200 in
+    any region; stops early on a definitive "not supported".
+    """
+    def _payload(mid):
+        # No token-limit param: models disagree on max_tokens vs
+        # max_completion_tokens, and it isn't needed to test route support.
+        return {"model": mid, "messages": [{"role": "user", "content": "hi"}]}
+
+    for r in _runtime_probe_regions(region, model_regions):
+        result = _probe_runtime_once(_RUNTIME_CHAT_PATH, model_id, r, model_regions, _payload)
+        if result == _PROBE_YES:
+            return True
+        if result == _PROBE_NO:
+            return False
+        # _PROBE_UNKNOWN → try the next region
+    return False
+
+
+def _probe_runtime_responses(model_id: str, region: str,
+                             model_regions: dict | None = None) -> bool:
+    """Test if a model supports the Responses API on bedrock-runtime.
+
+    Probes across multiple regions so a transient failure or region-specific
+    slowness doesn't yield a false negative. Returns True on a confirmed 200 in
+    any region; stops early on a definitive "not supported".
+    """
+    def _payload(mid):
+        return {"model": mid, "input": "hi", "store": False, "max_output_tokens": 16}
+
+    for r in _runtime_probe_regions(region, model_regions):
+        result = _probe_runtime_once(_RUNTIME_RESPONSES_PATH, model_id, r, model_regions, _payload)
+        if result == _PROBE_YES:
+            return True
+        if result == _PROBE_NO:
+            return False
+        # _PROBE_UNKNOWN → try the next region
+    return False
 
 
 def _probe_mantle_chat_completions(mantle_models: set[str], model_id: str, region: str) -> str | None:
@@ -1417,7 +1449,9 @@ AA_CREATOR_MAP = {
     "moonshotai": "Kimi",
     "moonshot": "Kimi",
     "qwen": "Alibaba",
-    "xai": "xAI",
+    # AA labels xAI/Grok models under the creator "SpaceXAI" (not "xAI").
+    # Values may be a single name or a list of acceptable AA creator names.
+    "xai": ["xAI", "SpaceXAI"],
 }
 
 # Some AA entries have creator=None but can be matched by name prefix
@@ -1425,11 +1459,27 @@ AA_NAME_PREFIX_FALLBACK = {
     "xai": "Grok",
 }
 
+# Hand-curated pricing for Bedrock models that neither LiteLLM nor Artificial
+# Analysis carry. Sourced from the AWS Bedrock pricing page (per-1K token rates,
+# i.e. AWS's per-1M price / 1000). Used only as a fallback when the automated
+# sources have no pricing. Keep keys as the base Bedrock model_id (no geo prefix).
+AWS_PRICING_OVERRIDES: dict[str, dict[str, float]] = {
+    # Writer Palmyra Vision 7B — $0.15 / $0.60 per 1M input/output tokens
+    "writer.palmyra-vision-7b": {"input_per_1k": 0.00015, "output_per_1k": 0.0006},
+}
 
-def _get_aa_creator(model_id: str) -> str:
-    """Get AA creator name from Bedrock model_id prefix."""
+
+def _get_aa_creators(model_id: str) -> list[str]:
+    """Get the acceptable AA creator name(s) for a Bedrock model_id prefix.
+
+    A prefix may map to more than one AA creator label (e.g. xai → xAI or
+    SpaceXAI), so this always returns a list.
+    """
     prefix = model_id.split(".")[0].lower()
-    return AA_CREATOR_MAP.get(prefix, "")
+    val = AA_CREATOR_MAP.get(prefix, "")
+    if not val:
+        return []
+    return list(val) if isinstance(val, (list, tuple)) else [val]
 
 
 def _tokenize_name(name: str) -> list[str]:
@@ -1570,12 +1620,12 @@ def match_quality_baseline(bedrock_name: str, model_id: str, aa_models: list[dic
     Returns (quality_score, pricing_dict) where pricing_dict has
     input_per_1k and output_per_1k (converted from AA's per-1M format).
     """
-    creator = _get_aa_creator(model_id)
-    if not creator or not aa_models:
+    creators = _get_aa_creators(model_id)
+    if not creators or not aa_models:
         return 0.0, {}
 
-    # Filter by creator
-    creator_models = [m for m in aa_models if m["creator"] == creator]
+    # Filter by creator (accept any of the mapped AA creator labels)
+    creator_models = [m for m in aa_models if m.get("creator") in creators]
 
     # Fallback: for providers where AA has creator=None (e.g., xAI/Grok),
     # match by name prefix instead
@@ -1818,6 +1868,14 @@ def build_catalog(
                 "cache_read_per_1k": 0.0,
                 "cache_write_per_1k": 0.0,
             }
+        elif base_id in AWS_PRICING_OVERRIDES or model_id in AWS_PRICING_OVERRIDES:
+            ov = AWS_PRICING_OVERRIDES.get(base_id) or AWS_PRICING_OVERRIDES[model_id]
+            pricing = {
+                "input_per_1k": ov["input_per_1k"],
+                "output_per_1k": ov["output_per_1k"],
+                "cache_read_per_1k": ov.get("cache_read_per_1k", 0.0),
+                "cache_write_per_1k": ov.get("cache_write_per_1k", 0.0),
+            }
         else:
             pricing = {
                 "input_per_1k": 0.0,
@@ -1828,6 +1886,27 @@ def build_catalog(
 
         # Determine tier (needs pricing and capabilities computed first)
         api_support = caps.get("api_support") or _derive_api_support(base_id, model_id, caps, mantle_models)
+
+        # Safeguard against transient probe failures: a runtime OpenAI-compat
+        # capability (chat_completions/responses) that the existing catalog
+        # already recorded on bedrock-runtime should not be dropped just because
+        # this run's probe timed out. Runtime capabilities don't silently vanish
+        # (a truly removed model disappears from ListFoundationModels entirely),
+        # so restore any runtime entry the fresh probe lost. This does NOT
+        # resurrect mantle entries (those can legitimately move to runtime).
+        if isinstance(api_support, dict) and existing:
+            existing_apis = existing.get("api_support")
+            if isinstance(existing_apis, dict):
+                for api in ("chat_completions", "responses"):
+                    ex = existing_apis.get(api)
+                    if (api not in api_support and isinstance(ex, dict)
+                            and ex.get("endpoint") == _ENDPOINT_RUNTIME):
+                        api_support[api] = ex
+                        logger.info(
+                            f"    {model_id}: preserved runtime {api} from existing "
+                            f"catalog (probe inconclusive this run)"
+                        )
+
         # tier logic keys off the set of supported APIs (list of names)
         api_names = list(api_support.keys()) if isinstance(api_support, dict) else list(api_support)
         if existing and "tier" in existing:
@@ -2088,6 +2167,10 @@ def add_mantle_only_models(
                        "cache_read_per_1k": 0.0, "cache_write_per_1k": 0.0}
         elif existing and existing.get("pricing", {}).get("input_per_1k", 0) > 0:
             pricing = existing["pricing"]
+        elif mantle_id in AWS_PRICING_OVERRIDES:
+            ov = AWS_PRICING_OVERRIDES[mantle_id]
+            pricing = {"input_per_1k": ov["input_per_1k"], "output_per_1k": ov["output_per_1k"],
+                       "cache_read_per_1k": ov.get("cache_read_per_1k", 0.0), "cache_write_per_1k": ov.get("cache_write_per_1k", 0.0)}
         else:
             pricing = {"input_per_1k": 0.0, "output_per_1k": 0.0, "cache_read_per_1k": 0.0, "cache_write_per_1k": 0.0}
 

@@ -1456,7 +1456,7 @@
         "standard"
       ],
       "guardrail_compatible": true,
-      "quality_baseline": 0.0,
+      "quality_baseline": 60.9,
       "api_support": {
         "converse": {
           "endpoint": "bedrock-runtime"
@@ -1936,10 +1936,10 @@
       "tier": "reasoning",
       "display_name": "Kimi K2 Thinking",
       "capabilities": {
-        "tool_use": false,
+        "tool_use": true,
         "vision": false,
         "streaming": true,
-        "streaming_tool_use": false,
+        "streaming_tool_use": true,
         "document_support": false,
         "extended_thinking": true,
         "prompt_caching": false
@@ -3891,8 +3891,8 @@
       "max_input_tokens": 128000,
       "max_output_tokens": 4096,
       "pricing": {
-        "input_per_1k": 0.0,
-        "output_per_1k": 0.0,
+        "input_per_1k": 0.00015,
+        "output_per_1k": 0.0006,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
       },
@@ -6086,7 +6086,7 @@
       "max_input_tokens": 128000,
       "max_output_tokens": 16384,
       "pricing": {
-        "input_per_1k": 0.00056,
+        "input_per_1k": 0.00057,
         "output_per_1k": 0.00168,
         "cache_read_per_1k": 0.0,
         "cache_write_per_1k": 0.0
@@ -6623,7 +6623,7 @@
       },
       "supported_latency_modes": [],
       "guardrail_compatible": false,
-      "quality_baseline": 0.0,
+      "quality_baseline": 25,
       "api_support": {
         "chat_completions": {
           "endpoint": "bedrock-mantle",

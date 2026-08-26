@@ -1,118 +1,10 @@
 {
-  "qwen.qwen3-32b": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "openai.gpt-oss-120b": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "qwen.qwen3-coder-480b-a35b-instruct": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "mistral.magistral-small-2509": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "google.gemma-4-31b": [
-    "eu-central-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "zai.glm-5": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "moonshotai.kimi-k2-thinking": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "mistral.mistral-large-3-675b-instruct": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "zai.glm-4.7": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
+  "openai.gpt-5.4-2026-03-05": [
     "us-east-1",
     "us-east-2",
     "us-west-2"
   ],
   "xai.grok-4.6": [
-    "us-west-2"
-  ],
-  "zai.glm-4.6": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
     "us-west-2"
   ],
   "google.gemma-4-26b-a4b": [
@@ -121,169 +13,12 @@
     "us-east-2",
     "us-west-2"
   ],
-  "minimax.minimax-m2.1": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
+  "xai.grok-4.3": [
     "us-east-1",
     "us-east-2",
     "us-west-2"
   ],
-  "nvidia.nemotron-super-3-120b": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "openai.gpt-5.6-terra": [
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "deepseek.v3.1": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "google.gemma-3-4b-it": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "deepseek.v3.2": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "google.gemma-3-12b-it": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "qwen.qwen3-vl-235b-a22b-instruct": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "nvidia.nemotron-nano-9b-v2": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "nvidia.nemotron-nano-12b-v2": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "mistral.devstral-2-123b": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "minimax.minimax-m2": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "openai.gpt-5.4": [
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "minimax.minimax-m2.5": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "writer.palmyra-vision-7b": [
+  "mistral.ministral-3-3b-instruct": [
     "ap-northeast-1",
     "ap-south-1",
     "ap-southeast-2",
@@ -309,10 +44,96 @@
     "us-east-2",
     "us-west-2"
   ],
-  "anthropic.claude-haiku-4-5": [
+  "nvidia.nemotron-super-3-120b": [
     "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
     "eu-north-1",
     "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "qwen.qwen3-coder-next": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "mistral.voxtral-mini-3b-2507": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "qwen.qwen3-235b-a22b-2507": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "qwen.qwen3-vl-235b-a22b-instruct": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "mistral.mistral-large-3-675b-instruct": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "mistral.voxtral-small-24b-2507": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "openai.gpt-5.4": [
     "us-east-1",
     "us-east-2",
     "us-west-2"
@@ -343,7 +164,7 @@
     "us-east-2",
     "us-west-2"
   ],
-  "qwen.qwen3-coder-30b-a3b-instruct": [
+  "minimax.minimax-m2": [
     "ap-northeast-1",
     "ap-south-1",
     "ap-southeast-2",
@@ -356,25 +177,7 @@
     "us-east-2",
     "us-west-2"
   ],
-  "openai.gpt-5.4-2026-03-05": [
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "mistral.voxtral-small-24b-2507": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "zai.glm-4.7-flash": [
+  "zai.glm-4.6": [
     "ap-northeast-1",
     "ap-south-1",
     "ap-southeast-2",
@@ -400,7 +203,7 @@
     "us-east-2",
     "us-west-2"
   ],
-  "openai.gpt-oss-20b": [
+  "minimax.minimax-m2.5": [
     "ap-northeast-1",
     "ap-south-1",
     "ap-southeast-2",
@@ -413,7 +216,270 @@
     "us-east-2",
     "us-west-2"
   ],
-  "qwen.qwen3-235b-a22b-2507": [
+  "nvidia.nemotron-nano-9b-v2": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "minimax.minimax-m2.1": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "deepseek.v3.2": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "writer.palmyra-vision-7b": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "moonshotai.kimi-k2.5": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "openai.gpt-5.6-luna": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "google.gemma-3-27b-it": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "qwen.qwen3-coder-30b-a3b-instruct": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "mistral.devstral-2-123b": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "nvidia.nemotron-nano-12b-v2": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "google.gemma-4-31b": [
+    "eu-central-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "qwen.qwen3-coder-480b-a35b-instruct": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "zai.glm-5": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "google.gemma-3-12b-it": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "qwen.qwen3-32b": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "anthropic.claude-haiku-4-5": [
+    "ap-northeast-1",
+    "eu-north-1",
+    "eu-west-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "openai.gpt-oss-120b": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "zai.glm-4.7-flash": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "deepseek.v3.1": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "mistral.ministral-3-14b-instruct": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "zai.glm-4.7": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "openai.gpt-5.6-terra": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "moonshotai.kimi-k2-thinking": [
+    "ap-northeast-1",
+    "ap-south-1",
+    "ap-southeast-2",
+    "eu-north-1",
+    "eu-west-2",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "google.gemma-4-e2b": [
+    "eu-central-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+  ],
+  "mistral.magistral-small-2509": [
     "ap-northeast-1",
     "ap-south-1",
     "ap-southeast-2",
@@ -439,17 +505,7 @@
     "us-east-2",
     "us-west-2"
   ],
-  "openai.gpt-5.6-luna": [
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "xai.grok-4.3": [
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "qwen.qwen3-coder-next": [
+  "openai.gpt-oss-20b": [
     "ap-northeast-1",
     "ap-south-1",
     "ap-southeast-2",
@@ -462,7 +518,7 @@
     "us-east-2",
     "us-west-2"
   ],
-  "mistral.ministral-3-3b-instruct": [
+  "google.gemma-3-4b-it": [
     "ap-northeast-1",
     "ap-south-1",
     "ap-southeast-2",
@@ -475,68 +531,7 @@
     "us-east-2",
     "us-west-2"
   ],
-  "moonshotai.kimi-k2.5": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-north-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "mistral.voxtral-mini-3b-2507": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "mistral.ministral-3-14b-instruct": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "google.gemma-3-27b-it": [
-    "ap-northeast-1",
-    "ap-south-1",
-    "ap-southeast-2",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-west-1",
-    "eu-west-2",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "google.gemma-4-e2b": [
-    "eu-central-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-2"
-  ],
-  "anthropic.claude-opus-5": [
-    "eu-north-1",
-    "eu-west-1",
-    "us-east-1"
-  ],
-  "openai.gpt-5.5": [
+  "openai.gpt-5.6-sol": [
     "us-east-1",
     "us-east-2"
   ],
@@ -544,7 +539,11 @@
     "us-east-1",
     "us-east-2"
   ],
-  "anthropic.claude-sonnet-5": [
+  "openai.gpt-5.5": [
+    "us-east-1",
+    "us-east-2"
+  ],
+  "anthropic.claude-opus-5": [
     "eu-north-1",
     "eu-west-1",
     "us-east-1"
@@ -555,17 +554,18 @@
     "eu-west-1",
     "us-east-1"
   ],
-  "openai.gpt-5.6-sol": [
-    "us-east-1",
-    "us-east-2"
-  ],
-  "anthropic.claude-fable-5": [
+  "anthropic.claude-sonnet-5": [
+    "eu-north-1",
+    "eu-west-1",
     "us-east-1"
   ],
   "anthropic.claude-opus-4-7": [
     "ap-northeast-1",
     "eu-north-1",
     "eu-west-1",
+    "us-east-1"
+  ],
+  "anthropic.claude-fable-5": [
     "us-east-1"
   ]
 }
