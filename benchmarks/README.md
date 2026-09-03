@@ -146,18 +146,6 @@ router doesn't send hard tasks to cheap models.
 
 ---
 
-## Router Fixes Applied (May 9, 2026)
-
-1. **System prompt extraction bug** — `_extract_text()` now handles system prompt format, fixing complexity scoring
-2. **Expanded REASONING_MARKERS** — added "analysis", "build a", "for each", etc.
-3. **Added DATA_ANALYSIS_SIGNALS** — SQL analytics keywords (cohort, CTE, window functions)
-4. **Reasoning auto-promote threshold** — raised from 2 to 4 markers to reduce false positives
-5. **Opus serviceTier fix** — all Opus models (4.1-4.7) reject serviceTier parameter; catalog updated
-
-See `docs/JS_PORT_CHANGES_2026-05-09.md` for full details.
-
----
-
 ## Prompt Format
 
 The synthetic prompts in `classifier/datasets/generated/*.json` serve double duty:
