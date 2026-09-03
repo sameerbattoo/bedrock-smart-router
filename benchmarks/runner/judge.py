@@ -17,7 +17,7 @@ import time
 
 import boto3
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from benchmarks.runner.config import JUDGE_MODEL_ID, JUDGE_SYSTEM_PROMPT_WITH_ANSWER, REGION
 
 

@@ -24,7 +24,7 @@ from datetime import datetime
 
 import boto3
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from benchmarks.runner.config import BURST_CONCURRENCY_LEVELS, BURST_PROMPT, MODELS, REGION
 from bedrock_smart_router import BedrockRouter, RoutingConfig
 

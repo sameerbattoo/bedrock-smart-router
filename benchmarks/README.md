@@ -28,23 +28,6 @@ Router Default: **98.7% cheaper** and **78% faster** than Sonnet with comparable
 
 ```
 benchmarks/
-├── data/
-│   ├── generated/                    # 295 custom prompts (6 categories)
-│   │   ├── text_to_sql.json          (50 prompts)
-│   │   ├── document_extraction.json  (50 prompts)
-│   │   ├── log_analysis.json         (45 prompts)
-│   │   ├── anomaly_detection.json    (50 prompts)
-│   │   ├── code_generation.json      (50 prompts)
-│   │   └── summarization.json        (50 prompts)
-│   ├── generated_scripts/            # Scripts to regenerate prompts
-│   │   └── gen_*.py (6 files)
-│   ├── industry_standard/
-│   │   ├── text_datasets/            # BoolQ, TriviaQA, XSum, T-REx, etc. (9 datasets)
-│   │   ├── multimodal/              # Invoice/DocVQA/ChartQA images (150 samples)
-│   │   ├── pdfs/                    # Real multi-page PDF documents (50 samples)
-│   │   ├── reasoning/              # GSM8K, GPQA, MBPP, MATH, ARC (complex)
-│   │   └── auxiliary/              # HellaSwag, WinoGrande, MMLU, Alpaca
-│   └── download_scripts/            # Scripts to download all datasets
 ├── runner/                           # Benchmark execution scripts
 │   ├── config.py                    # Models, strategies, judge prompts
 │   ├── run_benchmark.py             # Main orchestrator
@@ -52,14 +35,15 @@ benchmarks/
 │   ├── burst_test.py                # Concurrency/throttling test
 │   ├── analyze_results.py           # Generates REPORT.md from results
 │   ├── quick_mix_test.py            # Quick 3-prompt test across runners
-│   ├── calibrate_thresholds.py      # Threshold calibration using labeled data
-│   └── generate_all.py              # Regenerate all prompt files
-├── classifier/                       # Complexity classifier (ML-based)
-│   ├── prepare_data.py              # Combines all data sources
-│   ├── train.py                     # Trains sentence-embedding classifier
-│   ├── predict.py                   # Inference / interactive mode
-│   ├── training_data.json           # 2,545 labeled samples
-│   ├── trained_model/               # Saved model artifacts
+│   ├── tune_heuristic.py            # Tunes the keyword-heuristic scorer on labeled prompts
+│   └── generate_all.py              # Regenerate the synthetic benchmark prompts
+├── classifier/                       # Complexity classifier (TF-IDF + LogReg)
+│   ├── download/                    # One download script per data source
+│   ├── datasets/                    # Downloaded data + generated/ synthetic prompts
+│   │   └── generated/               #   synthetic prompts (also used as benchmark prompts)
+│   │       └── scripts/             #   gen_*.py generators (run via runner/generate_all.py)
+│   ├── train_tfidf.py               # Trains the classifier → ml_classifier.json
+│   ├── tfidf_model/                 # Saved model artifacts
 │   └── README.md
 └── results/                          # Benchmark run outputs + REPORT.md
 ```
@@ -122,42 +106,43 @@ python benchmarks/runner/burst_test.py --levels 10,25,50,100
 
 ### Complexity Classifier
 ```bash
-# Prepare training data (2,545 samples from all sources)
-python benchmarks/classifier/prepare_data.py
+# 1. Download the training datasets into classifier/datasets/
+python benchmarks/classifier/download/download_all.py
 
-# Train (requires: pip install sentence-transformers scikit-learn)
-python benchmarks/classifier/train.py
-
-# Predict
-python benchmarks/classifier/predict.py "Build a cohort analysis with CTEs"
+# 2. Train and export the model (requires: pip install datasets scikit-learn numpy)
+python benchmarks/classifier/train_tfidf.py
+#    → bedrock_smart_router/data/ml_classifier.json
 ```
+
+See `benchmarks/classifier/README.md` for the full dataset/license table and
+architecture details.
 
 ---
 
-## Data Sources (2,545 total training samples)
+## Classifier Training Data
 
-| Source | Samples | Labels | Purpose |
-|---|---|---|---|
-| Custom prompts (6 categories) | 295 | Hand-labeled simple/medium/complex | Core benchmark |
-| Text datasets (BoolQ, TriviaQA, etc.) | 1,050 | By task type mapping | Classifier training |
-| Multimodal (invoices, DocVQA, ChartQA, PDFs) | 200 | By task complexity | Vision/document testing |
-| Reasoning (GSM8K, GPQA, MBPP, MATH, ARC) | 250 | All complex | Complex class balance |
-| Auxiliary (HellaSwag, WinoGrande, MMLU, Alpaca) | 750 | Medium/simple | Class balance |
+Datasets are downloaded (not committed) via one script per source under
+`classifier/download/`. All sources are permissively licensed and ungated
+(DevQuasar, HellaSwag, MATH, GSM8K, ARC, MMLU, WinoGrande, CommonsenseQA,
+HumanEval, MBPP, BBH, IFEval) plus in-repo synthetic prompts under
+`classifier/datasets/generated/`. Alpaca (non-commercial) and GPQA (gated) are
+intentionally excluded. Full table: `classifier/README.md`.
 
 ---
 
 ## Complexity Classifier Results
 
-Trained on 2,545 samples using sentence embeddings (all-MiniLM-L6-v2) + logistic regression:
+TF-IDF (1–3 gram) + Logistic Regression, exported for pure-NumPy runtime
+inference (no scikit-learn dependency at inference time):
 
-| Metric | Keyword Heuristic | Embedding Classifier |
+| Metric | Keyword Heuristic | TF-IDF Classifier |
 |---|---|---|
-| **Overall Accuracy** | 42.5% | **82.8%** |
-| Complex Recall | ~30% | **96%** |
-| Inference Time | <1ms | ~5ms |
-| Model Size | 0 (rules only) | 22MB |
+| **Overall Accuracy** | 42.5% | **~86%** |
+| Inference Time | <1ms | <1ms |
+| Runtime Dependency | none | numpy only |
 
-The classifier almost never misses a complex prompt (96% recall), ensuring the router doesn't send hard tasks to cheap models.
+The classifier keeps strong recall on complex/reasoning prompts, ensuring the
+router doesn't send hard tasks to cheap models.
 
 ---
 
@@ -175,7 +160,13 @@ See `docs/JS_PORT_CHANGES_2026-05-09.md` for full details.
 
 ## Prompt Format
 
-Each prompt in `data/generated/*.json`:
+The synthetic prompts in `classifier/datasets/generated/*.json` serve double duty:
+they are the prompts the benchmark runner sends to each runner, and they are also
+folded into the classifier's training data. Regenerate them with
+`python benchmarks/runner/generate_all.py` (which runs the `gen_*.py` scripts under
+`classifier/datasets/generated/scripts/`).
+
+Each prompt object:
 ```json
 {
   "id": "sql_001",

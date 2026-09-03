@@ -11,14 +11,14 @@ import os
 import json
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import boto3
 from bedrock_smart_router import BedrockRouter, RoutingConfig
 from benchmarks.runner.config import MODELS, REGION, JUDGE_MODEL_ID, JUDGE_SYSTEM_PROMPT_WITH_ANSWER
 
 # Load 1 prompt per difficulty from text_to_sql
-prompts_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "generated", "text_to_sql.json")
+prompts_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "classifier", "datasets", "generated", "text_to_sql.json")
 all_prompts = json.load(open(prompts_path))
 
 test_prompts = []

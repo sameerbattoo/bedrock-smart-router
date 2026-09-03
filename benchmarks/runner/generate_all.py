@@ -7,7 +7,7 @@ import os
 import subprocess
 import sys
 
-GEN_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "generated_scripts")
+GEN_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "classifier", "datasets", "generated", "scripts")
 
 print("Generating all benchmark prompts...")
 print("=" * 50)
@@ -24,4 +24,4 @@ for gen_file in generators:
         print(f"  ERROR: {result.stderr.strip()}")
 
 print("\n" + "=" * 50)
-print("Done! Prompt files are in benchmarks/prompts/")
+print("Done! Prompt files are in benchmarks/classifier/datasets/generated/")

@@ -4,8 +4,8 @@
 #!/usr/bin/env python3
 """Test and tune the heuristic complexity classifier.
 
-Evaluates the RequestAnalyzer's heuristic scoring against all labeled data
-(2,545 samples from training_data.json + 295 generated prompts), then performs
+Evaluates the RequestAnalyzer's heuristic scoring against the hand-labeled
+generated prompts (benchmarks/classifier/datasets/generated/), then performs
 grid search over weights and thresholds to find optimal parameters.
 
 Usage:
@@ -37,21 +37,9 @@ from bedrock_smart_router.models import Complexity
 
 # ─── Data Loading ───────────────────────────────────────────────────────────
 
-def load_training_data() -> list[dict[str, Any]]:
-    """Load the labeled samples from classifier training data."""
-    path = os.path.join(BENCHMARKS_DIR, "classifier", "training_data.json")
-    if not os.path.exists(path):
-        print(f"  WARNING: {path} not found, skipping.")
-        return []
-    with open(path) as f:
-        data = json.load(f)
-    print(f"  Loaded {len(data)} samples from training_data.json")
-    return data
-
-
 def load_generated_prompts() -> list[dict[str, Any]]:
-    """Load the 295 hand-labeled generated prompts."""
-    prompts_dir = os.path.join(BENCHMARKS_DIR, "data", "generated")
+    """Load the hand-labeled generated prompts from classifier/datasets/generated/."""
+    prompts_dir = os.path.join(BENCHMARKS_DIR, "classifier", "datasets", "generated")
     if not os.path.exists(prompts_dir):
         print(f"  WARNING: {prompts_dir} not found, skipping.")
         return []
@@ -83,17 +71,11 @@ def load_generated_prompts() -> list[dict[str, Any]]:
 def load_all_data() -> list[dict[str, Any]]:
     """Load and deduplicate all labeled data."""
     print("\nLoading labeled data...")
-    training = load_training_data()
     generated = load_generated_prompts()
 
     # Deduplicate by text prefix
     seen_texts = set()
     all_data = []
-    for item in training:
-        key = item["text"][:200]
-        if key not in seen_texts:
-            seen_texts.add(key)
-            all_data.append(item)
     for item in generated:
         key = item["text"][:200]
         if key not in seen_texts:

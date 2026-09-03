@@ -21,8 +21,8 @@ from datetime import datetime
 
 import boto3
 
-# Add parent to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add project root (parent of benchmarks/) to path for `benchmarks.*` imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from benchmarks.runner.config import (
     ALL_RUNNERS,
     MODELS,
@@ -35,7 +35,7 @@ from bedrock_smart_router import BedrockRouter, RoutingConfig
 
 def load_prompts(category=None):
     """Load prompts from JSON files."""
-    prompts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "generated")
+    prompts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "classifier", "datasets", "generated")
     all_prompts = []
     for filename in sorted(os.listdir(prompts_dir)):
         if not filename.endswith(".json"):
